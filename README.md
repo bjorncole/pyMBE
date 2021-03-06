@@ -23,7 +23,7 @@ conda install mamba
 
 If you don't have `anaconda` or `miniconda`, just get [Mambaforge](https://github.com/conda-forge/miniforge/releases/tag/4.9.2-5).
 
-## Get `anaconda-project`
+## 3. Get `anaconda-project`
 
 If you don't have `anaconda-project`, install [anaconda-project](https://anaconda-project.readthedocs.io):
 
@@ -31,9 +31,11 @@ If you don't have `anaconda-project`, install [anaconda-project](https://anacond
 mamba install anaconda-project=0.8.4
 ```
 
-## Configure `mamba` as default
+## 4. Configure `mamba` as default
 
 > This will make `anaconda-project` use `mamba` instead of `conda`, making it faster to solve and install the environments.
+
+> You will have to do this when you start your shell unless you set these environment variables permanently.
 
 ```bash
 CONDA_EXE=mamba        # linux
