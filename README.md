@@ -13,7 +13,7 @@ cd sysmlv2-semantics
 
 ## 2. Get `mamba`
 
-> or stick to `conda` if you like...
+> or stick to `conda` if you like...  just change `mamba` to `conda` in the instructions below.
 
 If you have anaconda or miniconda, install `mamba` (it's faster and better than conda):
 
