@@ -2,8 +2,7 @@
 
 A project to experiment with and validate semantics for `KerML` and `SysML v2`.
 
-# Installation
-
+# Get set up...
 
 ## 1. Clone this repo
 
