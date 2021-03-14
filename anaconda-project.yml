@@ -27,15 +27,15 @@ description:
 commands:
   lab:
     description: launch lab
+    env_spec: user
     unix: &lab jupyter lab --no-browser --debug
     windows: *lab
-    env_spec: user
   notebooks/KerML Nested Features.ipynb:
+    env_spec: user
     notebook: notebooks/KerML Nested Features.ipynb
-    env_spec: user
   notebooks/Kerbal Model.ipynb:
-    notebook: notebooks/Kerbal Model.ipynb
     env_spec: user
+    notebook: notebooks/Kerbal Model.ipynb
 
 #
 # In the variables section, list any environment variables your code depends on.
@@ -96,12 +96,14 @@ platforms:
 env_specs:
   user:
     description: The environment for running the notebooks
-    packages: 
-    - jupyterlab
+    packages:
     - ipyelk >=0.3
+    - jupyterlab
     - matplotlib
     - networkx
     - notebook
     - numpy
     - pip
+    - rdflib
+    - rdflib-jsonld
     - wheel
