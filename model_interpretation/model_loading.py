@@ -115,6 +115,7 @@ class GraphManager:
     def __init__(self, session_handle=None):
         self.superclassing_graph = NX.DiGraph()
         self.part_featuring_graph = NX.DiGraph()
+        self.feature_typing_graph = NX.DiGraph()
         self.banded_featuring_graph = NX.DiGraph()
         self.session = session_handle
 
@@ -145,6 +146,10 @@ class GraphManager:
 
                 if self.session.get_metaclass_by_id(feature) == 'PartUsage':
 
+                    self.feature_typing_graph.add_node(feature, name=self.session.get_name_by_id(ele_id=feature))
+                    self.feature_typing_graph.add_node(typ, name=self.session.get_name_by_id(ele_id=typ))
+                    self.feature_typing_graph.add_edge(feature, typ)
+
                     self.banded_featuring_graph.add_node(feature, name=self.session.get_name_by_id(ele_id=feature))
                     self.banded_featuring_graph.add_node(typ, name=self.session.get_name_by_id(ele_id=typ))
                     self.banded_featuring_graph.add_edge(feature, typ, kind='FeatureTyping')
@@ -158,8 +163,15 @@ class GraphManager:
                 if self.session.get_metaclass_by_id(feature) == 'PartUsage':
                     self.part_featuring_graph.add_node(owner, name=self.session.get_name_by_id(ele_id=owner))
                     self.part_featuring_graph.add_node(feature, name=self.session.get_name_by_id(ele_id=feature))
-                    self.part_featuring_graph.add_edge(owner, specific)
+                    self.part_featuring_graph.add_edge(owner, feature)
 
                     self.banded_featuring_graph.add_node(feature, name=self.session.get_name_by_id(ele_id=feature))
                     self.banded_featuring_graph.add_node(owner, name=self.session.get_name_by_id(ele_id=owner))
                     self.banded_featuring_graph.add_edge(owner, feature, kind='FeatureMembership')
+
+    def get_feature_type_name(self, feature_id=''):
+        types = list(self.feature_typing_graph.successors(feature_id))
+        if len(types) > 1:
+            return 'Multiple Names'
+        else:
+            return self.session.get_name_by_id(types[0])
