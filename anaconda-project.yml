@@ -97,10 +97,10 @@ env_specs:
   user:
     description: The environment for running the notebooks
     packages:
-    - ipyelk >=0.3
-    - jupyterlab
+    - ipyelk >=0.3,<0.4
+    - jupyterlab >=3.0,<4
     - matplotlib
-    - networkx
+    - networkx >=2.0,<3
     - notebook
     - numpy
     - pip
