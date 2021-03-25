@@ -1,3 +1,4 @@
+from collections import defaultdict
 import networkx as NX
 
 
@@ -19,7 +20,7 @@ class ModelingSession:
         trial = self.lookup.get_element_by_id(ele_id=ele_id)
         if trial is None:
             for ele in self.ele_list:
-                if ele['@id'] == id:
+                if ele['@id'] == ele_id:
                     self.lookup.memoize_one(ele=ele)
                     return ele
         else:
@@ -75,29 +76,22 @@ class ModelLookup:
 
     def __init__(self):
         self.id_memo_dict = {}
-        self.metaclass_lookup = {}
+        self.metaclass_lookup = defaultdict(list)
 
-    def memoize_many(self, ele_list=()):
-        self.id_memo_dict.update({ele['@id']: ele for ele in ele_list})
-        for ele in ele_list:
-            if ele['@type'] in self.metaclass_lookup:
-                self.metaclass_lookup[ele['@type']].append(ele['@id'])
-            else:
-                self.metaclass_lookup.update({ele['@type']: [ele['@id']]})
+    def memoize(self, *elements: dict):
+        self.id_memo_dict.update({
+            element['@id']: element
+            for element in elements
+        })
+        types_mapping = defaultdict(list)
+        _ = {
+            types_mapping[element["@type"]].append(element["@id"])
+            for element in elements
+        }
+        self.metaclass_lookup.update(types_mapping)
 
-
-    def memoize_one(self, ele=None):
-        self.id_memo_dict.update({ele['@id']: ele})
-        if ele['@type'] in self.metaclass_lookup:
-            self.metaclass_lookup[ele['@type']].append(ele['@id'])
-        else:
-            self.metaclass_lookup.update({ele['@type']: [ele['@id']]})
-
-    def get_element_by_id(self, ele_id=''):
-        if ele_id in self.id_memo_dict:
-            return self.id_memo_dict[ele_id]
-        else:
-            return None
+    def get_element_by_id(self, element_id: str = ""):
+        return self.id_memo_dict.get(element_id, None)
 
 
 class KernelReference:
@@ -112,24 +106,37 @@ class GraphManager:
     and also semantic interpretations
     """
 
+    _TYPE_MAPPINGS = dict(
+        Superclassing=dict(source="general", target="specific"),
+        FeatureTyping=dict(source="type", target="typedFeature"),
+        FeatureMembership=dict(source="owningType", target="memberFeature"),
+    )
+
     def __init__(self, session_handle=None):
-        self.superclassing_graph = NX.DiGraph()
-        self.part_featuring_graph = NX.DiGraph()
-        self.feature_typing_graph = NX.DiGraph()
+        self.graph = NX.MultiDiGraph()
         self.banded_featuring_graph = NX.DiGraph()
         self.session = session_handle
 
-    def build_graphs_from_data(self, ele_list=()):
+    def build_graphs_from_data(self, *elements):
         """
         Packs elements into utility syntax graphs for later processing
         :param ele_list: list of element JSONs to pack
         :return: nothing
         """
 
-        for ele in ele_list:
-            if ele['@type'] == 'Superclassing':
-                general = ele['general']['@id']
-                specific = ele['specific']['@id']
+        for element in elements:
+            element_type = element["@type"]
+            mapping = self._TYPE_MAPPINGS.get(element_type, None)
+            if mapping is None:
+                continue
+            source = element[mapping["source"]["@id"]]
+            target = element[mapping["target"]["@id"]]
+
+
+
+            if element['@type'] == 'Superclassing':
+                general = element['general']['@id']
+                specific = element['specific']['@id']
                 self.superclassing_graph.add_node(general, name=self.session.get_name_by_id(ele_id=general))
                 self.superclassing_graph.add_node(specific, name=self.session.get_name_by_id(ele_id=specific))
                 self.superclassing_graph.add_edge(general, specific)
@@ -138,9 +145,9 @@ class GraphManager:
                 self.banded_featuring_graph.add_node(specific, name=self.session.get_name_by_id(ele_id=specific))
                 self.banded_featuring_graph.add_edge(general, specific, kind='Superclassing')
 
-            elif ele['@type'] == 'FeatureTyping':
-                typ = ele['type']['@id']
-                feature = ele['typedFeature']['@id']
+            elif element['@type'] == 'FeatureTyping':
+                typ = element['type']['@id']
+                feature = element['typedFeature']['@id']
 
                 # limit to part usages for now
 
@@ -154,9 +161,9 @@ class GraphManager:
                     self.banded_featuring_graph.add_node(typ, name=self.session.get_name_by_id(ele_id=typ))
                     self.banded_featuring_graph.add_edge(feature, typ, kind='FeatureTyping')
 
-            elif ele['@type'] == 'FeatureMembership':
-                owner = ele['owningType']['@id']
-                feature = ele['memberFeature']['@id']
+            elif element['@type'] == 'FeatureMembership':
+                owner = element['owningType']['@id']
+                feature = element['memberFeature']['@id']
 
                 # limit to part usages for now
 

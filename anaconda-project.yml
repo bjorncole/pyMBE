@@ -8,7 +8,7 @@
 #
 # Set the 'name' key to name your project
 #
-name: sysmlv2-semantics
+name: pymbe
 
 #
 # Set the 'icon' key to give your project an icon
@@ -18,13 +18,23 @@ icon:
 #
 # Set a one-sentence-or-so 'description' key with project details
 #
-description:
+description: |
+  A pythonic Model-based Engineering framework based on SysML v2
 
 #
 # In the commands section, list your runnable scripts, notebooks, and other code.
 # Use `anaconda-project add-command` to add commands.
 #
 commands:
+  setup:
+    description: setup development environment
+    env_spec: user
+    unix: |
+      pip install git+https://github.com/Systems-Modeling/SysML-v2-API-Python-Client.git --no-dependencies
+      pip install -e . --no-dependencies
+    windows: |
+      pip install git+https://github.com/Systems-Modeling/SysML-v2-API-Python-Client.git --no-dependencies
+      pip install -e . --no-dependencies
   lab:
     description: launch lab
     env_spec: user

@@ -1,5 +1,6 @@
 import model_loading
 
+
 class Instance:
     """
     A class to represent instances of real things in the M0 universe interpreted from the model.

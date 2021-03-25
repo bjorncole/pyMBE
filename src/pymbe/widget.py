@@ -32,7 +32,8 @@ class SysML2ClientWidget(SysML2Client, ipyw.VBox):
             width = "80%",
         ),
     ))
-    type_selector = trt.Instance(ipyw.SelectMultiple, args=tuple())
+    node_type_selector = trt.Instance(ipyw.SelectMultiple, args=tuple())
+    edge_type_selector
 
     @trt.validate("children")
     def _validate_children(self, proposal):
