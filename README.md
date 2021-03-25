@@ -1,4 +1,4 @@
-# SysML v2 Semantics
+# pyMBE
 
 A project to experiment with and validate semantics for `KerML` and `SysML v2`.
 
@@ -7,8 +7,8 @@ A project to experiment with and validate semantics for `KerML` and `SysML v2`.
 ## 1. Clone this repo
 
 ```bash
-git clone https://github.com/sanbales/sysmlv2-semantics.git
-cd sysmlv2-semantics
+git clone https://github.com/bjorncole/pymbe.git
+cd pymbe
 ```
 
 ## 2. Get `mamba`
