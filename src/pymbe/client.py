@@ -1,13 +1,11 @@
 from dateutil import parser
 from datetime import timezone
 
-from sysml_v2_api_client.rest import ApiException
-
 import requests
-import traitlets as trt
 import sysml_v2_api_client as sysml2
+import traitlets as trt
 
-from graph import SysML2LabeledPropertyGraph, SysML2RDFGraph
+from .graph import SysML2LabeledPropertyGraph, SysML2RDFGraph
 
 
 class SysML2Client(trt.HasTraits):
@@ -33,17 +31,18 @@ class SysML2Client(trt.HasTraits):
         min=10,
     )
 
-    _api_configuration = trt.Instance(sysml2.Configuration)
-    _commits_api = trt.Instance(sysml2.CommitApi)
-    _elements_api = trt.Instance(sysml2.ElementApi)
-    _projects_api = trt.Instance(sysml2.ProjectApi)
+    _api_configuration: sysml2.Configuration = trt.Instance(sysml2.Configuration)
+    _commits_api: sysml2.CommitApi = trt.Instance(sysml2.CommitApi)
+    _elements_api: sysml2.ElementApi = trt.Instance(sysml2.ElementApi)
+    _projects_api: sysml2.ProjectApi = trt.Instance(sysml2.ProjectApi)
 
     projects = trt.Dict()
     elements_by_id = trt.Dict()
     elements_by_type = trt.Dict()
+    relationship_types = trt.Tuple()
 
-    lpg = trt.Instance(SysML2LabeledPropertyGraph, args=tuple())
-    rdf = trt.Instance(SysML2RDFGraph, args=tuple())
+    lpg: SysML2LabeledPropertyGraph = trt.Instance(SysML2LabeledPropertyGraph, args=tuple())
+    rdf: SysML2RDFGraph = trt.Instance(SysML2RDFGraph, args=tuple())
 
     @trt.default("_api_configuration")
     def _make_api_configuration(self):
@@ -111,18 +110,10 @@ class SysML2Client(trt.HasTraits):
             f"elements?page[size]={self.page_size}"
         )
 
-    @property
-    def selected_elements_by_type(self):
-        element_ids = sum(map(list, self.type_selector.value), [])
-        return [
-            self.elements_by_id[id_]
-            for id_ in element_ids
-        ]
-
-    def by_id(id_: str):
+    def by_id(self, id_: str):
         return self.elements_by_id[id_]
 
-    def name_by_id(id_: str):
+    def name_by_id(self, id_: str):
         return self.by_id(id_).get("Name")
     
     def _get_elements_from_server(self):
@@ -140,14 +131,20 @@ class SysML2Client(trt.HasTraits):
             element["@id"]: element
             for element in elements
         }
+        element_types = {element["@type"] for element in elements}
         self.elements_by_type = {
-            type_: tuple([
-                el["@id"]
-                for el in elements
-                if el["@type"] == type_
+            element_type: tuple([
+                element["@id"]
+                for element in elements
+                if element["@type"] == element_type
             ])
-            for type_ in set(element["@type"] for element in elements)
+            for element_type in element_types
         }
+        self.relationship_types = sorted({
+            element["@type"]
+            for element in elements
+            if "relatedElement" in element
+        })
     
     def _download_elements(self):
         elements = self._get_elements_from_server()

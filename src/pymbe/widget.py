@@ -9,7 +9,7 @@ import ipyelk.nx
 
 from ipyelk.diagram.elk_model import ElkLabel
 
-from client import SysML2Client
+from .client import SysML2Client
 
 
 class SysML2ClientWidget(SysML2Client, ipyw.VBox):
@@ -32,8 +32,8 @@ class SysML2ClientWidget(SysML2Client, ipyw.VBox):
             width = "80%",
         ),
     ))
+    edge_type_selector = trt.Instance(ipyw.SelectMultiple, args=tuple())
     node_type_selector = trt.Instance(ipyw.SelectMultiple, args=tuple())
-    edge_type_selector
 
     @trt.validate("children")
     def _validate_children(self, proposal):
@@ -41,7 +41,7 @@ class SysML2ClientWidget(SysML2Client, ipyw.VBox):
         if children:
             return children
         return [
-            ipyw.HTML("<h2>SysML2 Remote Service</h2>"),
+            ipyw.HTML("<h1>SysML2 Remote Service</h1>"),
             ipyw.HBox([self.host_url_input, self.host_port_input]),
             ipyw.HBox([
                 ipyw.VBox([
@@ -51,8 +51,16 @@ class SysML2ClientWidget(SysML2Client, ipyw.VBox):
                 ], layout=ipyw.Layout(width="80%", max_width="32rem")),
                 self.download_elements,
             ]),
-            ipyw.HTML("<h2>Element Types<h2>"),
-            self.type_selector,
+            ipyw.HBox([
+                ipyw.VBox([
+                    ipyw.HTML("<h2>Relationship Types</h2>"),
+                    self.edge_type_selector,
+                ]),
+                ipyw.VBox([
+                    ipyw.HTML("<h2>Non-Relationship Types</h2>"),
+                    self.node_type_selector,
+                ]),
+            ]),
         ]
     
     @trt.default("host_url_input")
@@ -119,9 +127,15 @@ class SysML2ClientWidget(SysML2Client, ipyw.VBox):
 
     @trt.observe("elements_by_type")
     def _updated_type_selector_options(self, *_):
-        self.type_selector.options = {
-            f"{type_} [{len(elements)}]": elements
-            for type_, elements in sorted(self.elements_by_type.items())
+        self.edge_type_selector.options = {
+            f"{element_type} [{len(elements)}]": elements
+            for element_type, elements in sorted(self.elements_by_type.items())
+            if element_type in self.relationship_types
+        }
+        self.node_type_selector.options = {
+            f"{element_type} [{len(elements)}]": elements
+            for element_type, elements in sorted(self.elements_by_type.items())
+            if element_type not in self.relationship_types
         }
 
     @property
@@ -138,12 +152,16 @@ class SysML2ClientWidget(SysML2Client, ipyw.VBox):
         progress.layout.visibility = "visible"
 
         progress.value += 1
+
         elements = self._get_elements_from_server()
         progress.value += 1
+
         self._update_elements(elements=elements)
         progress.value += 1
+
         self.lpg._update(client=self)
         progress.value += 1
+
         self.rdf._update(client=self)
         progress.value += 1
 
@@ -180,13 +198,24 @@ class SysML2ClientWidget(SysML2Client, ipyw.VBox):
     def _update_commit_options(self, *_):
         self.commit_selector.options = self._get_commit_options()
 
+    @property
+    def selected_elements_by_type(self):
+        element_ids = (
+            sum(map(list, self.node_type_selector.value), [])
+            + sum(map(list, self.edge_type_selector.value), [])
+        )
+        return [
+            self.elements_by_id[id_]
+            for id_ in element_ids
+        ]
+
 
 class Diagram:
-    
+
     def subgraph(
         self,
         *,
-        add_ipyelk_data: bool = True,
+        # add_ipyelk_data: bool = True,
         edges: (list, tuple) = None,
         edge_types: (list, tuple, str) = None,
     ):
@@ -250,13 +279,13 @@ class Diagram:
             },
         )
 
-        def _element_type_opt_change(change):
+        def _element_type_opt_change(*_):
             elk_diagram.transformer.layouts = layouts.value
             elk_diagram.refresh()
 
         layouts.observe(_element_type_opt_change, "value")
         elk_diagram.layout.flex = "1"
-        
+
         # Make the direction and label placement look better...
         self.set_layout_option(layouts, "Parents", "Direction", "UP")
         self.set_layout_option(layouts, "Label", "Node Label Placement", "H_CENTER V_TOP INSIDE")

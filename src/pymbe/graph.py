@@ -47,7 +47,7 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
         relationship_element_ids = {
             element_id
             for element_id, element in elements_by_id.items()
-            if 'relatedElement' in element
+            if "relatedElement" in element
         }
         non_relationship_element_ids = set(
             elements_by_id
