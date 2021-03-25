@@ -42,6 +42,14 @@ CONDA_EXE=mamba        # linux
 set CONDA_EXE=mamba    # windows
 ```
 
+## 5. Setup the Development Environment
+
+> This will install the non-packaged dependencies and `pymbe` in editable mode.
+
+```bash
+anaconda-project run setup
+```
+
 # ... and get going!
 
 You can then get a running instance of JupyterLab by running:
