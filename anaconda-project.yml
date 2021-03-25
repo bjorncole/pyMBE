@@ -33,8 +33,7 @@ commands:
       pip install git+https://github.com/Systems-Modeling/SysML-v2-API-Python-Client.git --no-dependencies
       pip install -e . --no-dependencies
     windows: |
-      pip install git+https://github.com/Systems-Modeling/SysML-v2-API-Python-Client.git --no-dependencies
-      pip install -e . --no-dependencies
+      pip install git+https://github.com/Systems-Modeling/SysML-v2-API-Python-Client.git --no-dependencies & pip install -e . --no-dependencies
   lab:
     description: launch lab
     env_spec: user
