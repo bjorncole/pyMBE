@@ -1,6 +1,6 @@
-# SysML v2 Semantics
+# PyMBE
 
-A project to experiment with and validate semantics for `KerML` and `SysML v2`.
+A project to experiment with and validate semantics for `KerML` and `SysML v2`. Running core semantics and interpreting models is a foundational capability for any modeling software.
 
 # Get set up...
 
