@@ -127,6 +127,11 @@ class SysML2Client(trt.HasTraits):
     
     def _update_elements(self, *_, elements=None):
         elements = elements or []
+        self.relationship_types = sorted({
+            element["@type"]
+            for element in elements
+            if "relatedElement" in element
+        })
         self.elements_by_id = {
             element["@id"]: element
             for element in elements
@@ -140,11 +145,7 @@ class SysML2Client(trt.HasTraits):
             ])
             for element_type in element_types
         }
-        self.relationship_types = sorted({
-            element["@type"]
-            for element in elements
-            if "relatedElement" in element
-        })
+
     
     def _download_elements(self):
         elements = self._get_elements_from_server()
