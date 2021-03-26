@@ -36,7 +36,7 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
     def __getitem__(self, *args):
         return self.graph.__getitem__(*args)
 
-    def _update(self, client, merge=False):
+    def update(self, client, merge=False):
         if not merge:
             old_graph = self.graph
             self.graph = nx.MultiDiGraph()
@@ -128,7 +128,7 @@ class SysML2RDFGraph(trt.HasTraits):
             ">"
         )
 
-    def _update(self, client, merge=False):
+    def update(self, client, merge=False):
         if not merge:
             old_graph = self.graph
             self.graph = rdf.Graph()

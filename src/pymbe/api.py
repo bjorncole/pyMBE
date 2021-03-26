@@ -1,1 +1,1 @@
-from .widget import SysML2ClientWidget
+from .widget.client import SysML2ClientWidget

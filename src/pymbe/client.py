@@ -150,5 +150,5 @@ class SysML2Client(trt.HasTraits):
     def _download_elements(self):
         elements = self._get_elements_from_server()
         self._update_elements(elements=elements)
-        self.lpg._update(client=self)
-        self.rdf._update(client=self)
+        self.lpg.update(client=self)
+        self.rdf.update(client=self)
