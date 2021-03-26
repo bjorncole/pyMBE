@@ -3,7 +3,7 @@ from collections import Counter
 import ipywidgets as ipyw
 import traitlets as trt
 
-from .client import SysML2Client
+from ..client import SysML2Client
 
 
 class SysML2ClientWidget(SysML2Client, ipyw.VBox):
