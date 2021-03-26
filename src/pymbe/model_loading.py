@@ -12,16 +12,16 @@ class ModelingSession:
         self.ele_list = ele_list
         self.graph_manager = GraphManager(session_handle=self)
 
-    def thaw_json_data(self, jsons=()):
-        self.lookup.memoize_many(ele_list=jsons)
-        self.graph_manager.build_graphs_from_data(ele_list=jsons)
+    def thaw_json_data(self, jsons):
+        self.lookup.memoize(jsons)
+        self.graph_manager.build_graphs_from_data(jsons)
 
     def get_data_by_id(self, ele_id=''):
-        trial = self.lookup.get_element_by_id(ele_id=ele_id)
+        trial = self.lookup.get_element_by_id(ele_id)
         if trial is None:
             for ele in self.ele_list:
                 if ele['@id'] == ele_id:
-                    self.lookup.memoize_one(ele=ele)
+                    self.lookup.memoize([ele])
                     return ele
         else:
             return trial
@@ -78,7 +78,7 @@ class ModelLookup:
         self.id_memo_dict = {}
         self.metaclass_lookup = defaultdict(list)
 
-    def memoize(self, *elements: dict):
+    def memoize(self, elements: list):
         self.id_memo_dict.update({
             element['@id']: element
             for element in elements
@@ -117,7 +117,7 @@ class GraphManager:
         self.banded_featuring_graph = NX.DiGraph()
         self.session = session_handle
 
-    def build_graphs_from_data(self, *elements):
+    def build_graphs_from_data(self, elements: list):
         """
         Packs elements into utility syntax graphs for later processing
         :param ele_list: list of element JSONs to pack
