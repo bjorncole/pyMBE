@@ -159,11 +159,11 @@ class GraphManager:
 
                     self.feature_typing_graph.add_node(feature, name=self.session.get_name_by_id(ele_id=feature))
                     self.feature_typing_graph.add_node(typ, name=self.session.get_name_by_id(ele_id=typ))
-                    self.feature_typing_graph.add_edge(typ, feature)
+                    self.feature_typing_graph.add_edge(feature, typ)
 
                     self.banded_featuring_graph.add_node(feature, name=self.session.get_name_by_id(ele_id=feature))
                     self.banded_featuring_graph.add_node(typ, name=self.session.get_name_by_id(ele_id=typ))
-                    self.banded_featuring_graph.add_edge(feature, typ, kind='FeatureTyping^-1')
+                    self.banded_featuring_graph.add_edge(typ, feature, kind='FeatureTyping^-1')
 
             elif element['@type'] == 'FeatureMembership':
                 owner = element['owningType']['@id']
