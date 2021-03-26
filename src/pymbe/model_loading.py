@@ -143,11 +143,11 @@ class GraphManager:
                 specific = element['specific']['@id']
                 self.superclassing_graph.add_node(general, name=self.session.get_name_by_id(ele_id=general))
                 self.superclassing_graph.add_node(specific, name=self.session.get_name_by_id(ele_id=specific))
-                self.superclassing_graph.add_edge(general, specific)
+                self.superclassing_graph.add_edge(specific, general)
 
                 self.banded_featuring_graph.add_node(general, name=self.session.get_name_by_id(ele_id=general))
                 self.banded_featuring_graph.add_node(specific, name=self.session.get_name_by_id(ele_id=specific))
-                self.banded_featuring_graph.add_edge(general, specific, kind='Superclassing')
+                self.banded_featuring_graph.add_edge(specific, general, kind='Superclassing')
 
             elif element['@type'] == 'FeatureTyping':
                 typ = element['type']['@id']
@@ -159,11 +159,11 @@ class GraphManager:
 
                     self.feature_typing_graph.add_node(feature, name=self.session.get_name_by_id(ele_id=feature))
                     self.feature_typing_graph.add_node(typ, name=self.session.get_name_by_id(ele_id=typ))
-                    self.feature_typing_graph.add_edge(feature, typ)
+                    self.feature_typing_graph.add_edge(typ, feature)
 
                     self.banded_featuring_graph.add_node(feature, name=self.session.get_name_by_id(ele_id=feature))
                     self.banded_featuring_graph.add_node(typ, name=self.session.get_name_by_id(ele_id=typ))
-                    self.banded_featuring_graph.add_edge(feature, typ, kind='FeatureTyping')
+                    self.banded_featuring_graph.add_edge(feature, typ, kind='FeatureTyping^-1')
 
             elif element['@type'] == 'FeatureMembership':
                 owner = element['owningType']['@id']
@@ -178,7 +178,7 @@ class GraphManager:
 
                     self.banded_featuring_graph.add_node(feature, name=self.session.get_name_by_id(ele_id=feature))
                     self.banded_featuring_graph.add_node(owner, name=self.session.get_name_by_id(ele_id=owner))
-                    self.banded_featuring_graph.add_edge(owner, feature, kind='FeatureMembership')
+                    self.banded_featuring_graph.add_edge(feature, owner, kind='FeatureMembership^-1')
 
     def get_feature_type_name(self, feature_id=''):
         types = list(self.feature_typing_graph.successors(feature_id))
