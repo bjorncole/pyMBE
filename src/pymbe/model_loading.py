@@ -1,6 +1,6 @@
 from collections import defaultdict
 import networkx as NX
-
+import math
 
 class ModelingSession:
     """
@@ -115,6 +115,9 @@ class GraphManager:
     def __init__(self, session_handle=None):
         self.graph = NX.MultiDiGraph()
         self.banded_featuring_graph = NX.DiGraph()
+        self.superclassing_graph = NX.DiGraph()
+        self.feature_typing_graph = NX.DiGraph()
+        self.part_featuring_graph = NX.DiGraph()
         self.session = session_handle
 
     def build_graphs_from_data(self, elements: list):
@@ -129,8 +132,9 @@ class GraphManager:
             mapping = self._TYPE_MAPPINGS.get(element_type, None)
             if mapping is None:
                 continue
-            source = element[mapping["source"]["@id"]]
-            target = element[mapping["target"]["@id"]]
+
+            source = element[mapping["source"]]["@id"]
+            target = element[mapping["target"]]["@id"]
 
 
 
