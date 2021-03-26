@@ -1,13 +1,7 @@
 from collections import Counter
 
 import ipywidgets as ipyw
-import networkx as nx
 import traitlets as trt
-
-import ipyelk
-import ipyelk.nx
-
-from ipyelk.diagram.elk_model import ElkLabel
 
 from .client import SysML2Client
 
@@ -159,10 +153,10 @@ class SysML2ClientWidget(SysML2Client, ipyw.VBox):
         self._update_elements(elements=elements)
         progress.value += 1
 
-        self.lpg._update(client=self)
+        self.lpg.update(client=self)
         progress.value += 1
 
-        self.rdf._update(client=self)
+        self.rdf.update(client=self)
         progress.value += 1
 
         progress.value = progress.max
@@ -208,86 +202,3 @@ class SysML2ClientWidget(SysML2Client, ipyw.VBox):
             self.elements_by_id[id_]
             for id_ in element_ids
         ]
-
-
-class Diagram:
-
-    def subgraph(
-        self,
-        *,
-        # add_ipyelk_data: bool = True,
-        edges: (list, tuple) = None,
-        edge_types: (list, tuple, str) = None,
-    ):
-        graph = self.graph
-        subgraph = type(graph)()
-
-        edges = edges or []
-
-        edge_types = edge_types or []
-        if isinstance(edge_types, str):
-            edge_types = [edge_types]
-
-        if edge_types:
-            edges += [
-                (source, target, data)
-                for (source, target, type_), data in graph.edges.items()
-                if type_ in edge_types
-            ]
-
-        if not edges:
-            print(f"Could not find any edges of type: '{edge_types}'!")
-            return subgraph
-
-        nodes = {
-            node_id: graph.nodes[node_id]
-            for node_id in sum([
-                [source, target]
-                for (source, target, data) in edges
-            ], [])  # sum(a_list, []) flattens a_list
-        }
-
-        for id_, node_data in nodes.items():
-            node_data["id"] = id_
-            type_label = [ElkLabel(
-                id=f"""type_label_for_{id_}""",
-                text=f"""«{node_data["@type"]}»""",
-                properties={
-                    "cssClasses": "node_type_label",
-                },
-            )] if "@type" in node_data else []
-            node_data["labels"] = type_label + [node_data["name"]]
-
-        subgraph.add_nodes_from(nodes.items())
-        subgraph.add_edges_from(edges)
-
-        return subgraph
-
-    def make_diagram(self, graph: nx.Graph) -> ipyw.HBox:
-        layouts = ipyelk.nx.XELKTypedLayout()
-
-        elk_diagram = ipyelk.Elk(
-            transformer=ipyelk.nx.XELK(
-                source=(graph, None),
-                label_key="labels",
-                layouts=layouts.value,
-            ),
-            style={
-                " text.elklabel.node_type_label": {
-                    "font-style": "italic",
-                }
-            },
-        )
-
-        def _element_type_opt_change(*_):
-            elk_diagram.transformer.layouts = layouts.value
-            elk_diagram.refresh()
-
-        layouts.observe(_element_type_opt_change, "value")
-        elk_diagram.layout.flex = "1"
-
-        # Make the direction and label placement look better...
-        self.set_layout_option(layouts, "Parents", "Direction", "UP")
-        self.set_layout_option(layouts, "Label", "Node Label Placement", "H_CENTER V_TOP INSIDE")
-
-        return ipyw.HBox([elk_diagram, layouts], layout=dict(height="60vh"))
