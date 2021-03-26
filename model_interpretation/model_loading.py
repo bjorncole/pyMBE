@@ -1,4 +1,5 @@
 import networkx as NX
+import math
 
 
 class ModelingSession:
@@ -132,11 +133,11 @@ class GraphManager:
                 specific = ele['specific']['@id']
                 self.superclassing_graph.add_node(general, name=self.session.get_name_by_id(ele_id=general))
                 self.superclassing_graph.add_node(specific, name=self.session.get_name_by_id(ele_id=specific))
-                self.superclassing_graph.add_edge(general, specific)
+                self.superclassing_graph.add_edge(specific, general)
 
                 self.banded_featuring_graph.add_node(general, name=self.session.get_name_by_id(ele_id=general))
                 self.banded_featuring_graph.add_node(specific, name=self.session.get_name_by_id(ele_id=specific))
-                self.banded_featuring_graph.add_edge(general, specific, kind='Superclassing')
+                self.banded_featuring_graph.add_edge(specific, general, kind='Superclassing')
 
             elif ele['@type'] == 'FeatureTyping':
                 typ = ele['type']['@id']
@@ -152,7 +153,7 @@ class GraphManager:
 
                     self.banded_featuring_graph.add_node(feature, name=self.session.get_name_by_id(ele_id=feature))
                     self.banded_featuring_graph.add_node(typ, name=self.session.get_name_by_id(ele_id=typ))
-                    self.banded_featuring_graph.add_edge(feature, typ, kind='FeatureTyping')
+                    self.banded_featuring_graph.add_edge(typ, feature, kind='FeatureTyping^-1')
 
             elif ele['@type'] == 'FeatureMembership':
                 owner = ele['owningType']['@id']
@@ -167,11 +168,85 @@ class GraphManager:
 
                     self.banded_featuring_graph.add_node(feature, name=self.session.get_name_by_id(ele_id=feature))
                     self.banded_featuring_graph.add_node(owner, name=self.session.get_name_by_id(ele_id=owner))
-                    self.banded_featuring_graph.add_edge(owner, feature, kind='FeatureMembership')
+                    self.banded_featuring_graph.add_edge(feature, owner, kind='FeatureMembership^-1')
 
     def get_feature_type_name(self, feature_id=''):
         types = list(self.feature_typing_graph.successors(feature_id))
         if len(types) > 1:
             return 'Multiple Names'
-        else:
+        elif len(types) == 1:
             return self.session.get_name_by_id(types[0])
+        elif len(types) == 0:
+            return 'Part'
+
+    def get_feature_type(self, feature_id=''):
+        types = list(self.feature_typing_graph.successors(feature_id))
+        if len(types) > 1:
+            return types
+        elif len(types) == 1:
+            return types
+        elif len(types) == 0:
+            return []
+
+    def roll_up_lower_multiplicities(self):
+        banded_roots = [self.session.get_data_by_id(node)
+                        for node in self.banded_featuring_graph.nodes
+                        if self.banded_featuring_graph.out_degree(node) == 0]
+
+        part_multiplicity = {}
+
+        for part_use in self.session.get_all_of_metaclass(metaclass_name='PartUsage'):
+            corrected_mult = 0
+            for part_tree_root in banded_roots:
+                try:
+                    part_path = NX.shortest_path(
+                        self.banded_featuring_graph,
+                        part_use['@id'],
+                        part_tree_root['@id'])
+                    # TODO: check that the path actually exists
+                    corrected_mult = math.prod(
+                        [self.session.feature_lower_multiplicity(feature_id=node)
+                         for node in part_path])
+                except NX.NetworkXNoPath:
+                    pass
+            part_multiplicity.update({part_use['@id']: corrected_mult})
+
+        return part_multiplicity
+
+    def roll_up_upper_multiplicities(self):
+        banded_roots = [self.session.get_data_by_id(node)
+                        for node in self.banded_featuring_graph.nodes
+                        if self.banded_featuring_graph.out_degree(node) == 0]
+
+        part_multiplicity = {}
+
+        for part_use in self.session.get_all_of_metaclass(metaclass_name='PartUsage'):
+            corrected_mult = 0
+            for part_tree_root in banded_roots:
+                try:
+                    part_path = NX.shortest_path(
+                        self.banded_featuring_graph,
+                        part_use['@id'],
+                        part_tree_root['@id'])
+                    # TODO: check that the path actually exists
+                    corrected_mult = math.prod(
+                        [self.session.feature_upper_multiplicity(feature_id=node)
+                         for node in part_path])
+                except NX.NetworkXNoPath:
+                    pass
+            part_multiplicity.update({part_use['@id']: corrected_mult})
+
+        return part_multiplicity
+
+    def partition_abstract_type(self, abstract_type_id=''):
+        specifics = list(self.banded_featuring_graph.predecessors(abstract_type_id))
+        return specifics
+
+    def get_att_literal_values(self, att_use=None):
+        literal_values = []
+        for att_member in att_use['ownedMember']:
+            if att_member['@id'] in self.session.lookup.id_memo_dict:
+                if self.session.lookup.id_memo_dict[att_member['@id']]['@type'] == 'LiteralReal':
+                    literal_values.append(self.session.lookup.id_memo_dict[att_member['@id']])
+
+        return literal_values
