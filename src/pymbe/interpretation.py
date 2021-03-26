@@ -26,6 +26,16 @@ class InstanceGenerationStrategy:
             print(short_list)
 
 
+    def pprint_feature_solution(self, solution_no=0):
+        for key, val in self.feature_instance_dicts[solution_no].items():
+            print(self.session.get_name_by_id(key) + ', id = ' + key + ', size = ' + str(len(val)))
+            short_list = []
+            for indx, ind_val in enumerate(val):
+                if indx < 5:
+                    short_list.append(ind_val)
+            print(short_list)
+
+
 class RandomGenerationStrategy(InstanceGenerationStrategy):
     """
     Generate instances at random based on a model
@@ -47,9 +57,9 @@ class RandomGenerationStrategy(InstanceGenerationStrategy):
         #self.pprint_classifier_solution(solution_no=1)
         # try to "roll up" instances - apparently we can simply repeat this until all nodes have been touched
         # note that the same approach works for solving expression trees (work from leaves to nodes)
-        left_to_push = self.push_classifiers_more_general()
-        #self.pprint_classifier_solution(solution_no=1)
-        left_to_push = self.push_classifiers_more_general()
+        safety = 0
+        while self.push_classifiers_more_general() > 0 and safety < 100:
+            safety = safety + 1
         self.populate_standalone_non_abstract_classifiers()
         #self.pprint_classifier_solution(solution_no=1)
         self.feature_instance_dicts = self.generate_feature_populations()
@@ -162,6 +172,7 @@ class RandomGenerationStrategy(InstanceGenerationStrategy):
         Take specific classifiers and push the calculated instances to more general classifiers
         :return:
         """
+        white_list = []
 
         for classifier_instance_dict in self.classifier_instance_dicts:
             white_list = list(self.session.graph_manager.superclassing_graph.nodes())

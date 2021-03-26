@@ -1,6 +1,6 @@
 from collections import defaultdict
 import networkx as NX
-
+import math
 
 class ModelingSession:
     """
@@ -12,16 +12,16 @@ class ModelingSession:
         self.ele_list = ele_list
         self.graph_manager = GraphManager(session_handle=self)
 
-    def thaw_json_data(self, jsons=()):
-        self.lookup.memoize_many(ele_list=jsons)
-        self.graph_manager.build_graphs_from_data(ele_list=jsons)
+    def thaw_json_data(self, jsons):
+        self.lookup.memoize(jsons)
+        self.graph_manager.build_graphs_from_data(jsons)
 
     def get_data_by_id(self, ele_id=''):
-        trial = self.lookup.get_element_by_id(ele_id=ele_id)
+        trial = self.lookup.get_element_by_id(ele_id)
         if trial is None:
             for ele in self.ele_list:
                 if ele['@id'] == ele_id:
-                    self.lookup.memoize_one(ele=ele)
+                    self.lookup.memoize([ele])
                     return ele
         else:
             return trial
@@ -78,7 +78,7 @@ class ModelLookup:
         self.id_memo_dict = {}
         self.metaclass_lookup = defaultdict(list)
 
-    def memoize(self, *elements: dict):
+    def memoize(self, elements: list):
         self.id_memo_dict.update({
             element['@id']: element
             for element in elements
@@ -115,9 +115,12 @@ class GraphManager:
     def __init__(self, session_handle=None):
         self.graph = NX.MultiDiGraph()
         self.banded_featuring_graph = NX.DiGraph()
+        self.superclassing_graph = NX.DiGraph()
+        self.feature_typing_graph = NX.DiGraph()
+        self.part_featuring_graph = NX.DiGraph()
         self.session = session_handle
 
-    def build_graphs_from_data(self, *elements):
+    def build_graphs_from_data(self, elements: list):
         """
         Packs elements into utility syntax graphs for later processing
         :param ele_list: list of element JSONs to pack
@@ -129,8 +132,9 @@ class GraphManager:
             mapping = self._TYPE_MAPPINGS.get(element_type, None)
             if mapping is None:
                 continue
-            source = element[mapping["source"]["@id"]]
-            target = element[mapping["target"]["@id"]]
+
+            source = element[mapping["source"]]["@id"]
+            target = element[mapping["target"]]["@id"]
 
 
 
@@ -139,11 +143,11 @@ class GraphManager:
                 specific = element['specific']['@id']
                 self.superclassing_graph.add_node(general, name=self.session.get_name_by_id(ele_id=general))
                 self.superclassing_graph.add_node(specific, name=self.session.get_name_by_id(ele_id=specific))
-                self.superclassing_graph.add_edge(general, specific)
+                self.superclassing_graph.add_edge(specific, general)
 
                 self.banded_featuring_graph.add_node(general, name=self.session.get_name_by_id(ele_id=general))
                 self.banded_featuring_graph.add_node(specific, name=self.session.get_name_by_id(ele_id=specific))
-                self.banded_featuring_graph.add_edge(general, specific, kind='Superclassing')
+                self.banded_featuring_graph.add_edge(specific, general, kind='Superclassing')
 
             elif element['@type'] == 'FeatureTyping':
                 typ = element['type']['@id']
@@ -159,7 +163,7 @@ class GraphManager:
 
                     self.banded_featuring_graph.add_node(feature, name=self.session.get_name_by_id(ele_id=feature))
                     self.banded_featuring_graph.add_node(typ, name=self.session.get_name_by_id(ele_id=typ))
-                    self.banded_featuring_graph.add_edge(feature, typ, kind='FeatureTyping')
+                    self.banded_featuring_graph.add_edge(typ, feature, kind='FeatureTyping^-1')
 
             elif element['@type'] == 'FeatureMembership':
                 owner = element['owningType']['@id']
@@ -174,7 +178,7 @@ class GraphManager:
 
                     self.banded_featuring_graph.add_node(feature, name=self.session.get_name_by_id(ele_id=feature))
                     self.banded_featuring_graph.add_node(owner, name=self.session.get_name_by_id(ele_id=owner))
-                    self.banded_featuring_graph.add_edge(owner, feature, kind='FeatureMembership')
+                    self.banded_featuring_graph.add_edge(feature, owner, kind='FeatureMembership^-1')
 
     def get_feature_type_name(self, feature_id=''):
         types = list(self.feature_typing_graph.successors(feature_id))
