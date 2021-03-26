@@ -133,3 +133,6 @@ dmypy.json
 
 # Anaconda Project
 envs/
+
+#PyCharm
+.idea
