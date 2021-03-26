@@ -7,8 +7,8 @@ A project to experiment with and validate semantics for `KerML` and `SysML v2`. 
 ## 1. Clone this repo
 
 ```bash
-git clone https://github.com/sanbales/sysmlv2-semantics.git
-cd sysmlv2-semantics
+git clone https://github.com/bjorncole/pymbe.git
+cd pymbe
 ```
 
 ## 2. Get `mamba`
@@ -40,6 +40,14 @@ mamba install anaconda-project=0.8.4
 ```bash
 CONDA_EXE=mamba        # linux
 set CONDA_EXE=mamba    # windows
+```
+
+## 5. Setup the Development Environment
+
+> This will install the non-packaged dependencies and `pymbe` in editable mode.
+
+```bash
+anaconda-project run setup
 ```
 
 # ... and get going!
