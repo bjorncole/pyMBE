@@ -63,10 +63,10 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
     def update(self, elements: dict, merge=False):
         new_edges = [
             [
-                element_id,
-                data[key]["@id"],
-                edge_type,
-                {
+                element_id,                                 # source
+                data[key]["@id"],                           # target
+                edge_type,                                  # edge type
+                {                                           # edge data
                     "@id": f"_{uuid4()}",
                     "source": [{"@id": element_id}],
                     "target": [{"@id": data[key]["@id"]}],
