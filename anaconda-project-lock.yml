@@ -17,7 +17,7 @@ locking_enabled: true
 env_specs:
   user:
     locked: true
-    env_spec_hash: c1b986977f730c2cbed0cd3f10414fd90d3f30c0
+    env_spec_hash: 44b2a4c058138ba204349682abfa616827ac8514
     platforms:
     - linux-64
     - osx-64
@@ -29,7 +29,7 @@ env_specs:
       - attrs=20.3.0=pyhd3deb0d_0
       - babel=2.9.0=pyhd3deb0d_0
       - backcall=0.2.0=pyh9f0ad1d_0
-      - backports.functools_lru_cache=1.6.1=py_0
+      - backports.functools_lru_cache=1.6.3=pyhd8ed1ab_0
       - backports=1.0=py_2
       - bleach=3.3.0=pyh44b312d_0
       - cycler=0.10.0=py_2
@@ -39,6 +39,7 @@ env_specs:
       - idna=2.10=pyh9f0ad1d_0
       - ipyelk=1.0.0=pyhd8ed1ab_0
       - ipython_genutils=0.2.0=py_1
+      - ipytree=0.2.1=pyhd8ed1ab_0
       - ipywidgets=7.6.3=pyhd3deb0d_0
       - isodate=0.6.0=py_1
       - jinja2=2.11.3=pyh44b312d_0
@@ -96,25 +97,25 @@ env_specs:
       - certifi=2020.12.5=py39hf3d152e_1
       - cffi=1.14.5=py39he32792d_0
       - chardet=4.0.0=py39hf3d152e_1
-      - cryptography=3.4.6=py39hbca0aa6_0
+      - cryptography=3.4.7=py39hbca0aa6_0
       - dbus=1.13.6=hfdff14a_1
       - entrypoints=0.3=py39hde42818_1002
       - expat=2.2.10=h9c3ff4c_0
       - fontconfig=2.13.1=hba837de_1004
       - freetype=2.10.4=h0708190_1
       - gettext=0.19.8.1=h0b5b191_1005
-      - glib-tools=2.68.0=h9c3ff4c_1
-      - glib=2.68.0=h9c3ff4c_1
+      - glib-tools=2.68.0=h9c3ff4c_2
+      - glib=2.68.0=h9c3ff4c_2
       - gst-plugins-base=1.18.4=h29181c9_0
       - gstreamer=1.18.4=h76c114f_0
       - icu=68.1=h58526e2_0
-      - importlib-metadata=3.7.3=py39hf3d152e_0
+      - importlib-metadata=3.9.0=py39hf3d152e_0
       - ipykernel=5.5.0=py39hef51801_1
-      - ipython=7.21.0=py39hef51801_0
+      - ipython=7.22.0=py39hef51801_0
       - jedi=0.18.0=py39hf3d152e_2
       - jpeg=9d=h516909a_0
       - jupyter_core=4.7.1=py39hf3d152e_0
-      - jupyter_server=1.4.1=py39hf3d152e_0
+      - jupyter_server=1.5.1=py39hf3d152e_0
       - keepalive=0.5=py39hf3d152e_5
       - kiwisolver=1.3.1=py39h1a9c180_1
       - krb5=1.17.2=h926e7f8_0
@@ -127,7 +128,7 @@ env_specs:
       - libgcc-ng=9.3.0=h2828fa1_18
       - libgfortran-ng=7.5.0=h14aa051_18
       - libgfortran4=7.5.0=h14aa051_18
-      - libglib=2.68.0=h3e27bee_1
+      - libglib=2.68.0=h3e27bee_2
       - libgomp=9.3.0=h2828fa1_18
       - libiconv=1.16=h516909a_0
       - libllvm11=11.1.0=hf817b99_0
@@ -154,8 +155,8 @@ env_specs:
       - notebook=6.3.0=py39hf3d152e_0
       - nspr=4.30=h9c3ff4c_0
       - nss=3.63=hb5efdd6_0
-      - numpy=1.20.1=py39hdbf815f_0
-      - openssl=1.1.1j=h7f98852_0
+      - numpy=1.20.2=py39hdbf815f_0
+      - openssl=1.1.1k=h7f98852_0
       - pandoc=2.12=h7f98852_0
       - pcre=8.44=he1b5a44_0
       - pickleshare=0.7.5=py39hde42818_1002
@@ -177,7 +178,7 @@ env_specs:
       - setuptools=49.6.0=py39hf3d152e_3
       - sniffio=1.2.0=py39hf3d152e_1
       - sparqlwrapper=1.8.5=py39hf3d152e_1005
-      - sqlite=3.35.2=h74cdb3f_0
+      - sqlite=3.35.3=h74cdb3f_0
       - terminado=0.9.3=py39hf3d152e_0
       - tk=8.6.10=hed695b0_1
       - tornado=6.1=py39h3811e60_1
@@ -197,16 +198,16 @@ env_specs:
       - certifi=2020.12.5=py39h6e9494a_1
       - cffi=1.14.5=py39h319c39b_0
       - chardet=4.0.0=py39h6e9494a_1
-      - cryptography=3.4.6=py39ha2c9959_0
+      - cryptography=3.4.7=py39ha2c9959_0
       - entrypoints=0.3=pyhd8ed1ab_1003
       - freetype=2.10.4=h4cff582_1
-      - importlib-metadata=3.7.3=py39h6e9494a_0
+      - importlib-metadata=3.9.0=py39h6e9494a_0
       - ipykernel=5.5.0=py39h71a6800_1
-      - ipython=7.21.0=py39h71a6800_0
+      - ipython=7.22.0=py39h71a6800_0
       - jedi=0.18.0=py39h6e9494a_2
       - jpeg=9d=hbcb3906_0
       - jupyter_core=4.7.1=py39h6e9494a_0
-      - jupyter_server=1.4.1=py39h6e9494a_0
+      - jupyter_server=1.5.1=py39h6e9494a_0
       - keepalive=0.5=py39h6e9494a_5
       - kiwisolver=1.3.1=py39hedf5dff_1
       - lcms2=2.12=h577c468_0
@@ -228,8 +229,8 @@ env_specs:
       - nbconvert=6.0.7=py39h6e9494a_3
       - ncurses=6.2=h2e338ed_4
       - notebook=6.3.0=py39h6e9494a_0
-      - numpy=1.20.1=py39h3c955ea_0
-      - openssl=1.1.1j=hbcf498f_0
+      - numpy=1.20.2=py39h7eed0ac_0
+      - openssl=1.1.1k=h0d85af4_0
       - pandoc=2.13=h0d85af4_0
       - pickleshare=0.7.5=py_1003
       - pillow=8.1.2=py39h5fdd921_0
@@ -243,7 +244,7 @@ env_specs:
       - setuptools=49.6.0=py39h6e9494a_3
       - sniffio=1.2.0=py39h6e9494a_1
       - sparqlwrapper=1.8.5=py39h6e9494a_1005
-      - sqlite=3.35.2=h44b9ce1_0
+      - sqlite=3.35.3=h44b9ce1_0
       - terminado=0.9.3=py39h6e9494a_0
       - tk=8.6.10=h0419947_1
       - tornado=6.1=py39hcbf5805_1
@@ -261,18 +262,18 @@ env_specs:
       - cffi=1.14.5=py39h0878f49_0
       - chardet=4.0.0=py39hcbf5309_1
       - colorama=0.4.4=pyh9f0ad1d_0
-      - cryptography=3.4.6=py39hd8d06c1_0
+      - cryptography=3.4.7=py39hd8d06c1_0
       - entrypoints=0.3=pyhd8ed1ab_1003
       - freetype=2.10.4=h546665d_1
       - icu=68.1=h0e60522_0
-      - importlib-metadata=3.7.3=py39hcbf5309_0
+      - importlib-metadata=3.9.0=py39hcbf5309_0
       - intel-openmp=2020.3=h57928b3_311
       - ipykernel=5.5.0=py39h832f523_1
-      - ipython=7.21.0=py39h832f523_0
+      - ipython=7.22.0=py39h832f523_0
       - jedi=0.18.0=py39hcbf5309_2
       - jpeg=9d=h8ffe710_0
       - jupyter_core=4.7.1=py39hcbf5309_0
-      - jupyter_server=1.4.1=py39hcbf5309_0
+      - jupyter_server=1.5.1=py39hcbf5309_0
       - keepalive=0.5=py39hcbf5309_5
       - kiwisolver=1.3.1=py39h2e07f2f_1
       - lcms2=2.12=h2a16943_0
@@ -290,15 +291,15 @@ env_specs:
       - m2w64-gmp=6.1.0=2
       - m2w64-libwinpthread-git=5.0.0.4634.697f757=2
       - markupsafe=1.1.1=py39hb82d6ee_3
-      - matplotlib-base=3.3.4=py39h581301d_0
-      - matplotlib=3.3.4=py39hcbf5309_0
+      - matplotlib-base=3.4.0=py39h581301d_0
+      - matplotlib=3.4.0=py39hcbf5309_0
       - mistune=0.8.4=py39hb82d6ee_1003
       - mkl=2020.4=hb70f87d_311
       - msys2-conda-epoch=20160418=1
       - nbconvert=6.0.7=py39hcbf5309_3
       - notebook=6.3.0=py39hcbf5309_0
-      - numpy=1.20.1=py39h6635163_0
-      - openssl=1.1.1j=h8ffe710_0
+      - numpy=1.20.2=py39h6635163_0
+      - openssl=1.1.1k=h8ffe710_0
       - pandoc=2.13=h8ffe710_0
       - pickleshare=0.7.5=py_1003
       - pillow=8.1.2=py39h1a9d4f7_0
@@ -319,7 +320,7 @@ env_specs:
       - setuptools=49.6.0=py39hcbf5309_3
       - sniffio=1.2.0=py39hcbf5309_1
       - sparqlwrapper=1.8.5=py39hcbf5309_1005
-      - sqlite=3.35.2=h8ffe710_0
+      - sqlite=3.35.3=h8ffe710_0
       - terminado=0.9.3=py39hcbf5309_0
       - tk=8.6.10=h8ffe710_1
       - tornado=6.1=py39hb82d6ee_1
