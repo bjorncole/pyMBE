@@ -8,26 +8,16 @@ from ..client import SysML2Client
 
 class SysML2ClientWidget(SysML2Client, ipyw.VBox):
     """An ipywidget to interact with a SysML v2 API."""
-    
+
+    _WIDE_WIDGET_MAX_WIDTH = "32rem"
+    _WIDE_WIDGET_WIDTH = "99%"
+
     host_url_input = trt.Instance(ipyw.Text)
     host_port_input = trt.Instance(ipyw.IntText)
     project_selector = trt.Instance(ipyw.Dropdown)
     commit_selector = trt.Instance(ipyw.Dropdown)
     download_elements = trt.Instance(ipyw.Button)
-    progress_bar = trt.Instance(ipyw.IntProgress, kw=dict(
-        description="Loading:",
-        min=0,
-        max=6,
-        step=1,
-        value=0,
-        layout=ipyw.Layout(
-            max_width = "30rem",
-            visibility="hidden",
-            width = "80%",
-        ),
-    ))
-    edge_type_selector = trt.Instance(ipyw.SelectMultiple, args=tuple())
-    node_type_selector = trt.Instance(ipyw.SelectMultiple, args=tuple())
+    progress_bar = trt.Instance(ipyw.IntProgress)
 
     @trt.validate("children")
     def _validate_children(self, proposal):
@@ -36,37 +26,45 @@ class SysML2ClientWidget(SysML2Client, ipyw.VBox):
             return children
         return [
             ipyw.HTML("<h1>SysML2 Remote Service</h1>"),
-            ipyw.HBox([self.host_url_input, self.host_port_input]),
+            ipyw.HBox([
+                ipyw.VBox([
+                    self.host_url_input,
+                ],
+                    layout=ipyw.Layout(
+                        max_width=self._WIDE_WIDGET_MAX_WIDTH,
+                        width=self._WIDE_WIDGET_WIDTH,
+                    ),
+                ),
+                self.host_port_input,
+            ]),
             ipyw.HBox([
                 ipyw.VBox([
                     self.project_selector,
                     self.commit_selector,
-                    self.progress_bar,
-                ], layout=ipyw.Layout(width="80%", max_width="32rem")),
+                ],
+                    layout=ipyw.Layout(
+                        max_width=self._WIDE_WIDGET_MAX_WIDTH,
+                        width=self._WIDE_WIDGET_WIDTH,
+                    ),
+                ),
                 self.download_elements,
             ]),
-            ipyw.HBox([
-                ipyw.VBox([
-                    ipyw.HTML("<h2>Relationship Types</h2>"),
-                    self.edge_type_selector,
-                ]),
-                ipyw.VBox([
-                    ipyw.HTML("<h2>Non-Relationship Types</h2>"),
-                    self.node_type_selector,
-                ]),
-            ]),
+            self.progress_bar,
         ]
-    
+
     @trt.default("host_url_input")
     def _make_host_url_input(self):
-        input_box = ipyw.Text(default_value=self.host_url)
+        input_box = ipyw.Text(
+            default_value=self.host_url,
+            layout=ipyw.Layout(
+                max_width=self._WIDE_WIDGET_MAX_WIDTH,
+                width="99%",
+            ),
+        )
         trt.link(
             (self, "host_url"),
             (input_box, "value"),
         )
-        layout = input_box.layout
-        layout.width = "80%"
-        layout.max_width = "30rem"
         return input_box
 
     @trt.default("host_port_input")
@@ -75,14 +73,15 @@ class SysML2ClientWidget(SysML2Client, ipyw.VBox):
             default_value=self.host_port,
             min=1,
             max=65535,
+            layout=ipyw.Layout(
+                max_width="6rem",
+                width="15%",
+            ),
         )
         trt.link(
             (self, "host_port"),
             (input_box, "value"),
         )
-        layout = input_box.layout
-        layout.width = "15%"
-        layout.max_width = "6rem"
         return input_box
 
     @trt.default("project_selector")
@@ -90,10 +89,12 @@ class SysML2ClientWidget(SysML2Client, ipyw.VBox):
         selector = ipyw.Dropdown(
             descriptor="Projects",
             options=self._get_project_options(),
+            layout=ipyw.Layout(
+                max_width=self._WIDE_WIDGET_MAX_WIDTH,
+                width="99%",
+            ),
         )
-        selector.observe(self._update_commit_options, "value")
-        selector.layout.width = "99%"
-        selector.layout.max_width = "30rem"
+        trt.link((selector, "value"), (self, "selected_project"))
         return selector
 
     @trt.default("commit_selector")
@@ -101,10 +102,12 @@ class SysML2ClientWidget(SysML2Client, ipyw.VBox):
         selector = ipyw.Dropdown(
             descriptor="Commits",
             options=self._get_commit_options(),
+            layout=ipyw.Layout(
+                max_width=self._WIDE_WIDGET_MAX_WIDTH,
+                width="99%",
+            ),
         )
-        selector.observe(self._update_elements, "value")
-        selector.layout.width = "99%"
-        selector.layout.max_width = "30rem"
+        trt.link((selector, "value"), (self, "selected_commit"))
         return selector
 
     @trt.default("download_elements")
@@ -112,33 +115,37 @@ class SysML2ClientWidget(SysML2Client, ipyw.VBox):
         button = ipyw.Button(
             icon="cloud-download",
             tooltip="Fetch elements from remote host.",
+            layout=ipyw.Layout(
+                height="95%",
+                max_width="6rem",
+                width="15%",
+            ),
         )
         button.on_click(self._download_elements)
-        layout = button.layout
-        layout.height, layout.width = "90%", "15%"
-        layout.max_width = "6rem"
         return button
 
-    @trt.observe("elements_by_type")
-    def _updated_type_selector_options(self, *_):
-        self.edge_type_selector.options = {
-            f"{element_type} [{len(elements)}]": elements
-            for element_type, elements in sorted(self.elements_by_type.items())
-            if element_type in self.relationship_types
-        }
-        self.node_type_selector.options = {
-            f"{element_type} [{len(elements)}]": elements
-            for element_type, elements in sorted(self.elements_by_type.items())
-            if element_type not in self.relationship_types
-        }
+    @trt.default("progress_bar")
+    def _make_progress_bar(self):
+        return ipyw.IntProgress(
+            description="Loading:",
+            min=0,
+            max=4,
+            step=1,
+            value=0,
+            layout=ipyw.Layout(
+                max_width="36rem",
+                visibility="hidden",
+                width="99%",
+            ),
+        )
 
-    @property
-    def selected_project_id(self):
-        return self.project_selector.value
+    @trt.observe("_api_configuration")
+    def _update_apis(self, *_):
+        self.project_selector.options = self._get_project_options()
 
-    @property
-    def selected_commit_id(self):
-        return self.commit_selector.value
+    @trt.observe("selected_project")
+    def _update_commit_options(self, *_):
+        self.commit_selector.options = self._get_commit_options()
 
     def _download_elements(self, *_):
         progress = self.progress_bar
@@ -147,16 +154,7 @@ class SysML2ClientWidget(SysML2Client, ipyw.VBox):
 
         progress.value += 1
 
-        elements = self._get_elements_from_server()
-        progress.value += 1
-
-        self._update_elements(elements=elements)
-        progress.value += 1
-
-        self.lpg.update(client=self)
-        progress.value += 1
-
-        self.rdf.update(client=self)
+        super()._download_elements()
         progress.value += 1
 
         progress.value = progress.max
@@ -185,20 +183,6 @@ class SysML2ClientWidget(SysML2Client, ipyw.VBox):
         return [
             commit.id
             for commit in self._commits_api.get_commits_by_project(
-                self.selected_project_id
+                self.selected_project
             )
-        ]
-
-    def _update_commit_options(self, *_):
-        self.commit_selector.options = self._get_commit_options()
-
-    @property
-    def selected_elements_by_type(self):
-        element_ids = (
-            sum(map(list, self.node_type_selector.value), [])
-            + sum(map(list, self.edge_type_selector.value), [])
-        )
-        return [
-            self.elements_by_id[id_]
-            for id_ in element_ids
         ]

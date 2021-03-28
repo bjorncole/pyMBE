@@ -5,21 +5,20 @@ import requests
 import sysml_v2_api_client as sysml2
 import traitlets as trt
 
-from .graph import SysML2LabeledPropertyGraph, SysML2RDFGraph
-
 
 class SysML2Client(trt.HasTraits):
     """
         A traitleted SysML v2 API Client.
 
     ..todo:
-        Make this capable of running independently.
+        - Add ability to use element download pagination.
 
     """
 
     host_url = trt.Unicode(
         default_value="http://sysml2-sst.intercax.com"
     )
+
     host_port = trt.Integer(
         default_value=9000,
         min=1,
@@ -36,13 +35,13 @@ class SysML2Client(trt.HasTraits):
     _elements_api: sysml2.ElementApi = trt.Instance(sysml2.ElementApi)
     _projects_api: sysml2.ProjectApi = trt.Instance(sysml2.ProjectApi)
 
+    selected_project: str = trt.Unicode(allow_none=True)
+    selected_commit: str = trt.Unicode(allow_none=True)
+
     projects = trt.Dict()
     elements_by_id = trt.Dict()
     elements_by_type = trt.Dict()
     relationship_types = trt.Tuple()
-
-    lpg: SysML2LabeledPropertyGraph = trt.Instance(SysML2LabeledPropertyGraph, args=tuple())
-    rdf: SysML2RDFGraph = trt.Instance(SysML2RDFGraph, args=tuple())
 
     @trt.default("_api_configuration")
     def _make_api_configuration(self):
@@ -95,7 +94,6 @@ class SysML2Client(trt.HasTraits):
             api_maker = getattr(self, f"_make{api_attr}")
             setattr(self, api_attr, api_maker())
             del old_api
-        self.project_selector.options = self._get_project_options()
 
     @property
     def host(self):
@@ -105,8 +103,8 @@ class SysML2Client(trt.HasTraits):
     def elements_url(self):
         return (
             f"{self.host}/"
-            f"projects/{self.selected_project_id}/"
-            f"commits/{self.selected_commit_id}/"
+            f"projects/{self.selected_project}/"
+            f"commits/{self.selected_commit}/"
             f"elements?page[size]={self.page_size}"
         )
 
@@ -115,7 +113,7 @@ class SysML2Client(trt.HasTraits):
 
     def name_by_id(self, id_: str):
         return self.by_id(id_).get("Name")
-    
+
     def _get_elements_from_server(self):
         response = requests.get(self.elements_url)
         if not response.ok:
@@ -124,7 +122,8 @@ class SysML2Client(trt.HasTraits):
                 f"reason: {response.reason}"
             )
         return response.json()
-    
+
+    @trt.observe("selected_commit")
     def _update_elements(self, *_, elements=None):
         elements = elements or []
         self.relationship_types = sorted({
@@ -146,9 +145,6 @@ class SysML2Client(trt.HasTraits):
             for element_type in element_types
         }
 
-    
     def _download_elements(self):
         elements = self._get_elements_from_server()
         self._update_elements(elements=elements)
-        self.lpg.update(client=self)
-        self.rdf.update(client=self)
