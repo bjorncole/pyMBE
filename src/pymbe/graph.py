@@ -2,6 +2,7 @@ import json
 import requests
 
 from copy import deepcopy
+from uuid import uuid4
 
 import networkx as nx
 import rdflib as rdf
@@ -61,7 +62,21 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
 
     def update(self, elements: dict, merge=False):
         new_edges = [
-            [element_id, data[key]["@id"], edge_type]
+            [
+                element_id,
+                data[key]["@id"],
+                edge_type,
+                {
+                    "@id": f"_{uuid4()}",
+                    "source": [{"@id": element_id}],
+                    "target": [{"@id": data[key]["@id"]}],
+                    "@type": f"_{edge_type}",
+                    "relatedElement": [
+                        {"@id": element_id},
+                        {"@id": data[key]["@id"]},
+                    ],
+                },
+            ]
             for element_id, data in elements.items()
             for key, edge_type in self.NEW_EDGES.items()
             if (data.get(key, {}) or {}).get("@id")

@@ -30,7 +30,7 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyw.HBox):
     @trt.validate("layout")
     def _validate_layout(self, proposal):
         layout = proposal.value
-        layout
+        # TODO: if necessary, manipulate the layout here
         return layout
 
     @trt.observe("graph")
