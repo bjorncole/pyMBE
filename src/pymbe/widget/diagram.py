@@ -213,7 +213,7 @@ class SysML2ElkDiagram(ipyw.HBox):
     elk_diagram: ipyelk.Elk = trt.Instance(ipyelk.Elk)
     elk_layout: ipyelk.nx.XELKTypedLayout() = trt.Instance(
         ipyelk.nx.XELKTypedLayout,
-        args=(),
+        kw=dict(selected_index=None),  # makes layout start collapsed
     )
     elk_transformer: ipyelk.nx.XELK = trt.Instance(ipyelk.nx.XELK)
     graph: nx.Graph = trt.Instance(nx.Graph, args=())
