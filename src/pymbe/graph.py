@@ -21,7 +21,11 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
         "owner": "OwnedBy",
     }
 
-    graph = trt.Instance(nx.MultiDiGraph, args=tuple())
+    graph: nx.MultiDiGraph = trt.Instance(nx.MultiDiGraph, args=tuple())
+
+    merge: bool = trt.Bool(default=False)
+
+    elements_by_id: dict = trt.Dict()
 
     nodes_by_type: dict = trt.Dict()
     edges_by_type: dict = trt.Dict()
@@ -60,7 +64,13 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
     def __getitem__(self, *args):
         return self.graph.__getitem__(*args)
 
-    def update(self, elements: dict, merge=False):
+    @trt.observe("elements_by_id")
+    def _update_elements(self, *_):
+        self.update(elements=self.elements_by_id)
+
+    def update(self, elements: dict, merge=None):
+        if merge is None:
+            merge = self.merge
         new_edges = [
             [
                 element_id,                                 # source
