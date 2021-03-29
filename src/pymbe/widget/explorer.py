@@ -152,7 +152,7 @@ class ProjectExplorer(ipyw.HBox):
             elif owner in nodes:
                 nodes[owner].add_node(node)
             else:
-                owner_name = self.nodes[owner]["_data"]["qualifiedName"]
+                owner_name = self.elements_by_id[owner]["qualifiedName"] or owner
                 self.log.warning(
                     f"Not including {node} because its owner "
                     f"{owner_name} does not have a name!"
