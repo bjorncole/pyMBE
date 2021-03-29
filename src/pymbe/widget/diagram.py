@@ -348,18 +348,6 @@ class SysML2ElkDiagram(ipyw.HBox):
         self.elk_app.style = self.elk_diagram.style
         self.elk_app.diagram.defs = self.elk_diagram.defs
 
-        # _ = node_data.pop("@context", None)
-        # node_data["id"] = id_
-        # type_label = [ElkLabel(
-        #     id=f"""type_label_for_{id_}""",
-        #     text=f"""«{node_data["@type"]}»""",
-        #     properties={
-        #         "cssClasses": "node_type_label",
-        #     },
-        # )] if "@type" in node_data else []
-        # node_data["labels"] = type_label + [
-        #     node_data.get("name", node_data.get("id"))]
-
     def _update_diagram_layout_(self, *_):
         self.elk_app.transformer.layouts = self.elk_layout.value
         self.elk_app.refresh()
