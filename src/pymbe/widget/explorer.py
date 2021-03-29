@@ -8,7 +8,7 @@ import traitlets as trt
 
 
 ICONS_FOR_TYPES = {
-    "Package": "archive",  # "cube"
+    "Package": "archive",  # "cube" or "box" or "box-open"
     "ItemDefinition": "file-invoice",  # "info"
     "PartDefinition": "file-powerpoint",
     "StateDefinition": "file-contract",

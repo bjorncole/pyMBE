@@ -25,9 +25,16 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyw.HBox):
                     ipyw.HTML("<h2>Edge Types</h2>"),
                     self.edge_type_selector,
                 ],
-                layout=ipyw.Layout(width="25%"),
+                layout=ipyw.Layout(height="100%", width="25%"),
             ),
-            self.diagram,
+            ipyw.VBox(
+                [self.diagram],
+                layout=ipyw.Layout(
+                    height="100%",
+                    min_height="800px",
+                    width="75%",
+                ),
+            ),
         ]
 
     @trt.validate("layout")
@@ -64,6 +71,8 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyw.HBox):
             for edge_type, edges in sorted(edges_by_type.items())
             if edge_type in self.edge_types
         }
+
+        self.diagram.graph = self.graph
 
     @property
     def selected_nodes_by_type(self):

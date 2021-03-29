@@ -10,10 +10,35 @@ import ipyelk
 import ipyelk.nx
 import ipyelk.contrib.shapes.connectors as conn
 
-from ipyelk.contrib.elements import Edge, Partition, Record, element, elements
+from ipyelk.contrib.elements import (
+    Compartment,
+    Compound,
+    Edge,
+    Partition,
+    Record,
+    element,
+    elements,
+)
 from ipyelk.diagram.elk_model import ElkLabel
 from ipyelk.diagram.symbol import Def
 
+
+def a_part(data: dict, width=220):
+    part = Part(data=data, identifier=data["@id"], width=width)
+    value = data.get("value", None)
+    if value is not None:
+        name = value
+    else:
+        name = (
+            data.get("name", None)
+            or data["@id"]
+        )
+    part.title = Compartment(headings=[
+        f"""«{data["@type"]}»""",
+        f"""{name}""",
+    ])
+    # TODO: add properties
+    return part
 
 def a_circle_arrow_endpoint(r=6, closed=False):
     return conn.ConnectorDef(
@@ -70,8 +95,8 @@ class RelationEndKind(Enum):
 
 @element
 class Part(Record):
-    pass
-
+    data: dict = field(default_factory=dict)
+    identifier: str = ""
 
 @element
 class RelationEnd(elements.BaseElement):
@@ -127,6 +152,11 @@ class Relation(Edge):
 
 
 @element
+class Association(Edge):
+    pass
+
+
+@element
 class Composition(Edge):
     shape_start: ty.ClassVar[str] = "composition"
 
@@ -147,11 +177,6 @@ class DirectedAssociation(Edge):
 
 
 @element
-class Association(Edge):
-    pass
-
-
-@element
 class Generalization(Edge):
     shape_end: ty.ClassVar[str] = "generalization"
 
@@ -166,9 +191,20 @@ class FeatureType(Edge):
     shape_end: ty.ClassVar[str] = "feature_typed"
 
 
+EDGE_MAP = {
+    "FeatureType": FeatureType,
+    "Subsetting": Subsetting,
+    "Superclassing": Generalization,
+    "OwnedBy": Containment,
+    # TODO: review and map the rest of the edge types
+}
+
+DEFAULT_EDGE = DirectedAssociation
+
+
 @element
-class PartDiagram(Partition):
-    """A diagram for visualizing parts."""
+class Diagram(Partition):
+    """An elk diagram."""
 
     # TODO flesh out ideas of encapsulating diagram defs / styles / elements
     defs: ty.ClassVar[ty.Dict[str, Def]] = {
@@ -203,20 +239,25 @@ class PartDiagram(Partition):
             "stroke": "transparent",
             "fill": "transparent",
         },
+        " .elklabel.compartment_title_1": {},
+        " .elklabel.heading, .elklabel.compartment_title_2": {"font-weight": "bold"}
     }
-    default_edge: ty.Type[Edge] = field(default=Association)
+    default_edge: ty.Type[Edge] = field(default=DirectedAssociation)
 
 
 class SysML2ElkDiagram(ipyw.HBox):
     """A SysML v2 Diagram"""
 
-    elk_diagram: ipyelk.Elk = trt.Instance(ipyelk.Elk)
+    elk_app: ipyelk.Elk = trt.Instance(ipyelk.Elk)
+    elk_diagram: Diagram = trt.Instance(Diagram, args=())
     elk_layout: ipyelk.nx.XELKTypedLayout() = trt.Instance(
         ipyelk.nx.XELKTypedLayout,
         kw=dict(selected_index=None),  # makes layout start collapsed
     )
     elk_transformer: ipyelk.nx.XELK = trt.Instance(ipyelk.nx.XELK)
     graph: nx.Graph = trt.Instance(nx.Graph, args=())
+
+    parts: dict = trt.Dict()
 
     style: dict = trt.Dict(kw={
         " text.elklabel.node_type_label": {
@@ -233,7 +274,7 @@ class SysML2ElkDiagram(ipyw.HBox):
         children = proposal.value
         if children:
             return children
-        return [self.elk_diagram, self.elk_layout]
+        return [self.elk_app, self.elk_layout]
 
     @trt.validate("layout")
     def _validate_layout(self, proposal):
@@ -249,18 +290,19 @@ class SysML2ElkDiagram(ipyw.HBox):
             layouts=self.elk_layout.value,
         )
 
-    @trt.default("elk_diagram")
-    def _make_diagram(self) -> ipyelk.Elk:
-        elk_diagram = ipyelk.Elk(
+    @trt.default("elk_app")
+    def _make_app(self) -> ipyelk.Elk:
+        elk_app = ipyelk.Elk(
             transformer=self.elk_transformer,
             style=self.style,
+            layout=dict(
+                height="100%",
+                min_height="600px",
+                width="100%",
+            ),
         )
-        elk_diagram.layout.flex = "1"
-        return elk_diagram
-
-    def _update_diagram_layout_(self, *_):
-        self.elk_diagram.transformer.layouts = self.elk_layout.value
-        self.elk_diagram.refresh()
+        elk_app.layout.flex = "1"
+        return elk_app
 
     @trt.observe("elk_layout")
     def _update_observers_for_layout(self, change: trt.Bunch):
@@ -272,17 +314,51 @@ class SysML2ElkDiagram(ipyw.HBox):
     @trt.observe("graph")
     def _update_nodes(self, change: trt.Bunch):
         if change.old not in (None, trt.Undefined):
-            del change.old
+            old = change.old
+            del old
+        self.parts = {
+            id_: a_part(node_data)
+            for id_, node_data in self.graph.nodes.items()
+            if node_data
+        }
+        diagram = Diagram()
+        for (source, target, type_), edge in self.graph.edges.items():
+            if source not in self.parts:
+                self.log.warn(
+                    f"Could not map source: {source} in '{type_}' with {target}"
+                )
+                continue
+            if target not in self.parts:
+                self.log.warn(
+                    f"Could not map target: {target} in '{type_}' with {source}"
+                )
+                continue
+            diagram.add_edge(
+                source=self.parts[source],
+                target=self.parts[target],
+                cls=EDGE_MAP.get(type_, DEFAULT_EDGE),
+            )
+        diagram.defs = {**diagram.defs}
+        self.elk_diagram = diagram
 
-        for id_, node_data in self.graph.nodes.items():
-            _ = node_data.pop("@context", None)
-            node_data["id"] = id_
-            type_label = [ElkLabel(
-                id=f"""type_label_for_{id_}""",
-                text=f"""«{node_data["@type"]}»""",
-                properties={
-                    "cssClasses": "node_type_label",
-                },
-            )] if "@type" in node_data else []
-            node_data["labels"] = type_label + [
-                node_data.get("name", node_data.get("id"))]
+    @trt.observe("elk_diagram")
+    def _update_app(self, *_):
+        self.elk_app.transformer.source = Compound()(self.elk_diagram)
+        self.elk_app.style = self.elk_diagram.style
+        self.elk_app.diagram.defs = self.elk_diagram.defs
+
+        # _ = node_data.pop("@context", None)
+        # node_data["id"] = id_
+        # type_label = [ElkLabel(
+        #     id=f"""type_label_for_{id_}""",
+        #     text=f"""«{node_data["@type"]}»""",
+        #     properties={
+        #         "cssClasses": "node_type_label",
+        #     },
+        # )] if "@type" in node_data else []
+        # node_data["labels"] = type_label + [
+        #     node_data.get("name", node_data.get("id"))]
+
+    def _update_diagram_layout_(self, *_):
+        self.elk_app.transformer.layouts = self.elk_layout.value
+        self.elk_app.refresh()
