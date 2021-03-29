@@ -31,6 +31,7 @@ DEFAULT_ICON = "genderless"
 
 
 class Element(ipyt.Node):
+    """A project element node compatible with ipytree."""
 
     _identifier = trt.Unicode()
     _owner = trt.Unicode("self", allow_none=True)
@@ -39,8 +40,10 @@ class Element(ipyt.Node):
 
 
 class ProjectExplorer(ipyw.HBox):
+    """A widget to explore the structure and data in a project."""
 
     FILTER_KEYS = ("@context",)
+    INCLUDE_NODE_TYPES = ("Namespace", "Package")
 
     element_data: ipyw.Output = trt.Instance(ipyw.Output, args=())
     elements_by_id: dict = trt.Dict()
@@ -123,7 +126,7 @@ class ProjectExplorer(ipyw.HBox):
             tree.remove_node(node)
 
     def update(self, elements: dict):
-        self.nodes = {
+        nodes = {
             element_id: Element(
                 icon=ICONS_FOR_TYPES.get(element["@type"], DEFAULT_ICON),
                 name=(
@@ -138,7 +141,12 @@ class ProjectExplorer(ipyw.HBox):
             for element_id, element in elements.items()
             if element.get("name", None)
             or (element["owner"] or {}).get("@id", None)
+            or (element["@type"] in self.INCLUDE_NODE_TYPES)
         }
+        for node in nodes.values():
+            if node._owner in nodes:
+                nodes[node._owner].add_node(node)
+        self.nodes = nodes
 
     @trt.observe("nodes")
     def _update_tree(self, *_):
@@ -149,10 +157,8 @@ class ProjectExplorer(ipyw.HBox):
             owner = node._owner
             if owner is None:
                 tree.add_node(node)
-            elif owner in nodes:
-                nodes[owner].add_node(node)
-            else:
-                owner_name = self.elements_by_id[owner]["qualifiedName"] or owner
+            elif owner not in nodes:
+                owner_name = self.elements_by_id.get(owner, {}).get("qualifiedName", owner)
                 self.log.warning(
                     f"Not including {node} because its owner "
                     f"{owner_name} does not have a name!"
