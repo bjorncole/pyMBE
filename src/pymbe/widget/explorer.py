@@ -110,11 +110,7 @@ class ProjectExplorer(ipyw.HBox):
 
     @property
     def selected_data(self):
-        data = deepcopy(getattr(
-            self.nodes.get(self.selected, None),
-            "_data",
-            {},
-        ))
+        data = deepcopy(self.elements_by_id.get(self.selected, {}))
         for key in self.FILTER_KEYS:
             data.pop(key, None)
         return data
@@ -124,19 +120,28 @@ class ProjectExplorer(ipyw.HBox):
         for node in tree.nodes:
             tree.remove_node(node)
 
+    def _make_node(self, element):
+        element_id = element["@id"]
+        owner = (
+            element.get("owner", None)
+            or element.get("owningRelatedElement", None)
+            or {}
+        ).get("@id", None)
+        return Element(
+            icon=ICONS_FOR_TYPES.get(element["@type"], DEFAULT_ICON),
+            name=(
+                element["name"]
+                or f"""«{element["@type"]}: {element_id}»"""
+            ),
+            _identifier=element_id,
+            _type=element["@type"],
+            _owner=owner,
+            _data=element,
+        )
+
     def update(self, elements: dict):
         nodes = {
-            element_id: Element(
-                icon=ICONS_FOR_TYPES.get(element["@type"], DEFAULT_ICON),
-                name=(
-                    element["name"]
-                    or f"""«{element["@type"]}: {element_id}»"""
-                ),
-                _identifier=element["identifier"],
-                _type=element["@type"],
-                _owner=(element["owner"] or {}).get("@id", None),
-                _data=element,
-            )
+            element_id: self._make_node(element=element)
             for element_id, element in elements.items()
         }
         for node in nodes.values():

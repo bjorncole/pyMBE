@@ -172,6 +172,11 @@ class Containment(Edge):
 
 
 @element
+class OwnedBy(Edge):
+    shape_end: ty.ClassVar[str] = "containment"
+
+
+@element
 class DirectedAssociation(Edge):
     shape_end: ty.ClassVar[str] = "directed_association"
 
@@ -195,7 +200,7 @@ EDGE_MAP = {
     "FeatureType": FeatureType,
     "Subsetting": Subsetting,
     "Superclassing": Generalization,
-    "OwnedBy": Containment,
+    "OwnedBy": OwnedBy,
     # TODO: review and map the rest of the edge types
 }
 
@@ -234,6 +239,9 @@ class Diagram(Partition):
         },
         " .arrow.directed_association": {
             "fill": "none",
+        },
+        " .arrow.subsetting": {
+            "fill": "rgb(0,0,0)",
         },
         " .internal>.elknode": {
             "stroke": "transparent",
