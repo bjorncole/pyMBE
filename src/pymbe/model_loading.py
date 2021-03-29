@@ -35,6 +35,9 @@ class ModelingSession:
         else:
             return None
 
+    def get_signature_by_id(self, ele_id=''):
+        return self.get_element_signature(self.get_data_by_id(ele_id=ele_id))
+
     def get_metaclass_by_id(self, ele_id=''):
         trial = self.get_data_by_id(ele_id=ele_id)
         if trial is not None and '@type' in trial:
@@ -67,6 +70,32 @@ class ModelingSession:
                     return self.get_data_by_id(mult['upperBound']['@id'])['value']
 
         return 1
+
+    def get_element_signature(self, element):
+        if not 'relatedElement' in element:
+            return element['name'] + ', id ' + element['@id'] + '[' + element['@type'] + ']'
+        elif element['@type'] == 'FeatureTyping':
+            typed_feature_name = self.get_name_by_id(element['typedFeature']['@id'])
+            if typed_feature_name is None:
+                typed_feature_name = ''
+            type_name = self.get_name_by_id(element['type']['@id'])
+            if type_name is None:
+                type_name = ''
+            return typed_feature_name + ', id ' + element['typedFeature']['@id'] + \
+                ' - > ' + type_name + ', id ' + element['type']['@id'] + \
+                ' <' + element['@type'] + '>'
+        elif element['@type'] == 'FeatureMembership':
+            typed_feature_name = self.get_name_by_id(element['memberFeature']['@id'])
+            if typed_feature_name is None:
+                typed_feature_name = ''
+            owning_type_name = self.get_name_by_id(element['owningType']['@id'])
+            if owning_type_name is None:
+                owning_type_name = ''
+            return typed_feature_name + ', id ' + element['memberFeature']['@id'] + \
+                ' - > ' + owning_type_name + ', id ' + element['owningType']['@id'] + \
+                ' <' + element['@type'] + '>'
+        else:
+            return 'Uncaptured relationship with metatype ' + element['@type']
 
 
 class ModelLookup:
@@ -110,6 +139,7 @@ class GraphManager:
         Superclassing=dict(source="general", target="specific"),
         FeatureTyping=dict(source="type", target="typedFeature"),
         FeatureMembership=dict(source="owningType", target="memberFeature"),
+        Redefinition=dict(source="redefiningFeature", target="redefinedFeature")
     )
 
     def __init__(self, session_handle=None):
@@ -118,6 +148,8 @@ class GraphManager:
         self.superclassing_graph = NX.DiGraph()
         self.feature_typing_graph = NX.DiGraph()
         self.part_featuring_graph = NX.DiGraph()
+        self.attribute_featuring_graph = NX.DiGraph()
+        self.redefinition_graph = NX.DiGraph()
         self.session = session_handle
 
     def build_graphs_from_data(self, elements: list):
@@ -135,7 +167,6 @@ class GraphManager:
 
             source = element[mapping["source"]]["@id"]
             target = element[mapping["target"]]["@id"]
-
 
 
             if element['@type'] == 'Superclassing':
@@ -179,6 +210,22 @@ class GraphManager:
                     self.banded_featuring_graph.add_node(feature, name=self.session.get_name_by_id(ele_id=feature))
                     self.banded_featuring_graph.add_node(owner, name=self.session.get_name_by_id(ele_id=owner))
                     self.banded_featuring_graph.add_edge(feature, owner, kind='FeatureMembership^-1')
+
+                elif self.session.get_data_by_id(redefined)['@type'] == 'AttributeUsage':
+                    self.attribute_featuring_graph.add_node(feature, name=self.session.get_name_by_id(ele_id=feature))
+                    self.attribute_featuring_graph.add_node(owner, name=self.session.get_name_by_id(ele_id=owner))
+                    self.attribute_featuring_graph.add_edge(feature, owner, kind='FeatureMembership^-1')
+
+            elif element['@type'] == 'Redefinition':
+                redefined = element['redefinedFeature']['@id']
+                redefining = element['redefiningFeature']['@id']
+
+                if self.session.get_data_by_id(redefined)['@type'] == 'AttributeUsage':
+
+                    self.redefinition_graph.add_node(redefined, name=self.session.get_name_by_id(ele_id=redefined))
+                    self.redefinition_graph.add_node(redefining, name=self.session.get_name_by_id(ele_id=redefining))
+                    self.redefinition_graph.add_edge(redefining, redefined, kind='Redefinition^-1')
+
 
     def get_feature_type_name(self, feature_id=''):
         types = list(self.feature_typing_graph.successors(feature_id))
@@ -247,6 +294,12 @@ class GraphManager:
             part_multiplicity.update({part_use['@id']: corrected_mult})
 
         return part_multiplicity
+
+    def map_attributes_to_types(self):
+
+        # Examine the superclassing and feature typing parts of the graph to see which types the attribute should
+        # expect to be a member of
+        pass
 
     def partition_abstract_type(self, abstract_type_id=''):
         specifics = list(self.banded_featuring_graph.predecessors(abstract_type_id))

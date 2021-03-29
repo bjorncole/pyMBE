@@ -35,6 +35,18 @@ class InstanceGenerationStrategy:
                     short_list.append(ind_val)
             print(short_list)
 
+    def pprint_attribute_solution(self, solution_no=0):
+        for key, val in self.attribute_dicts[solution_no].items():
+            key_data = self.session.get_data_by_id(key)
+            print(self.session.get_name_by_id(key) +
+                  '::' + self.session.get_name_by_id(key_data['owningType']['@id']) +
+                  ', id = ' + key + ', size = ' + str(len(val)))
+            short_list = []
+            for indx, ind_val in enumerate(val):
+                if indx < 5:
+                    short_list.append(ind_val)
+            print(short_list)
+
 
 class RandomGenerationStrategy(InstanceGenerationStrategy):
     """
@@ -63,6 +75,10 @@ class RandomGenerationStrategy(InstanceGenerationStrategy):
         self.populate_standalone_non_abstract_classifiers()
         #self.pprint_classifier_solution(solution_no=1)
         self.feature_instance_dicts = self.generate_feature_populations()
+
+        self.redefinition_sequences = self.build_redefinition_sequences()
+
+        self.attribute_dicts = self.generate_value_holders()
 
     def build_partitioned_multiplicities(self):
         """
@@ -124,6 +140,17 @@ class RandomGenerationStrategy(InstanceGenerationStrategy):
             )
 
         return sorted_feature_groups
+
+    def build_redefinition_sequences(self):
+        sorted_redefinition_groups = []
+
+        for comp in NX.connected_components(self.session.graph_manager.redefinition_graph.to_undirected()):
+            connected_sub = NX.subgraph(self.session.graph_manager.redefinition_graph, list(comp))
+            sorted_redefinition_groups.append(
+                [node for node in NX.topological_sort(connected_sub)]
+            )
+
+        return sorted_redefinition_groups
 
     def generate_classifier_populations(self):
         classifier_instance_dicts = []
@@ -214,8 +241,6 @@ class RandomGenerationStrategy(InstanceGenerationStrategy):
                         black_list.append(gen)
 
             classifier_instance_dict.update(first_pass_dict)
-
-            print("White list has " + str(len(white_list)) + " nodes remaining.")
 
         return len(white_list)
 
@@ -335,6 +360,64 @@ class RandomGenerationStrategy(InstanceGenerationStrategy):
             feature_sequence_dictionaries.append(feature_sequence_dictionary)
 
         return feature_sequence_dictionaries
+
+    def generate_value_holders(self):
+
+        attribute_dictionaries = []
+
+        full_attribute_list = [att['@id'] for att in self.session.get_all_of_metaclass(metaclass_name="AttributeUsage")]
+
+        for indx, classifier_instance_dict in enumerate(self.classifier_instance_dicts):
+            attribute_dictionaries.append({})
+
+        for redef_seq in self.redefinition_sequences:
+            for att in redef_seq:
+                full_attribute_list.remove(att)
+                att_data = self.session.get_data_by_id(att)
+                att_owner_id = att_data['owningType']['@id']
+                att_owner = self.session.get_data_by_id(att_owner_id)
+                print(att_data['name'] + ' is under ' + att_owner['name'])
+
+                for indx, classifier_instance_dict in enumerate(self.classifier_instance_dicts):
+                    new_holders = []
+                    if att_owner_id in classifier_instance_dict:
+                        #print('Found attribute owner in classifier dict')
+                        for instance in classifier_instance_dict[att_owner_id]:
+                            #print(instance)
+                            new_holder = ValueHolder([instance], att_data['name'], None, att)
+                            new_holders.append(new_holder)
+
+                    elif att_owner_id in self.feature_instance_dicts[indx]:
+                        #print('Found attribute owner in feature dict')
+                        for instance_seq in self.feature_instance_dicts[indx][att_owner_id]:
+                            #print(instance_seq)
+                            new_holder = ValueHolder(instance_seq, att_data['name'], None, att)
+                            new_holders.append(new_holder)
+
+                    attribute_dictionaries[indx].update({att: new_holders})
+
+        for att_id in full_attribute_list:
+            att_data = self.session.get_data_by_id(att_id)
+            att_owner_id = att_data['owningType']['@id']
+            for indx, classifier_instance_dict in enumerate(self.classifier_instance_dicts):
+                new_holders = []
+                if att_owner_id in classifier_instance_dict:
+                    # print('Found attribute owner in classifier dict')
+                    for instance in classifier_instance_dict[att_owner_id]:
+                        # print(instance)
+                        new_holder = ValueHolder([instance], att_data['name'], None, att_id)
+                        new_holders.append(new_holder)
+
+                elif att_owner_id in self.feature_instance_dicts[indx]:
+                    # print('Found attribute owner in feature dict')
+                    for instance_seq in self.feature_instance_dicts[indx][att_owner_id]:
+                        # print(instance_seq)
+                        new_holder = ValueHolder(instance_seq, att_data['name'], None, att_id)
+                        new_holders.append(new_holder)
+
+                attribute_dictionaries[indx].update({att_id: new_holders})
+
+        return attribute_dictionaries
 
 class Instance:
     """
