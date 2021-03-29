@@ -18,12 +18,15 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyw.HBox):
         if children:
             return children
         return [
-            ipyw.VBox([
-                ipyw.HTML("<h2>Node Types</h2>"),
-                self.node_type_selector,
-                ipyw.HTML("<h2>Edge Types</h2>"),
-                self.edge_type_selector,
-            ]),
+            ipyw.VBox(
+                [
+                    ipyw.HTML("<h2>Node Types</h2>"),
+                    self.node_type_selector,
+                    ipyw.HTML("<h2>Edge Types</h2>"),
+                    self.edge_type_selector,
+                ],
+                layout=ipyw.Layout(width="25%"),
+            ),
             self.diagram,
         ]
 

@@ -7,6 +7,29 @@ import ipywidgets as ipyw
 import traitlets as trt
 
 
+ICONS_FOR_TYPES = {
+    "Package": "archive",  # "cube"
+    "ItemDefinition": "file-invoice",  # "info"
+    "PartDefinition": "file-powerpoint",
+    "StateDefinition": "file-contract",
+    "ActionUsage": "copy",
+    "AttributeUsage": "copy",  # "underline"
+    "PartUsage": "copy",
+    "ReferenceUsage": "code-branch",
+    "MultiplicityRange": "ellipsis-h",  # "star-of-life" or "share-alt-square"
+    "LiteralInteger": "quote-right",
+    "LiteralReal": "quote-right",
+    "Feature": "terminal",  # "pencil-alt"
+    "Expression": "code",
+    "Function": "square-root-alt",
+    "OperatorExpression": "broom",  # "hashtag"
+    "InvocationExpression": "comment-alt",
+    "Succession": "long-arrow-alt-right",
+}
+
+DEFAULT_ICON = "genderless"
+
+
 class Element(ipyt.Node):
 
     _identifier = trt.Unicode()
@@ -102,6 +125,7 @@ class ProjectExplorer(ipyw.HBox):
     def update(self, elements: dict):
         self.nodes = {
             element_id: Element(
+                icon=ICONS_FOR_TYPES.get(element["@type"], DEFAULT_ICON),
                 name=(
                     element["name"]
                     or f"""«{element["@type"]}: {element_id}»"""

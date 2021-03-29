@@ -1,5 +1,6 @@
 from dateutil import parser
 from datetime import timezone
+from warnings import warn
 
 import requests
 import sysml_v2_api_client as sysml2
@@ -16,7 +17,7 @@ class SysML2Client(trt.HasTraits):
     """
 
     host_url = trt.Unicode(
-        default_value="http://sysml2-sst.intercax.com"
+        default_value="http://sysml2-sst.intercax.com",
     )
 
     host_port = trt.Integer(
@@ -26,9 +27,11 @@ class SysML2Client(trt.HasTraits):
     )
 
     page_size = trt.Integer(
-        default_value=2000,
-        min=10,
+        default_value=5000,
+        min=1,
     )
+
+    paginate = trt.Bool(default_value=True)
 
     _api_configuration: sysml2.Configuration = trt.Instance(sysml2.Configuration)
     _commits_api: sysml2.CommitApi = trt.Instance(sysml2.CommitApi)
@@ -101,18 +104,23 @@ class SysML2Client(trt.HasTraits):
 
     @property
     def elements_url(self):
+        if not self.paginate:
+            warn(
+                "By default, disabling pagination still retrieves 100 "
+                "records at a time!  True pagination is not supported yet."
+            )
         return (
             f"{self.host}/"
             f"projects/{self.selected_project}/"
             f"commits/{self.selected_commit}/"
-            f"elements?page[size]={self.page_size}"
-        )
+            f"elements"
+        ) + (f"?page[size]={self.page_size}" if self.paginate else "")
 
-    def by_id(self, id_: str):
+    def by_id(self, id_: str) -> dict:
         return self.elements_by_id[id_]
 
-    def name_by_id(self, id_: str):
-        return self.by_id(id_).get("Name")
+    def name_by_id(self, id_: str) -> str:
+        return self.by_id(id_).get("name")
 
     def _get_elements_from_server(self):
         response = requests.get(self.elements_url)
@@ -147,4 +155,7 @@ class SysML2Client(trt.HasTraits):
 
     def _download_elements(self):
         elements = self._get_elements_from_server()
+        max_elements = self.page_size if self.paginate else 100
+        if len(elements) == max_elements:
+            warn("There are probably more elements that were not retrieved!")
         self._update_elements(elements=elements)
