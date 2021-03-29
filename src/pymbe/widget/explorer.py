@@ -43,7 +43,6 @@ class ProjectExplorer(ipyw.HBox):
     """A widget to explore the structure and data in a project."""
 
     FILTER_KEYS = ("@context",)
-    INCLUDE_NODE_TYPES = ("Namespace", "Package")
 
     element_data: ipyw.Output = trt.Instance(ipyw.Output, args=())
     elements_by_id: dict = trt.Dict()
@@ -139,32 +138,35 @@ class ProjectExplorer(ipyw.HBox):
                 _data=element,
             )
             for element_id, element in elements.items()
-            if element.get("name", None)
-            or (element["owner"] or {}).get("@id", None)
-            or (element["@type"] in self.INCLUDE_NODE_TYPES)
         }
         for node in nodes.values():
             if node._owner in nodes:
                 nodes[node._owner].add_node(node)
+
+        # Filter nodes to those that have subnodes or a proper name
+        nodes = {
+            id_: node
+            for id_, node in nodes.items()
+            if node.nodes
+            or node._data.get("name", None)
+        }
         self.nodes = nodes
 
     @trt.observe("nodes")
     def _update_tree(self, *_):
+
+        # find the root nodes and sort them
+        roots = sorted(
+            [
+                node for node in self.nodes.values()
+                if node._owner is None
+            ],
+            # Sort nodes with subnodes first and then by name
+            key=lambda n: (-len(n.nodes), n.name),
+        )
+
+        # update the tree
         self._clear_tree()
         tree = self.tree
-        nodes = self.nodes
-        for node in nodes.values():
-            owner = node._owner
-            if owner is None:
-                tree.add_node(node)
-            elif owner not in nodes:
-                owner_name = self.elements_by_id.get(owner, {}).get("qualifiedName", owner)
-                self.log.warning(
-                    f"Not including {node} because its owner "
-                    f"{owner_name} does not have a name!"
-                )
-        tree.nodes = sorted(
-            tree.nodes,
-            key=lambda n: len(n.nodes),
-            reverse=True,
-        )
+        for root in roots:
+            tree.add_node(root)
