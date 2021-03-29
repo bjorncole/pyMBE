@@ -14,6 +14,7 @@ from ipyelk.contrib.elements import (
     Compartment,
     Compound,
     Edge,
+    Label,
     Partition,
     Record,
     element,
@@ -222,33 +223,21 @@ class Diagram(Partition):
         "feature_typed": a_feature_typing_endpoint(r=8, closed=True),
     }
     style: ty.ClassVar[ty.Dict[str, Def]] = {
+        # Elk Label styles for Box Titles
         " .elklabel.compartment_title_1": {
             # "font-weight": "bold",
         },
         " .elklabel.heading, .elklabel.compartment_title_2": {
             "font-weight": "bold",
         },
-        " .arrow.inheritance": {
-            "fill": "none",
-        },
-        " .arrow.containment": {
-            "fill": "none",
-        },
-        " .arrow.aggregation": {
-            "fill": "none",
-        },
-        " .arrow.directed_association": {
-            "fill": "none",
-        },
-        " .arrow.subsetting": {
-            "fill": "rgb(0,0,0)",
-        },
-        " .internal>.elknode": {
+        # Style Arrowheads (future may try to )
+        " .subsetting > .round > ellipse": {"fill": "var(--jp-elk-node-stroke)"},
+        " .internal > .elknode": {
             "stroke": "transparent",
             "fill": "transparent",
         },
-        " .elklabel.compartment_title_1": {},
-        " .elklabel.heading, .elklabel.compartment_title_2": {"font-weight": "bold"}
+        # Necessary for having the viewport use the whole vertical height
+        " .lm-Widget.jp-ElkView .sprotty > .sprotty-root > svg.sprotty-graph": {"height": "unset!important"}
     }
     default_edge: ty.Type[Edge] = field(default=DirectedAssociation)
 
@@ -282,7 +271,10 @@ class SysML2ElkDiagram(ipyw.HBox):
         children = proposal.value
         if children:
             return children
-        return [self.elk_app, self.elk_layout]
+        return [
+            ipyw.VBox([self.elk_app], layout=dict(height="100%", width="80%")),
+            ipyw.VBox([self.elk_layout], layout=dict(height="100%", width="20%")),
+        ]
 
     @trt.validate("layout")
     def _validate_layout(self, proposal):
@@ -341,11 +333,12 @@ class SysML2ElkDiagram(ipyw.HBox):
                     f"Could not map target: {target} in '{type_}' with {source}"
                 )
                 continue
-            diagram.add_edge(
+            edge = diagram.add_edge(
                 source=self.parts[source],
                 target=self.parts[target],
                 cls=EDGE_MAP.get(type_, DEFAULT_EDGE),
             )
+            edge.labels.append(Label(text=type_))
         diagram.defs = {**diagram.defs}
         self.elk_diagram = diagram
 

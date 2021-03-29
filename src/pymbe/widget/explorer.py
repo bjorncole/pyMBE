@@ -155,20 +155,27 @@ class ProjectExplorer(ipyw.HBox):
             if node.nodes
             or node._data.get("name", None)
         }
+        # Sort the child nodes
+        for node in nodes.values():
+            node.nodes = self.sort_nodes(node.nodes)
         self.nodes = nodes
+
+    @staticmethod
+    def sort_nodes(nodes: (list, tuple, set)) -> tuple:
+        # Sort nodes with number of subnodes first and then by name
+        return tuple(sorted(
+            nodes,
+            key=lambda n: (-len(n.nodes), n.name),
+        ))
 
     @trt.observe("nodes")
     def _update_tree(self, *_):
 
         # find the root nodes and sort them
-        roots = sorted(
-            [
-                node for node in self.nodes.values()
-                if node._owner is None
-            ],
-            # Sort nodes with subnodes first and then by name
-            key=lambda n: (-len(n.nodes), n.name),
-        )
+        roots = self.sort_nodes([
+            node for node in self.nodes.values()
+            if node._owner is None
+        ])
 
         # update the tree
         self._clear_tree()
