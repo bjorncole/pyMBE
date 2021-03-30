@@ -138,9 +138,9 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
     def filter(
             self,
             *,
-            nodes: (list, tuple) = None,
+            nodes: (list, set, tuple) = None,
             node_types: (list, tuple, str) = None,
-            edges: (list, tuple) = None,
+            edges: (list, set, tuple) = None,
             edge_types: (list, tuple, str) = None,
     ):
         graph = self.graph
@@ -152,7 +152,7 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
         node_types = node_types or self.node_types
         if isinstance(node_types, str):
             node_types = [node_types]
-        edge_types = edge_types or edge_types
+        edge_types = edge_types or []
         if isinstance(edge_types, str):
             edge_types = [edge_types]
 
@@ -174,7 +174,7 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
             for (source, target, data) in edges
         ], [])
             if node_id in nodes
-            and graph.nodes[node_id]["@type"] in node_types
+            and self.elements_by_id[node_id]["@type"] in node_types
         }
 
         subgraph.add_nodes_from(nodes.items())

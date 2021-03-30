@@ -11,23 +11,15 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyw.HBox):
     diagram: SysML2ElkDiagram = trt.Instance(SysML2ElkDiagram, args=())
     edge_type_selector = trt.Instance(ipyw.SelectMultiple, args=())
     node_type_selector = trt.Instance(ipyw.SelectMultiple, args=())
+    update_diagram = trt.Instance(ipyw.Button)
 
     @trt.validate("children")
     def _validate_children(self, proposal):
         children = proposal.value
         if children:
             return children
+        self._update_diagram_toolbar()
         return [
-            # TODO: Add this back when its functionality is tied in
-            # ipyw.VBox(
-            #     [
-            #         ipyw.HTML("<h2>Node Types</h2>"),
-            #         self.node_type_selector,
-            #         ipyw.HTML("<h2>Edge Types</h2>"),
-            #         self.edge_type_selector,
-            #     ],
-            #     layout=ipyw.Layout(height="100%", width="25%"),
-            # ),
             ipyw.VBox(
                 [self.diagram],
                 layout=ipyw.Layout(
@@ -36,11 +28,16 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyw.HBox):
             ),
         ]
 
-    @trt.validate("layout")
-    def _validate_layout(self, proposal):
-        layout = proposal.value
-        # TODO: if necessary, manipulate the layout here
-        return layout
+    @trt.default("update_diagram")
+    def _make_update_diagram_button(self) -> ipyw.Button:
+        button = ipyw.Button(
+            description="",
+            icon="retweet",
+            tooltip="Update diagram",
+            layout=dict(height="40px", width="40px")
+        )
+        button.on_click(self._update_diagram_graph)
+        return button
 
     @trt.observe("graph")
     def _updated_type_selector_options(self, *_):
@@ -73,20 +70,60 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyw.HBox):
 
         self.diagram.graph = self.graph
 
+    @trt.observe("edge_type_selector", "node_type_selector")
+    def _update_observers_for_selectors(self, change: trt.Bunch):
+        if not change:
+            return
+        if change.old:
+            change.old.unobserve(self._update_filtered_graph)
+        if change.new:
+            change.new.observe(self._update_filtered_graph, "value")
+
+    def _update_diagram_graph(self, *_):
+        diagram = self.diagram
+        diagram.graph = self.filter(
+            nodes=self.selected_node_ids_by_type,
+            edges=self.selected_edge_ids_by_type,
+        )
+        # TODO: look into adding a refresh, e.g.,
+        # self.diagram.elk_app.refresh()
+
+    @property
+    def selected_node_ids_by_type(self):
+        return tuple(set(sum(map(list, self.node_type_selector.value), [])))
+
     @property
     def selected_nodes_by_type(self):
-        node_ids = set(sum(map(list, self.node_type_selector.value), []))
         return tuple(
             self.graph.nodes[id_]
-            for id_ in sorted(node_ids)
+            for id_ in sorted(self.selected_node_ids_by_type)
             if id_ in self.graph.nodes
         )
 
     @property
+    def selected_edge_ids_by_type(self):
+        return tuple(set(sum(map(list, self.edge_type_selector.value), [])))
+
+    @property
     def selected_edges_by_type(self):
-        edge_ids = set(sum(map(list, self.edge_type_selector.value), []))
         return tuple(
             self.graph.edges[id_]
-            for id_ in sorted(edge_ids)
+            for id_ in sorted(self.selected_edge_ids_by_type)
             if id_ in self.graph.edges
         )
+
+    def _update_diagram_toolbar(self):
+        # Append edge and node selectors to elk_app toolbar
+        diagram = self.diagram
+        accordion = {**diagram.toolbar_accordion}
+        accordion.update({
+            "Edge Types": self.edge_type_selector,
+            "Node Types": self.node_type_selector,
+        })
+
+        buttons = [*diagram.toolbar_buttons]
+        buttons += [self.update_diagram]
+
+        with diagram.hold_trait_notifications():
+            diagram.toolbar_accordion = accordion
+            diagram.toolbar_buttons = buttons

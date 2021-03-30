@@ -22,6 +22,7 @@ from ipyelk.contrib.elements import (
 )
 from ipyelk.diagram.elk_model import ElkLabel
 from ipyelk.diagram.symbol import Def
+from ipyelk.tools import tools as elk_tools
 
 
 def a_part(data: dict, width=220):
@@ -281,6 +282,16 @@ class SysML2ElkDiagram(ipyw.HBox):
     elk_transformer: ipyelk.nx.XELK = trt.Instance(ipyelk.nx.XELK)
     graph: nx.Graph = trt.Instance(nx.Graph, args=())
 
+    fit_btn: elk_tools.FitBtn = trt.Instance(elk_tools.FitBtn)
+    toggle_btn: elk_tools.ToggleCollapsedBtn = trt.Instance(
+        elk_tools.ToggleCollapsedBtn,
+    )
+    toolbar_buttons: list = trt.List(trait=trt.Instance(ipyw.Button))
+    toolbar_accordion: dict = trt.Dict(
+        key_trait=trt.Unicode(),
+        value_trait=trt.Instance(ipyw.Widget),
+    )
+
     parts: dict = trt.Dict()
 
     style: dict = trt.Dict(kw={
@@ -298,10 +309,8 @@ class SysML2ElkDiagram(ipyw.HBox):
         children = proposal.value
         if children:
             return children
-        return [
-            ipyw.VBox([self.elk_app], layout=dict(height="100%", width="80%")),
-            ipyw.VBox([self.elk_layout], layout=dict(height="100%", width="20%")),
-        ]
+        self._update_toolbar()
+        return [self.elk_app]
 
     @trt.validate("layout")
     def _validate_layout(self, proposal):
@@ -323,13 +332,65 @@ class SysML2ElkDiagram(ipyw.HBox):
             transformer=self.elk_transformer,
             style=self.style,
             layout=dict(
+                flex="1",
                 height="100%",
                 min_height="600px",
                 width="100%",
             ),
         )
-        elk_app.layout.flex = "1"
         return elk_app
+
+    def _make_command_palette(self) -> ipyw.VBox:
+        titles, widgets = zip(*self.toolbar_accordion.items())
+        titles = {
+            idx: title
+            for idx, title in enumerate(titles)
+        }
+        return ipyw.VBox(
+            [
+                ipyw.HBox(self.toolbar_buttons),
+                ipyw.Accordion(
+                    _titles=titles,
+                    children=widgets,
+                    selected_index=None,
+                )
+            ],
+            # layout=dict(width="20%")
+        )
+
+    @trt.default("toggle_btn")
+    def _make_toggle_btn(self) -> elk_tools.ToggleCollapsedBtn:
+        return elk_tools.ToggleCollapsedBtn(
+            app=self.elk_app,
+            description="",
+            icon="compress",
+            layout=dict(height="40px", width="40px"),
+            tooltip="Collapse/Expand the selected elements",
+        )
+
+    @trt.default("fit_btn")
+    def _make_fit_btn(self) -> elk_tools.FitBtn:
+        return elk_tools.FitBtn(
+            app=self.elk_app,
+            description="",
+            icon="expand-arrows-alt",
+            layout=dict(height="40px", width="40px"),
+            tooltip="Fit Diagram",
+        )
+
+    @trt.default("toolbar_buttons")
+    def _make_toolbar_buttons(self):
+        return [self.fit_btn, self.toggle_btn]
+
+    @trt.default("toolbar_accordion")
+    def _make_toolbar_accordion(self):
+        return {
+            "Layout": self.elk_layout,
+        }
+
+    @trt.observe("toolbar_buttons", "toolbar_accordion")
+    def _update_toolbar(self, *_):
+        self.elk_app.toolbar.commands = [self._make_command_palette()]
 
     @trt.observe("elk_layout")
     def _update_observers_for_layout(self, change: trt.Bunch):
