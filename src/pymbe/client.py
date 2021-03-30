@@ -1,11 +1,11 @@
 from dateutil import parser
 from datetime import timezone
+from functools import lru_cache
+from warnings import warn
 
 import requests
 import sysml_v2_api_client as sysml2
 import traitlets as trt
-
-from .graph import SysML2LabeledPropertyGraph, SysML2RDFGraph
 
 
 class SysML2Client(trt.HasTraits):
@@ -13,13 +13,14 @@ class SysML2Client(trt.HasTraits):
         A traitleted SysML v2 API Client.
 
     ..todo:
-        Make this capable of running independently.
+        - Add ability to use element download pagination.
 
     """
 
     host_url = trt.Unicode(
-        default_value="http://sysml2-sst.intercax.com"
+        default_value="http://sysml2-sst.intercax.com",
     )
+
     host_port = trt.Integer(
         default_value=9000,
         min=1,
@@ -27,22 +28,24 @@ class SysML2Client(trt.HasTraits):
     )
 
     page_size = trt.Integer(
-        default_value=2000,
-        min=10,
+        default_value=5000,
+        min=1,
     )
+
+    paginate = trt.Bool(default_value=True)
 
     _api_configuration: sysml2.Configuration = trt.Instance(sysml2.Configuration)
     _commits_api: sysml2.CommitApi = trt.Instance(sysml2.CommitApi)
     _elements_api: sysml2.ElementApi = trt.Instance(sysml2.ElementApi)
     _projects_api: sysml2.ProjectApi = trt.Instance(sysml2.ProjectApi)
 
+    selected_project: str = trt.Unicode(allow_none=True)
+    selected_commit: str = trt.Unicode(allow_none=True)
+
     projects = trt.Dict()
     elements_by_id = trt.Dict()
     elements_by_type = trt.Dict()
     relationship_types = trt.Tuple()
-
-    lpg: SysML2LabeledPropertyGraph = trt.Instance(SysML2LabeledPropertyGraph, args=tuple())
-    rdf: SysML2RDFGraph = trt.Instance(SysML2RDFGraph, args=tuple())
 
     @trt.default("_api_configuration")
     def _make_api_configuration(self):
@@ -95,7 +98,6 @@ class SysML2Client(trt.HasTraits):
             api_maker = getattr(self, f"_make{api_attr}")
             setattr(self, api_attr, api_maker())
             del old_api
-        self.project_selector.options = self._get_project_options()
 
     @property
     def host(self):
@@ -103,28 +105,38 @@ class SysML2Client(trt.HasTraits):
 
     @property
     def elements_url(self):
+        if not self.paginate:
+            warn(
+                "By default, disabling pagination still retrieves 100 "
+                "records at a time!  True pagination is not supported yet."
+            )
         return (
             f"{self.host}/"
-            f"projects/{self.selected_project_id}/"
-            f"commits/{self.selected_commit_id}/"
-            f"elements?page[size]={self.page_size}"
-        )
+            f"projects/{self.selected_project}/"
+            f"commits/{self.selected_commit}/"
+            f"elements"
+        ) + (f"?page[size]={self.page_size}" if self.paginate else "")
 
-    def by_id(self, id_: str):
+    def by_id(self, id_: str) -> dict:
         return self.elements_by_id[id_]
 
-    def name_by_id(self, id_: str):
-        return self.by_id(id_).get("Name")
-    
-    def _get_elements_from_server(self):
-        response = requests.get(self.elements_url)
+    def name_by_id(self, id_: str) -> str:
+        return self.by_id(id_).get("name")
+
+    @lru_cache
+    def _retrieve_data(self, url):
+        response = requests.get(url)
         if not response.ok:
             raise requests.HTTPError(
-                f"Failed to retrieve elements from '{self.elements_url}', "
+                f"Failed to retrieve elements from '{url}', "
                 f"reason: {response.reason}"
             )
         return response.json()
-    
+
+    def _get_elements_from_server(self):
+        return self._retrieve_data(self.elements_url)
+
+    @trt.observe("selected_commit")
     def _update_elements(self, *_, elements=None):
         elements = elements or []
         self.relationship_types = sorted({
@@ -146,9 +158,9 @@ class SysML2Client(trt.HasTraits):
             for element_type in element_types
         }
 
-    
     def _download_elements(self):
         elements = self._get_elements_from_server()
+        max_elements = self.page_size if self.paginate else 100
+        if len(elements) == max_elements:
+            warn("There are probably more elements that were not retrieved!")
         self._update_elements(elements=elements)
-        self.lpg._update(client=self)
-        self.rdf._update(client=self)

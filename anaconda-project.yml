@@ -1,13 +1,3 @@
-# This is an Anaconda project file.
-#
-# Here you can describe your project and how to run it.
-# Use `anaconda-project run` to run the project.
-# The file is in YAML format, please see http://www.yaml.org/start.html for more.
-#
-
-#
-# Set the 'name' key to name your project
-#
 name: pymbe
 
 #
@@ -15,17 +5,19 @@ name: pymbe
 #
 icon:
 
-#
-# Set a one-sentence-or-so 'description' key with project details
-#
 description: |
-  A pythonic Model-based Engineering framework based on SysML v2
+  A pythonic Model-based Engineering framework based on SysML v2.
 
 #
 # In the commands section, list your runnable scripts, notebooks, and other code.
 # Use `anaconda-project add-command` to add commands.
 #
 commands:
+  lab:
+    description: launch lab
+    env_spec: user
+    unix: &lab jupyter lab --no-browser --debug
+    windows: *lab
   setup:
     description: setup development environment
     env_spec: user
@@ -34,11 +26,6 @@ commands:
       pip install -e . --no-dependencies
     windows: |
       pip install git+https://github.com/Systems-Modeling/SysML-v2-API-Python-Client.git --no-dependencies & pip install -e . --no-dependencies
-  lab:
-    description: launch lab
-    env_spec: user
-    unix: &lab jupyter lab --no-browser --debug
-    windows: *lab
   notebooks/KerML Nested Features.ipynb:
     env_spec: user
     notebook: notebooks/KerML Nested Features.ipynb
@@ -107,6 +94,7 @@ env_specs:
     description: The environment for running the notebooks
     packages:
     - ipyelk >=1.0,<2.0
+    - ipytree >=0.2.1,<1.0
     - jupyterlab >=3.0,<4
     - matplotlib
     - networkx >=2.0,<3
