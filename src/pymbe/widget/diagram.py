@@ -41,15 +41,17 @@ def a_part(data: dict, width=220):
     # TODO: add properties
     return part
 
-def a_subsetting_endpoint(r=6, closed=False):
+
+def an_arrow_endpoint(r=6, closed=False):
     return conn.ConnectorDef(
         children=[
-            conn.Circle(x=r * 1 / 6, y=0, radius=r / 5),
-            conn.Path.from_list([(r, -r / 2), (r / 2, 0), (r, r / 2)],
-                           closed=closed),
+            conn.Path.from_list(
+                [(r / 2, -r / 3), (0, 0), (r / 2, r / 3)],
+                closed=closed,
+            ),
         ],
         correction=conn.Point(-1, 0),
-        offset=conn.Point(-r * 2 / 3, 0),
+        offset=conn.Point((-r / 1.75) if closed else 0, 0),
     )
 
 
@@ -64,7 +66,7 @@ def a_feature_typing_endpoint(r=6, closed=False):
             ),
         ],
         correction=conn.Point(-1, 0),
-        offset=conn.Point(-r * 2 / 3, 0),
+        offset=conn.Point((-r / 1.75) if closed else 0, 0),
     )
 
 
@@ -78,7 +80,21 @@ def a_redefinition_endpoint(r=6, closed=False):
             ),
         ],
         correction=conn.Point(-1, 0),
-        offset=conn.Point(-r * 2 / 3, 0),
+        offset=conn.Point((-r / 1.75) if closed else 0, 0),
+    )
+
+
+def a_subsetting_endpoint(r=6, closed=False):
+    return conn.ConnectorDef(
+        children=[
+            conn.Circle(x=r / 5, y=0, radius=r / 5),
+            conn.Path.from_list(
+                [(r, -r / 2.5), (r / 2.5, 0), (r, r / 2.5)],
+                closed=closed,
+            ),
+        ],
+        correction=conn.Point(-1, 0),
+        offset=conn.Point(-r if closed else (-r / 1.9), 0),
     )
 
 
@@ -155,7 +171,7 @@ class Relation(Edge):
 
 @element
 class Association(Edge):
-    pass
+    shape_end: ty.ClassVar[str] = "association"
 
 
 @element
@@ -198,9 +214,15 @@ class FeatureTyping(Edge):
     shape_end: ty.ClassVar[str] = "feature_typing"
 
 
+@element
+class Redefinition(Edge):
+    shape_end: ty.ClassVar[str] = "redefinition"
+
+
 EDGE_MAP = {
     "FeatureTyping": FeatureTyping,
     "OwnedBy": OwnedBy,
+    "Redefinition": Redefinition,
     "Subsetting": Subsetting,
     "Superclassing": Generalization,
     # TODO: review and map the rest of the edge types
@@ -215,13 +237,14 @@ class Diagram(Partition):
 
     # TODO flesh out ideas of encapsulating diagram defs / styles / elements
     defs: ty.ClassVar[ty.Dict[str, Def]] = {
-        "composition": conn.Rhomb(r=4),
         "aggregation": conn.Rhomb(r=4),
+        "composition": conn.Rhomb(r=4),
         "containment": conn.Containment(r=4),
-        "directed_association": conn.StraightArrow(r=4),
-        "generalization": conn.StraightArrow(r=4, closed=True),
-        "subsetting": a_subsetting_endpoint(r=8, closed=False),
-        "feature_typing": a_feature_typing_endpoint(r=8, closed=True),
+        "directed_association": an_arrow_endpoint(r=10, closed=False),
+        "feature_typing": a_feature_typing_endpoint(r=10, closed=True),
+        "generalization": an_arrow_endpoint(r=10, closed=True),
+        "redefinition": a_redefinition_endpoint(r=10, closed=True),
+        "subsetting": a_subsetting_endpoint(r=10, closed=False),
     }
     style: ty.ClassVar[ty.Dict[str, Def]] = {
         # Elk Label styles for Box Titles
