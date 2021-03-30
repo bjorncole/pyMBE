@@ -63,8 +63,9 @@ class ProjectExplorer(ipyw.HBox):
     @trt.validate("layout")
     def _validate_layout(self, proposal):
         layout = proposal.value
-        layout.grid_template_columns = "repeat(2, 500px)"
-        layout.height = "450px"
+        # layout.grid_template_columns = "repeat(2, auto)"
+        layout.height = "100%"
+        layout.width = "auto"
         return layout
 
     @trt.default("tree")

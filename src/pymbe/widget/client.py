@@ -9,11 +9,10 @@ from ..client import SysML2Client
 __all__ = ("ElementDetails", "SysML2ClientWidget")
 
 
-class SysML2ClientWidget(SysML2Client, ipyw.VBox):
+class SysML2ClientWidget(SysML2Client):
     """An ipywidget to interact with a SysML v2 API."""
 
-    _WIDE_WIDGET_MAX_WIDTH = "32rem"
-    _WIDE_WIDGET_WIDTH = "99%"
+    widget: ipyw.GridspecLayout = trt.Instance(ipyw.GridspecLayout)
 
     host_url_input = trt.Instance(ipyw.Text)
     host_port_input = trt.Instance(ipyw.IntText)
@@ -22,47 +21,46 @@ class SysML2ClientWidget(SysML2Client, ipyw.VBox):
     download_elements = trt.Instance(ipyw.Button)
     progress_bar = trt.Instance(ipyw.IntProgress)
 
-    @trt.validate("children")
-    def _validate_children(self, proposal):
-        children = proposal.value
-        if children:
-            return children
-        return [
-            ipyw.HTML("<h1>SysML2 Remote Service</h1>"),
-            ipyw.HBox([
-                ipyw.VBox([
-                    self.host_url_input,
-                ],
-                    layout=ipyw.Layout(
-                        max_width=self._WIDE_WIDGET_MAX_WIDTH,
-                        width=self._WIDE_WIDGET_WIDTH,
-                    ),
-                ),
-                self.host_port_input,
-            ]),
-            ipyw.HBox([
-                ipyw.VBox([
-                    self.project_selector,
-                    self.commit_selector,
-                ],
-                    layout=ipyw.Layout(
-                        max_width=self._WIDE_WIDGET_MAX_WIDTH,
-                        width=self._WIDE_WIDGET_WIDTH,
-                    ),
-                ),
-                self.download_elements,
-            ]),
+    def _ipython_display_(self):
+        return self.widget
+
+    @trt.default("widget")
+    def _make_widget(self) -> ipyw.GridspecLayout:
+        cols = 12
+        idx = cols - 1
+        grid = ipyw.GridspecLayout(4, cols, width="auto", height="auto")
+        grid[0, :idx] = self.host_url_input
+        grid[0, idx:] = self.host_port_input
+        grid[1, :idx] = self.project_selector
+        grid[2, :idx] = self.commit_selector
+        grid[1:3, idx:] = self.download_elements
+        grid[3, :] = self.progress_bar
+
+        for widget in (
+            self.host_url_input,
+            self.host_port_input,
+            self.project_selector,
+            self.commit_selector,
+            self.download_elements,
             self.progress_bar,
-        ]
+        ):
+            widget.layout.height="95%"
+            widget.layout.width="auto"
+            widget.layout.min_height=None
+            widget.layout.max_height=None
+            widget.layout.max_width=None
+            widget.layout.min_width=None
+
+        self.download_elements.layout.max_width = "6rem"
+        self.host_port_input.layout.max_width = "6rem"
+        return grid
 
     @trt.default("host_url_input")
     def _make_host_url_input(self):
         input_box = ipyw.Text(
             default_value=self.host_url,
-            layout=ipyw.Layout(
-                max_width=self._WIDE_WIDGET_MAX_WIDTH,
-                width="99%",
-            ),
+            description="Server:",
+            description_tooltip="The URL and port of the SysML v2 Server",
         )
         trt.link(
             (self, "host_url"),
@@ -76,10 +74,6 @@ class SysML2ClientWidget(SysML2Client, ipyw.VBox):
             default_value=self.host_port,
             min=1,
             max=65535,
-            layout=ipyw.Layout(
-                max_width="6rem",
-                width="15%",
-            ),
         )
         trt.link(
             (self, "host_port"),
@@ -90,12 +84,8 @@ class SysML2ClientWidget(SysML2Client, ipyw.VBox):
     @trt.default("project_selector")
     def _make_project_selector(self):
         selector = ipyw.Dropdown(
-            descriptor="Projects",
+            description="Project:",
             options=self._get_project_options(),
-            layout=ipyw.Layout(
-                max_width=self._WIDE_WIDGET_MAX_WIDTH,
-                width="99%",
-            ),
         )
         trt.link((selector, "value"), (self, "selected_project"))
         return selector
@@ -103,12 +93,8 @@ class SysML2ClientWidget(SysML2Client, ipyw.VBox):
     @trt.default("commit_selector")
     def _make_commit_selector(self):
         selector = ipyw.Dropdown(
-            descriptor="Commits",
+            description="Commit:",
             options=self._get_commit_options(),
-            layout=ipyw.Layout(
-                max_width=self._WIDE_WIDGET_MAX_WIDTH,
-                width="99%",
-            ),
         )
         trt.link((selector, "value"), (self, "selected_commit"))
         return selector
@@ -118,29 +104,22 @@ class SysML2ClientWidget(SysML2Client, ipyw.VBox):
         button = ipyw.Button(
             icon="cloud-download",
             tooltip="Fetch elements from remote host.",
-            layout=ipyw.Layout(
-                height="95%",
-                max_width="6rem",
-                width="15%",
-            ),
         )
         button.on_click(self._download_elements)
         return button
 
     @trt.default("progress_bar")
     def _make_progress_bar(self):
-        return ipyw.IntProgress(
+        progress_bar = ipyw.IntProgress(
             description="Loading:",
             min=0,
             max=4,
             step=1,
             value=0,
-            layout=ipyw.Layout(
-                max_width="36rem",
-                visibility="hidden",
-                width="99%",
-            ),
         )
+        progress_bar.style.bar_color = "gray"
+        progress_bar.layout.visibility = "hidden"
+        return progress_bar
 
     @trt.observe("_api_configuration")
     def _update_apis(self, *_):

@@ -299,7 +299,7 @@ class SysML2ElkDiagram(ipyw.HBox):
             "font-style": "italic",
         },
         " parents": {
-            "org.eclipse.elk.direction": "UP",
+            "org.eclipse.elk.direction": "RIGHT",
             "org.eclipse.elk.nodeLabels.placement": "H_CENTER V_TOP INSIDE",
         },
     })
@@ -313,9 +313,10 @@ class SysML2ElkDiagram(ipyw.HBox):
         return [self.elk_app]
 
     @trt.validate("layout")
-    def _validate_layout(self, proposal):
+    def _validate_children(self, proposal):
         layout = proposal.value
-        layout.height = "60vh"
+        layout.height = "100vh"
+        layout.width = "auto"
         return layout
 
     @trt.default("elk_transformer")
@@ -355,7 +356,6 @@ class SysML2ElkDiagram(ipyw.HBox):
                     selected_index=None,
                 )
             ],
-            # layout=dict(width="20%")
         )
 
     @trt.default("toggle_btn")

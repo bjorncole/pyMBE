@@ -28,6 +28,13 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyw.HBox):
             ),
         ]
 
+    @trt.validate("layout")
+    def _validate_children(self, proposal):
+        layout = proposal.value
+        layout.height = "100vh"
+        layout.width = "auto"
+        return layout
+
     @trt.default("update_diagram")
     def _make_update_diagram_button(self) -> ipyw.Button:
         button = ipyw.Button(
