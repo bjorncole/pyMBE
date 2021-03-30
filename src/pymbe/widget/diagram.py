@@ -25,15 +25,17 @@ from ipyelk.diagram.symbol import Def
 
 
 def a_part(data: dict, width=220):
-    part = Part(data=data, identifier=data["@id"], width=width)
     value = data.get("value", None)
     if value is not None:
         name = value
+        if isinstance(value, (bool, float, int)):
+            width = int(0.5 * width)
     else:
         name = (
             data.get("name", None)
             or data["@id"]
         )
+    part = Part(data=data, identifier=data["@id"], width=width)
     part.title = Compartment(headings=[
         f"""«{data["@type"]}»""",
         f"""{name}""",
