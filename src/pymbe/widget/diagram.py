@@ -41,7 +41,7 @@ def a_part(data: dict, width=220):
     # TODO: add properties
     return part
 
-def a_circle_arrow_endpoint(r=6, closed=False):
+def a_subsetting_endpoint(r=6, closed=False):
     return conn.ConnectorDef(
         children=[
             conn.Circle(x=r * 1 / 6, y=0, radius=r / 5),
@@ -99,6 +99,7 @@ class Part(Record):
     data: dict = field(default_factory=dict)
     identifier: str = ""
 
+
 @element
 class RelationEnd(elements.BaseElement):
     kind: RelationEndKind = None
@@ -110,8 +111,8 @@ class RelationEnd(elements.BaseElement):
 @element
 class Relation(Edge):
     kind: str = "Undefined"
-    source: RelationEnd = None
-    target: RelationEnd = None
+    source_end: RelationEnd = None
+    target_end: RelationEnd = None
     display_kind: bool = True
     display_multiplicity: bool = True
     display_usage: bool = True
@@ -193,15 +194,15 @@ class Subsetting(Edge):
 
 
 @element
-class FeatureType(Edge):
-    shape_end: ty.ClassVar[str] = "feature_typed"
+class FeatureTyping(Edge):
+    shape_end: ty.ClassVar[str] = "feature_typing"
 
 
 EDGE_MAP = {
-    "FeatureType": FeatureType,
+    "FeatureTyping": FeatureTyping,
+    "OwnedBy": OwnedBy,
     "Subsetting": Subsetting,
     "Superclassing": Generalization,
-    "OwnedBy": OwnedBy,
     # TODO: review and map the rest of the edge types
 }
 
@@ -219,8 +220,8 @@ class Diagram(Partition):
         "containment": conn.Containment(r=4),
         "directed_association": conn.StraightArrow(r=4),
         "generalization": conn.StraightArrow(r=4, closed=True),
-        "subsetting": a_circle_arrow_endpoint(r=8, closed=False),
-        "feature_typed": a_feature_typing_endpoint(r=8, closed=True),
+        "subsetting": a_subsetting_endpoint(r=8, closed=False),
+        "feature_typing": a_feature_typing_endpoint(r=8, closed=True),
     }
     style: ty.ClassVar[ty.Dict[str, Def]] = {
         # Elk Label styles for Box Titles
@@ -232,6 +233,7 @@ class Diagram(Partition):
         },
         # Style Arrowheads (future may try to )
         " .subsetting > .round > ellipse": {"fill": "var(--jp-elk-node-stroke)"},
+        " .feature_typing > .round > ellipse": {"fill": "var(--jp-elk-node-stroke)"},
         " .internal > .elknode": {
             "stroke": "transparent",
             "fill": "transparent",
@@ -338,7 +340,7 @@ class SysML2ElkDiagram(ipyw.HBox):
                 target=self.parts[target],
                 cls=EDGE_MAP.get(type_, DEFAULT_EDGE),
             )
-            edge.labels.append(Label(text=type_))
+            edge.labels.append(Label(text=f"«{type_}»"))
         diagram.defs = {**diagram.defs}
         self.elk_diagram = diagram
 

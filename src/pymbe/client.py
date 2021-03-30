@@ -1,5 +1,6 @@
 from dateutil import parser
 from datetime import timezone
+from functools import lru_cache
 from warnings import warn
 
 import requests
@@ -122,14 +123,18 @@ class SysML2Client(trt.HasTraits):
     def name_by_id(self, id_: str) -> str:
         return self.by_id(id_).get("name")
 
-    def _get_elements_from_server(self):
-        response = requests.get(self.elements_url)
+    @lru_cache
+    def _retrieve_data(self, url):
+        response = requests.get(url)
         if not response.ok:
             raise requests.HTTPError(
-                f"Failed to retrieve elements from '{self.elements_url}', "
+                f"Failed to retrieve elements from '{url}', "
                 f"reason: {response.reason}"
             )
         return response.json()
+
+    def _get_elements_from_server(self):
+        return self._retrieve_data(self.elements_url)
 
     @trt.observe("selected_commit")
     def _update_elements(self, *_, elements=None):

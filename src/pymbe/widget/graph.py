@@ -18,7 +18,7 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyw.HBox):
         if children:
             return children
         return [
-            # Add this back when its functionality is complete
+            # TODO: Add this back when its functionality is tied in
             # ipyw.VBox(
             #     [
             #         ipyw.HTML("<h2>Node Types</h2>"),
@@ -31,8 +31,6 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyw.HBox):
             ipyw.VBox(
                 [self.diagram],
                 layout=ipyw.Layout(
-                    # height="100%",
-                    # min_height="800px",
                     width="100%",
                 ),
             ),
