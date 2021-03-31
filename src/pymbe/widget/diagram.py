@@ -270,7 +270,7 @@ class Diagram(Partition):
     default_edge: ty.Type[Edge] = field(default=DirectedAssociation)
 
 
-class SysML2ElkDiagram(ipyw.HBox):
+class SysML2ElkDiagram(ipyw.Box):
     """A SysML v2 Diagram"""
 
     elk_app: ipyelk.Elk = trt.Instance(ipyelk.Elk)
@@ -292,8 +292,6 @@ class SysML2ElkDiagram(ipyw.HBox):
         value_trait=trt.Instance(ipyw.Widget),
     )
 
-    parts: dict = trt.Dict()
-
     style: dict = trt.Dict(kw={
         " text.elklabel.node_type_label": {
             "font-style": "italic",
@@ -312,13 +310,6 @@ class SysML2ElkDiagram(ipyw.HBox):
         self._update_toolbar()
         return [self.elk_app]
 
-    @trt.validate("layout")
-    def _validate_children(self, proposal):
-        layout = proposal.value
-        layout.height = "100vh"
-        layout.width = "auto"
-        return layout
-
     @trt.default("elk_transformer")
     def _make_transformer(self) -> ipyelk.nx.XELK:
         return ipyelk.nx.XELK(
@@ -335,28 +326,10 @@ class SysML2ElkDiagram(ipyw.HBox):
             layout=dict(
                 flex="1",
                 height="100%",
-                min_height="600px",
                 width="100%",
             ),
         )
         return elk_app
-
-    def _make_command_palette(self) -> ipyw.VBox:
-        titles, widgets = zip(*self.toolbar_accordion.items())
-        titles = {
-            idx: title
-            for idx, title in enumerate(titles)
-        }
-        return ipyw.VBox(
-            [
-                ipyw.HBox(self.toolbar_buttons),
-                ipyw.Accordion(
-                    _titles=titles,
-                    children=widgets,
-                    selected_index=None,
-                )
-            ],
-        )
 
     @trt.default("toggle_btn")
     def _make_toggle_btn(self) -> elk_tools.ToggleCollapsedBtn:
@@ -400,30 +373,31 @@ class SysML2ElkDiagram(ipyw.HBox):
         change.new.observe(self._element_type_opt_change, "value")
 
     @trt.observe("graph")
-    def _update_nodes(self, change: trt.Bunch):
+    def _update_diagram(self, change: trt.Bunch):
         if change.old not in (None, trt.Undefined):
             old = change.old
             del old
-        self.parts = {
+        graph = self.graph
+        parts = {
             id_: a_part(node_data)
-            for id_, node_data in self.graph.nodes.items()
+            for id_, node_data in graph.nodes.items()
             if node_data
         }
         diagram = Diagram()
-        for (source, target, type_), edge in self.graph.edges.items():
-            if source not in self.parts:
+        for (source, target, type_), edge in graph.edges.items():
+            if source not in parts:
                 self.log.warn(
                     f"Could not map source: {source} in '{type_}' with {target}"
                 )
                 continue
-            if target not in self.parts:
+            if target not in parts:
                 self.log.warn(
                     f"Could not map target: {target} in '{type_}' with {source}"
                 )
                 continue
             edge = diagram.add_edge(
-                source=self.parts[source],
-                target=self.parts[target],
+                source=parts[source],
+                target=parts[target],
                 cls=EDGE_MAP.get(type_, DEFAULT_EDGE),
             )
             edge.labels.append(Label(text=f"«{type_}»"))
@@ -435,6 +409,23 @@ class SysML2ElkDiagram(ipyw.HBox):
         self.elk_app.transformer.source = Compound()(self.elk_diagram)
         self.elk_app.style = self.elk_diagram.style
         self.elk_app.diagram.defs = self.elk_diagram.defs
+
+    def _make_command_palette(self) -> ipyw.VBox:
+        titles, widgets = zip(*self.toolbar_accordion.items())
+        titles = {
+            idx: title
+            for idx, title in enumerate(titles)
+        }
+        return ipyw.VBox(
+            [
+                ipyw.HBox(self.toolbar_buttons),
+                ipyw.Accordion(
+                    _titles=titles,
+                    children=widgets,
+                    selected_index=None,
+                )
+            ],
+        )
 
     def _update_diagram_layout_(self, *_):
         self.elk_app.transformer.layouts = self.elk_layout.value

@@ -69,8 +69,8 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
         self.update(elements=self.elements_by_id)
 
     def update(self, elements: dict, merge=None):
-        if merge is None:
-            merge = self.merge
+        merge = self.merge if merge is None else merge
+
         new_edges = [
             [
                 element_id,                                 # source
@@ -94,9 +94,12 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
 
         filtered_keys = list(self.FILTERED_DATA_KEYS) + list(self.NEW_EDGES)
         elements = {
-            key: value
-            for key, value in elements.items()
-            if key not in filtered_keys
+            element_id: {
+                key: value
+                for key, value in element_data.items()
+                if key not in filtered_keys
+            }
+            for element_id, element_data in elements.items()
         }
 
         relationship_element_ids = {
@@ -113,27 +116,31 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
             for element_id in relationship_element_ids
         ]
 
-        with self.hold_trait_notifications():
-            if not merge:
-                old_graph = self.graph
-                self.graph = nx.MultiDiGraph()
-                del old_graph
+        graph = nx.MultiDiGraph()
+        if merge:
+            graph.add_nodes_from(self.graph)
+            graph.add_edges_from(self.graph)
 
-            self.graph.add_nodes_from(
-                {
-                    id_: elements[id_]
-                    for id_ in non_relationship_element_ids
-                }.items()
-            )
-            self.graph.add_edges_from([
-                [
-                    relation["relatedElement"][0]["@id"],  # source node (str id)
-                    relation["relatedElement"][1]["@id"],  # target node (str id)
-                    relation["@type"],                     # edge type (str name)
-                    relation,                              # edge data (dict)
-                ]
-                for relation in relationships
-            ] + new_edges)
+        old_graph = self.graph
+        del old_graph
+
+        graph.add_nodes_from(
+            {
+                id_: elements[id_]
+                for id_ in non_relationship_element_ids
+            }.items()
+        )
+        graph.add_edges_from([
+            [
+                relation["relatedElement"][0]["@id"],  # source node (str id)
+                relation["relatedElement"][1]["@id"],  # target node (str id)
+                relation["@type"],                     # edge type (str name)
+                relation,                              # edge data (dict)
+            ]
+            for relation in relationships
+        ] + new_edges)
+
+        self.graph = graph
 
     def filter(
             self,
@@ -146,20 +153,22 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
         graph = self.graph
         subgraph = graph.__class__()
 
-        nodes = nodes or self.graph.nodes
-        edges = edges or self.graph.edges
+        nodes = nodes or ([] if node_types else list(self.graph.nodes))
+        edges = edges or ([] if edge_types else list(self.graph.edges))
 
-        node_types = node_types or self.node_types
+        node_types = node_types or ([] if nodes else self.node_types)
         if isinstance(node_types, str):
             node_types = [node_types]
-        edge_types = edge_types or []
+
+        edge_types = edge_types or ([] if edges else self.edge_types)
         if isinstance(edge_types, str):
             edge_types = [edge_types]
 
+        edges = list(set(edges))
         if edge_types:
             edges += [
-                (source, target, data)
-                for (source, target, type_), data in edges.items()
+                (source, target, type_)
+                for (source, target, type_) in self.graph.edges
                 if type_ in edge_types
             ]
 
@@ -167,18 +176,24 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
             print(f"Could not find any edges of type: '{edge_types}'!")
             return subgraph
 
-        nodes = {
-            node_id: graph.nodes[node_id]
+        nodes = [
+            node_id
             for node_id in sum([  # sum(a_list, []) flattens a_list
-            [source, target]
-            for (source, target, data) in edges
-        ], [])
+                [source, target]
+                for (source, target, type_) in edges
+            ], [])
             if node_id in nodes
-            and self.elements_by_id[node_id]["@type"] in node_types
-        }
+            or self.graph.nodes[node_id].get("@type", None) in node_types
+        ]
 
-        subgraph.add_nodes_from(nodes.items())
-        subgraph.add_edges_from(edges)
+        subgraph.add_nodes_from((
+            [node, self.graph.nodes[node]]
+            for node in nodes
+        ))
+        subgraph.add_edges_from((
+            [*edge, self.graph.edges[edge]]
+            for edge in edges
+        ))
 
         return subgraph
 

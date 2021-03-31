@@ -5,10 +5,13 @@ from ..graph import SysML2LabeledPropertyGraph
 from .diagram import SysML2ElkDiagram
 
 
-class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyw.HBox):
+class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyw.Box):
     """An ipywidget to interact with a SysML2 model through an LPG."""
 
-    diagram: SysML2ElkDiagram = trt.Instance(SysML2ElkDiagram, args=())
+    diagram: SysML2ElkDiagram = trt.Instance(
+        SysML2ElkDiagram,
+        kw=dict(layout=dict(width="100%", height="100vh")),
+    )
     edge_type_selector = trt.Instance(ipyw.SelectMultiple, args=())
     node_type_selector = trt.Instance(ipyw.SelectMultiple, args=())
     update_diagram = trt.Instance(ipyw.Button)
@@ -19,19 +22,12 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyw.HBox):
         if children:
             return children
         self._update_diagram_toolbar()
-        return [
-            ipyw.VBox(
-                [self.diagram],
-                layout=ipyw.Layout(
-                    width="100%",
-                ),
-            ),
-        ]
+        return [self.diagram]
 
     @trt.validate("layout")
-    def _validate_children(self, proposal):
+    def _validate_layout(self, proposal):
         layout = proposal.value
-        layout.height = "100vh"
+        layout.height = "100%"
         layout.width = "auto"
         return layout
 
@@ -87,40 +83,39 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyw.HBox):
             change.new.observe(self._update_filtered_graph, "value")
 
     def _update_diagram_graph(self, *_):
-        diagram = self.diagram
-        diagram.graph = self.filter(
-            nodes=self.selected_node_ids_by_type,
-            edges=self.selected_edge_ids_by_type,
+        self.diagram.graph = self.filter(
+            nodes=self.selected_by_type_node_ids,
+            edges=self.selected_by_type_edge_ids,
         )
         # TODO: look into adding a refresh, e.g.,
         # self.diagram.elk_app.refresh()
 
     @property
-    def selected_node_ids_by_type(self):
+    def selected_by_type_node_ids(self):
         return tuple(set(sum(map(list, self.node_type_selector.value), [])))
 
     @property
-    def selected_nodes_by_type(self):
+    def selected_by_type_nodes(self):
         return tuple(
             self.graph.nodes[id_]
-            for id_ in sorted(self.selected_node_ids_by_type)
+            for id_ in sorted(self.selected_by_type_node_ids)
             if id_ in self.graph.nodes
         )
 
     @property
-    def selected_edge_ids_by_type(self):
+    def selected_by_type_edge_ids(self):
         return tuple(set(sum(map(list, self.edge_type_selector.value), [])))
 
     @property
-    def selected_edges_by_type(self):
+    def selected_by_type_edges(self):
         return tuple(
             self.graph.edges[id_]
-            for id_ in sorted(self.selected_edge_ids_by_type)
+            for id_ in sorted(self.selected_by_type_edge_ids)
             if id_ in self.graph.edges
         )
 
     def _update_diagram_toolbar(self):
-        # Append edge and node selectors to elk_app toolbar
+        # Append elements to the elk_app toolbar
         diagram = self.diagram
         accordion = {**diagram.toolbar_accordion}
         accordion.update({
