@@ -273,6 +273,7 @@ class Diagram(Partition):
 class SysML2ElkDiagram(ipyw.Box):
     """A SysML v2 Diagram"""
 
+    compound: Compound = trt.Instance(Compound, args=())
     elk_app: ipyelk.Elk = trt.Instance(ipyelk.Elk)
     elk_diagram: Diagram = trt.Instance(Diagram, args=())
     elk_layout: ipyelk.nx.XELKTypedLayout() = trt.Instance(
@@ -287,12 +288,17 @@ class SysML2ElkDiagram(ipyw.Box):
         elk_tools.ToggleCollapsedBtn,
     )
     toolbar_buttons: list = trt.List(trait=trt.Instance(ipyw.Button))
-    toolbar_accordion: dict = trt.Dict(
+    toolbar_accordion: ty.Dict[str, ipyw.Widget] = trt.Dict(
         key_trait=trt.Unicode(),
         value_trait=trt.Instance(ipyw.Widget),
     )
 
-    style: dict = trt.Dict(kw={
+    parts: ty.Dict[str, Part] = trt.Dict(
+        key_trait=trt.Unicode(),
+        value_trait=trt.Instance(Part),
+    )
+
+    style: ty.Dict[str, dict] = trt.Dict(kw={
         " text.elklabel.node_type_label": {
             "font-style": "italic",
         },
@@ -378,11 +384,14 @@ class SysML2ElkDiagram(ipyw.Box):
             old = change.old
             del old
         graph = self.graph
-        parts = {
+        parts = self.parts
+        new_parts = {
             id_: a_part(node_data)
             for id_, node_data in graph.nodes.items()
             if node_data
+            and id_ not in parts
         }
+        self.parts.update(new_parts)
         diagram = Diagram()
         for (source, target, type_), edge in graph.edges.items():
             if source not in parts:
@@ -406,7 +415,7 @@ class SysML2ElkDiagram(ipyw.Box):
 
     @trt.observe("elk_diagram")
     def _update_app(self, *_):
-        self.elk_app.transformer.source = Compound()(self.elk_diagram)
+        self.elk_app.transformer.source = self.compound(self.elk_diagram)
         self.elk_app.style = self.elk_diagram.style
         self.elk_app.diagram.defs = self.elk_diagram.defs
 

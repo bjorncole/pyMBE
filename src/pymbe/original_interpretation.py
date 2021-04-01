@@ -3,12 +3,14 @@ import copy
 
 import networkx as NX
 
+from .model_loading import ModelingSession
+
 
 class InstanceGenerationStrategy:
     """
     Base class for approaches to creating sets of instances conforming to a model
     """
-    def __init__(self, number_of_cases=10, model_session=None, short_names=None):
+    def __init__(self, number_of_cases=10, model_session: ModelingSession = None, short_names=None):
         self.classifier_instance_dicts = {}
         self.feature_instance_dicts = {}
 
@@ -52,7 +54,7 @@ class RandomGenerationStrategy(InstanceGenerationStrategy):
     """
     Generate instances at random based on a model
     """
-    def __init__(self, number_of_cases=10, model_session=None, short_names=None):
+    def __init__(self, number_of_cases=10, model_session: ModelingSession = None, short_names=None):
         """
         Execute the instance space generator from the constructor
         :param number_of_cases: number of alternative solutions to generate

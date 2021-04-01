@@ -149,6 +149,7 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
             node_types: (list, tuple, str) = None,
             edges: (list, set, tuple) = None,
             edge_types: (list, tuple, str) = None,
+            reverse_edge_types: (list, tuple, str) = None,
     ):
         graph = self.graph
         subgraph = graph.__class__()
@@ -164,6 +165,10 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
         if isinstance(edge_types, str):
             edge_types = [edge_types]
 
+        reverse_edge_types = reverse_edge_types or []
+        if isinstance(reverse_edge_types, str):
+            reverse_edge_types = [reverse_edge_types]
+
         edges = list(set(edges))
         if edge_types:
             edges += [
@@ -176,24 +181,30 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
             print(f"Could not find any edges of type: '{edge_types}'!")
             return subgraph
 
-        nodes = [
+        nodes = {
             node_id
-            for node_id in sum([  # sum(a_list, []) flattens a_list
+            for node_id in set(sum([  # sum(a_list, []) flattens a_list
                 [source, target]
                 for (source, target, type_) in edges
-            ], [])
+            ], []))
             if node_id in nodes
             or self.graph.nodes[node_id].get("@type", None) in node_types
-        ]
-
+        }
+        edges = set(edges)
         subgraph.add_nodes_from((
             [node, self.graph.nodes[node]]
             for node in nodes
         ))
-        subgraph.add_edges_from((
-            [*edge, self.graph.edges[edge]]
-            for edge in edges
-        ))
+        subgraph.add_edges_from(
+            [
+                *(
+                    (target, source, type_) if type_ in reverse_edge_types
+                    else (source, target, type_)
+                ),
+                self.graph.edges[(source, target, type_)]
+            ]
+            for source, target, type_ in edges
+        )
 
         return subgraph
 

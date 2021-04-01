@@ -44,10 +44,10 @@ class ProjectExplorer(ipyw.HBox):
 
     FILTER_KEYS = ("@context",)
 
-    element_data: ipyw.Output = trt.Instance(ipyw.Output, args=())
+    data_display: ipyw.Output = trt.Instance(ipyw.Output, args=())
     elements_by_id: dict = trt.Dict()
     nodes: dict = trt.Dict(kw={})
-    selected: str = trt.Unicode()
+    selected: tuple = trt.Tuple(trt.Unicode())
     tree: ipyt.Tree = trt.Instance(ipyt.Tree)
 
     @trt.validate("children")
@@ -57,7 +57,7 @@ class ProjectExplorer(ipyw.HBox):
             return children
         return [
             self.tree,
-            self.element_data,
+            self.data_display,
         ]
 
     @trt.validate("layout")
@@ -71,18 +71,15 @@ class ProjectExplorer(ipyw.HBox):
     @trt.default("tree")
     def _make_tree(self) -> ipyt.Tree:
         tree = ipyt.Tree(
-            multiple_selection=False,
-            layout=ipyw.Layout(width="45%")
+            multiple_selection=True,
+            layout=dict(width="45%"),
         )
         tree.observe(self._update_selected, "selected_nodes")
         return tree
 
-    @trt.default("element_data")
-    def _make_element_data(self) -> ipyw.Output:
-        element_data = ipyw.Output(
-            layout=ipyw.Layout(width="45%")
-        )
-        return element_data
+    @trt.default("data_display")
+    def _make_data_display(self) -> ipyw.Output:
+        return ipyw.Output(layout=dict(width="45%"))
 
     @trt.observe("tree")
     def _update_selected_node_observer(self, change: trt.Bunch = None):
@@ -94,27 +91,28 @@ class ProjectExplorer(ipyw.HBox):
 
     @trt.observe("selected")
     def _update_details(self, *_):
-        data = self.element_data
-        with data:
-            data.clear_output()
-            display(JSON(self.selected_data))
+        self.data_display.outputs = self._make_JSON_output()
 
     @trt.observe("elements_by_id")
     def _update_elements(self, *_):
         self.update(elements=self.elements_by_id)
+        self.data_display.outputs = []
 
     def _update_selected(self, *_):
         if not self.tree.selected_nodes:
-            self.selected_element = ""
+            self.selected = []
             return
-        self.selected = self.tree.selected_nodes[0]._identifier
+        self.selected = [
+            node._identifier
+            for node in self.tree.selected_nodes
+        ]
 
-    @property
-    def selected_data(self):
-        data = deepcopy(self.elements_by_id.get(self.selected, {}))
-        for key in self.FILTER_KEYS:
-            data.pop(key, None)
-        return data
+    def get_element_data(self, element_id: str) -> dict:
+        return {
+            key: value
+            for key, value in self.elements_by_id.get(element_id, {}).items()
+            if key not in self.FILTER_KEYS
+        }
 
     def _clear_tree(self):
         tree = self.tree
@@ -183,3 +181,21 @@ class ProjectExplorer(ipyw.HBox):
         tree = self.tree
         for root in roots:
             tree.add_node(root)
+
+    def _make_JSON_output(self) -> list:
+        return [
+            {
+                "output_type": "display_data",
+                "data": {
+                    "text/plain": f"JSON Display for {id_}",
+                    "application/json": self.elements_by_id.get(id_, {}),
+                },
+                "metadata": {
+                    "application/json": {
+                        "expanded": False,
+                        "root": id_,
+                    },
+                },
+            }
+            for id_ in self.selected
+        ]
