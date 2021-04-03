@@ -59,3 +59,8 @@ anaconda-project run lab
 ```
 
 Copy the URL where JupyterLab is running into your preferred browser, and you should be good to go!
+
+## Widgets
+
+You can compose a widget as illustrated in the Widget Example notebook.
+![Simple Example](https://user-images.githubusercontent.com/1438114/113459048-50a7d380-93e2-11eb-912e-5bc327545ea8.gif)
