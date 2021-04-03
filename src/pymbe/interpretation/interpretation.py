@@ -383,16 +383,23 @@ class RandomGenerationStrategy(InstanceGenerationStrategy):
                     if att_owner_id in classifier_instance_dict:
                         #print('Found attribute owner in classifier dict')
                         for instance in classifier_instance_dict[att_owner_id]:
+                            if isinstance(instance, list):
+                                preseq = copy.deepcopy(instance)
+                            else:
+                                preseq = [instance]
                             #print(instance)
                             new_holder = ValueHolder([instance], att_data['name'], None, att)
-                            new_holders.append(new_holder)
+                            preseq.append(new_holder)
+                            new_holders.append(preseq)
 
                     elif att_owner_id in self.feature_instance_dicts[indx]:
                         #print('Found attribute owner in feature dict')
                         for instance_seq in self.feature_instance_dicts[indx][att_owner_id]:
+                            preseq = copy.deepcopy(instance_seq)
                             #print(instance_seq)
                             new_holder = ValueHolder(instance_seq, att_data['name'], None, att)
-                            new_holders.append(new_holder)
+                            preseq.append(new_holder)
+                            new_holders.append(preseq)
 
                     attribute_dictionaries[indx].update({att: new_holders})
 
@@ -404,16 +411,23 @@ class RandomGenerationStrategy(InstanceGenerationStrategy):
                 if att_owner_id in classifier_instance_dict:
                     # print('Found attribute owner in classifier dict')
                     for instance in classifier_instance_dict[att_owner_id]:
+                        if isinstance(instance, list):
+                            preseq = copy.deepcopy(instance)
+                        else:
+                            preseq = [instance]
                         # print(instance)
                         new_holder = ValueHolder([instance], att_data['name'], None, att_id)
-                        new_holders.append(new_holder)
+                        preseq.append(new_holder)
+                        new_holders.append(preseq)
 
                 elif att_owner_id in self.feature_instance_dicts[indx]:
                     # print('Found attribute owner in feature dict')
                     for instance_seq in self.feature_instance_dicts[indx][att_owner_id]:
+                        preseq = copy.deepcopy(instance_seq)
                         # print(instance_seq)
                         new_holder = ValueHolder(instance_seq, att_data['name'], None, att_id)
-                        new_holders.append(new_holder)
+                        preseq.append(new_holder)
+                        new_holders.append(preseq)
 
                 attribute_dictionaries[indx].update({att_id: new_holders})
 
