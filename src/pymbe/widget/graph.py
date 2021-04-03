@@ -2,34 +2,28 @@ import ipywidgets as ipyw
 import traitlets as trt
 
 from ..graph import SysML2LabeledPropertyGraph
+from .core import BaseWidget
 from .diagram import SysML2ElkDiagram
 
 
-class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyw.Box):
+class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
     """An ipywidget to interact with a SysML2 model through an LPG."""
 
+    description = trt.Unicode("Diagram").tag(sync=True)
     diagram: SysML2ElkDiagram = trt.Instance(
         SysML2ElkDiagram,
         kw=dict(layout=dict(width="100%", height="100vh")),
     )
-    edge_type_selector = trt.Instance(ipyw.SelectMultiple, args=())
-    node_type_selector = trt.Instance(ipyw.SelectMultiple, args=())
-    update_diagram = trt.Instance(ipyw.Button)
-
-    @trt.validate("children")
-    def _validate_children(self, proposal):
-        children = proposal.value
-        if children:
-            return children
-        self._update_diagram_toolbar()
-        return [self.diagram]
-
-    @trt.validate("layout")
-    def _validate_layout(self, proposal):
-        layout = proposal.value
-        layout.height = "100%"
-        layout.width = "auto"
-        return layout
+    edge_type_selector: ipyw.SelectMultiple = trt.Instance(
+        ipyw.SelectMultiple,
+        args=(),
+    )
+    node_type_selector: ipyw.SelectMultiple = trt.Instance(
+        ipyw.SelectMultiple,
+        args=(),
+    )
+    update_diagram: ipyw.Button = trt.Instance(ipyw.Button)
+    selector_link: trt.link = trt.Instance(trt.link, allow_none=True)
 
     @trt.default("update_diagram")
     def _make_update_diagram_button(self) -> ipyw.Button:
@@ -41,6 +35,31 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyw.Box):
         )
         button.on_click(self._update_diagram_graph)
         return button
+
+    @trt.validate("children")
+    def _validate_children(self, proposal):
+        children = proposal.value
+        if children:
+            return children
+        self._update_diagram_toolbar()
+        self._update_diagram_observers()
+        return [self.diagram]
+
+    @trt.validate("layout")
+    def _validate_layout(self, proposal):
+        layout = proposal.value
+        layout.height = "100%"
+        layout.width = "auto"
+        return layout
+
+    @trt.observe("diagram")
+    def _update_diagram_observers(self, *_):
+        if self.selector_link:
+            self.selector_link.unlink()
+        self.selector_link = trt.link(
+            (self, "selected"),
+            (self.diagram.elk_app.diagram, "selected"),
+        )
 
     @trt.observe("graph")
     def _updated_type_selector_options(self, *_):

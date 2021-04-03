@@ -8,8 +8,10 @@ import networkx as nx
 import rdflib as rdf
 import traitlets as trt
 
+from .core import Base
 
-class SysML2LabeledPropertyGraph(trt.HasTraits):
+
+class SysML2LabeledPropertyGraph(Base):
     """A Labelled Property Graph for SysML v2.
 
     ..todo::
@@ -25,8 +27,6 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
 
     merge: bool = trt.Bool(default=False)
 
-    elements_by_id: dict = trt.Dict()
-
     nodes_by_type: dict = trt.Dict()
     edges_by_type: dict = trt.Dict()
 
@@ -37,6 +37,9 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
             f"{len(self.graph.edges):,d} edges"
             ">"
         )
+
+    def __getitem__(self, *args):
+        return self.graph.__getitem__(*args)
 
     @property
     def nodes(self):
@@ -60,9 +63,6 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
             edge_type
             for *_, edge_type in self.graph.edges
         }))
-
-    def __getitem__(self, *args):
-        return self.graph.__getitem__(*args)
 
     @trt.observe("elements_by_id")
     def _update_elements(self, *_):
@@ -209,11 +209,12 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
         return subgraph
 
 
-class SysML2RDFGraph(trt.HasTraits):
+class SysML2RDFGraph(Base):
     """A Resource Description Framework (RDF) Graph for SysML v2 data."""
 
     _cached_contexts: dict = trt.Instance(dict, args=tuple())
     graph: rdf.Graph = trt.Instance(rdf.Graph, args=tuple())
+    merge: bool = trt.Bool(default_value=False)
 
     def import_context(self, jsonld_item: dict) -> dict:
         jsonld_item = deepcopy(jsonld_item)
@@ -232,7 +233,7 @@ class SysML2RDFGraph(trt.HasTraits):
             self._cached_contexts[context_url] = data["@context"]
         jsonld_item["@context"].update(self._cached_contexts[context_url])
         return jsonld_item
-    
+
     def __repr__(self):
         return (
             "<SysML v2 RDF Graph: "
@@ -241,8 +242,10 @@ class SysML2RDFGraph(trt.HasTraits):
             ">"
         )
 
-    def update(self, elements: dict, merge=False):
-        if not merge:
+    @trt.observe("elements_by_id")
+    def update(self, *_):
+        elements = self.elements_by_id
+        if not self.merge:
             old_graph = self.graph
             self.graph = rdf.Graph()
             del old_graph

@@ -6,9 +6,12 @@ from warnings import warn
 import requests
 import sysml_v2_api_client as sysml2
 import traitlets as trt
+import typing as ty
+
+from .core import Base
 
 
-class SysML2Client(trt.HasTraits):
+class SysML2Client(Base):
     """
         A traitleted SysML v2 API Client.
 
@@ -18,7 +21,7 @@ class SysML2Client(trt.HasTraits):
     """
 
     host_url = trt.Unicode(
-        default_value="http://sysml2-sst.intercax.com",
+        default_value="http://localhost",
     )
 
     host_port = trt.Integer(
@@ -42,10 +45,12 @@ class SysML2Client(trt.HasTraits):
     selected_project: str = trt.Unicode(allow_none=True)
     selected_commit: str = trt.Unicode(allow_none=True)
 
+    elements_by_type: ty.Dict[str, ty.Tuple[str]] = trt.Dict(
+        key_trait=trt.Unicode(),
+        value_trait=trt.Tuple(),
+    )
     projects = trt.Dict()
-    elements_by_id = trt.Dict()
-    elements_by_type = trt.Dict()
-    relationship_types = trt.Tuple()
+    relationship_types: ty.Tuple[str] = trt.Tuple()
 
     @trt.default("_api_configuration")
     def _make_api_configuration(self):
@@ -98,6 +103,7 @@ class SysML2Client(trt.HasTraits):
             api_maker = getattr(self, f"_make{api_attr}")
             setattr(self, api_attr, api_maker())
             del old_api
+        self.projects = self._make_projects()
 
     @property
     def host(self):

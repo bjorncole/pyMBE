@@ -36,7 +36,7 @@ def a_part(data: dict, width=220):
             data.get("name", None)
             or data["@id"]
         )
-    part = Part(data=data, identifier=data["@id"], width=width)
+    part = Part(data=data, id=data["@id"], width=width)
     part.title = Compartment(headings=[
         f"""«{data["@type"]}»""",
         f"""{name}""",
@@ -116,7 +116,7 @@ class RelationEndKind(Enum):
 @element
 class Part(Record):
     data: dict = field(default_factory=dict)
-    identifier: str = ""
+    id: str = ""
 
 
 @element
@@ -391,7 +391,7 @@ class SysML2ElkDiagram(ipyw.Box):
             if node_data
             and id_ not in parts
         }
-        self.parts.update(new_parts)
+        parts.update(new_parts)
         diagram = Diagram()
         for (source, target, type_), edge in graph.edges.items():
             if source not in parts:
@@ -404,12 +404,13 @@ class SysML2ElkDiagram(ipyw.Box):
                     f"Could not map target: {target} in '{type_}' with {source}"
                 )
                 continue
-            edge = diagram.add_edge(
+            new_edge = diagram.add_edge(
                 source=parts[source],
                 target=parts[target],
                 cls=EDGE_MAP.get(type_, DEFAULT_EDGE),
             )
-            edge.labels.append(Label(text=f"«{type_}»"))
+            new_edge.labels.append(Label(text=f"«{type_}»"))
+            new_edge.id = edge["@id"]
         diagram.defs = {**diagram.defs}
         self.elk_diagram = diagram
 

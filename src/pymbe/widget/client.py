@@ -9,10 +9,10 @@ from ..client import SysML2Client
 __all__ = ("ElementDetails", "SysML2ClientWidget")
 
 
-class SysML2ClientWidget(SysML2Client):
+class SysML2ClientWidget(SysML2Client, ipyw.GridspecLayout):
     """An ipywidget to interact with a SysML v2 API."""
 
-    widget: ipyw.GridspecLayout = trt.Instance(ipyw.GridspecLayout)
+    description = trt.Unicode("API Client").tag(sync=True)
 
     host_url_input = trt.Instance(ipyw.Text)
     host_port_input = trt.Instance(ipyw.IntText)
@@ -21,20 +21,39 @@ class SysML2ClientWidget(SysML2Client):
     download_elements = trt.Instance(ipyw.Button)
     progress_bar = trt.Instance(ipyw.IntProgress)
 
-    def _ipython_display_(self):
-        return self.widget
+    def __init__(self, n_rows=4, n_columns=12, **kwargs):
+        super().__init__(n_rows=n_rows, n_columns=n_columns, **kwargs)
 
-    @trt.default("widget")
-    def _make_widget(self) -> ipyw.GridspecLayout:
-        cols = 12
-        idx = cols - 1
-        grid = ipyw.GridspecLayout(4, cols, width="auto", height="auto")
-        grid[0, :idx] = self.host_url_input
-        grid[0, idx:] = self.host_port_input
-        grid[1, :idx] = self.project_selector
-        grid[2, :idx] = self.commit_selector
-        grid[1:3, idx:] = self.download_elements
-        grid[3, :] = self.progress_bar
+    def _ipython_display_(self, **kwargs):
+        super()._ipython_display_(**kwargs)
+        self._set_layout()
+
+    @trt.validate("children")
+    def _set_children(self, proposal):
+        children = proposal.value
+        if children:
+            return children
+        return [
+            self.host_url_input,
+            self.host_port_input,
+            self.project_selector,
+            self.commit_selector,
+            self.download_elements,
+            self.progress_bar,
+        ]
+
+    def _set_layout(self):
+        layout = self.layout
+        layout.height = "auto"
+        layout.width = "auto"
+
+        idx = self.n_columns - 1
+        self[0, :idx] = self.host_url_input
+        self[0, idx:] = self.host_port_input
+        self[1, :idx] = self.project_selector
+        self[2, :idx] = self.commit_selector
+        self[1:3, idx:] = self.download_elements
+        self[3, :] = self.progress_bar
 
         for widget in (
             self.host_url_input,
@@ -51,9 +70,7 @@ class SysML2ClientWidget(SysML2Client):
             widget.layout.max_width=None
             widget.layout.min_width=None
 
-        self.download_elements.layout.max_width = "6rem"
-        self.host_port_input.layout.max_width = "6rem"
-        return grid
+        self.layout = layout
 
     @trt.default("host_url_input")
     def _make_host_url_input(self):
@@ -74,6 +91,7 @@ class SysML2ClientWidget(SysML2Client):
             default_value=self.host_port,
             min=1,
             max=65535,
+            layout=dict(max_width="6rem"),
         )
         trt.link(
             (self, "host_port"),
@@ -104,6 +122,7 @@ class SysML2ClientWidget(SysML2Client):
         button = ipyw.Button(
             icon="cloud-download",
             tooltip="Fetch elements from remote host.",
+            layout=dict(max_width="6rem"),
         )
         button.on_click(self._download_elements)
         return button
