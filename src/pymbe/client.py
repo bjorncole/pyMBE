@@ -100,6 +100,19 @@ class SysML2Client(Base):
             del old_api
         self.projects = self._make_projects()
 
+    @trt.observe("selected_commit")
+    def _update_elements(self, *_, elements=None):
+        elements = elements or []
+        self.relationship_types = sorted({
+            element["@type"]
+            for element in elements
+            if "relatedElement" in element
+        })
+        self.elements_by_id = {
+            element["@id"]: element
+            for element in elements
+        }
+
     @property
     def host(self):
         return f"{self.host_url}:{self.host_port}"
@@ -119,7 +132,7 @@ class SysML2Client(Base):
         ) + (f"?page[size]={self.page_size}" if self.paginate else "")
 
     @lru_cache
-    def _retrieve_data(self, url):
+    def _retrieve_data(self, url: str) -> dict:
         response = requests.get(url)
         if not response.ok:
             raise requests.HTTPError(
@@ -131,18 +144,8 @@ class SysML2Client(Base):
     def _get_elements_from_server(self):
         return self._retrieve_data(self.elements_url)
 
-    @trt.observe("selected_commit")
-    def _update_elements(self, *_, elements=None):
-        elements = elements or []
-        self.relationship_types = sorted({
-            element["@type"]
-            for element in elements
-            if "relatedElement" in element
-        })
-        self.elements_by_id = {
-            element["@id"]: element
-            for element in elements
-        }
+    def update(self, elements: dict):
+        elements = tuple(elements.values())
         element_types = {element["@type"] for element in elements}
         self.elements_by_type = {
             element_type: tuple([

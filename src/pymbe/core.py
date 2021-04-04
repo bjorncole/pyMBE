@@ -1,5 +1,6 @@
 import traitlets as trt
 import typing as ty
+import warnings
 
 
 class Base(trt.HasTraits):
@@ -17,8 +18,12 @@ class Base(trt.HasTraits):
 
     relationship_types: ty.Tuple[str] = trt.Tuple()
 
-    def update(self, elements):
+    def update(self, elements: dict):
         """Subclasses must implement this!"""
+        warnings.warn(
+            f"{self.__class__.__name__} does not "
+            f"specialize the `update` method!"
+        )
 
     def get_element_by_id(self, id_: str) -> dict:
         return self.elements_by_id[id_]
@@ -28,4 +33,5 @@ class Base(trt.HasTraits):
 
     @trt.observe("elements_by_id")
     def _update_elements(self, *_):
+
         self.update(elements=self.elements_by_id)

@@ -14,22 +14,19 @@ class UI(DockBox):
     """A user interface for the integrated widget"""
 
     # widgets
-    client: SysML2ClientWidget = trt.Instance(
-        SysML2ClientWidget,
-        kw=dict(host_url="http://sysml2-sst.intercax.com"),
-    )
+    client: SysML2ClientWidget = trt.Instance(SysML2ClientWidget)
     tree: ContainmentTree = trt.Instance(ContainmentTree, args=())
     inspector: ElementInspector = trt.Instance(ElementInspector, args=())
-    lpg: SysML2LPGWidget = trt.Instance(
-        SysML2LPGWidget,
-        kw=dict(layout=dict(height="66vh")),
-    )
+    lpg: SysML2LPGWidget = trt.Instance(SysML2LPGWidget, args=())
 
     # links
     data_links: list = trt.List()
     selector_links: list = trt.List()
 
-    def __init__(self, *args, **kwargs):
+    lpg_height: int = trt.Int(default_value=65, min=25, max=100)
+
+    def __init__(self, host_url, *args, **kwargs):
+        self.client = SysML2ClientWidget(host_url=host_url)
         super().__init__(*args, **kwargs)
         self.description = "SysML Model"
 
@@ -58,9 +55,10 @@ class UI(DockBox):
             sizes=[0.20, 0.80],
         )
 
-        # TODO: find a way to avoid doing these fixes
+        # TODO: find a way to avoid doing these three lines
         self.client._set_layout()
         self.tree.layout.overflow_y = "auto"
+        self._update_lpg_height()
 
         self.data_links = [
             trt.link(
@@ -77,6 +75,10 @@ class UI(DockBox):
             for widget in (self.inspector, self.lpg)
         ]
 
+    @trt.observe("lpg_height")
+    def _update_lpg_height(self, *_):
+        self.lpg.layout.height = f"{self.lpg_height}vh"
+
     @classmethod
-    def new(cls):
-        return DockPop([cls()], description="SysML Model")
+    def new(cls, host_url: str) -> DockPop:
+        return DockPop([cls(host_url=host_url)], description="SysML Model")

@@ -21,16 +21,9 @@ class ElementInspector(ipyw.Output, BaseWidget):
     @trt.validate("layout")
     def _validate_layout(self, proposal):
         layout = proposal.value
-        layout.overflow_y = "scroll"
+        layout.overflow_y = "auto"
         layout.width = "auto"
         return layout
-
-    @trt.observe("elements_by_id")
-    def _clean_elements_data(self, *_):
-        self.clean_data = {
-            id_: self.get_clean_data(data=data)
-            for id_, data in self.elements_by_id.items()
-        }
 
     @trt.observe("selected")
     def _update_details(self, *_):
@@ -45,6 +38,12 @@ class ElementInspector(ipyw.Output, BaseWidget):
             key: value
             for key, value in data.items()
             if key not in self.FILTER_KEYS
+        }
+
+    def update(self, elements: dict):
+        self.clean_data = {
+            id_: self.get_clean_data(data=data)
+            for id_, data in elements.items()
         }
 
     @staticmethod

@@ -6,29 +6,6 @@ import typing as ty
 from .core import BaseWidget
 
 
-ICONS_FOR_TYPES = {
-    "Package": "archive",  # "cube" or "box" or "box-open"
-    "ItemDefinition": "file-invoice",  # "info"
-    "PartDefinition": "file-powerpoint",
-    "StateDefinition": "file-contract",
-    "ActionUsage": "copy",
-    "AttributeUsage": "copy",  # "underline"
-    "PartUsage": "copy",
-    "ReferenceUsage": "code-branch",
-    "MultiplicityRange": "ellipsis-h",  # "star-of-life" or "share-alt-square"
-    "LiteralInteger": "quote-right",
-    "LiteralReal": "quote-right",
-    "Feature": "terminal",  # "pencil-alt"
-    "Expression": "code",
-    "Function": "square-root-alt",
-    "OperatorExpression": "broom",  # "hashtag"
-    "InvocationExpression": "comment-alt",
-    "Succession": "long-arrow-alt-right",
-}
-
-DEFAULT_ICON = "genderless"
-
-
 class Element(ipyt.Node):
     """A project element node compatible with ipytree."""
 
@@ -42,7 +19,33 @@ class Element(ipyt.Node):
 class ContainmentTree(ipyt.Tree, BaseWidget):
     """A widget to explore the structure and data in a project."""
 
-    description = trt.Unicode("Containment Tree").tag(sync=True)
+    description: str = trt.Unicode("Containment Tree").tag(sync=True)
+
+    default_icon: str = trt.Unicode("genderless").tag(sync=True)
+
+    icons_by_type: dict = trt.Dict(
+        key_trait=trt.Unicode(),
+        value_trait=trt.Unicode(),
+        kw=dict(
+            ActionUsage="copy",
+            AttributeUsage="copy",  # "underline"
+            Expression="code",
+            Feature="terminal",  # "pencil-alt",
+            Function="square-root-alt",
+            InvocationExpression="comment-alt",
+            ItemDefinition="file-invoice",  # info
+            LiteralInteger="quote-right",
+            MultiplicityRange="ellipsis-h",  # "star-of-life" or "share-alt-square"
+            OperatorExpression="broom",  # "hashtag"
+            Package="archive",  # "cube" or "box" or "box-open"
+            PartDefinition="file-powerpoint",
+            PartUsage="copy",
+            ReferenceUsage="code-branch",
+            StateDefinition="file-contract",
+            Succession="long-arrow-alt-right",
+        ),
+    ).tag(sync=True)
+
     nodes_by_id: ty.Dict[str, Element] = trt.Dict(
         key_trait=trt.Unicode(),
         value_trait=trt.Instance(Element),
@@ -50,37 +53,11 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
     )
 
     @trt.validate("layout")
-    def _validate_layout(self, proposal):
+    def _validate_layout(self, proposal: trt.Bunch) -> ipyw.Layout:
         layout = proposal.value
         layout.overflow_y = "auto"
         layout.width = "auto"
         return layout
-
-    @trt.observe("elements_by_id")
-    def update(self, *_, elements: dict = None):
-        elements = elements or self.elements_by_id
-        nodes = {
-            element_id: self._make_node(element=element)
-            for element_id, element in elements.items()
-        }
-        for node in nodes.values():
-            if node._owner in nodes:
-                nodes[node._owner].add_node(node)
-
-        # Filter nodes to those that have subnodes or a proper name
-        nodes = {
-            id_: node
-            for id_, node in nodes.items()
-            if node.nodes
-            or node._data.get("name", None)
-        }
-        # Sort the child nodes
-        for node in nodes.values():
-            node.nodes = self.sort_nodes(node.nodes)
-
-        with self.hold_trait_notifications():
-            self.selected = []
-            self.nodes_by_id = nodes
 
     @trt.observe("selected_nodes")
     def _update_selected(self, *_):
@@ -117,6 +94,40 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
         for root in roots:
             self.add_node(root)
 
+    @trt.observe("icons_by_type", "default_icon")
+    def _update_icons(self, *_):
+        for id_, element_data in self.elements_by_id.items():
+            node = self.nodes_by_id[id_]
+            node.icon = self.icons_by_type.get(
+                element_data["@type"],
+                self.default_icon,
+            )
+
+    def update(self, elements: dict = None):
+        elements = elements or self.elements_by_id
+        nodes = {
+            element_id: self._make_node(element=element)
+            for element_id, element in elements.items()
+        }
+        for node in nodes.values():
+            if node._owner in nodes:
+                nodes[node._owner].add_node(node)
+
+        # Filter nodes to those that have subnodes or a proper name
+        nodes = {
+            id_: node
+            for id_, node in nodes.items()
+            if node.nodes
+            or node._data.get("name", None)
+        }
+        # Sort the child nodes
+        for node in nodes.values():
+            node.nodes = self.sort_nodes(node.nodes)
+
+        with self.hold_trait_notifications():
+            self.selected = []
+            self.nodes_by_id = nodes
+
     def select_nodes(self, *nodes: str):
         """Select a list of nodes"""
         with self.hold_trait_notifications():
@@ -142,8 +153,7 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
             self.remove_node(node)
             del node
 
-    @staticmethod
-    def _make_node(element):
+    def _make_node(self, element):
         element_id = element["@id"]
 
         owner = (
@@ -153,7 +163,7 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
         ).get("@id", None)
 
         return Element(
-            icon=ICONS_FOR_TYPES.get(element["@type"], DEFAULT_ICON),
+            icon=self.icons_by_type.get(element["@type"], self.default_icon),
             name=(
                 element["name"]
                 or f"""«{element["@type"]}: {element_id}»"""

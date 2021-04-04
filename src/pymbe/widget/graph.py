@@ -6,7 +6,7 @@ from .core import BaseWidget
 from .diagram import SysML2ElkDiagram
 
 
-ipyw.register
+@ipyw.register
 class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
     """An ipywidget to interact with a SysML2 model through an LPG."""
 
@@ -148,12 +148,21 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
                 ))
             else:
                 excluded_edge_types = []
-            self.diagram.graph = self.get_path(
+            subgraph = self.get_path(
                 selected=self.selected,
                 directional=self.path_directionality.value,
                 excluded_edge_types=excluded_edge_types,
                 reversed_edge_types=self.edge_type_reverser.value,
             )
+            if subgraph:
+                self.diagram.graph = subgraph
+            else:
+                self.log.warning(
+                    "Could not find path between " 
+                    f"""{" and ".join(self.selected)}, with directionality """
+                    f"""{"not" if not self.path_directionality else ""} """ 
+                    "enforced."
+                )
             return
         elif button is self.filter_by_dist:
             raise NotImplementedError("Need to implement this!")
