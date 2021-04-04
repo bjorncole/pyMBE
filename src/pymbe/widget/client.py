@@ -9,17 +9,18 @@ from ..client import SysML2Client
 __all__ = ("ElementDetails", "SysML2ClientWidget")
 
 
+@ipyw.register
 class SysML2ClientWidget(SysML2Client, ipyw.GridspecLayout):
     """An ipywidget to interact with a SysML v2 API."""
 
     description = trt.Unicode("API Client").tag(sync=True)
 
-    host_url_input = trt.Instance(ipyw.Text)
-    host_port_input = trt.Instance(ipyw.IntText)
-    project_selector = trt.Instance(ipyw.Dropdown)
-    commit_selector = trt.Instance(ipyw.Dropdown)
-    download_elements = trt.Instance(ipyw.Button)
-    progress_bar = trt.Instance(ipyw.IntProgress)
+    host_url_input: ipyw.Text = trt.Instance(ipyw.Text)
+    host_port_input: ipyw.IntText = trt.Instance(ipyw.IntText)
+    project_selector: ipyw.Dropdown = trt.Instance(ipyw.Dropdown)
+    commit_selector: ipyw.Dropdown = trt.Instance(ipyw.Dropdown)
+    download_elements: ipyw.Button = trt.Instance(ipyw.Button)
+    progress_bar: ipyw.IntProgress = trt.Instance(ipyw.IntProgress)
 
     def __init__(self, n_rows=4, n_columns=12, **kwargs):
         super().__init__(n_rows=n_rows, n_columns=n_columns, **kwargs)

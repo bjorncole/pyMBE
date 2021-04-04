@@ -9,3 +9,23 @@ class Base(trt.HasTraits):
         key_trait=trt.Unicode(),
         value_trait=trt.Dict(),
     )
+
+    elements_by_type: ty.Dict[str, ty.Tuple[str]] = trt.Dict(
+        key_trait=trt.Unicode(),
+        value_trait=trt.Tuple(),
+    )
+
+    relationship_types: ty.Tuple[str] = trt.Tuple()
+
+    def update(self, elements):
+        """Subclasses must implement this!"""
+
+    def get_element_by_id(self, id_: str) -> dict:
+        return self.elements_by_id[id_]
+
+    def get_name_by_id(self, id_: str) -> str:
+        return self.get_element_by_id(id_).get("name")
+
+    @trt.observe("elements_by_id")
+    def _update_elements(self, *_):
+        self.update(elements=self.elements_by_id)

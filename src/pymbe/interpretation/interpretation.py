@@ -1,6 +1,6 @@
 import networkx as nx
 
-from .graph import SysML2LabeledPropertyGraph
+from ..graph import SysML2LabeledPropertyGraph
 
 
 def retrieve_element(elements: dict, element: (dict, str), strict: bool = True) -> dict:

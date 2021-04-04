@@ -18,10 +18,10 @@ class SysML2LabeledPropertyGraph(Base):
         Integrate it with the RDF representation.
     """
 
-    FILTERED_DATA_KEYS = ("@context",)
-    NEW_EDGES = {
-        "owner": "OwnedBy",
-    }
+    FILTERED_DATA_KEYS: tuple = ("@context",)
+    ATTRIBUTE_TO_EDGES: tuple = (
+        dict(attribute="owner", new_type="Owned", reversed=True),
+    )
 
     graph: nx.MultiDiGraph = trt.Instance(nx.MultiDiGraph, args=tuple())
 
@@ -51,48 +51,66 @@ class SysML2LabeledPropertyGraph(Base):
 
     @property
     def node_types(self):
-        return tuple(sorted({
-            node_data.get("@type")
-            for node_id, node_data in self.graph.nodes.data()
-            if node_data.get("@type", False)
-        }))
+        return tuple(sorted(self.nodes_by_type))
 
     @property
     def edge_types(self):
-        return tuple(sorted({
-            edge_type
-            for *_, edge_type in self.graph.edges
-        }))
+        return tuple(sorted(self.edges_by_type))
 
-    @trt.observe("elements_by_id")
-    def _update_elements(self, *_):
-        self.update(elements=self.elements_by_id)
+    @staticmethod
+    def _make_new_edge(data: dict, edge_mapper: dict) -> list:
+        attribute = edge_mapper["attribute"]
+        if not data.get(attribute, {}):
+            return []
+        edge_type = edge_mapper["new_type"]
+        sources = [data["@id"]]
+        targets =data[attribute]
+        if isinstance(targets, (list, tuple, set)):
+            targets = [
+                t["@id"] for t in targets
+            ]
+            sources *= len(targets)
+        elif isinstance(targets, dict):
+            targets = [targets["@id"]]
+        else:
+            raise ValueError(
+                f"Cannot process: {targets} of type: {type(targets)}."
+            )
+        if edge_mapper.get("reversed", False):
+            sources, targets = targets, sources
+        return [
+            [
+                source,                           # source
+                target,                           # target
+                edge_type,                        # edge type
+                {                                 # edge data
+                    "@id": f"_{uuid4()}",
+                    "source": [{"@id": source}],
+                    "target": [{"@id": target}],
+                    "@type": f"_{edge_type}",
+                    "relatedElement": [
+                        {"@id": source},
+                        {"@id": target},
+                    ],
+                },
+            ] for source, target in zip(sources, targets)
+        ]
 
     def update(self, elements: dict, merge=None):
         merge = self.merge if merge is None else merge
 
         new_edges = [
-            [
-                element_id,                                 # source
-                data[key]["@id"],                           # target
-                edge_type,                                  # edge type
-                {                                           # edge data
-                    "@id": f"_{uuid4()}",
-                    "source": [{"@id": element_id}],
-                    "target": [{"@id": data[key]["@id"]}],
-                    "@type": f"_{edge_type}",
-                    "relatedElement": [
-                        {"@id": element_id},
-                        {"@id": data[key]["@id"]},
-                    ],
-                },
-            ]
-            for element_id, data in elements.items()
-            for key, edge_type in self.NEW_EDGES.items()
-            if (data.get(key, {}) or {}).get("@id")
+            self._make_new_edge(data=element_data, edge_mapper=edge_mapper)
+            for element_id, element_data in elements.items()
+            for edge_mapper in self.ATTRIBUTE_TO_EDGES
         ]
+        # flatten new edges
+        new_edges = sum(new_edges, [])
 
-        filtered_keys = list(self.FILTERED_DATA_KEYS) + list(self.NEW_EDGES)
+        filtered_keys = list(self.FILTERED_DATA_KEYS) + [
+            edge_mapper["attribute"]
+            for edge_mapper in self.ATTRIBUTE_TO_EDGES
+        ]
         elements = {
             element_id: {
                 key: value
@@ -208,6 +226,61 @@ class SysML2LabeledPropertyGraph(Base):
 
         return subgraph
 
+    def get_path(self,
+            selected: (list, set, tuple),
+            directional: bool = True,
+            excluded_edge_types: (list, set, tuple) = None,
+            reversed_edge_types: (list, set, tuple) = None,
+        ):
+        """Make a subgraph with the shortest paths between two selected nodes"""
+        excluded_edge_types = excluded_edge_types or []
+        reversed_edge_types = reversed_edge_types or []
+
+        if len(selected) != 2 or not all(isinstance(n, str) for n in selected):
+            print("Can only work with two elements selected")
+            return None
+
+        if reversed_edge_types and not directional:
+            raise ValueError(
+                f"Reversing edge types: {reversed_edge_types} makes no "
+                "sense since directional is False")
+
+        edges = [
+            (edge[::-1][1:])
+            if edge[2] in reversed_edge_types
+            else [*edge[:2]] + [edge[2]]
+            for edge in self.graph.edges
+        ]
+        if excluded_edge_types:
+            edges = [
+                (source, target, type_)
+                for source, target, type_ in edges
+                if type_ not in excluded_edge_types
+            ]
+
+        if directional:
+            path_graph = nx.MultiDiGraph()
+        else:
+            path_graph = nx.MultiGraph()
+        path_graph.add_edges_from(edges)
+
+        source, target = selected
+        try:
+            nodes = set(sum(
+                map(list, nx.all_shortest_paths(path_graph, source, target)),
+                []))
+            subgraph = nx.MultiDiGraph(self.graph.subgraph(nodes))
+            if excluded_edge_types:
+                subgraph.remove_edges_from([
+                    edge
+                    for edge in subgraph.edges
+                    if edge[2] in excluded_edge_types
+                ])
+            return subgraph
+        except (nx.NetworkXError, nx.NetworkXException) as exc:
+            self.log.warning(exc)
+            return None
+
 
 class SysML2RDFGraph(Base):
     """A Resource Description Framework (RDF) Graph for SysML v2 data."""
@@ -228,7 +301,8 @@ class SysML2RDFGraph(Base):
             data = response.json()
             if "@context" not in data:
                 raise ValueError(
-                    f"Download context does not have a @context key: {list(data.keys())}"
+                    "Download context does not have a "
+                    f"@context key: {list(data.keys())}"
                 )
             self._cached_contexts[context_url] = data["@context"]
         jsonld_item["@context"].update(self._cached_contexts[context_url])

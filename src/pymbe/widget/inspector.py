@@ -5,6 +5,7 @@ import typing as ty
 from .core import BaseWidget
 
 
+@ipyw.register
 class ElementInspector(ipyw.Output, BaseWidget):
     """A widget to inspect a SysML v2 Element"""
 

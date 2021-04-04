@@ -1,4 +1,5 @@
 import ipytree as ipyt
+import ipywidgets as ipyw
 import traitlets as trt
 import typing as ty
 
@@ -37,6 +38,7 @@ class Element(ipyt.Node):
     _data: dict = trt.Dict()
 
 
+@ipyw.register
 class ContainmentTree(ipyt.Tree, BaseWidget):
     """A widget to explore the structure and data in a project."""
 
@@ -92,7 +94,15 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
         if not self.selected:
             self.deselect_nodes()
             return
-        self.select_nodes(*self.selected)
+        with self.hold_trait_notifications():
+            self.select_nodes(*self.selected)
+            nodes_to_deselect = [
+                node
+                for node in self.selected_nodes
+                if node._identifier not in self.selected
+            ]
+            if nodes_to_deselect:
+                self.deselect_nodes(*nodes_to_deselect)
 
     @trt.observe("nodes_by_id")
     def _update_tree(self, *_):

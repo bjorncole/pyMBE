@@ -45,12 +45,7 @@ class SysML2Client(Base):
     selected_project: str = trt.Unicode(allow_none=True)
     selected_commit: str = trt.Unicode(allow_none=True)
 
-    elements_by_type: ty.Dict[str, ty.Tuple[str]] = trt.Dict(
-        key_trait=trt.Unicode(),
-        value_trait=trt.Tuple(),
-    )
     projects = trt.Dict()
-    relationship_types: ty.Tuple[str] = trt.Tuple()
 
     @trt.default("_api_configuration")
     def _make_api_configuration(self):
@@ -122,12 +117,6 @@ class SysML2Client(Base):
             f"commits/{self.selected_commit}/"
             f"elements"
         ) + (f"?page[size]={self.page_size}" if self.paginate else "")
-
-    def by_id(self, id_: str) -> dict:
-        return self.elements_by_id[id_]
-
-    def name_by_id(self, id_: str) -> str:
-        return self.by_id(id_).get("name")
 
     @lru_cache
     def _retrieve_data(self, url):
