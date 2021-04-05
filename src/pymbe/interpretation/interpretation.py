@@ -1,7 +1,57 @@
 import random
 import copy
 
-import networkx as NX
+import networkx as nx
+
+from ..graph import SysML2LabeledPropertyGraph
+
+
+def retrieve_element(elements: dict, element: (dict, str), strict: bool = True) -> dict:
+    input_element = element
+    if isinstance(element, str):
+        element = elements.get(element, None)
+    elif not isinstance(element, dict):
+        raise ValueError(f"Failed to process element: '{input_element}'")
+    if strict and element is None:
+        raise ValueError(f"Failed to process element: '{input_element}'")
+    return element
+
+
+def get_metaclass(elements: dict, element: (dict, str)) -> str:
+    element = retrieve_element(elements, element)
+    return element.get("@type", None)
+
+
+def get_feature_upper_multiplicity(
+    elements: dict,
+    feature: (dict, str),
+) -> (None, int):
+    feature = retrieve_element(elements, feature)
+
+    multiplicity = elements.get((feature.get("multiplicity") or {}).get("@id"))
+    if multiplicity is None:
+        return None
+
+    upper_bound = elements.get((multiplicity.get("upperBound") or {}).get("@id"))
+    if upper_bound is None:
+        return None
+
+    return upper_bound.get("value")
+
+
+def make_banded_featuring_graph(lpg: SysML2LabeledPropertyGraph) -> nx.DiGraph:
+    return lpg.filter(
+        edge_types=(
+            "FeatureMembership",
+            "FeatureTyping",
+            "Redefinition",
+            "Superclassing",
+        ),
+        reverse_edge_types=(
+            "FeatureMembership",
+            "FeatureTyping",
+        )
+    )
 
 
 class InstanceGenerationStrategy:
@@ -133,10 +183,10 @@ class RandomGenerationStrategy(InstanceGenerationStrategy):
 
     def build_sequence_templates(self):
         sorted_feature_groups = []
-        for comp in NX.connected_components(self.session.graph_manager.part_featuring_graph.to_undirected()):
-            connected_sub = NX.subgraph(self.session.graph_manager.part_featuring_graph, list(comp))
+        for comp in nx.connected_components(self.session.graph_manager.part_featuring_graph.to_undirected()):
+            connected_sub = nx.subgraph(self.session.graph_manager.part_featuring_graph, list(comp))
             sorted_feature_groups.append(
-                [node for node in NX.topological_sort(connected_sub)]
+                [node for node in nx.topological_sort(connected_sub)]
             )
 
         return sorted_feature_groups
@@ -144,10 +194,10 @@ class RandomGenerationStrategy(InstanceGenerationStrategy):
     def build_redefinition_sequences(self):
         sorted_redefinition_groups = []
 
-        for comp in NX.connected_components(self.session.graph_manager.redefinition_graph.to_undirected()):
-            connected_sub = NX.subgraph(self.session.graph_manager.redefinition_graph, list(comp))
+        for comp in nx.connected_components(self.session.graph_manager.redefinition_graph.to_undirected()):
+            connected_sub = nx.subgraph(self.session.graph_manager.redefinition_graph, list(comp))
             sorted_redefinition_groups.append(
-                [node for node in NX.topological_sort(connected_sub)]
+                [node for node in nx.topological_sort(connected_sub)]
             )
 
         return sorted_redefinition_groups

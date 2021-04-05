@@ -266,7 +266,7 @@ class SysML2ElkDiagram(ipyw.Box):
     compound: Compound = trt.Instance(Compound, args=())
     elk_app: ipyelk.Elk = trt.Instance(ipyelk.Elk)
     elk_diagram: Diagram = trt.Instance(Diagram, args=())
-    elk_layout: ipyelk.nx.XELKTypedLayout() = trt.Instance(
+    elk_layout: ipyelk.nx.XELKTypedLayout = trt.Instance(
         ipyelk.nx.XELKTypedLayout,
         kw=dict(selected_index=None),  # makes layout start collapsed
     )
@@ -337,15 +337,6 @@ class SysML2ElkDiagram(ipyw.Box):
         elk_app.observe(self._update_selected, "selected")
         return elk_app
 
-    def _update_selected(self, *_):
-        elk_map = self.elk_map
-        self.selected = [
-            elk_map[mark.node]
-            for mark in self.elk_app.selected
-            if hasattr(mark, "node")
-            and mark.node in elk_map
-        ]
-
     @trt.default("toggle_btn")
     def _make_toggle_btn(self) -> elk_tools.ToggleCollapsedBtn:
         return elk_tools.ToggleCollapsedBtn(
@@ -387,21 +378,6 @@ class SysML2ElkDiagram(ipyw.Box):
             change.old.unobserve(self._element_type_opt_change)
             del change.old
         change.new.observe(self._element_type_opt_change, "value")
-
-    def _add_parts(self):
-        new_parts = {
-            id_: self.make_part(node_data)
-            for id_, node_data in self.graph.nodes.items()
-            if node_data
-               and id_ not in self.parts
-        }
-        self.parts.update(new_parts)
-
-        self.elk_map.update({
-            child: id_
-            for id_, part in new_parts.items()
-            for child in part.children
-        })
 
     @trt.observe("graph")
     def _update_diagram(self, change: trt.Bunch):
@@ -459,6 +435,21 @@ class SysML2ElkDiagram(ipyw.Box):
         # TODO: add properties
         return part
 
+    def _add_parts(self):
+        new_parts = {
+            id_: self.make_part(node_data)
+            for id_, node_data in self.graph.nodes.items()
+            if node_data
+               and id_ not in self.parts
+        }
+        self.parts.update(new_parts)
+
+        self.elk_map.update({
+            child: id_
+            for id_, part in new_parts.items()
+            for child in part.children
+        })
+
     def _make_command_palette(self) -> ipyw.VBox:
         titles, widgets = zip(*self.toolbar_accordion.items())
         titles = {
@@ -472,10 +463,19 @@ class SysML2ElkDiagram(ipyw.Box):
                     _titles=titles,
                     children=widgets,
                     selected_index=None,
-                )
+                ),
             ],
         )
 
     def _update_diagram_layout_(self, *_):
         self.elk_app.transformer.layouts = self.elk_layout.value
         self.elk_app.refresh()
+
+    def _update_selected(self, *_):
+        elk_map = self.elk_map
+        self.selected = [
+            elk_map[mark.node]
+            for mark in self.elk_app.selected
+            if hasattr(mark, "node")
+            and mark.node in elk_map
+        ]

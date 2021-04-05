@@ -152,6 +152,15 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
     def _on_graph_update(self, *_):
         self.diagram.graph = self.graph
 
+    @trt.observe("selected")
+    def _update_based_on_selection(self, *_):
+        selected = self.selected
+        self.filter_to_path.disabled = (
+            len(selected) != 2 or
+            not all(isinstance(n, str) for n in selected)
+        )
+        self.filter_by_dist.disabled = not selected
+
     @property
     def excluded_edge_types(self):
         included_edges = self.edge_type_selector.value
@@ -171,65 +180,6 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
         return set(self.node_types).difference((
             self.graph.nodes[nodes[0]]["@type"] for nodes in included_nodes
         ))
-
-    def _update_diagram_graph(self, button=None):
-        if button is self.filter_to_path:
-            source, target = self.selected
-            subgraph = self.get_path(
-                source=source,
-                target=target,
-                directional=self.path_directionality.value,
-                excluded_edge_types=self.excluded_edge_types,
-                excluded_node_types=self.excluded_node_types,
-                reversed_edge_types=self.edge_type_reverser.value,
-            )
-            if subgraph:
-                self.diagram.graph = subgraph
-            else:
-                self.log.warning(
-                    "Could not find path between " 
-                    f"""{" and ".join(self.selected)}, with directionality """
-                    f"""{"not" if not self.path_directionality else ""} """ 
-                    "enforced."
-                )
-            return
-        elif button is self.filter_by_dist:
-            subgraph = self.get_spanning_subgraph_from_seeds(
-                seeds=self.selected,
-                max_distance=self.max_distance.value,
-                directional=self.path_directionality.value,
-                excluded_edge_types=self.excluded_edge_types,
-                excluded_node_types=self.excluded_node_types,
-                reversed_edge_types=self.edge_type_reverser.value,
-            )
-            if subgraph:
-                self.diagram.graph = subgraph
-            else:
-                self.log.warning(
-                    "Could not find a spanning graph of distance "
-                    f"{self.max_distance.value} from these seeds: " 
-                    f"{self.selected}."
-                )
-            return
-        elif self.selected_by_type_node_ids or self.selected_by_type_edge_ids:
-            self.diagram.graph = self.filter(
-                nodes=self.selected_by_type_node_ids,
-                edges=self.selected_by_type_edge_ids,
-            )
-        else:
-            self.diagram.graph = self.graph
-
-        # TODO: look into adding a refresh, e.g.,
-        # self.diagram.elk_app.refresh()
-
-    @trt.observe("selected")
-    def _update_based_on_selection(self, *_):
-        selected = self.selected
-        self.filter_to_path.disabled = (
-            len(selected) != 2 or
-            not all(isinstance(n, str) for n in selected)
-        )
-        self.filter_by_dist.disabled = not selected
 
     @property
     def selected_by_type_node_ids(self):
@@ -254,6 +204,58 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
             for id_ in sorted(self.selected_by_type_edge_ids)
             if id_ in self.graph.edges
         )
+
+    def _update_diagram_graph(self, button=None):
+        if button is self.filter_to_path:
+            source, target = self.selected
+            subgraph = self.get_path(
+                source=source,
+                target=target,
+                directional=self.path_directionality.value,
+                excluded_edge_types=self.excluded_edge_types,
+                excluded_node_types=self.excluded_node_types,
+                reversed_edge_types=self.edge_type_reverser.value,
+            )
+            if subgraph:
+                self.diagram.graph = subgraph
+            else:
+                self.filter_to_path.disabled = True
+                self.log.warning(
+                    "Could not find path between " 
+                    f"""{" and ".join(self.selected)}, with directionality """
+                    f"""{"not" if not self.path_directionality else ""} """ 
+                    "enforced."
+                )
+            return
+        elif button is self.filter_by_dist:
+            subgraph = self.get_spanning_subgraph_from_seeds(
+                seeds=self.selected,
+                max_distance=self.max_distance.value,
+                directional=self.path_directionality.value,
+                excluded_edge_types=self.excluded_edge_types,
+                excluded_node_types=self.excluded_node_types,
+                reversed_edge_types=self.edge_type_reverser.value,
+            )
+            if subgraph:
+                self.diagram.graph = subgraph
+            else:
+                self.filter_by_dist.disabled = True
+                self.log.warning(
+                    "Could not find a spanning graph of distance "
+                    f"{self.max_distance.value} from these seeds: " 
+                    f"{self.selected}."
+                )
+            return
+        elif self.selected_by_type_node_ids or self.selected_by_type_edge_ids:
+            self.diagram.graph = self.filter(
+                nodes=self.selected_by_type_node_ids,
+                edges=self.selected_by_type_edge_ids,
+            )
+        else:
+            self.diagram.graph = self.graph
+
+        # TODO: look into adding a refresh, e.g.,
+        # self.diagram.elk_app.refresh()
 
     def _update_diagram_toolbar(self):
         # Append elements to the elk_app toolbar
