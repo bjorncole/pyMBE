@@ -62,5 +62,5 @@ Copy the URL where JupyterLab is running into your preferred browser, and you sh
 
 ## Widgets
 
-You can compose a widget as illustrated in the Widget Example notebook.
-![Simple Example](https://user-images.githubusercontent.com/1438114/113459048-50a7d380-93e2-11eb-912e-5bc327545ea8.gif)
+You can interact with the SysML v2 data using widgets, as illustrated in this example:
+![Composed Widget](https://user-images.githubusercontent.com/1438114/113528145-bb494280-958d-11eb-8d9f-5b8f7d2b1dbe.gif)
