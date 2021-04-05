@@ -15,6 +15,7 @@ from ipyelk.contrib.elements import (
     Compound,
     Edge,
     Label,
+    Mark,
     Partition,
     Record,
     element,
@@ -293,7 +294,7 @@ class SysML2ElkDiagram(ipyw.Box):
         value_trait=trt.Instance(Part),
     )
 
-    selected: tuple = trt.Tuple()
+    selected: ty.Tuple[str] = trt.Tuple()
 
     style: ty.Dict[str, dict] = trt.Dict(
         kw={
@@ -388,6 +389,8 @@ class SysML2ElkDiagram(ipyw.Box):
         self._add_parts()
         parts = self.parts
         diagram = Diagram()
+        # for id_, part in self.parts.items():
+        #     diagram.add_child(child=part, key=id_)
         for (source, target, type_), edge in self.graph.edges.items():
             if source not in parts:
                 self.log.warn(
@@ -445,9 +448,8 @@ class SysML2ElkDiagram(ipyw.Box):
         self.parts.update(new_parts)
 
         self.elk_map.update({
-            child: id_
+            part: id_
             for id_, part in new_parts.items()
-            for child in part.children
         })
 
     def _make_command_palette(self) -> ipyw.VBox:
@@ -472,10 +474,13 @@ class SysML2ElkDiagram(ipyw.Box):
         self.elk_app.refresh()
 
     def _update_selected(self, *_):
-        elk_map = self.elk_map
+        _, hierarchy = self.elk_transformer.source
+
+        self.log.warn(f"Looking for {len(self.elk_app.selected)} items!")
+
         self.selected = [
-            elk_map[mark.node]
-            for mark in self.elk_app.selected
-            if hasattr(mark, "node")
-            and mark.node in elk_map
+            next(hierarchy.predecessors(item)).node.data["@id"]
+            for item in self.elk_app.selected
+            if isinstance(item, Mark)
+            and isinstance(item.node, Compartment)
         ]

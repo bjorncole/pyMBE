@@ -100,12 +100,12 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
     def _update_diagram_observers(self, *_):
         # TODO: add back in after resolving issue with ipyelk indexing
         pass
-        # if self.selector_link:
-        #     self.selector_link.unlink()
-        # self.selector_link = trt.link(
-        #     (self, "selected"),
-        #     (self.diagram.elk_app.diagram, "selected"),
-        # )
+        if self.selector_link:
+            self.selector_link.unlink()
+        self.selector_link = trt.link(
+            (self, "selected"),
+            (self.diagram, "selected"),
+        )
 
     @trt.observe("nodes_by_type")
     def _update_node_type_selector_options(self, *_):
