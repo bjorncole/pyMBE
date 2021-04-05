@@ -476,8 +476,6 @@ class SysML2ElkDiagram(ipyw.Box):
     def _update_selected(self, *_):
         _, hierarchy = self.elk_transformer.source
 
-        self.log.warn(f"Looking for {len(self.elk_app.selected)} items!")
-
         self.selected = [
             next(hierarchy.predecessors(item)).node.data["@id"]
             for item in self.elk_app.selected
