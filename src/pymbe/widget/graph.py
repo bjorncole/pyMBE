@@ -27,6 +27,7 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
         ipyw.SelectMultiple,
         kw=dict(rows=10),
     )
+    max_type_selector_rows: int = trt.Int(default_value=10, min=5)
     update_diagram: ipyw.Button = trt.Instance(ipyw.Button)
     filter_to_path: ipyw.Button = trt.Instance(ipyw.Button)
     path_directionality: ipyw.Checkbox = trt.Instance(
@@ -106,52 +107,80 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
         #     (self.diagram.elk_app.diagram, "selected"),
         # )
 
-    @trt.observe("graph")
-    def _updated_type_selector_options(self, *_):
-        nodes_by_type = {
-            node_type: [
-                node
-                for node in self.nodes
-                if self.nodes[node].get("@type", None) == node_type
-            ]
-            for node_type in self.node_types
-        }
+    @trt.observe("nodes_by_type")
+    def _update_node_type_selector_options(self, *_):
         self.node_type_selector.options = {
             f"{node_type} [{len(nodes)}]": nodes
-            for node_type, nodes in sorted(nodes_by_type.items())
+            for node_type, nodes in sorted(self.nodes_by_type.items())
         }
+        self._update_rows_in_multiselect(
+            selectors=[self.node_type_selector],
+        )
 
-        edges_by_type = {
-            an_edge_type: [
-                (source, target, edge_type)
-                for source, target, edge_type in self.edges
-                if edge_type == an_edge_type
-            ]
-            for an_edge_type in self.edge_types
-        }
-
+    @trt.observe("edges_by_type")
+    def _update_edge_type_selector_options(self, *_):
         self.edge_type_selector.options = {
             f"{edge_type} [{len(edges)}]": edges
-            for edge_type, edges in sorted(edges_by_type.items())
+            for edge_type, edges in sorted(self.edges_by_type.items())
             if edge_type in self.edge_types
         }
 
         self.edge_type_reverser.options = self.edge_types
+        self._update_rows_in_multiselect(
+            selectors=[self.edge_type_selector, self.edge_type_reverser],
+        )
+
+    @trt.observe("max_type_selector_rows")
+    def _update_rows_in_multiselect(
+        self,
+        *_,
+        selectors: list = None,
+    ):
+        if not selectors:
+            selectors = [
+                getattr(self, item)
+                for item in dir(self)
+                if isinstance(getattr(self, item), ipyw.SelectMultiple)
+            ]
+        for selector in selectors:
+            selector.rows = min(
+                self.max_type_selector_rows,
+                len(selector.options)
+            )
+
+    @trt.observe("graph")
+    def _on_graph_update(self, *_):
         self.diagram.graph = self.graph
+
+    @property
+    def excluded_edge_types(self):
+        included_edges = self.edge_type_selector.value
+        if not included_edges:
+            return []
+
+        return set(self.edge_types).difference((
+                edges[0][2] for edges in included_edges
+            ))
+
+    @property
+    def excluded_node_types(self):
+        included_nodes = self.node_type_selector.value
+        if not included_nodes:
+            return []
+
+        return set(self.node_types).difference((
+            self.graph.nodes[nodes[0]]["@type"] for nodes in included_nodes
+        ))
 
     def _update_diagram_graph(self, button=None):
         if button is self.filter_to_path:
-            included_edges = self.edge_type_selector.value
-            if included_edges:
-                excluded_edge_types = set(self.edge_types).difference((
-                    edges[0][2] for edges in included_edges
-                ))
-            else:
-                excluded_edge_types = []
+            source, target = self.selected
             subgraph = self.get_path(
-                selected=self.selected,
+                source=source,
+                target=target,
                 directional=self.path_directionality.value,
-                excluded_edge_types=excluded_edge_types,
+                excluded_edge_types=self.excluded_edge_types,
+                excluded_node_types=self.excluded_node_types,
                 reversed_edge_types=self.edge_type_reverser.value,
             )
             if subgraph:
@@ -165,12 +194,30 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
                 )
             return
         elif button is self.filter_by_dist:
-            raise NotImplementedError("Need to implement this!")
-
-        self.diagram.graph = self.filter(
-            nodes=self.selected_by_type_node_ids,
-            edges=self.selected_by_type_edge_ids,
-        )
+            subgraph = self.get_spanning_subgraph_from_seeds(
+                seeds=self.selected,
+                max_distance=self.max_distance.value,
+                directional=self.path_directionality.value,
+                excluded_edge_types=self.excluded_edge_types,
+                excluded_node_types=self.excluded_node_types,
+                reversed_edge_types=self.edge_type_reverser.value,
+            )
+            if subgraph:
+                self.diagram.graph = subgraph
+            else:
+                self.log.warning(
+                    "Could not find a spanning graph of distance "
+                    f"{self.max_distance.value} from these seeds: " 
+                    f"{self.selected}."
+                )
+            return
+        elif self.selected_by_type_node_ids or self.selected_by_type_edge_ids:
+            self.diagram.graph = self.filter(
+                nodes=self.selected_by_type_node_ids,
+                edges=self.selected_by_type_edge_ids,
+            )
+        else:
+            self.diagram.graph = self.graph
 
         # TODO: look into adding a refresh, e.g.,
         # self.diagram.elk_app.refresh()
@@ -212,22 +259,25 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
         # Append elements to the elk_app toolbar
         diagram = self.diagram
         accordion = {**diagram.toolbar_accordion}
-        accordion.update({
-            "Nodes": ipyw.VBox([
-                ipyw.Label("Select by Type:"),
+
+        sub_accordion = ipyw.Accordion(
+            _titles={0: "Node Types", 1: "Edge Types"},
+            children=[
                 self.node_type_selector,
-            ]),
-            "Edges": ipyw.VBox([
-                ipyw.Label("Select by Type:"),
                 self.edge_type_selector,
-                ipyw.Label("Reverse by Type:"),
-                self.edge_type_reverser,
-            ]),
+            ],
+            selected_index=None,
+        )
+        accordion.update({
+            # TODO: enable this after the functionality is complete
+            # "Reverse Edges": self.edge_type_reverser,
             "Filter": ipyw.VBox([
+                self.path_directionality,
                 ipyw.Label("Shortest Path:"),
-                ipyw.HBox([self.filter_to_path, self.path_directionality]),
+                ipyw.HBox([self.filter_to_path, ]),
                 ipyw.Label("Distance:"),
                 ipyw.HBox([self.filter_by_dist, self.max_distance]),
+                sub_accordion,
             ]),
         })
 

@@ -22,6 +22,12 @@ class SysML2LabeledPropertyGraph(Base):
 
     merge: bool = trt.Bool(default=False)
 
+    nodes: dict = trt.Dict()
+    edges: dict = trt.Dict()
+
+    node_types: tuple = trt.Tuple()
+    edge_types: tuple = trt.Tuple()
+
     nodes_by_type: dict = trt.Dict()
     edges_by_type: dict = trt.Dict()
 
@@ -35,22 +41,6 @@ class SysML2LabeledPropertyGraph(Base):
 
     def __getitem__(self, *args):
         return self.graph.__getitem__(*args)
-
-    @property
-    def nodes(self):
-        return dict(self.graph.nodes)
-
-    @property
-    def edges(self):
-        return dict(self.graph.edges)
-
-    @property
-    def node_types(self):
-        return tuple(sorted(self.nodes_by_type))
-
-    @property
-    def edge_types(self):
-        return tuple(sorted(self.edges_by_type))
 
     @staticmethod
     def _make_new_edge(data: dict, edge_mapper: dict) -> list:
@@ -153,7 +143,40 @@ class SysML2LabeledPropertyGraph(Base):
             for relation in relationships
         ] + new_edges)
 
-        self.graph = graph
+        with self.hold_trait_notifications():
+            self.nodes = dict(graph.nodes)
+            self.edges = dict(graph.edges)
+
+            self.node_types = tuple(sorted({
+                node["@type"]
+                for node in self.nodes.values()
+                if "@type" in node
+            }))
+            self.edge_types = tuple(sorted({
+                edge["@type"]
+                for edge in self.edges.values()
+                if "@type" in edge
+            }))
+
+            self.nodes_by_type = {
+                node_type: [
+                    node
+                    for node in graph.nodes
+                    if graph.nodes[node].get("@type", None) == node_type
+                ]
+                for node_type in self.node_types
+            }
+
+            self.edges_by_type = {
+                edge_type: [
+                    edge
+                    for edge in graph.edges
+                    if edge[2] == edge_type
+                ]
+                for edge_type in self.edge_types
+            }
+
+            self.graph = graph
 
     def filter(
             self,
@@ -221,30 +244,36 @@ class SysML2LabeledPropertyGraph(Base):
 
         return subgraph
 
-    def get_path(self,
-            selected: (list, set, tuple),
-            directional: bool = True,
-            excluded_edge_types: (list, set, tuple) = None,
-            reversed_edge_types: (list, set, tuple) = None,
-        ):
-        """Make a subgraph with the shortest paths between two selected nodes"""
+    def _get_subgraph(self,
+        directional: bool = True,
+        excluded_edge_types: (list, set, tuple) = None,
+        excluded_node_types: (list, set, tuple) = None,
+        reversed_edge_types: (list, set, tuple) = None,
+    ):
         excluded_edge_types = excluded_edge_types or []
+        excluded_node_types = excluded_node_types or []
         reversed_edge_types = reversed_edge_types or []
-
-        if len(selected) != 2 or not all(isinstance(n, str) for n in selected):
-            print("Can only work with two elements selected")
-            return None
 
         if reversed_edge_types and not directional:
             raise ValueError(
                 f"Reversing edge types: {reversed_edge_types} makes no "
                 "sense since directional is False")
 
+        included_nodes = sum(
+            [
+                nodes
+                for node_type, nodes in self.nodes_by_type.items()
+                if node_type not in excluded_node_types
+            ],
+            [],
+        )
+        graph = self.graph.__class__(self.graph.subgraph(included_nodes))
+
         edges = [
             (edge[::-1][1:])
             if edge[2] in reversed_edge_types
             else [*edge[:2]] + [edge[2]]
-            for edge in self.graph.edges
+            for edge in graph.edges
         ]
         if excluded_edge_types:
             edges = [
@@ -254,24 +283,98 @@ class SysML2LabeledPropertyGraph(Base):
             ]
 
         if directional:
-            path_graph = nx.MultiDiGraph()
+            subgraph = nx.MultiDiGraph()
         else:
-            path_graph = nx.MultiGraph()
-        path_graph.add_edges_from(edges)
+            subgraph = nx.MultiGraph()
+        subgraph.add_edges_from(edges)
+        return subgraph
 
-        source, target = selected
+    def _filter_subgraph(
+        self,
+        subgraph: nx.Graph,
+        excluded_edge_types: (list, set, tuple) = None,
+        excluded_node_types: (list, set, tuple) = None,
+    ):
+        return subgraph
+
+    def get_path(self,
+            source: str,
+            target: str,
+            directional: bool = True,
+            excluded_edge_types: (list, set, tuple) = None,
+            excluded_node_types: (list, set, tuple) = None,
+            reversed_edge_types: (list, set, tuple) = None,
+        ):
+        """Make a subgraph with the shortest paths between two selected nodes"""
+
+        path_graph = self._get_subgraph(
+            directional=directional,
+            excluded_edge_types=excluded_edge_types,
+            excluded_node_types=excluded_node_types,
+            reversed_edge_types=reversed_edge_types,
+        )
+
         try:
             nodes = set(sum(
                 map(list, nx.all_shortest_paths(path_graph, source, target)),
                 []))
             subgraph = nx.MultiDiGraph(self.graph.subgraph(nodes))
-            if excluded_edge_types:
-                subgraph.remove_edges_from([
-                    edge
-                    for edge in subgraph.edges
-                    if edge[2] in excluded_edge_types
-                ])
             return subgraph
         except (nx.NetworkXError, nx.NetworkXException) as exc:
             self.log.warning(exc)
             return None
+
+    def get_spanning_subgraph_from_seeds(
+        self,
+        seeds: (list, set, tuple),
+        max_distance: int = 2,
+        directional: bool = True,
+        excluded_edge_types: (list, set, tuple) = None,
+        excluded_node_types: (list, set, tuple) = None,
+        reversed_edge_types: (list, set, tuple) = None,
+    ):
+        graph = self._get_subgraph(
+            directional=directional,
+            excluded_edge_types=excluded_edge_types,
+            excluded_node_types=excluded_node_types,
+            reversed_edge_types=reversed_edge_types,
+        )
+
+        seed_nodes = {
+            id_: max_distance
+            for id_ in seeds
+            if id_ in graph.nodes
+        }
+        seed_elements = [
+            self.elements_by_id[id_]
+            for id_ in seeds
+            if id_ not in seed_nodes
+            and id_ in self.elements_by_id
+        ]
+        seed_edges = [
+            [element["relatedElement"][0]["@id"],
+             element["relatedElement"][1]["@id"]]
+            for element in seed_elements
+            if len(element.get("relatedElement")) == 2
+        ]
+
+        distances = {
+            node: max_distance - 1
+            for node in set(sum(seed_edges, []))
+            if node in graph
+        }
+        distances.update(seed_nodes)
+
+        max_iter = 100
+        while sum(distances.values()) > 0 and max_iter > 0:
+            max_iter -= 1
+            for node_id, distance in tuple(distances.items()):
+                if distance < 1:
+                    continue
+                for neighbor in graph.neighbors(node_id):
+                    distances[neighbor] = distances.get(neighbor, distance - 1)
+                distances[node_id] -= 1
+
+        nodes = tuple(distances)
+
+        return nx.MultiDiGraph(self.graph.subgraph(nodes))
