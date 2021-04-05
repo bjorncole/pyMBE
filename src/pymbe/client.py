@@ -11,6 +11,33 @@ import typing as ty
 from .core import Base
 
 
+TIMEZONES = {
+    "EDT": "UTC-4",
+    "EST": "UTC-5",
+
+    "CDT": "UTC-5",
+    "CST": "UTC-6",
+
+    "MDT": "UTC-6",
+    "MST": "UTC-7",
+
+    "PDT": "UTC-7",
+    "PST": "UTC-8",
+
+    "AKDT": "UTC-8",
+    "AKST": "UTC-9",
+
+    "HDT": "UTC-9",
+    "HST": "UTC-10",
+
+    "AoE": "UTC-12",
+    "SST": "UTC-11",
+    "AST": "UTC-4",
+    "ChST": "UTC+10",
+    "WAKT": "UTC+12",
+}
+
+
 class SysML2Client(Base):
     """
         A traitleted SysML v2 API Client.
@@ -75,7 +102,8 @@ class SysML2Client(Base):
         return {
             project.id: dict(
                 created=parser.parse(
-                    " ".join(project.name.split()[-6:])
+                    " ".join(project.name.split()[-6:]),
+                    tzinfos=TIMEZONES,
                 ).astimezone(timezone.utc),
                 full_name=project.name,
                 name=" ".join(project.name.split()[:-6]),
