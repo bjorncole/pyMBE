@@ -416,6 +416,12 @@ class SysML2ElkDiagram(ipyw.Box):
         self.elk_app.style = self.elk_diagram.style
         self.elk_app.diagram.defs = self.elk_diagram.defs
 
+    # TODO: add reverse selection
+    # @trt.observe("selected")
+    # def _update_diagram_selections(self, *_):
+    #     for selected_id in self.selected:
+    #         node_selected = self.parts.get(selected_id)
+
     @staticmethod
     def make_part(data: dict, width=220):
         value = data.get("value", None)
@@ -471,9 +477,7 @@ class SysML2ElkDiagram(ipyw.Box):
     def _process_selected(self, item, hierarchy):
         id_ = None
         if isinstance(item, ipyelk.transform.Edge):
-            print("Parsing Edge")
             id_ = item.data.get("properties", {}).get("data", {}).get("@id")
-            print(f"Parsed: {id_}")
         elif isinstance(getattr(item, "node", None), Compartment):
             id_ = next(hierarchy.predecessors(item)).node.data["@id"]
         if id_ is None:
@@ -485,7 +489,7 @@ class SysML2ElkDiagram(ipyw.Box):
 
         diagram_selections = self.elk_app.selected
 
-        if not diagram_selections:
+        if not diagram_selections and self.selected:
             self.selected = []
             return
 
@@ -493,9 +497,9 @@ class SysML2ElkDiagram(ipyw.Box):
             self._process_selected(item, hierarchy)
             for item in diagram_selections
         ]
-
-        self.selected = [
-            item
-            for item in selected
-            if item is not None
-        ]
+        if set(selected).difference(set(self.selected)):
+            self.selected = [
+                item
+                for item in selected
+                if item is not None
+            ]
