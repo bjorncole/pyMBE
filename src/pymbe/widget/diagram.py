@@ -117,89 +117,89 @@ class Relation(Edge):
     display_multiplicity: bool = True
     display_usage: bool = True
 
-    def __post_init__(self, *args, **kwargs):
-        super().__post_init__(*args, **kwargs)
-        if self.labels:
-            return
+    # def __post_init__(self, *args, **kwargs):
+    #     super().__post_init__(*args, **kwargs)
+        # if self.labels:
+        #     return
 
-        if self.display_kind and self.kind:
-            self.labels += [ElkLabel(
-                text=f"«{self.kind}»",
-                id=f"{self.id}_label",
-            )]
+        # if self.display_kind and self.kind:
+        #     self.labels += [ElkLabel(
+        #         text=f"«{self.kind}»",
+        #         id=f"{self.identifier}_label",
+        #     )]
 
-        if self.display_multiplicity and self.multiplicity:
-            mid = "" if None in self.multiplicity else ".."
+        # if self.display_multiplicity and self.multiplicity:
+        #     mid = "" if None in self.multiplicity else ".."
 
-            lower, upper = self.multiplicity
+        #     lower, upper = self.multiplicity
 
-            lower = self.multiplicity[0] or "0"
-            upper = self.multiplicity[1] or "*"
-            self.labels += [ElkLabel(
-                id=f"{self.id}_label_tail",
-                text=f"{lower}{mid}{upper}",
-                layoutOptions={
-                    "org.eclipse.elk.edgeLabels.placement": "TAIL",
-                },
-            )]
+        #     lower = self.multiplicity[0] or "0"
+        #     upper = self.multiplicity[1] or "*"
+        #     self.labels += [ElkLabel(
+        #         id=f"{self.id}_label_tail",
+        #         text=f"{lower}{mid}{upper}",
+        #         layoutOptions={
+        #             "org.eclipse.elk.edgeLabels.placement": "TAIL",
+        #         },
+        #     )]
 
-        if self.display_usage and self.usage:
-            self.labels += [ElkLabel(
-                id=f"{self.id}_label_tail",
-                text=f"{{{self.usage}}}",
-                layoutOptions={
-                    "org.eclipse.elk.edgeLabels.placement": "HEAD",
-                },
-            )]
+        # if self.display_usage and self.usage:
+        #     self.labels += [ElkLabel(
+        #         id=f"{self.id}_label_tail",
+        #         text=f"{{{self.usage}}}",
+        #         layoutOptions={
+        #             "org.eclipse.elk.edgeLabels.placement": "HEAD",
+        #         },
+        #     )]
 
 
 @element
-class Association(Edge):
+class Association(Relation):
     shape_end: ty.ClassVar[str] = "association"
 
 
 @element
-class Composition(Edge):
+class Composition(Relation):
     shape_start: ty.ClassVar[str] = "composition"
 
 
 @element
-class Aggregation(Edge):
+class Aggregation(Relation):
     shape_start: ty.ClassVar[str] = "aggregation"
 
 
 @element
-class Containment(Edge):
+class Containment(Relation):
     shape_start: ty.ClassVar[str] = "containment"
 
 
 @element
-class OwnedBy(Edge):
+class OwnedBy(Relation):
     shape_end: ty.ClassVar[str] = "containment"
 
 
 @element
-class DirectedAssociation(Edge):
+class DirectedAssociation(Relation):
     shape_end: ty.ClassVar[str] = "directed_association"
 
 
 @element
-class Generalization(Edge):
+class Generalization(Relation):
     shape_end: ty.ClassVar[str] = "generalization"
 
 
 @element
-class Subsetting(Edge):
+class Subsetting(Relation):
     shape_end: ty.ClassVar[str] = "subsetting"
 
 
 @element
-class FeatureTyping(Edge):
+class FeatureTyping(Relation):
     shape_end: ty.ClassVar[str] = "feature_typing"
 
 
 @element
-class Redefinition(Edge):
+class Redefinition(Relation):
     shape_end: ty.ClassVar[str] = "redefinition"
 
 
@@ -270,11 +270,6 @@ class SysML2ElkDiagram(ipyw.Box):
     elk_layout: ipyelk.nx.XELKTypedLayout = trt.Instance(
         ipyelk.nx.XELKTypedLayout,
         kw=dict(selected_index=None),  # makes layout start collapsed
-    )
-    elk_map: dict = trt.Dict(
-        key_trait=trt.Instance(Compartment),
-        value_trait=trt.Unicode(),
-        kw={},
     )
     elk_transformer: ipyelk.nx.XELK = trt.Instance(ipyelk.nx.XELK)
     graph: nx.Graph = trt.Instance(nx.Graph, args=())
@@ -386,11 +381,14 @@ class SysML2ElkDiagram(ipyw.Box):
             old = change.old
             del old
 
-        self._add_parts()
-        parts = self.parts
         diagram = Diagram()
-        # for id_, part in self.parts.items():
-        #     diagram.add_child(child=part, key=id_)
+        parts = self._add_parts()
+
+        # TODO: add ownership, maybe this should be configurable?
+        # for id_, part in parts.items():
+        #     owner = self.parts.get((part.data.get("owner") or {}).get("@id"), diagram)
+        #     owner.add_child(child=part, key=id_)
+
         for (source, target, type_), edge in self.graph.edges.items():
             if source not in parts:
                 self.log.warn(
@@ -407,8 +405,8 @@ class SysML2ElkDiagram(ipyw.Box):
                 target=parts[target],
                 cls=EDGE_MAP.get(type_, DEFAULT_EDGE),
             )
+            new_edge.properties["data"] = edge
             new_edge.labels.append(Label(text=f"«{type_}»"))
-            new_edge.id = edge["@id"]
         diagram.defs = {**diagram.defs}
         self.elk_diagram = diagram
 
@@ -439,18 +437,15 @@ class SysML2ElkDiagram(ipyw.Box):
         return part
 
     def _add_parts(self):
+        old_parts = self.parts
         new_parts = {
             id_: self.make_part(node_data)
             for id_, node_data in self.graph.nodes.items()
             if node_data
-               and id_ not in self.parts
+            and id_ not in old_parts
         }
-        self.parts.update(new_parts)
-
-        self.elk_map.update({
-            part: id_
-            for id_, part in new_parts.items()
-        })
+        old_parts.update(new_parts)
+        return old_parts
 
     def _make_command_palette(self) -> ipyw.VBox:
         titles, widgets = zip(*self.toolbar_accordion.items())
@@ -473,12 +468,34 @@ class SysML2ElkDiagram(ipyw.Box):
         self.elk_app.transformer.layouts = self.elk_layout.value
         self.elk_app.refresh()
 
+    def _process_selected(self, item, hierarchy):
+        id_ = None
+        if isinstance(item, ipyelk.transform.Edge):
+            print("Parsing Edge")
+            id_ = item.data.get("properties", {}).get("data", {}).get("@id")
+            print(f"Parsed: {id_}")
+        elif isinstance(getattr(item, "node", None), Compartment):
+            id_ = next(hierarchy.predecessors(item)).node.data["@id"]
+        if id_ is None:
+            self.log.debug(f"Could not parse: {item}")
+        return id_
+
     def _update_selected(self, *_):
         _, hierarchy = self.elk_transformer.source
 
+        diagram_selections = self.elk_app.selected
+
+        if not diagram_selections:
+            self.selected = []
+            return
+
+        selected = [
+            self._process_selected(item, hierarchy)
+            for item in diagram_selections
+        ]
+
         self.selected = [
-            next(hierarchy.predecessors(item)).node.data["@id"]
-            for item in self.elk_app.selected
-            if isinstance(item, Mark)
-            and isinstance(item.node, Compartment)
+            item
+            for item in selected
+            if item is not None
         ]

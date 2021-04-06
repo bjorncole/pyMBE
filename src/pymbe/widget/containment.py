@@ -71,7 +71,7 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
         if not self.selected:
             self.deselect_nodes()
             return
-        with self.hold_trait_notifications():
+        with self.hold_sync():
             self.select_nodes(*self.selected)
             nodes_to_deselect = [
                 node
@@ -118,6 +118,7 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
             id_: node
             for id_, node in nodes.items()
             if node.nodes
+            or node._owner
             or node._data.get("name", None)
         }
         # Sort the child nodes
@@ -130,7 +131,7 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
 
     def select_nodes(self, *nodes: str):
         """Select a list of nodes"""
-        with self.hold_trait_notifications():
+        with self.hold_sync():
             for node_id in nodes:
                 node = self.nodes_by_id.get(node_id, None)
                 if node is None:
@@ -144,7 +145,7 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
             for node_id, node in self.nodes_by_id.items()
             if node.selected
         ]
-        with self.hold_trait_notifications():
+        with self.hold_sync():
             for node in nodes:
                 node.selected = False
 

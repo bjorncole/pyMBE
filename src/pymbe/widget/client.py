@@ -46,6 +46,7 @@ class SysML2ClientWidget(SysML2Client, ipyw.GridspecLayout):
     def _set_layout(self):
         layout = self.layout
         layout.height = "auto"
+        layout.overflow_y = "hidden"
         layout.width = "auto"
 
         idx = self.n_columns - 1
@@ -66,10 +67,12 @@ class SysML2ClientWidget(SysML2Client, ipyw.GridspecLayout):
         ):
             widget.layout.height="95%"
             widget.layout.width="auto"
-            widget.layout.min_height=None
-            widget.layout.max_height=None
-            widget.layout.max_width=None
-            widget.layout.min_width=None
+            widget.layout.overflow_y = "hidden"
+            widget.layout.overflow_x = "hidden"
+            widget.layout.min_height = None
+            widget.layout.max_height = None
+            widget.layout.max_width = None
+            widget.layout.min_width = None
 
         self.layout = layout
 
