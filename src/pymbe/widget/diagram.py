@@ -15,13 +15,11 @@ from ipyelk.contrib.elements import (
     Compound,
     Edge,
     Label,
-    Mark,
     Partition,
     Record,
     element,
     elements,
 )
-from ipyelk.diagram.elk_model import ElkLabel
 from ipyelk.diagram.symbol import Def
 from ipyelk.tools import tools as elk_tools
 
@@ -258,6 +256,20 @@ class PartContainer(Partition):
     }
 
 
+class CenterButton(elk_tools.ToolButton):
+
+    def handler(self, *_):
+        diagram = self.app.diagram
+        diagram.center(retain_zoom=True)
+
+
+class FitButton(elk_tools.ToolButton):
+
+    def handler(self, *_):
+        diagram = self.app.diagram
+        diagram.fit(padding=50)
+
+
 @ipyw.register
 class SysML2ElkDiagram(ipyw.Box):
     """A SysML v2 Diagram"""
@@ -271,10 +283,8 @@ class SysML2ElkDiagram(ipyw.Box):
     )
     graph: nx.Graph = trt.Instance(nx.Graph, args=())
 
-    fit_btn: elk_tools.FitBtn = trt.Instance(elk_tools.FitBtn)
-    toggle_btn: elk_tools.ToggleCollapsedBtn = trt.Instance(
-        elk_tools.ToggleCollapsedBtn,
-    )
+    fit: FitButton = trt.Instance(FitButton)
+    center: CenterButton = trt.Instance(CenterButton)
     toolbar_buttons: list = trt.List(trait=trt.Instance(ipyw.Button))
     toolbar_accordion: ty.Dict[str, ipyw.Widget] = trt.Dict(
         key_trait=trt.Unicode(),
@@ -326,19 +336,19 @@ class SysML2ElkDiagram(ipyw.Box):
         elk_app.observe(self._update_selected, "selected")
         return elk_app
 
-    @trt.default("toggle_btn")
-    def _make_toggle_btn(self) -> elk_tools.ToggleCollapsedBtn:
-        return elk_tools.ToggleCollapsedBtn(
+    @trt.default("center")
+    def _make_center_btn(self) -> CenterButton:
+        return CenterButton(
             app=self.elk_app,
             description="",
             icon="compress",
             layout=dict(height="40px", width="40px"),
-            tooltip="Collapse/Expand the selected elements",
+            tooltip="Center Diagram",
         )
 
-    @trt.default("fit_btn")
-    def _make_fit_btn(self) -> elk_tools.FitBtn:
-        return elk_tools.FitBtn(
+    @trt.default("fit")
+    def _make_fit_btn(self) -> FitButton:
+        return FitButton(
             app=self.elk_app,
             description="",
             icon="expand-arrows-alt",
@@ -348,7 +358,7 @@ class SysML2ElkDiagram(ipyw.Box):
 
     @trt.default("toolbar_buttons")
     def _make_toolbar_buttons(self):
-        return [self.fit_btn, self.toggle_btn]
+        return [self.fit_btn, self.center_btn]
 
     @trt.default("toolbar_accordion")
     def _make_toolbar_accordion(self):

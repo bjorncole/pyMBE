@@ -27,8 +27,11 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
         ipyw.SelectMultiple,
         kw=dict(rows=10),
     )
+
     max_type_selector_rows: int = trt.Int(default_value=10, min=5)
+
     update_diagram: ipyw.Button = trt.Instance(ipyw.Button)
+
     filter_to_path: ipyw.Button = trt.Instance(ipyw.Button)
     path_directionality: ipyw.Checkbox = trt.Instance(
         ipyw.Checkbox,
@@ -248,10 +251,10 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
                     f"{self.max_distance.value} from these seeds: " 
                     f"{self.selected}."
                 )
-        self.diagram.graph = new_graph
 
-        # TODO: look into adding a refresh, e.g.,
+        self.diagram.graph = new_graph
         # self.diagram.elk_app.refresh()
+        self.diagram.elk_app.diagram.fit()
 
     def _update_diagram_toolbar(self):
         # Append elements to the elk_app toolbar

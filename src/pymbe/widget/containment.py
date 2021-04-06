@@ -61,18 +61,23 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
 
     @trt.observe("selected_nodes")
     def _update_selected(self, *_):
-        self.selected = [
-            node._identifier
-            for node in self.selected_nodes
-        ]
+        selected = {node._identifier for node in self.selected_nodes}
+        if selected.symmetric_difference(self.selected):
+            self.selected = tuple(selected)
 
     @trt.observe("selected")
     def _update_selected_elements(self, *_):
-        if not self.selected:
-            self.deselect_nodes()
+        nodes_selected = {
+            node._identifier
+            for node in self.selected_nodes
+        }
+        if not nodes_selected.symmetric_difference(self.selected):
             return
-        with self.hold_sync():
-            self.select_nodes(*self.selected)
+        with self.hold_trait_notifications():
+            if not self.selected:
+                self.deselect_nodes()
+                return
+
             nodes_to_deselect = [
                 node
                 for node in self.selected_nodes
@@ -80,6 +85,8 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
             ]
             if nodes_to_deselect:
                 self.deselect_nodes(*nodes_to_deselect)
+
+            self.select_nodes(*self.selected)
 
     @trt.observe("nodes_by_id")
     def _update_tree(self, *_):
@@ -131,23 +138,21 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
 
     def select_nodes(self, *nodes: str):
         """Select a list of nodes"""
-        with self.hold_sync():
-            for node_id in nodes:
-                node = self.nodes_by_id.get(node_id, None)
-                if node is None:
-                    continue
+        for node_id in nodes:
+            node = self.nodes_by_id.get(node_id, None)
+            if node:
                 node.selected = True
 
     def deselect_nodes(self, *nodes: str):
         """Deselect a node, or deselect all if none is specified."""
-        nodes = nodes or [
-            node
-            for node_id, node in self.nodes_by_id.items()
-            if node.selected
-        ]
-        with self.hold_sync():
-            for node in nodes:
-                node.selected = False
+        if not nodes:
+            nodes = [
+                node
+                for node_id, node in self.nodes_by_id.items()
+                if node.selected
+            ]
+        for node in nodes:
+            node.selected = False
 
     def _clear_tree(self):
         for node in self.nodes:
