@@ -216,10 +216,8 @@ DEFAULT_EDGE = DirectedAssociation
 
 
 @element
-class Diagram(Partition):
-    """An elk diagram."""
-
-    # TODO flesh out ideas of encapsulating diagram defs / styles / elements
+class PartContainer(Partition):
+    """A container for the parts diagram."""
 
     default_edge: ty.Type[Edge] = field(default=DirectedAssociation)
 
@@ -265,13 +263,12 @@ class SysML2ElkDiagram(ipyw.Box):
     """A SysML v2 Diagram"""
 
     compound: Compound = trt.Instance(Compound, args=())
+    container: PartContainer = trt.Instance(PartContainer, args=())
     elk_app: ipyelk.Elk = trt.Instance(ipyelk.Elk)
-    elk_diagram: Diagram = trt.Instance(Diagram, args=())
     elk_layout: ipyelk.nx.XELKTypedLayout = trt.Instance(
         ipyelk.nx.XELKTypedLayout,
         kw=dict(selected_index=None),  # makes layout start collapsed
     )
-    elk_transformer: ipyelk.nx.XELK = trt.Instance(ipyelk.nx.XELK)
     graph: nx.Graph = trt.Instance(nx.Graph, args=())
 
     fit_btn: elk_tools.FitBtn = trt.Instance(elk_tools.FitBtn)
@@ -311,18 +308,14 @@ class SysML2ElkDiagram(ipyw.Box):
         self._update_toolbar()
         return [self.elk_app]
 
-    @trt.default("elk_transformer")
-    def _make_transformer(self) -> ipyelk.nx.XELK:
-        return ipyelk.nx.XELK(
-            source=(self.graph, None),
-            label_key="labels",
-            layouts=self.elk_layout.value,
-        )
-
     @trt.default("elk_app")
     def _make_app(self) -> ipyelk.Elk:
         elk_app = ipyelk.Elk(
-            transformer=self.elk_transformer,
+            transformer=ipyelk.nx.XELK(
+                source=(self.graph, None),
+                label_key="labels",
+                layouts=self.elk_layout.value,
+            ),
             style=self.style,
             layout=dict(
                 flex="1",
@@ -381,12 +374,12 @@ class SysML2ElkDiagram(ipyw.Box):
             old = change.old
             del old
 
-        diagram = Diagram()
+        container = PartContainer()
         parts = self._add_parts()
 
         # TODO: add ownership, maybe this should be configurable?
         # for id_, part in parts.items():
-        #     owner = self.parts.get((part.data.get("owner") or {}).get("@id"), diagram)
+        #     owner = self.parts.get((part.data.get("owner") or {}).get("@id"), container)
         #     owner.add_child(child=part, key=id_)
 
         for (source, target, type_), edge in self.graph.edges.items():
@@ -400,21 +393,21 @@ class SysML2ElkDiagram(ipyw.Box):
                     f"Could not map target: {target} in '{type_}' with {source}"
                 )
                 continue
-            new_edge = diagram.add_edge(
+            new_edge = container.add_edge(
                 source=parts[source],
                 target=parts[target],
                 cls=EDGE_MAP.get(type_, DEFAULT_EDGE),
             )
             new_edge.properties["data"] = edge
             new_edge.labels.append(Label(text=f"«{type_}»"))
-        diagram.defs = {**diagram.defs}
-        self.elk_diagram = diagram
+        container.defs = {**container.defs}
+        self.container = container
 
-    @trt.observe("elk_diagram")
+    @trt.observe("container")
     def _update_app(self, *_):
-        self.elk_app.transformer.source = self.compound(self.elk_diagram)
-        self.elk_app.style = self.elk_diagram.style
-        self.elk_app.diagram.defs = self.elk_diagram.defs
+        self.elk_app.transformer.source = self.compound(self.container)
+        self.elk_app.style = self.container.style
+        self.elk_app.diagram.defs = self.container.defs
 
     # TODO: add reverse selection
     # @trt.observe("selected")
@@ -485,7 +478,7 @@ class SysML2ElkDiagram(ipyw.Box):
         return id_
 
     def _update_selected(self, *_):
-        _, hierarchy = self.elk_transformer.source
+        _, hierarchy = self.elk_app.transformer.source
 
         diagram_selections = self.elk_app.selected
 
