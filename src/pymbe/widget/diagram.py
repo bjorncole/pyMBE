@@ -85,6 +85,9 @@ class Mapper:
     to_map: dict = field(repr=False)
     from_map: dict = field(default=None, repr=False)
 
+    def __len__(self):
+        return len(self.to_map)
+
     def __repr__(self):
         return f"Mapper({len(self.to_map)} Items)"
 
@@ -139,6 +142,8 @@ class Relationship(Edge):
     display_usage: bool = True
 
     def update(self, edge_data: dict):
+        if not edge_data:
+            return
         properties = self.properties
         properties["@id"] = edge_data["@id"]
 
@@ -392,7 +397,7 @@ class SysML2ElkDiagram(ipyw.Box):
         return Mapper(from_elk_id)
 
     @trt.default("center")
-    def _make_center_btn(self) -> CenterButton:
+    def _make_center_button(self) -> CenterButton:
         return CenterButton(
             app=self.elk_app,
             description="",
@@ -402,7 +407,7 @@ class SysML2ElkDiagram(ipyw.Box):
         )
 
     @trt.default("fit")
-    def _make_fit_btn(self) -> FitButton:
+    def _make_fit_button(self) -> FitButton:
         return FitButton(
             app=self.elk_app,
             description="",
@@ -413,7 +418,7 @@ class SysML2ElkDiagram(ipyw.Box):
 
     @trt.default("toolbar_buttons")
     def _make_toolbar_buttons(self):
-        return [self.fit_btn, self.center_btn]
+        return [self.fit, self.center]
 
     @trt.default("toolbar_accordion")
     def _make_toolbar_accordion(self):
@@ -439,11 +444,13 @@ class SysML2ElkDiagram(ipyw.Box):
             old = change.old
             del old
 
+        # TODO: investigate if we need to clear the Elk Transformer Registry
+        # self.elk_app.transformer.clear_registry()
         container = PartContainer()
         parts = self._add_parts()
 
-        for id_, part in parts.items():
-            container.add_child(child=part, key=id_)
+        # for id_, part in parts.items():
+        #     container.add_child(child=part, key=id_)
             # TODO: Look into adding children in a hierarchy, maybe make it configurable?
             # owner = self.parts.get((part.data.get("owner") or {}).get("@id"), container)
             # owner.add_child(child=part, key=id_)
@@ -464,7 +471,8 @@ class SysML2ElkDiagram(ipyw.Box):
                 target=parts[target],
                 cls=RELATIONSHIP_TYPES.get(type_, DEFAULT_RELATIONSHIP),
             )
-            new_relationship.update(edge)
+            if edge:
+                new_relationship.update(edge)
 
         container.defs = {**container.defs}
         self.container = container
@@ -476,15 +484,24 @@ class SysML2ElkDiagram(ipyw.Box):
         self.elk_app.diagram.defs = self.container.defs
         self.id_mapper = self._make_id_mapper()
 
+    def _map_selections(self, *selections):
+        if not selections:
+            return []
+        new_selections = self.id_mapper.get(*selections)
+        if selections and not new_selections:
+            self.id_mapper = self._make_id_mapper()
+            new_selections = self.id_mapper.get(*selections)
+        return new_selections
+
     @trt.observe("selected")
     def _update_diagram_selections(self, *_):
-        new_selections = self.id_mapper.get(*self.selected)
+        new_selections = self._map_selections(*self.selected)
         diagram = self.elk_app.diagram
         if set(diagram.selected).symmetric_difference(new_selections):
             diagram.selected = new_selections
 
     def _update_selected(self, *_):
-        new_selections = self.id_mapper.get(*self.elk_app.diagram.selected)
+        new_selections = self._map_selections(*self.elk_app.diagram.selected)
         if set(self.selected).symmetric_difference(new_selections):
             self.selected = new_selections
 
