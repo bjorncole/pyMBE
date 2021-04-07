@@ -1,4 +1,4 @@
-from dataclasses import field
+from dataclasses import dataclass, field
 from enum import Enum
 
 import ipywidgets as ipyw
@@ -82,6 +82,29 @@ def a_subsetting_endpoint(r=6, closed=False):
     )
 
 
+@dataclass
+class Mapper:
+    to_map: dict = field(repr=False)
+    from_map: dict = field(default=None, repr=False)
+
+    def __repr__(self):
+        return f"Mapper({len(self.to_map)} Items)"
+
+    def __post_init__(self, *args, **kwargs):
+        self.from_map = {v: k for k, v in self.to_map.items()}
+
+    def get(self, *items):
+        found = [
+            self.to_map.get(item, self.from_map.get(item))
+            for item in items
+        ]
+        return [
+            item
+            for item in found
+            if item is not None
+        ]
+
+
 class VisibilityKind(Enum):
     PUBLIC = "public"
     PRIVATE = "private"
@@ -109,19 +132,21 @@ class RelationEnd(elements.BaseElement):
 
 
 @element
-class Relation(Edge):
-    kind: str = "Undefined"
+class Relationship(Edge):
+
     source_end: RelationEnd = None
     target_end: RelationEnd = None
     display_kind: bool = True
     display_multiplicity: bool = True
     display_usage: bool = True
 
-    # def __post_init__(self, *args, **kwargs):
-    #     super().__post_init__(*args, **kwargs)
-        # if self.labels:
-        #     return
+    def update(self, edge_data: dict):
+        properties = self.properties
+        properties["@id"] = edge_data["@id"]
 
+        self.labels.append(Label(text=f"""«{edge_data["@type"]}»"""))
+
+        # TODO: Add processing of relationship properties
         # if self.display_kind and self.kind:
         #     self.labels += [ElkLabel(
         #         text=f"«{self.kind}»",
@@ -154,56 +179,56 @@ class Relation(Edge):
 
 
 @element
-class Association(Relation):
+class Association(Relationship):
     shape_end: ty.ClassVar[str] = "association"
 
 
 @element
-class Composition(Relation):
+class Composition(Relationship):
     shape_start: ty.ClassVar[str] = "composition"
 
 
 @element
-class Aggregation(Relation):
+class Aggregation(Relationship):
     shape_start: ty.ClassVar[str] = "aggregation"
 
 
 @element
-class Containment(Relation):
+class Containment(Relationship):
     shape_start: ty.ClassVar[str] = "containment"
 
 
 @element
-class OwnedBy(Relation):
+class OwnedBy(Relationship):
     shape_end: ty.ClassVar[str] = "containment"
 
 
 @element
-class DirectedAssociation(Relation):
+class DirectedAssociation(Relationship):
     shape_end: ty.ClassVar[str] = "directed_association"
 
 
 @element
-class Generalization(Relation):
+class Generalization(Relationship):
     shape_end: ty.ClassVar[str] = "generalization"
 
 
 @element
-class Subsetting(Relation):
+class Subsetting(Relationship):
     shape_end: ty.ClassVar[str] = "subsetting"
 
 
 @element
-class FeatureTyping(Relation):
+class FeatureTyping(Relationship):
     shape_end: ty.ClassVar[str] = "feature_typing"
 
 
 @element
-class Redefinition(Relation):
+class Redefinition(Relationship):
     shape_end: ty.ClassVar[str] = "redefinition"
 
 
-EDGE_MAP = {
+RELATIONSHIP_TYPES = {
     "FeatureTyping": FeatureTyping,
     "OwnedBy": OwnedBy,
     "Redefinition": Redefinition,
@@ -212,7 +237,7 @@ EDGE_MAP = {
     # TODO: review and map the rest of the edge types
 }
 
-DEFAULT_EDGE = DirectedAssociation
+DEFAULT_RELATIONSHIP = DirectedAssociation
 
 
 @element
@@ -270,6 +295,7 @@ class SysML2ElkDiagram(ipyw.Box):
         kw=dict(selected_index=None),  # makes layout start collapsed
     )
     graph: nx.Graph = trt.Instance(nx.Graph, args=())
+    id_mapper: Mapper = trt.Instance(Mapper, kw={})
 
     fit_btn: elk_tools.FitBtn = trt.Instance(elk_tools.FitBtn)
     toggle_btn: elk_tools.ToggleCollapsedBtn = trt.Instance(
@@ -326,6 +352,35 @@ class SysML2ElkDiagram(ipyw.Box):
         elk_app.observe(self._update_selected, "selected")
         return elk_app
 
+    @trt.default("id_mapper")
+    def _make_id_mapper(self) -> Mapper:
+        transformer = self.elk_app.transformer
+        relationships, hierarchy = transformer.source
+
+        elk_to_items = transformer._elk_to_item or {}
+
+        def id_from_item(item):
+            id_ = None
+            if isinstance(item, ipyelk.transform.Edge):
+                id_ = item.data.get("properties", {}).get("@id")
+            elif isinstance(getattr(item, "node", None), Compartment):
+                id_ = next(hierarchy.predecessors(item)).node.id
+            if id_ is None:
+                self.log.debug(f"Could not parse: {item}")
+            return id_
+
+        from_elk_id = {
+            elk_id: id_from_item(elk_item)
+            for elk_id, elk_item in elk_to_items.items()
+        }
+
+        from_elk_id = {
+            elk_id: sysml_id
+            for elk_id, sysml_id in from_elk_id.items()
+            if sysml_id is not None
+        }
+        return Mapper(from_elk_id)
+
     @trt.default("toggle_btn")
     def _make_toggle_btn(self) -> elk_tools.ToggleCollapsedBtn:
         return elk_tools.ToggleCollapsedBtn(
@@ -377,10 +432,11 @@ class SysML2ElkDiagram(ipyw.Box):
         container = PartContainer()
         parts = self._add_parts()
 
-        # TODO: add ownership, maybe this should be configurable?
-        # for id_, part in parts.items():
-        #     owner = self.parts.get((part.data.get("owner") or {}).get("@id"), container)
-        #     owner.add_child(child=part, key=id_)
+        for id_, part in parts.items():
+            container.add_child(child=part, key=id_)
+            # TODO: Look into adding children in a hierarchy, maybe make it configurable?
+            # owner = self.parts.get((part.data.get("owner") or {}).get("@id"), container)
+            # owner.add_child(child=part, key=id_)
 
         for (source, target, type_), edge in self.graph.edges.items():
             if source not in parts:
@@ -393,13 +449,13 @@ class SysML2ElkDiagram(ipyw.Box):
                     f"Could not map target: {target} in '{type_}' with {source}"
                 )
                 continue
-            new_edge = container.add_edge(
+            new_relationship = container.add_edge(
                 source=parts[source],
                 target=parts[target],
-                cls=EDGE_MAP.get(type_, DEFAULT_EDGE),
+                cls=RELATIONSHIP_TYPES.get(type_, DEFAULT_RELATIONSHIP),
             )
-            new_edge.properties["data"] = edge
-            new_edge.labels.append(Label(text=f"«{type_}»"))
+            new_relationship.update(edge)
+
         container.defs = {**container.defs}
         self.container = container
 
@@ -408,12 +464,19 @@ class SysML2ElkDiagram(ipyw.Box):
         self.elk_app.transformer.source = self.compound(self.container)
         self.elk_app.style = self.container.style
         self.elk_app.diagram.defs = self.container.defs
+        self.id_mapper = self._make_id_mapper()
 
-    # TODO: add reverse selection
-    # @trt.observe("selected")
-    # def _update_diagram_selections(self, *_):
-    #     for selected_id in self.selected:
-    #         node_selected = self.parts.get(selected_id)
+    @trt.observe("selected")
+    def _update_diagram_selections(self, *_):
+        new_selections = self.id_mapper.get(*self.selected)
+        diagram = self.elk_app.diagram
+        if set(diagram.selected).symmetric_difference(new_selections):
+            diagram.selected = new_selections
+
+    def _update_selected(self, *_):
+        new_selections = self.id_mapper.get(*self.elk_app.diagram.selected)
+        if set(self.selected).symmetric_difference(new_selections):
+            self.selected = new_selections
 
     @staticmethod
     def make_part(data: dict, width=220):
@@ -466,33 +529,3 @@ class SysML2ElkDiagram(ipyw.Box):
     def _update_diagram_layout_(self, *_):
         self.elk_app.transformer.layouts = self.elk_layout.value
         self.elk_app.refresh()
-
-    def _process_selected(self, item, hierarchy):
-        id_ = None
-        if isinstance(item, ipyelk.transform.Edge):
-            id_ = item.data.get("properties", {}).get("data", {}).get("@id")
-        elif isinstance(getattr(item, "node", None), Compartment):
-            id_ = next(hierarchy.predecessors(item)).node.data["@id"]
-        if id_ is None:
-            self.log.debug(f"Could not parse: {item}")
-        return id_
-
-    def _update_selected(self, *_):
-        _, hierarchy = self.elk_app.transformer.source
-
-        diagram_selections = self.elk_app.selected
-
-        if not diagram_selections and self.selected:
-            self.selected = []
-            return
-
-        selected = [
-            self._process_selected(item, hierarchy)
-            for item in diagram_selections
-        ]
-        if set(selected).difference(set(self.selected)):
-            self.selected = [
-                item
-                for item in selected
-                if item is not None
-            ]
