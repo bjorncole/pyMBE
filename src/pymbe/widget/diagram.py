@@ -449,6 +449,8 @@ class SysML2ElkDiagram(ipyw.Box):
         container = PartContainer()
         parts = self._add_parts()
 
+        # TODO: Look into adding the parts as children to the container without breaking the
+        #       diagram interactions (e.g., filter to path or span graph)
         # for id_, part in parts.items():
         #     container.add_child(child=part, key=id_)
             # TODO: Look into adding children in a hierarchy, maybe make it configurable?
