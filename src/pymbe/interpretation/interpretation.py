@@ -221,7 +221,7 @@ class RandomGenerationStrategy(InstanceGenerationStrategy):
                             index,
                             self.short_pre_bake
                         )
-                        instances_list.append(new_instance)
+                        instances_list.append([new_instance])
                     classifier_instance_dict.update({specific_key: instances_list})
 
             # work with non-abstract classifiers
@@ -237,7 +237,7 @@ class RandomGenerationStrategy(InstanceGenerationStrategy):
                             index,
                             self.short_pre_bake
                         )
-                        instances_list.append(new_instance)
+                        instances_list.append([new_instance])
                     classifier_instance_dict.update({types[0]: instances_list})
 
             classifier_instance_dicts.append(classifier_instance_dict)
@@ -319,7 +319,7 @@ class RandomGenerationStrategy(InstanceGenerationStrategy):
                         1,
                         self.short_pre_bake
                     )
-                    classifier_instance_dict.update({all_part_id: [new_instance]})
+                    classifier_instance_dict.update({all_part_id: [[new_instance]]})
 
     def generate_feature_populations(self):
         feature_sequence_dictionaries = []
@@ -388,7 +388,7 @@ class RandomGenerationStrategy(InstanceGenerationStrategy):
                                               str(new_sequence))
                                         print('Covered dict is ' + str(covered_draw_dict[node_type]))
 
-                                new_sequence.append(classifier_instance_dict[node_type][draw])
+                                new_sequence.append(classifier_instance_dict[node_type][draw][0])
 
                                 sequence_of_sequences.append(new_sequence)
 
@@ -398,14 +398,14 @@ class RandomGenerationStrategy(InstanceGenerationStrategy):
                         if isinstance(classifier_instance_dict[node], list):
                             starter_list = []
                             for item in classifier_instance_dict[node]:
-                                starter_list.append([item])
+                                starter_list.append(item)
                             # handle case where main type has more than one instance
                             feature_sequence_dictionary.update({node: starter_list})
-                            # print(starter_list)
+                            print(starter_list)
                             if len(starter_list) == 0:
                                 break
                         else:
-                            feature_sequence_dictionary.update({node: [[classifier_instance_dict[node]]]})
+                            feature_sequence_dictionary.update({node: [classifier_instance_dict[node]]})
 
             feature_sequence_dictionaries.append(feature_sequence_dictionary)
 
