@@ -6,9 +6,12 @@ from warnings import warn
 import requests
 import sysml_v2_api_client as sysml2
 import traitlets as trt
+import typing as ty
+
+from .core import Base
 
 
-class SysML2Client(trt.HasTraits):
+class SysML2Client(Base):
     """
         A traitleted SysML v2 API Client.
 
@@ -18,7 +21,7 @@ class SysML2Client(trt.HasTraits):
     """
 
     host_url = trt.Unicode(
-        default_value="http://sysml2-sst.intercax.com",
+        default_value="http://localhost",
     )
 
     host_port = trt.Integer(
@@ -43,9 +46,6 @@ class SysML2Client(trt.HasTraits):
     selected_commit: str = trt.Unicode(allow_none=True)
 
     projects = trt.Dict()
-    elements_by_id = trt.Dict()
-    elements_by_type = trt.Dict()
-    relationship_types = trt.Tuple()
 
     @trt.default("_api_configuration")
     def _make_api_configuration(self):
@@ -98,6 +98,20 @@ class SysML2Client(trt.HasTraits):
             api_maker = getattr(self, f"_make{api_attr}")
             setattr(self, api_attr, api_maker())
             del old_api
+        self.projects = self._make_projects()
+
+    @trt.observe("selected_commit")
+    def _update_elements(self, *_, elements=None):
+        elements = elements or []
+        self.relationship_types = sorted({
+            element["@type"]
+            for element in elements
+            if "relatedElement" in element
+        })
+        self.elements_by_id = {
+            element["@id"]: element
+            for element in elements
+        }
 
     @property
     def host(self):
@@ -117,14 +131,8 @@ class SysML2Client(trt.HasTraits):
             f"elements"
         ) + (f"?page[size]={self.page_size}" if self.paginate else "")
 
-    def by_id(self, id_: str) -> dict:
-        return self.elements_by_id[id_]
-
-    def name_by_id(self, id_: str) -> str:
-        return self.by_id(id_).get("name")
-
     @lru_cache
-    def _retrieve_data(self, url):
+    def _retrieve_data(self, url: str) -> dict:
         response = requests.get(url)
         if not response.ok:
             raise requests.HTTPError(
@@ -136,18 +144,8 @@ class SysML2Client(trt.HasTraits):
     def _get_elements_from_server(self):
         return self._retrieve_data(self.elements_url)
 
-    @trt.observe("selected_commit")
-    def _update_elements(self, *_, elements=None):
-        elements = elements or []
-        self.relationship_types = sorted({
-            element["@type"]
-            for element in elements
-            if "relatedElement" in element
-        })
-        self.elements_by_id = {
-            element["@id"]: element
-            for element in elements
-        }
+    def update(self, elements: dict):
+        elements = tuple(elements.values())
         element_types = {element["@type"] for element in elements}
         self.elements_by_type = {
             element_type: tuple([

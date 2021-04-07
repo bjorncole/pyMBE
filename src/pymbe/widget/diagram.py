@@ -22,26 +22,7 @@ from ipyelk.contrib.elements import (
 )
 from ipyelk.diagram.elk_model import ElkLabel
 from ipyelk.diagram.symbol import Def
-
-
-def a_part(data: dict, width=220):
-    value = data.get("value", None)
-    if value is not None:
-        name = value
-        if isinstance(value, (bool, float, int)):
-            width = int(0.5 * width)
-    else:
-        name = (
-            data.get("name", None)
-            or data["@id"]
-        )
-    part = Part(data=data, identifier=data["@id"], width=width)
-    part.title = Compartment(headings=[
-        f"""«{data["@type"]}»""",
-        f"""{name}""",
-    ])
-    # TODO: add properties
-    return part
+from ipyelk.tools import tools as elk_tools
 
 
 def an_arrow_endpoint(r=6, closed=False):
@@ -115,7 +96,7 @@ class RelationEndKind(Enum):
 @element
 class Part(Record):
     data: dict = field(default_factory=dict)
-    identifier: str = ""
+    id: str = ""
 
 
 @element
@@ -238,6 +219,9 @@ class Diagram(Partition):
     """An elk diagram."""
 
     # TODO flesh out ideas of encapsulating diagram defs / styles / elements
+
+    default_edge: ty.Type[Edge] = field(default=DirectedAssociation)
+
     defs: ty.ClassVar[ty.Dict[str, Def]] = {
         "aggregation": conn.Rhomb(r=4),
         "composition": conn.Rhomb(r=4),
@@ -248,6 +232,7 @@ class Diagram(Partition):
         "redefinition": a_redefinition_endpoint(r=10, closed=True),
         "subsetting": a_subsetting_endpoint(r=10, closed=False),
     }
+
     style: ty.ClassVar[ty.Dict[str, Def]] = {
         # Elk Label styles for Box Titles
         " .elklabel.compartment_title_1": {
@@ -257,57 +242,78 @@ class Diagram(Partition):
             "font-weight": "bold",
         },
         # Style Arrowheads (future may try to )
-        " .subsetting > .round > ellipse": {"fill": "var(--jp-elk-node-stroke)"},
-        " .feature_typing > .round > ellipse": {"fill": "var(--jp-elk-node-stroke)"},
+        " .subsetting > .round > ellipse": {
+            "fill": "var(--jp-elk-node-stroke)",
+        },
+        " .feature_typing > .round > ellipse": {
+            "fill": "var(--jp-elk-node-stroke)",
+        },
         " .internal > .elknode": {
             "stroke": "transparent",
             "fill": "transparent",
         },
         # Necessary for having the viewport use the whole vertical height
-        " .lm-Widget.jp-ElkView .sprotty > .sprotty-root > svg.sprotty-graph": {"height": "unset!important"}
+        " .lm-Widget.jp-ElkView .sprotty > .sprotty-root > svg.sprotty-graph": {
+            "height": "unset!important",
+        }
     }
-    default_edge: ty.Type[Edge] = field(default=DirectedAssociation)
 
 
-class SysML2ElkDiagram(ipyw.HBox):
+@ipyw.register
+class SysML2ElkDiagram(ipyw.Box):
     """A SysML v2 Diagram"""
 
+    compound: Compound = trt.Instance(Compound, args=())
     elk_app: ipyelk.Elk = trt.Instance(ipyelk.Elk)
     elk_diagram: Diagram = trt.Instance(Diagram, args=())
-    elk_layout: ipyelk.nx.XELKTypedLayout() = trt.Instance(
+    elk_layout: ipyelk.nx.XELKTypedLayout = trt.Instance(
         ipyelk.nx.XELKTypedLayout,
         kw=dict(selected_index=None),  # makes layout start collapsed
+    )
+    elk_map: dict = trt.Dict(
+        key_trait=trt.Instance(Compartment),
+        value_trait=trt.Unicode(),
+        kw={},
     )
     elk_transformer: ipyelk.nx.XELK = trt.Instance(ipyelk.nx.XELK)
     graph: nx.Graph = trt.Instance(nx.Graph, args=())
 
-    parts: dict = trt.Dict()
+    fit_btn: elk_tools.FitBtn = trt.Instance(elk_tools.FitBtn)
+    toggle_btn: elk_tools.ToggleCollapsedBtn = trt.Instance(
+        elk_tools.ToggleCollapsedBtn,
+    )
+    toolbar_buttons: list = trt.List(trait=trt.Instance(ipyw.Button))
+    toolbar_accordion: ty.Dict[str, ipyw.Widget] = trt.Dict(
+        key_trait=trt.Unicode(),
+        value_trait=trt.Instance(ipyw.Widget),
+    )
 
-    style: dict = trt.Dict(kw={
-        " text.elklabel.node_type_label": {
-            "font-style": "italic",
+    parts: ty.Dict[str, Part] = trt.Dict(
+        key_trait=trt.Unicode(),
+        value_trait=trt.Instance(Part),
+    )
+
+    selected: tuple = trt.Tuple()
+
+    style: ty.Dict[str, dict] = trt.Dict(
+        kw={
+            " text.elklabel.node_type_label": {
+                "font-style": "italic",
+            },
+            " parents": {
+                "org.eclipse.elk.direction": "RIGHT",
+                "org.eclipse.elk.nodeLabels.placement": "H_CENTER V_TOP INSIDE",
+            },
         },
-        " parents": {
-            "org.eclipse.elk.direction": "UP",
-            "org.eclipse.elk.nodeLabels.placement": "H_CENTER V_TOP INSIDE",
-        },
-    })
+    )
 
     @trt.validate("children")
     def _validate_children(self, proposal):
         children = proposal.value
         if children:
             return children
-        return [
-            ipyw.VBox([self.elk_app], layout=dict(height="100%", width="80%")),
-            ipyw.VBox([self.elk_layout], layout=dict(height="100%", width="20%")),
-        ]
-
-    @trt.validate("layout")
-    def _validate_layout(self, proposal):
-        layout = proposal.value
-        layout.height = "60vh"
-        return layout
+        self._update_toolbar()
+        return [self.elk_app]
 
     @trt.default("elk_transformer")
     def _make_transformer(self) -> ipyelk.nx.XELK:
@@ -323,13 +329,48 @@ class SysML2ElkDiagram(ipyw.HBox):
             transformer=self.elk_transformer,
             style=self.style,
             layout=dict(
+                flex="1",
                 height="100%",
-                min_height="600px",
                 width="100%",
             ),
         )
-        elk_app.layout.flex = "1"
+        elk_app.observe(self._update_selected, "selected")
         return elk_app
+
+    @trt.default("toggle_btn")
+    def _make_toggle_btn(self) -> elk_tools.ToggleCollapsedBtn:
+        return elk_tools.ToggleCollapsedBtn(
+            app=self.elk_app,
+            description="",
+            icon="compress",
+            layout=dict(height="40px", width="40px"),
+            tooltip="Collapse/Expand the selected elements",
+        )
+
+    @trt.default("fit_btn")
+    def _make_fit_btn(self) -> elk_tools.FitBtn:
+        return elk_tools.FitBtn(
+            app=self.elk_app,
+            description="",
+            icon="expand-arrows-alt",
+            layout=dict(height="40px", width="40px"),
+            tooltip="Fit Diagram",
+        )
+
+    @trt.default("toolbar_buttons")
+    def _make_toolbar_buttons(self):
+        return [self.fit_btn, self.toggle_btn]
+
+    @trt.default("toolbar_accordion")
+    def _make_toolbar_accordion(self):
+        return {
+            "Layout": self.elk_layout,
+        }
+
+    @trt.observe("toolbar_buttons", "toolbar_accordion")
+    def _update_toolbar(self, *_):
+        self.elk_app.toolbar.layout.width = "auto"
+        self.elk_app.toolbar.commands = [self._make_command_palette()]
 
     @trt.observe("elk_layout")
     def _update_observers_for_layout(self, change: trt.Bunch):
@@ -339,42 +380,102 @@ class SysML2ElkDiagram(ipyw.HBox):
         change.new.observe(self._element_type_opt_change, "value")
 
     @trt.observe("graph")
-    def _update_nodes(self, change: trt.Bunch):
+    def _update_diagram(self, change: trt.Bunch):
         if change.old not in (None, trt.Undefined):
             old = change.old
             del old
-        self.parts = {
-            id_: a_part(node_data)
-            for id_, node_data in self.graph.nodes.items()
-            if node_data
-        }
+
+        self._add_parts()
+        parts = self.parts
         diagram = Diagram()
         for (source, target, type_), edge in self.graph.edges.items():
-            if source not in self.parts:
+            if source not in parts:
                 self.log.warn(
                     f"Could not map source: {source} in '{type_}' with {target}"
                 )
                 continue
-            if target not in self.parts:
+            if target not in parts:
                 self.log.warn(
                     f"Could not map target: {target} in '{type_}' with {source}"
                 )
                 continue
-            edge = diagram.add_edge(
-                source=self.parts[source],
-                target=self.parts[target],
+            new_edge = diagram.add_edge(
+                source=parts[source],
+                target=parts[target],
                 cls=EDGE_MAP.get(type_, DEFAULT_EDGE),
             )
-            edge.labels.append(Label(text=f"«{type_}»"))
+            new_edge.labels.append(Label(text=f"«{type_}»"))
+            new_edge.id = edge["@id"]
         diagram.defs = {**diagram.defs}
         self.elk_diagram = diagram
 
     @trt.observe("elk_diagram")
     def _update_app(self, *_):
-        self.elk_app.transformer.source = Compound()(self.elk_diagram)
+        self.elk_app.transformer.source = self.compound(self.elk_diagram)
         self.elk_app.style = self.elk_diagram.style
         self.elk_app.diagram.defs = self.elk_diagram.defs
+
+    @staticmethod
+    def make_part(data: dict, width=220):
+        value = data.get("value", None)
+        if value is not None:
+            name = value
+            if isinstance(value, (bool, float, int)):
+                width = int(0.5 * width)
+        else:
+            name = (
+                data.get("name", None)
+                or data["@id"]
+            )
+        part = Part(data=data, id=data["@id"], width=width)
+        part.title = Compartment(headings=[
+            f"""«{data["@type"]}»""",
+            f"""{name}""",
+        ])
+        # TODO: add properties
+        return part
+
+    def _add_parts(self):
+        new_parts = {
+            id_: self.make_part(node_data)
+            for id_, node_data in self.graph.nodes.items()
+            if node_data
+               and id_ not in self.parts
+        }
+        self.parts.update(new_parts)
+
+        self.elk_map.update({
+            child: id_
+            for id_, part in new_parts.items()
+            for child in part.children
+        })
+
+    def _make_command_palette(self) -> ipyw.VBox:
+        titles, widgets = zip(*self.toolbar_accordion.items())
+        titles = {
+            idx: title
+            for idx, title in enumerate(titles)
+        }
+        return ipyw.VBox(
+            [
+                ipyw.HBox(self.toolbar_buttons),
+                ipyw.Accordion(
+                    _titles=titles,
+                    children=widgets,
+                    selected_index=None,
+                ),
+            ],
+        )
 
     def _update_diagram_layout_(self, *_):
         self.elk_app.transformer.layouts = self.elk_layout.value
         self.elk_app.refresh()
+
+    def _update_selected(self, *_):
+        elk_map = self.elk_map
+        self.selected = [
+            elk_map[mark.node]
+            for mark in self.elk_app.selected
+            if hasattr(mark, "node")
+            and mark.node in elk_map
+        ]

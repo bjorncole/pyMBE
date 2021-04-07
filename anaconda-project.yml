@@ -104,3 +104,4 @@ env_specs:
     - rdflib
     - rdflib-jsonld
     - wheel
+    - wxyz_lab

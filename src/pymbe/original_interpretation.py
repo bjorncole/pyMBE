@@ -1,64 +1,16 @@
 import random
 import copy
 
-import networkx as nx
+import networkx as NX
 
-from ..graph import SysML2LabeledPropertyGraph
-
-
-def retrieve_element(elements: dict, element: (dict, str), strict: bool = True) -> dict:
-    input_element = element
-    if isinstance(element, str):
-        element = elements.get(element, None)
-    elif not isinstance(element, dict):
-        raise ValueError(f"Failed to process element: '{input_element}'")
-    if strict and element is None:
-        raise ValueError(f"Failed to process element: '{input_element}'")
-    return element
-
-
-def get_metaclass(elements: dict, element: (dict, str)) -> str:
-    element = retrieve_element(elements, element)
-    return element.get("@type", None)
-
-
-def get_feature_upper_multiplicity(
-    elements: dict,
-    feature: (dict, str),
-) -> (None, int):
-    feature = retrieve_element(elements, feature)
-
-    multiplicity = elements.get((feature.get("multiplicity") or {}).get("@id"))
-    if multiplicity is None:
-        return None
-
-    upper_bound = elements.get((multiplicity.get("upperBound") or {}).get("@id"))
-    if upper_bound is None:
-        return None
-
-    return upper_bound.get("value")
-
-
-def make_banded_featuring_graph(lpg: SysML2LabeledPropertyGraph) -> nx.DiGraph:
-    return lpg.filter(
-        edge_types=(
-            "FeatureMembership",
-            "FeatureTyping",
-            "Redefinition",
-            "Superclassing",
-        ),
-        reverse_edge_types=(
-            "FeatureMembership",
-            "FeatureTyping",
-        )
-    )
+from .model_loading import ModelingSession
 
 
 class InstanceGenerationStrategy:
     """
     Base class for approaches to creating sets of instances conforming to a model
     """
-    def __init__(self, number_of_cases=10, model_session=None, short_names=None):
+    def __init__(self, number_of_cases=10, model_session: ModelingSession = None, short_names=None):
         self.classifier_instance_dicts = {}
         self.feature_instance_dicts = {}
 
@@ -102,7 +54,7 @@ class RandomGenerationStrategy(InstanceGenerationStrategy):
     """
     Generate instances at random based on a model
     """
-    def __init__(self, number_of_cases=10, model_session=None, short_names=None):
+    def __init__(self, number_of_cases=10, model_session: ModelingSession = None, short_names=None):
         """
         Execute the instance space generator from the constructor
         :param number_of_cases: number of alternative solutions to generate
@@ -183,10 +135,10 @@ class RandomGenerationStrategy(InstanceGenerationStrategy):
 
     def build_sequence_templates(self):
         sorted_feature_groups = []
-        for comp in nx.connected_components(self.session.graph_manager.part_featuring_graph.to_undirected()):
-            connected_sub = nx.subgraph(self.session.graph_manager.part_featuring_graph, list(comp))
+        for comp in NX.connected_components(self.session.graph_manager.part_featuring_graph.to_undirected()):
+            connected_sub = NX.subgraph(self.session.graph_manager.part_featuring_graph, list(comp))
             sorted_feature_groups.append(
-                [node for node in nx.topological_sort(connected_sub)]
+                [node for node in NX.topological_sort(connected_sub)]
             )
 
         return sorted_feature_groups
@@ -194,10 +146,10 @@ class RandomGenerationStrategy(InstanceGenerationStrategy):
     def build_redefinition_sequences(self):
         sorted_redefinition_groups = []
 
-        for comp in nx.connected_components(self.session.graph_manager.redefinition_graph.to_undirected()):
-            connected_sub = nx.subgraph(self.session.graph_manager.redefinition_graph, list(comp))
+        for comp in NX.connected_components(self.session.graph_manager.redefinition_graph.to_undirected()):
+            connected_sub = NX.subgraph(self.session.graph_manager.redefinition_graph, list(comp))
             sorted_redefinition_groups.append(
-                [node for node in nx.topological_sort(connected_sub)]
+                [node for node in NX.topological_sort(connected_sub)]
             )
 
         return sorted_redefinition_groups
@@ -221,7 +173,7 @@ class RandomGenerationStrategy(InstanceGenerationStrategy):
                             index,
                             self.short_pre_bake
                         )
-                        instances_list.append([new_instance])
+                        instances_list.append(new_instance)
                     classifier_instance_dict.update({specific_key: instances_list})
 
             # work with non-abstract classifiers
@@ -237,7 +189,7 @@ class RandomGenerationStrategy(InstanceGenerationStrategy):
                             index,
                             self.short_pre_bake
                         )
-                        instances_list.append([new_instance])
+                        instances_list.append(new_instance)
                     classifier_instance_dict.update({types[0]: instances_list})
 
             classifier_instance_dicts.append(classifier_instance_dict)
@@ -319,7 +271,7 @@ class RandomGenerationStrategy(InstanceGenerationStrategy):
                         1,
                         self.short_pre_bake
                     )
-                    classifier_instance_dict.update({all_part_id: [[new_instance]]})
+                    classifier_instance_dict.update({all_part_id: [new_instance]})
 
     def generate_feature_populations(self):
         feature_sequence_dictionaries = []
@@ -388,7 +340,7 @@ class RandomGenerationStrategy(InstanceGenerationStrategy):
                                               str(new_sequence))
                                         print('Covered dict is ' + str(covered_draw_dict[node_type]))
 
-                                new_sequence.append(classifier_instance_dict[node_type][draw][0])
+                                new_sequence.append(classifier_instance_dict[node_type][draw])
 
                                 sequence_of_sequences.append(new_sequence)
 
@@ -398,14 +350,14 @@ class RandomGenerationStrategy(InstanceGenerationStrategy):
                         if isinstance(classifier_instance_dict[node], list):
                             starter_list = []
                             for item in classifier_instance_dict[node]:
-                                starter_list.append(item)
+                                starter_list.append([item])
                             # handle case where main type has more than one instance
                             feature_sequence_dictionary.update({node: starter_list})
-                            print(starter_list)
+                            # print(starter_list)
                             if len(starter_list) == 0:
                                 break
                         else:
-                            feature_sequence_dictionary.update({node: [classifier_instance_dict[node]]})
+                            feature_sequence_dictionary.update({node: [[classifier_instance_dict[node]]]})
 
             feature_sequence_dictionaries.append(feature_sequence_dictionary)
 
@@ -433,23 +385,16 @@ class RandomGenerationStrategy(InstanceGenerationStrategy):
                     if att_owner_id in classifier_instance_dict:
                         #print('Found attribute owner in classifier dict')
                         for instance in classifier_instance_dict[att_owner_id]:
-                            if isinstance(instance, list):
-                                preseq = copy.deepcopy(instance)
-                            else:
-                                preseq = [instance]
                             #print(instance)
                             new_holder = ValueHolder([instance], att_data['name'], None, att)
-                            preseq.append(new_holder)
-                            new_holders.append(preseq)
+                            new_holders.append(new_holder)
 
                     elif att_owner_id in self.feature_instance_dicts[indx]:
                         #print('Found attribute owner in feature dict')
                         for instance_seq in self.feature_instance_dicts[indx][att_owner_id]:
-                            preseq = copy.deepcopy(instance_seq)
                             #print(instance_seq)
                             new_holder = ValueHolder(instance_seq, att_data['name'], None, att)
-                            preseq.append(new_holder)
-                            new_holders.append(preseq)
+                            new_holders.append(new_holder)
 
                     attribute_dictionaries[indx].update({att: new_holders})
 
@@ -461,23 +406,16 @@ class RandomGenerationStrategy(InstanceGenerationStrategy):
                 if att_owner_id in classifier_instance_dict:
                     # print('Found attribute owner in classifier dict')
                     for instance in classifier_instance_dict[att_owner_id]:
-                        if isinstance(instance, list):
-                            preseq = copy.deepcopy(instance)
-                        else:
-                            preseq = [instance]
                         # print(instance)
                         new_holder = ValueHolder([instance], att_data['name'], None, att_id)
-                        preseq.append(new_holder)
-                        new_holders.append(preseq)
+                        new_holders.append(new_holder)
 
                 elif att_owner_id in self.feature_instance_dicts[indx]:
                     # print('Found attribute owner in feature dict')
                     for instance_seq in self.feature_instance_dicts[indx][att_owner_id]:
-                        preseq = copy.deepcopy(instance_seq)
                         # print(instance_seq)
                         new_holder = ValueHolder(instance_seq, att_data['name'], None, att_id)
-                        preseq.append(new_holder)
-                        new_holders.append(preseq)
+                        new_holders.append(new_holder)
 
                 attribute_dictionaries[indx].update({att_id: new_holders})
 
