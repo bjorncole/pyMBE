@@ -1,3 +1,4 @@
+from copy import deepcopy
 from uuid import uuid4
 from warnings import warn
 
@@ -213,10 +214,16 @@ class SysML2LabeledPropertyGraph(Base):
         )
         subgraph = graph.__class__(graph.subgraph(included_nodes))
 
+        def _process_edge(src, tgt, typ, data, rev_types):
+            if typ in rev_types:
+                tgt, src = src, tgt
+                typ += "^-1"
+                data = deepcopy(data)
+                data["@type"] = typ
+            return (src, tgt, typ, data)
+
         edges = [
-            (tgt, src, typ, data)
-            if typ in reversed_edge_types
-            else (src, tgt, typ, data)
+            _process_edge(src, tgt, typ, data, reversed_edge_types)
             for (src, tgt, typ), data in subgraph.edges.items()
             if typ not in excluded_edge_types
         ]
