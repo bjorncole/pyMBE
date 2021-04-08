@@ -215,7 +215,7 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
                 f"Reversing edge types: {reversed_edge_types} makes no "
                 "sense since directional is False")
 
-        new_graph = self._get_subgraph(
+        new_graph = self.adapt(
             excluded_edge_types=self.excluded_edge_types,
             excluded_node_types=self.excluded_node_types,
             reversed_edge_types=self.edge_type_reverser.value,

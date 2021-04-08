@@ -379,7 +379,8 @@ class SysML2ElkDiagram(ipyw.Box):
             if isinstance(item, ipyelk.transform.Edge):
                 id_ = item.data.get("properties", {}).get("@id")
             elif isinstance(getattr(item, "node", None), Compartment):
-                id_ = next(hierarchy.predecessors(item)).node.id
+                if item in hierarchy:
+                    id_ = next(hierarchy.predecessors(item)).node.id
             if id_ is None:
                 self.log.debug(f"Could not parse: {item}")
             return id_

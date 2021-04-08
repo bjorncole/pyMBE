@@ -1,4 +1,5 @@
 from uuid import uuid4
+from warnings import warn
 
 import networkx as nx
 import traitlets as trt
@@ -177,16 +178,30 @@ class SysML2LabeledPropertyGraph(Base):
 
             self.graph = graph
 
-    def _get_subgraph(self,
-        excluded_edge_types: (list, set, tuple) = None,
+    def adapt(self,
         excluded_node_types: (list, set, tuple) = None,
+        excluded_edge_types: (list, set, tuple) = None,
         reversed_edge_types: (list, set, tuple) = None,
     ):
+        """
+            Using the existing graph, filter by node and edge
+            types, and/or reverse certain edge types.
+        """
         graph = self.graph
 
         excluded_edge_types = excluded_edge_types or []
         excluded_node_types = excluded_node_types or []
         reversed_edge_types = reversed_edge_types or []
+
+        mismatched_node_types = set(excluded_node_types).difference(self.node_types)
+        if mismatched_node_types:
+            warn(f"These node types are not in the graph: {mismatched_node_types}.")
+
+        mismatched_edge_types = set(
+            (*excluded_edge_types, *reversed_edge_types)
+        ).difference(self.edge_types)
+        if mismatched_edge_types:
+            warn(f"These edge types are not in the graph: {mismatched_edge_types}.")
 
         included_nodes = sum(
             [
@@ -196,24 +211,19 @@ class SysML2LabeledPropertyGraph(Base):
             ],
             [],
         )
-        graph = graph.__class__(graph.subgraph(included_nodes))
+        subgraph = graph.__class__(graph.subgraph(included_nodes))
 
         edges = [
-            (edge[::-1][1:])
-            if edge[2] in reversed_edge_types
-            else [*edge[:2]] + [edge[2]]
-            for edge in graph.edges
+            (tgt, src, typ, data)
+            if typ in reversed_edge_types
+            else (src, tgt, typ, data)
+            for (src, tgt, typ), data in subgraph.edges.items()
+            if typ not in excluded_edge_types
         ]
-        if excluded_edge_types:
-            edges = [
-                (source, target, type_)
-                for source, target, type_ in edges
-                if type_ not in excluded_edge_types
-            ]
 
-        subgraph = graph.__class__()
-        subgraph.add_edges_from(edges)
-        return subgraph
+        new_graph = graph.__class__()
+        new_graph.add_edges_from(edges)
+        return new_graph
 
     def _make_undirected(self, graph):
         if graph.is_multigraph():
