@@ -1,8 +1,11 @@
 from copy import deepcopy
+from functools import lru_cache
+from pathlib import Path
 from uuid import uuid4
 from warnings import warn
 
 import networkx as nx
+import ruamel.yaml as yaml
 import traitlets as trt
 
 from ..core import Base
@@ -18,6 +21,10 @@ class SysML2LabeledPropertyGraph(Base):
     FILTERED_DATA_KEYS: tuple = ("@context",)
     ATTRIBUTE_TO_EDGES: tuple = (
         # dict(attribute="owner", new_type="Owned", reversed=True),
+    )
+    SYSML_ADAPTERS: dict = yaml.load(
+        (Path(__file__).parent / "sysml_adapters.yml").read_text(),
+        Loader=yaml.RoundTripLoader,
     )
 
     graph: nx.MultiDiGraph = trt.Instance(nx.MultiDiGraph, args=tuple())
@@ -84,6 +91,8 @@ class SysML2LabeledPropertyGraph(Base):
         ]
 
     def update(self, elements: dict, merge=None):
+        self.adapt.cache_clear()
+
         merge = self.merge if merge is None else merge
 
         new_edges = [
@@ -179,7 +188,24 @@ class SysML2LabeledPropertyGraph(Base):
 
             self.graph = graph
 
+    def _process_adapter(self, adapter: str) -> dict:
+        adapter_kwargs = self.SYSML_ADAPTERS.get(adapter, {})
+        if not adapter_kwargs:
+            warn(f"Could not find SysML Adapter: '{adapter}'")
+            return adapter_kwargs
+
+        for key in tuple(adapter_kwargs):
+            if key.startswith("included_"):
+                included_types = adapter_kwargs.pop(key)
+                types_key = key.replace("included_", "")
+                types = set(getattr(self, types_key)).difference(included_types)
+                adapter_kwargs[f"excluded_{types_key}"] = types
+
+        return adapter_kwargs
+
+    @lru_cache
     def adapt(self,
+        adapter=None,
         excluded_node_types: (list, set, tuple) = None,
         excluded_edge_types: (list, set, tuple) = None,
         reversed_edge_types: (list, set, tuple) = None,
@@ -188,6 +214,9 @@ class SysML2LabeledPropertyGraph(Base):
             Using the existing graph, filter by node and edge
             types, and/or reverse certain edge types.
         """
+        if adapter:
+            return self.adapt(**self._process_adapter(adapter))
+
         graph = self.graph
 
         excluded_edge_types = excluded_edge_types or []
@@ -198,9 +227,9 @@ class SysML2LabeledPropertyGraph(Base):
         if mismatched_node_types:
             warn(f"These node types are not in the graph: {mismatched_node_types}.")
 
-        mismatched_edge_types = set(
+        mismatched_edge_types = {
             (*excluded_edge_types, *reversed_edge_types)
-        ).difference(self.edge_types)
+        }.difference(self.edge_types)
         if mismatched_edge_types:
             warn(f"These edge types are not in the graph: {mismatched_edge_types}.")
 
@@ -220,7 +249,7 @@ class SysML2LabeledPropertyGraph(Base):
                 typ += "^-1"
                 data = deepcopy(data)
                 data["@type"] = typ
-            return (src, tgt, typ, data)
+            return src, tgt, typ, data
 
         edges = [
             _process_edge(src, tgt, typ, data, reversed_edge_types)
@@ -232,7 +261,8 @@ class SysML2LabeledPropertyGraph(Base):
         new_graph.add_edges_from(edges)
         return new_graph
 
-    def _make_undirected(self, graph):
+    @staticmethod
+    def _make_undirected(graph):
         if graph.is_multigraph():
             return nx.MultiGraph(graph)
         else:

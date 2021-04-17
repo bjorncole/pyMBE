@@ -103,5 +103,6 @@ env_specs:
     - pip
     - rdflib
     - rdflib-jsonld
+    - ruamel.yaml
     - wheel
     - wxyz_lab
