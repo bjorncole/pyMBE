@@ -1,1 +1,1 @@
-src/**/*.yml
+recursive-include src *.py *.yml
