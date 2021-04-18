@@ -1,4 +1,5 @@
-from dataclasses import field
+from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum
 
 import ipywidgets as ipyw
@@ -20,7 +21,6 @@ from ipyelk.contrib.elements import (
     element,
     elements,
 )
-from ipyelk.diagram.elk_model import ElkLabel
 from ipyelk.diagram.symbol import Def
 from ipyelk.tools import tools as elk_tools
 
@@ -81,6 +81,32 @@ def a_subsetting_endpoint(r=6, closed=False):
     )
 
 
+@dataclass
+class Mapper:
+    to_map: dict = field(repr=False)
+    from_map: dict = field(default=None, repr=False)
+
+    def __len__(self):
+        return len(self.to_map)
+
+    def __repr__(self):
+        return f"Mapper({len(self.to_map)} Items)"
+
+    def __post_init__(self, *args, **kwargs):
+        self.from_map = {v: k for k, v in self.to_map.items()}
+
+    def get(self, *items):
+        found = [
+            self.to_map.get(item, self.from_map.get(item))
+            for item in items
+        ]
+        return [
+            item
+            for item in found
+            if item is not None
+        ]
+
+
 class VisibilityKind(Enum):
     PUBLIC = "public"
     PRIVATE = "private"
@@ -108,101 +134,105 @@ class RelationEnd(elements.BaseElement):
 
 
 @element
-class Relation(Edge):
-    kind: str = "Undefined"
+class Relationship(Edge):
+
     source_end: RelationEnd = None
     target_end: RelationEnd = None
     display_kind: bool = True
     display_multiplicity: bool = True
     display_usage: bool = True
 
-    def __post_init__(self, *args, **kwargs):
-        super().__post_init__(*args, **kwargs)
-        if self.labels:
+    def update(self, edge_data: dict):
+        if not edge_data:
             return
+        properties = self.properties
+        properties["@id"] = edge_data["@id"]
 
-        if self.display_kind and self.kind:
-            self.labels += [ElkLabel(
-                text=f"«{self.kind}»",
-                id=f"{self.id}_label",
-            )]
+        self.labels.append(Label(text=f"""«{edge_data["@type"]}»"""))
 
-        if self.display_multiplicity and self.multiplicity:
-            mid = "" if None in self.multiplicity else ".."
+        # TODO: Add processing of relationship properties
+        # if self.display_kind and self.kind:
+        #     self.labels += [ElkLabel(
+        #         text=f"«{self.kind}»",
+        #         id=f"{self.identifier}_label",
+        #     )]
 
-            lower, upper = self.multiplicity
+        # if self.display_multiplicity and self.multiplicity:
+        #     mid = "" if None in self.multiplicity else ".."
 
-            lower = self.multiplicity[0] or "0"
-            upper = self.multiplicity[1] or "*"
-            self.labels += [ElkLabel(
-                id=f"{self.id}_label_tail",
-                text=f"{lower}{mid}{upper}",
-                layoutOptions={
-                    "org.eclipse.elk.edgeLabels.placement": "TAIL",
-                },
-            )]
+        #     lower, upper = self.multiplicity
 
-        if self.display_usage and self.usage:
-            self.labels += [ElkLabel(
-                id=f"{self.id}_label_tail",
-                text=f"{{{self.usage}}}",
-                layoutOptions={
-                    "org.eclipse.elk.edgeLabels.placement": "HEAD",
-                },
-            )]
+        #     lower = self.multiplicity[0] or "0"
+        #     upper = self.multiplicity[1] or "*"
+        #     self.labels += [ElkLabel(
+        #         id=f"{self.id}_label_tail",
+        #         text=f"{lower}{mid}{upper}",
+        #         layoutOptions={
+        #             "org.eclipse.elk.edgeLabels.placement": "TAIL",
+        #         },
+        #     )]
+
+        # if self.display_usage and self.usage:
+        #     self.labels += [ElkLabel(
+        #         id=f"{self.id}_label_tail",
+        #         text=f"{{{self.usage}}}",
+        #         layoutOptions={
+        #             "org.eclipse.elk.edgeLabels.placement": "HEAD",
+        #         },
+        #     )]
 
 
 @element
-class Association(Edge):
+class Association(Relationship):
     shape_end: ty.ClassVar[str] = "association"
 
 
 @element
-class Composition(Edge):
+class Composition(Relationship):
     shape_start: ty.ClassVar[str] = "composition"
 
 
 @element
-class Aggregation(Edge):
+class Aggregation(Relationship):
     shape_start: ty.ClassVar[str] = "aggregation"
 
 
 @element
-class Containment(Edge):
+class Containment(Relationship):
     shape_start: ty.ClassVar[str] = "containment"
 
 
 @element
-class OwnedBy(Edge):
+class OwnedBy(Relationship):
     shape_end: ty.ClassVar[str] = "containment"
 
 
 @element
-class DirectedAssociation(Edge):
+class DirectedAssociation(Relationship):
     shape_end: ty.ClassVar[str] = "directed_association"
 
 
 @element
-class Generalization(Edge):
+class Generalization(Relationship):
     shape_end: ty.ClassVar[str] = "generalization"
 
 
 @element
-class Subsetting(Edge):
+class Subsetting(Relationship):
     shape_end: ty.ClassVar[str] = "subsetting"
 
 
 @element
-class FeatureTyping(Edge):
+class FeatureTyping(Relationship):
     shape_end: ty.ClassVar[str] = "feature_typing"
 
 
 @element
-class Redefinition(Edge):
+class Redefinition(Relationship):
     shape_end: ty.ClassVar[str] = "redefinition"
 
 
-EDGE_MAP = {
+RELATIONSHIP_TYPES = {
     "FeatureTyping": FeatureTyping,
     "OwnedBy": OwnedBy,
     "Redefinition": Redefinition,
@@ -211,14 +241,12 @@ EDGE_MAP = {
     # TODO: review and map the rest of the edge types
 }
 
-DEFAULT_EDGE = DirectedAssociation
+DEFAULT_RELATIONSHIP = DirectedAssociation
 
 
 @element
-class Diagram(Partition):
-    """An elk diagram."""
-
-    # TODO flesh out ideas of encapsulating diagram defs / styles / elements
+class PartContainer(Partition):
+    """A container for the parts diagram."""
 
     default_edge: ty.Type[Edge] = field(default=DirectedAssociation)
 
@@ -259,29 +287,36 @@ class Diagram(Partition):
     }
 
 
+class CenterButton(elk_tools.ToolButton):
+
+    def handler(self, *_):
+        diagram = self.app.diagram
+        diagram.center(retain_zoom=True)
+
+
+class FitButton(elk_tools.ToolButton):
+
+    def handler(self, *_):
+        diagram = self.app.diagram
+        diagram.fit(padding=50)
+
+
 @ipyw.register
 class SysML2ElkDiagram(ipyw.Box):
     """A SysML v2 Diagram"""
 
     compound: Compound = trt.Instance(Compound, args=())
+    container: PartContainer = trt.Instance(PartContainer, args=())
     elk_app: ipyelk.Elk = trt.Instance(ipyelk.Elk)
-    elk_diagram: Diagram = trt.Instance(Diagram, args=())
     elk_layout: ipyelk.nx.XELKTypedLayout = trt.Instance(
         ipyelk.nx.XELKTypedLayout,
         kw=dict(selected_index=None),  # makes layout start collapsed
     )
-    elk_map: dict = trt.Dict(
-        key_trait=trt.Instance(Compartment),
-        value_trait=trt.Unicode(),
-        kw={},
-    )
-    elk_transformer: ipyelk.nx.XELK = trt.Instance(ipyelk.nx.XELK)
     graph: nx.Graph = trt.Instance(nx.Graph, args=())
+    id_mapper: Mapper = trt.Instance(Mapper, kw={})
 
-    fit_btn: elk_tools.FitBtn = trt.Instance(elk_tools.FitBtn)
-    toggle_btn: elk_tools.ToggleCollapsedBtn = trt.Instance(
-        elk_tools.ToggleCollapsedBtn,
-    )
+    fit: FitButton = trt.Instance(FitButton)
+    center: CenterButton = trt.Instance(CenterButton)
     toolbar_buttons: list = trt.List(trait=trt.Instance(ipyw.Button))
     toolbar_accordion: ty.Dict[str, ipyw.Widget] = trt.Dict(
         key_trait=trt.Unicode(),
@@ -293,7 +328,7 @@ class SysML2ElkDiagram(ipyw.Box):
         value_trait=trt.Instance(Part),
     )
 
-    selected: tuple = trt.Tuple()
+    selected: ty.Tuple[str] = trt.Tuple()
 
     style: ty.Dict[str, dict] = trt.Dict(
         kw={
@@ -315,18 +350,14 @@ class SysML2ElkDiagram(ipyw.Box):
         self._update_toolbar()
         return [self.elk_app]
 
-    @trt.default("elk_transformer")
-    def _make_transformer(self) -> ipyelk.nx.XELK:
-        return ipyelk.nx.XELK(
-            source=(self.graph, None),
-            label_key="labels",
-            layouts=self.elk_layout.value,
-        )
-
     @trt.default("elk_app")
     def _make_app(self) -> ipyelk.Elk:
         elk_app = ipyelk.Elk(
-            transformer=self.elk_transformer,
+            transformer=ipyelk.nx.XELK(
+                source=(self.graph, None),
+                label_key="labels",
+                layouts=self.elk_layout.value,
+            ),
             style=self.style,
             layout=dict(
                 flex="1",
@@ -337,19 +368,49 @@ class SysML2ElkDiagram(ipyw.Box):
         elk_app.observe(self._update_selected, "selected")
         return elk_app
 
-    @trt.default("toggle_btn")
-    def _make_toggle_btn(self) -> elk_tools.ToggleCollapsedBtn:
-        return elk_tools.ToggleCollapsedBtn(
+    @trt.default("id_mapper")
+    def _make_id_mapper(self) -> Mapper:
+        transformer = self.elk_app.transformer
+        relationships, hierarchy = transformer.source
+
+        elk_to_items = transformer._elk_to_item or {}
+
+        def id_from_item(item):
+            id_ = None
+            if isinstance(item, ipyelk.transform.Edge):
+                id_ = item.data.get("properties", {}).get("@id")
+            elif isinstance(getattr(item, "node", None), Compartment):
+                if item in hierarchy:
+                    id_ = next(hierarchy.predecessors(item)).node.id
+            if id_ is None:
+                self.log.debug(f"Could not parse: {item}")
+            return id_
+
+        from_elk_id = {
+            elk_id: id_from_item(elk_item)
+            for elk_id, elk_item in elk_to_items.items()
+        }
+
+        from_elk_id = {
+            elk_id: sysml_id
+            for elk_id, sysml_id in from_elk_id.items()
+            if sysml_id is not None
+        }
+        return Mapper(from_elk_id)
+
+    @trt.default("center")
+    def _make_center_button(self) -> CenterButton:
+        return CenterButton(
             app=self.elk_app,
             description="",
             icon="compress",
             layout=dict(height="40px", width="40px"),
-            tooltip="Collapse/Expand the selected elements",
+            tooltip="Center Diagram",
         )
 
-    @trt.default("fit_btn")
-    def _make_fit_btn(self) -> elk_tools.FitBtn:
-        return elk_tools.FitBtn(
+    @trt.default("fit")
+    def _make_fit_button(self) -> FitButton:
+        return FitButton(
             app=self.elk_app,
             description="",
             icon="expand-arrows-alt",
@@ -359,7 +420,7 @@ class SysML2ElkDiagram(ipyw.Box):
 
     @trt.default("toolbar_buttons")
     def _make_toolbar_buttons(self):
-        return [self.fit_btn, self.toggle_btn]
+        return [self.fit, self.center]
 
     @trt.default("toolbar_accordion")
     def _make_toolbar_accordion(self):
@@ -385,9 +446,26 @@ class SysML2ElkDiagram(ipyw.Box):
             old = change.old
             del old
 
-        self._add_parts()
-        parts = self.parts
-        diagram = Diagram()
+        # TODO: investigate if we need to clear the Elk Transformer Registry
+        # self.elk_app.transformer.clear_registry()
+        container = PartContainer()
+        parts = self._add_parts()
+
+        container.labels += [
+            Label(text="""«Diagram»"""),
+            Label(text=f"""{len(self.graph)} Elements"""),
+            Label(text=f"""{len(self.graph.edges)} Relationships"""),
+            Label(text=f"""Created: {datetime.now().strftime("%Y-%m-%d")}"""),
+        ]
+
+        # TODO: Look into adding the parts as children to the container without breaking the
+        #       diagram interactions (e.g., filter to path or span graph)
+        # for id_, part in parts.items():
+        #     container.add_child(child=part, key=id_)
+            # TODO: Look into adding children in a hierarchy, maybe make it configurable?
+            # owner = self.parts.get((part.data.get("owner") or {}).get("@id"), container)
+            # owner.add_child(child=part, key=id_)
+
         for (source, target, type_), edge in self.graph.edges.items():
             if source not in parts:
                 self.log.warn(
@@ -399,21 +477,44 @@ class SysML2ElkDiagram(ipyw.Box):
                     f"Could not map target: {target} in '{type_}' with {source}"
                 )
                 continue
-            new_edge = diagram.add_edge(
+            new_relationship = container.add_edge(
                 source=parts[source],
                 target=parts[target],
-                cls=EDGE_MAP.get(type_, DEFAULT_EDGE),
+                cls=RELATIONSHIP_TYPES.get(type_, DEFAULT_RELATIONSHIP),
             )
-            new_edge.labels.append(Label(text=f"«{type_}»"))
-            new_edge.id = edge["@id"]
-        diagram.defs = {**diagram.defs}
-        self.elk_diagram = diagram
+            if edge:
+                new_relationship.update(edge)
 
-    @trt.observe("elk_diagram")
+        container.defs = {**container.defs}
+        self.container = container
+
+    @trt.observe("container")
     def _update_app(self, *_):
-        self.elk_app.transformer.source = self.compound(self.elk_diagram)
-        self.elk_app.style = self.elk_diagram.style
-        self.elk_app.diagram.defs = self.elk_diagram.defs
+        self.elk_app.transformer.source = self.compound(self.container)
+        self.elk_app.style = self.container.style
+        self.elk_app.diagram.defs = self.container.defs
+        self.id_mapper = self._make_id_mapper()
+
+    def _map_selections(self, *selections):
+        if not selections:
+            return []
+        new_selections = self.id_mapper.get(*selections)
+        if selections and not new_selections:
+            self.id_mapper = self._make_id_mapper()
+            new_selections = self.id_mapper.get(*selections)
+        return new_selections
+
+    @trt.observe("selected")
+    def _update_diagram_selections(self, *_):
+        new_selections = self._map_selections(*self.selected)
+        diagram = self.elk_app.diagram
+        if set(diagram.selected).symmetric_difference(new_selections):
+            diagram.selected = new_selections
+
+    def _update_selected(self, *_):
+        new_selections = self._map_selections(*self.elk_app.diagram.selected)
+        if set(self.selected).symmetric_difference(new_selections):
+            self.selected = new_selections
 
     @staticmethod
     def make_part(data: dict, width=220):
@@ -436,19 +537,15 @@ class SysML2ElkDiagram(ipyw.Box):
         return part
 
     def _add_parts(self):
+        old_parts = self.parts
         new_parts = {
             id_: self.make_part(node_data)
             for id_, node_data in self.graph.nodes.items()
             if node_data
-               and id_ not in self.parts
+            and id_ not in old_parts
         }
-        self.parts.update(new_parts)
-
-        self.elk_map.update({
-            child: id_
-            for id_, part in new_parts.items()
-            for child in part.children
-        })
+        old_parts.update(new_parts)
+        return old_parts
 
     def _make_command_palette(self) -> ipyw.VBox:
         titles, widgets = zip(*self.toolbar_accordion.items())
@@ -470,12 +567,3 @@ class SysML2ElkDiagram(ipyw.Box):
     def _update_diagram_layout_(self, *_):
         self.elk_app.transformer.layouts = self.elk_layout.value
         self.elk_app.refresh()
-
-    def _update_selected(self, *_):
-        elk_map = self.elk_map
-        self.selected = [
-            elk_map[mark.node]
-            for mark in self.elk_app.selected
-            if hasattr(mark, "node")
-            and mark.node in elk_map
-        ]

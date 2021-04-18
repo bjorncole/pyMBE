@@ -1,0 +1,12 @@
+# These adapters describe how to make SysML subgraphs of the LPG
+
+banded_graph:
+  description: |
+    Generate library settings for a "banded graph" of types, generalization, and feature membership to capture both SysML v1 and v2 styled composition structures
+  included_edge_types:
+  - FeatureMembership
+  - FeatureTyping
+  - Superclassing
+  reversed_edge_types:
+  - FeatureMembership
+  - FeatureTyping

@@ -27,8 +27,11 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
         ipyw.SelectMultiple,
         kw=dict(rows=10),
     )
+
     max_type_selector_rows: int = trt.Int(default_value=10, min=5)
+
     update_diagram: ipyw.Button = trt.Instance(ipyw.Button)
+
     filter_to_path: ipyw.Button = trt.Instance(ipyw.Button)
     path_directionality: ipyw.Checkbox = trt.Instance(
         ipyw.Checkbox,
@@ -100,12 +103,12 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
     def _update_diagram_observers(self, *_):
         # TODO: add back in after resolving issue with ipyelk indexing
         pass
-        # if self.selector_link:
-        #     self.selector_link.unlink()
-        # self.selector_link = trt.link(
-        #     (self, "selected"),
-        #     (self.diagram.elk_app.diagram, "selected"),
-        # )
+        if self.selector_link:
+            self.selector_link.unlink()
+        self.selector_link = trt.link(
+            (self, "selected"),
+            (self.diagram, "selected"),
+        )
 
     @trt.observe("nodes_by_type")
     def _update_node_type_selector_options(self, *_):
@@ -206,19 +209,27 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
         )
 
     def _update_diagram_graph(self, button=None):
+        directed = self.path_directionality.value
+        if self.edge_type_reverser.value and not directed:
+            raise ValueError(
+                f"Reversing edge types: {reversed_edge_types} makes no "
+                "sense since directional is False")
+
+        new_graph = self.adapt(
+            excluded_edge_types=self.excluded_edge_types,
+            excluded_node_types=self.excluded_node_types,
+            reversed_edge_types=self.edge_type_reverser.value,
+        )
+
         if button is self.filter_to_path:
             source, target = self.selected
-            subgraph = self.get_path(
+            new_graph = self.get_path_graph(
+                graph=new_graph,
                 source=source,
                 target=target,
-                directional=self.path_directionality.value,
-                excluded_edge_types=self.excluded_edge_types,
-                excluded_node_types=self.excluded_node_types,
-                reversed_edge_types=self.edge_type_reverser.value,
+                directed=directed,
             )
-            if subgraph:
-                self.diagram.graph = subgraph
-            else:
+            if not new_graph:
                 self.filter_to_path.disabled = True
                 self.log.warning(
                     "Could not find path between " 
@@ -226,36 +237,24 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
                     f"""{"not" if not self.path_directionality else ""} """ 
                     "enforced."
                 )
-            return
         elif button is self.filter_by_dist:
-            subgraph = self.get_spanning_subgraph_from_seeds(
+            new_graph = self.get_spanning_graph(
+                graph=new_graph,
                 seeds=self.selected,
                 max_distance=self.max_distance.value,
-                directional=self.path_directionality.value,
-                excluded_edge_types=self.excluded_edge_types,
-                excluded_node_types=self.excluded_node_types,
-                reversed_edge_types=self.edge_type_reverser.value,
+                directed=directed,
             )
-            if subgraph:
-                self.diagram.graph = subgraph
-            else:
+            if not new_graph:
                 self.filter_by_dist.disabled = True
                 self.log.warning(
                     "Could not find a spanning graph of distance "
                     f"{self.max_distance.value} from these seeds: " 
                     f"{self.selected}."
                 )
-            return
-        elif self.selected_by_type_node_ids or self.selected_by_type_edge_ids:
-            self.diagram.graph = self.filter(
-                nodes=self.selected_by_type_node_ids,
-                edges=self.selected_by_type_edge_ids,
-            )
-        else:
-            self.diagram.graph = self.graph
 
-        # TODO: look into adding a refresh, e.g.,
+        self.diagram.graph = new_graph
         # self.diagram.elk_app.refresh()
+        self.diagram.elk_app.diagram.fit()
 
     def _update_diagram_toolbar(self):
         # Append elements to the elk_app toolbar

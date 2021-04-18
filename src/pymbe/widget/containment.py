@@ -61,18 +61,22 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
 
     @trt.observe("selected_nodes")
     def _update_selected(self, *_):
-        self.selected = [
-            node._identifier
-            for node in self.selected_nodes
-        ]
+        element_ids = {node._identifier for node in self.selected_nodes}
+        self.update_selected(*element_ids)
 
     @trt.observe("selected")
-    def _update_selected_elements(self, *_):
-        if not self.selected:
-            self.deselect_nodes()
+    def _update_selected_nodes(self, *_):
+        nodes_selected = {
+            node._identifier
+            for node in self.selected_nodes
+        }
+        if not nodes_selected.symmetric_difference(self.selected):
             return
         with self.hold_trait_notifications():
-            self.select_nodes(*self.selected)
+            if not self.selected:
+                self.deselect_nodes()
+                return
+
             nodes_to_deselect = [
                 node
                 for node in self.selected_nodes
@@ -80,6 +84,8 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
             ]
             if nodes_to_deselect:
                 self.deselect_nodes(*nodes_to_deselect)
+
+            self.select_nodes(*self.selected)
 
     @trt.observe("nodes_by_id")
     def _update_tree(self, *_):
@@ -118,6 +124,7 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
             id_: node
             for id_, node in nodes.items()
             if node.nodes
+            or node._owner
             or node._data.get("name", None)
         }
         # Sort the child nodes
@@ -125,28 +132,26 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
             node.nodes = self.sort_nodes(node.nodes)
 
         with self.hold_trait_notifications():
-            self.selected = []
+            self.update_selected()
             self.nodes_by_id = nodes
 
     def select_nodes(self, *nodes: str):
         """Select a list of nodes"""
-        with self.hold_trait_notifications():
-            for node_id in nodes:
-                node = self.nodes_by_id.get(node_id, None)
-                if node is None:
-                    continue
+        for node_id in nodes:
+            node = self.nodes_by_id.get(node_id, None)
+            if node:
                 node.selected = True
 
     def deselect_nodes(self, *nodes: str):
         """Deselect a node, or deselect all if none is specified."""
-        nodes = nodes or [
-            node
-            for node_id, node in self.nodes_by_id.items()
-            if node.selected
-        ]
-        with self.hold_trait_notifications():
-            for node in nodes:
-                node.selected = False
+        if not nodes:
+            nodes = [
+                node
+                for node_id, node in self.nodes_by_id.items()
+                if node.selected
+            ]
+        for node in nodes:
+            node.selected = False
 
     def _clear_tree(self):
         for node in self.nodes:

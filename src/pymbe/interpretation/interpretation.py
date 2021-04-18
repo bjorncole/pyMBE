@@ -40,14 +40,15 @@ def get_feature_upper_multiplicity(
 
 
 def make_banded_featuring_graph(lpg: SysML2LabeledPropertyGraph) -> nx.DiGraph:
-    return lpg.filter(
-        edge_types=(
-            "FeatureMembership",
-            "FeatureTyping",
-            "Redefinition",
-            "Superclassing",
-        ),
-        reverse_edge_types=(
+    excluded_edge_types = set(lpg.edge_types).difference((
+        "FeatureMembership",
+        "FeatureTyping",
+        "Redefinition",
+        "Superclassing",
+    ))
+    return lpg.adapt(
+        excluded_edge_types=excluded_edge_types,
+        reversed_edge_types=(
             "FeatureMembership",
             "FeatureTyping",
         )
