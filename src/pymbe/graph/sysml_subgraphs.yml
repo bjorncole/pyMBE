@@ -10,3 +10,20 @@ banded_graph:
   reversed_edge_types:
   - FeatureMembership
   - FeatureTyping
+
+expanded_banded_graph:
+  description: |
+    Generate library settings for a expanded version of banded graph to accommodate expression tree relationships
+  included_edge_types:
+  - FeatureMembership
+  - FeatureTyping
+  - FeatureValue
+  - ParameterMembership
+  - ReturnParameterMembership
+  - Superclassing
+  reversed_edge_types:
+  - FeatureMembership
+  - FeatureTyping
+  - FeatureValue
+  - ParameterMembership
+  - ReturnParameterMembership

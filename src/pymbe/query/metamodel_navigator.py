@@ -18,4 +18,5 @@ def feature_upper_multiplicity(feature: dict, lpg: SysML2LabeledPropertyGraph):
             mult = lpg.elements_by_id[feature['multiplicity']['@id']]
             if '@id' in mult['upperBound']:
                 return lpg.elements_by_id[mult['upperBound']['@id']]['value']
+                
     return 1

@@ -107,8 +107,8 @@ class SysML2Client(Base):
                     tzinfos=TIMEZONES,
                 ).astimezone(timezone.utc)
             except ValueError:
-                warn(f"Could not parse project: {project}")
-                return {}
+                # TODO: revise this when the API server changes the project name
+                return dict()
             return dict(
                 created=created,
                 full_name=project.name,
@@ -121,9 +121,9 @@ class SysML2Client(Base):
         }
 
         return {
-            key: value
-            for key, value in results.items()
-            if value
+            project_id: project_data
+            for project_id, project_data in results.items()
+            if project_data
         }
 
     @trt.observe("host_url", "host_port")
