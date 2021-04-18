@@ -1,4 +1,4 @@
-# These adapters help make SysML subgraphs of the LPG
+# These adapters describe how to make SysML subgraphs of the LPG
 
 banded_graph:
   description: |

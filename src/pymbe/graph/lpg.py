@@ -22,8 +22,8 @@ class SysML2LabeledPropertyGraph(Base):
     ATTRIBUTE_TO_EDGES: tuple = (
         # dict(attribute="owner", new_type="Owned", reversed=True),
     )
-    SYSML_ADAPTERS: dict = yaml.load(
-        (Path(__file__).parent / "sysml_adapters.yml").read_text(),
+    SYSML_SUBGRAPH_RECIPES: dict = yaml.load(
+        (Path(__file__).parent / "sysml_subgraphs.yml").read_text(),
         Loader=yaml.RoundTripLoader,
     )
 
@@ -188,34 +188,31 @@ class SysML2LabeledPropertyGraph(Base):
 
             self.graph = graph
 
-    def _process_adapter(self, adapter: str) -> dict:
-        adapter_kwargs = self.SYSML_ADAPTERS.get(adapter, {})
-        if not adapter_kwargs:
-            warn(f"Could not find SysML Adapter: '{adapter}'")
-            return adapter_kwargs
+    def make_sysml_subgraph(self, subgraph: str) -> nx.MultiDiGraph:
+        instructions = self.SYSML_SUBGRAPH_RECIPES.get(subgraph)
+        if not instructions:
+            raise ValueError(f"Could not find SysML Adapter: '{instructions}'")
 
-        for key in tuple(adapter_kwargs):
-            if key.startswith("included_"):
-                included_types = adapter_kwargs.pop(key)
+        for key in tuple(instructions):
+            if key.startswith("included_") and key.endswith("_types"):
+                # revert included for excluded types
+                included_types = instructions.pop(key)
                 types_key = key.replace("included_", "")
                 types = set(getattr(self, types_key)).difference(included_types)
-                adapter_kwargs[f"excluded_{types_key}"] = types
+                instructions[f"excluded_{types_key}"] = tuple(sorted(types))
 
-        return adapter_kwargs
+        return self.adapt(**instructions)
 
     @lru_cache
     def adapt(self,
-        adapter=None,
         excluded_node_types: (list, set, tuple) = None,
         excluded_edge_types: (list, set, tuple) = None,
         reversed_edge_types: (list, set, tuple) = None,
     ):
         """
-            Using the existing graph, filter by node and edge
-            types, and/or reverse certain edge types.
+            Using the existing graph, filter by node and edge types, and/or
+            reverse certain edge types.
         """
-        if adapter:
-            return self.adapt(**self._process_adapter(adapter))
 
         graph = self.graph
 
