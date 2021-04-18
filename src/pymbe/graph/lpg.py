@@ -91,7 +91,7 @@ class SysML2LabeledPropertyGraph(Base):
         ]
 
     def update(self, elements: dict, merge=None):
-        self.adapt.cache_clear()
+        self._adapt.cache_clear()
 
         merge = self.merge if merge is None else merge
 
@@ -188,10 +188,13 @@ class SysML2LabeledPropertyGraph(Base):
 
             self.graph = graph
 
-    def make_sysml_subgraph(self, subgraph: str) -> nx.MultiDiGraph:
-        instructions = self.SYSML_SUBGRAPH_RECIPES.get(subgraph)
+    def get_projection(self, projection: str) -> nx.Graph:
+        instructions = self.SYSML_SUBGRAPH_RECIPES.get(projection)
         if not instructions:
-            raise ValueError(f"Could not find SysML Adapter: '{instructions}'")
+            raise ValueError(
+                f"Could not find SysML Project: '{projection}'.\n"
+                f"Options available are: {tuple(SYSML_SUBGRAPH_RECIPES)}"
+            )
 
         for key in tuple(instructions):
             if key.startswith("included_") and key.endswith("_types"):
@@ -201,24 +204,43 @@ class SysML2LabeledPropertyGraph(Base):
                 types = set(getattr(self, types_key)).difference(included_types)
                 instructions[f"excluded_{types_key}"] = tuple(sorted(types))
 
+        function_attributes = self.adapt.__annotations__
+        instructions = {
+            key: value
+            for key, value in instructions.items()
+            if key in function_attributes
+        }
+
         return self.adapt(**instructions)
 
-    @lru_cache
+
     def adapt(self,
         excluded_node_types: (list, set, tuple) = None,
         excluded_edge_types: (list, set, tuple) = None,
         reversed_edge_types: (list, set, tuple) = None,
-    ):
+    ) -> nx.Graph:
         """
             Using the existing graph, filter by node and edge types, and/or
             reverse certain edge types.
         """
-
-        graph = self.graph
-
         excluded_edge_types = excluded_edge_types or []
         excluded_node_types = excluded_node_types or []
         reversed_edge_types = reversed_edge_types or []
+
+        return self._adapt(
+            excluded_edge_types=tuple(sorted(excluded_edge_types)),
+            excluded_node_types=tuple(sorted(excluded_node_types)),
+            reversed_edge_types=tuple(sorted(reversed_edge_types)),
+        ).copy()
+
+    @lru_cache
+    def _adapt(self,
+        excluded_node_types: (list, set, tuple) = None,
+        excluded_edge_types: (list, set, tuple) = None,
+        reversed_edge_types: (list, set, tuple) = None,
+    ):
+
+        graph = self.graph
 
         mismatched_node_types = set(excluded_node_types).difference(self.node_types)
         if mismatched_node_types:
