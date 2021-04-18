@@ -4,7 +4,7 @@ import traitlets as trt
 import typing as ty
 
 from .core import BaseWidget
-from .labeling import m1_signature
+from .labeling import get_m1_signature_label
 
 
 class Element(ipyt.Node):
@@ -170,7 +170,7 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
 
         return Element(
             icon=self.icons_by_type.get(element["@type"], self.default_icon),
-            name=m1_signature(element, self.elements_by_id),
+            name=get_m1_signature_label(element, self.elements_by_id),
             _data=element,
             _identifier=element_id,
             _owner=owner,
