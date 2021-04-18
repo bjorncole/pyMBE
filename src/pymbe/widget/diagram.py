@@ -525,7 +525,9 @@ class SysML2ElkDiagram(ipyw.Box):
                 width = int(0.5 * width)
         else:
             name = (
-                data.get("name", None)
+                # TODO: fix this dirty hack to get the M1 label created by the containment tree
+                data.get("m1_label", None)
+                or data.get("name", None)
                 or data["@id"]
             )
         part = Part(data=data, id=data["@id"], width=width)

@@ -162,6 +162,11 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
     def _make_node(self, element):
         element_id = element["@id"]
 
+        icon = self.icons_by_type.get(element["@type"], self.default_icon)
+
+        name = get_m1_signature_label(element, self.elements_by_id)
+        self.elements_by_id[element_id]["m1_label"] = name
+
         owner = (
             element.get("owner", None)
             or element.get("owningRelatedElement", None)
@@ -169,8 +174,8 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
         ).get("@id", None)
 
         return Element(
-            icon=self.icons_by_type.get(element["@type"], self.default_icon),
-            name=get_m1_signature_label(element, self.elements_by_id),
+            icon=icon,
+            name=name,
             _data=element,
             _identifier=element_id,
             _owner=owner,

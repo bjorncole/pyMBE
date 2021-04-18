@@ -2,48 +2,38 @@
 
 
 def get_m1_signature_label(element: dict, all_elements: dict) -> str:
-    element_name = element.get("name")
-    element_metatype = element.get("@type")
+    name = element.get("name")
+    metatype = element.get("@type")
 
     # Get the element type(s)
-    element_types: list = element.get("type") or []
-    if isinstance(element_types, dict):
-        element_types = [element_types]
-    element_types = [
-        all_elements[element_type["@id"]].get("name")
-        for element_type in element_types
-        if element_type and "@id" in element_type
+    types: list = element.get("type") or []
+    if isinstance(types, dict):
+        types = [types]
+    type_names = [
+        all_elements[type_["@id"]].get("name")
+        for type_ in types
+        if type_ and "@id" in type_
     ]
-    element_types = [
-        str(element_type)
-        for element_type in element_types
-        if element_type
+    type_names = [
+        str(type_name)
+        for type_name in type_names
+        if type_name
     ]
 
-    if element_name:
-        if element_types:
-            element_name += f": {element_types[0]}"
-        return element_name
-    elif element_metatype == "FeatureReferenceExpression":
-        referent = all_elements[element["referent"]["@id"]]
-        referent_name = (
-            referent["name"] or
-            referent["qualifiedName"].split("::")[-2]
-        )
-        return f"FRE.{referent_name}"
-    elif element_metatype in (
-        "Expression",
-        "OperatorExpression",
-        "InvocationExpression",
-    ):
+    if name:
+        if type_names:
+            # TODO: look into using other types (if there are any)
+            name += f": {type_names[0]}"
+        return name
+    elif metatype.endswith("Expression"):
         return _get_m1_signature_label_for_expressions(
             element=element,
             all_elements=all_elements,
-            element_metatype=element_metatype,
-            element_types=element_types,
+            metatype=metatype,
+            type_names=type_names,
         )
     elif "@id" in element:
-        return f"""{element["@id"]} «{element_metatype}»"""
+        return f"""{element["@id"]} «{metatype}»"""
     else:
         return "blank"
 
@@ -51,9 +41,36 @@ def get_m1_signature_label(element: dict, all_elements: dict) -> str:
 def _get_m1_signature_label_for_expressions(
     element: dict,
     all_elements: dict,
-    element_metatype: str,
-    element_types: list,
+    metatype: str,
+    type_names: list,
 ) -> str:
+    if metatype not in (
+        "Expression",
+        "FeatureReferenceExpression",
+        "InvocationExpression",
+        "OperatorExpression",
+    ):
+        raise NotImplementedError(
+            f"Cannot create M1 signature for: {metatype}"
+        )
+
+    if metatype == "FeatureReferenceExpression":
+        referent_id = (element["referent"] or {}).get("@id")
+        referent = all_elements.get(referent_id)
+        if referent:
+            referent_name = referent["name"]
+            name_chain = referent["qualifiedName"].split("::")
+            index = 0
+            while not referent_name and index < len(name_chain):
+                index += 1
+                referent_name = name_chain[-index]
+                if referent_name.lower() == "null":
+                    referent_name = None
+        else:
+            referent_name = "UNNAMED"
+        return f"FRE.{referent_name}"
+
+    prefix = ""
     input_ids = [
         expression_input["@id"]
         for expression_input in element["input"]
@@ -62,10 +79,10 @@ def _get_m1_signature_label_for_expressions(
         all_elements[input_id]["name"]
         for input_id in input_ids
     ]
-    result_id = element["result"]["@id"]
-    result_name = all_elements[result_id]["name"]
-    prefix = ""
-    if element_metatype == "Expression":
+    result_id = (element["result"] or {}).get("@id")
+    result_name = all_elements.get(result_id, {}).get("name")
+
+    if metatype == "Expression":
         parameter_members = [result_id] + input_ids
         # Scan memberships to find non-parameter members
         non_parameter_members = [
@@ -77,8 +94,8 @@ def _get_m1_signature_label_for_expressions(
             if owned_member["@id"] not in parameter_members
         ]
         prefix = non_parameter_members[0] if non_parameter_members else ""
-    elif element_metatype == "OperatorExpression":
+    elif metatype == "OperatorExpression":
         prefix = element["operator"]
-    elif element_metatype == "InvocationExpression":
-        prefix = element_types[0] if element_types else ""
-    return f"""{prefix}({", ".join(input_names)}) => {result_name}"""
+    elif metatype == "InvocationExpression":
+        prefix = type_names[0] if type_names else ""
+    return f"""{prefix} ({", ".join(input_names)}) => {result_name}"""
