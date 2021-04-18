@@ -33,7 +33,7 @@ def roll_up_multiplicity(
     feat: dict,
     feature_multiplicity_function: callable,
 ) -> int:
-    banded_featuring_graph = lpg.get_projection("expanded_banded_graph")
+    banded_featuring_graph = lpg.get_projection("Expanded Banded Graph")
     banded_roots = [
         node
         for node in banded_featuring_graph.nodes

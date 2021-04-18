@@ -518,18 +518,21 @@ class SysML2ElkDiagram(ipyw.Box):
 
     @staticmethod
     def make_part(data: dict, width=220):
-        value = data.get("value", None)
-        if value is not None:
-            name = value
-            if isinstance(value, (bool, float, int)):
-                width = int(0.5 * width)
-        else:
+        value = data.get("value")
+        type_ = data.get("@type")
+
+        if type_ in ("MultiplicityRange", ) or type_.startswith("Literal"):
+            width = int(width / 2)
+
+        name = value
+        if name is None:
             name = (
-                # TODO: fix this dirty hack to get the M1 label created by the containment tree
-                data.get("m1_label", None)
-                or data.get("name", None)
+                # FIXME: hack to get M1 label created by containment tree
+                data.get("m1_label")
+                or data.get("name")
                 or data["@id"]
             )
+
         part = Part(data=data, id=data["@id"], width=width)
         part.title = Compartment(headings=[
             f"""«{data["@type"]}»""",

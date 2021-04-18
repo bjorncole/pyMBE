@@ -25,6 +25,14 @@ def get_m1_signature_label(element: dict, all_elements: dict) -> str:
             # TODO: look into using other types (if there are any)
             name += f": {type_names[0]}"
         return name
+    elif metatype.startswith("Literal"):
+        type_ = type_names[0] if type_names else metatype.replace("Literal", "")
+        return f"""{element["value"]} «{type_}»"""
+    elif metatype == "MultiplicityRange":
+        return _get_m1_signature_label_for_multiplicities(
+            element=element,
+            all_elements=all_elements,
+        )
     elif metatype.endswith("Expression"):
         return _get_m1_signature_label_for_expressions(
             element=element,
@@ -99,3 +107,23 @@ def _get_m1_signature_label_for_expressions(
     elif metatype == "InvocationExpression":
         prefix = type_names[0] if type_names else ""
     return f"""{prefix} ({", ".join(input_names)}) => {result_name}"""
+
+
+def _get_m1_signature_label_for_multiplicities(
+    element: dict,
+    all_elements: dict,
+) -> str:
+    limits = {
+        "lower": "0",
+        "upper": "*",
+    }
+    values = {}
+    for limit, default in limits.items():
+        literal_id = (element[f"{limit}Bound"] or {}).get("@id")
+        if literal_id is None:
+            values[limit] = default
+            continue
+        values[limit] = (
+            all_elements.get(literal_id) or {}
+        ).get("value", default)
+    return f"""{values["lower"]}..{values["upper"]}"""
