@@ -30,7 +30,7 @@ def get_m1_signature_label(element: dict, all_elements: dict) -> str:
             referent["name"] or
             referent["qualifiedName"].split("::")[-2]
         )
-        return "FRE." + referent_name
+        return f"FRE.{referent_name}"
     elif element_metatype in (
         "Expression",
         "OperatorExpression",
