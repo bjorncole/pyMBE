@@ -20,4 +20,4 @@ def feature_upper_multiplicity(feature: dict, client: SysML2Client):
             if '@id' in mult['upperBound']:
                 return client.elements_by_id[mult['upperBound']['@id']]['value']
 
-    return 1W
+    return 1
