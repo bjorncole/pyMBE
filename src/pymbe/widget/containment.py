@@ -165,6 +165,8 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
         icon = self.icons_by_type.get(element["@type"], self.default_icon)
 
         name = get_m1_signature_label(element, self.elements_by_id)
+
+        # TODO: do this in a better place
         self.elements_by_id[element_id]["m1_label"] = name
 
         owner = (
