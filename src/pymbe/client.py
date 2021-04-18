@@ -6,7 +6,6 @@ from warnings import warn
 import requests
 import sysml_v2_api_client as sysml2
 import traitlets as trt
-import typing as ty
 
 from .core import Base
 
@@ -99,16 +98,32 @@ class SysML2Client(Base):
     @trt.default("projects")
     def _make_projects(self):
         projects = self._projects_api.get_projects()
-        return {
-            project.id: dict(
-                created=parser.parse(
+
+        def process_project_safely(project) -> dict:
+            # protect against projects that can't be parsed
+            try:
+                created = parser.parse(
                     " ".join(project.name.split()[-6:]),
                     tzinfos=TIMEZONES,
-                ).astimezone(timezone.utc),
+                ).astimezone(timezone.utc)
+            except ValueError:
+                warn(f"Could not parse project: {project}")
+                return {}
+            return dict(
+                created=created,
                 full_name=project.name,
                 name=" ".join(project.name.split()[:-6]),
             )
+
+        results = {
+            project.id: process_project_safely(project)
             for project in projects
+        }
+
+        return {
+            key: value
+            for key, value in results.items()
+            if value
         }
 
     @trt.observe("host_url", "host_port")

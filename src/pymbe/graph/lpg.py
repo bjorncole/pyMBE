@@ -1,6 +1,11 @@
+from copy import deepcopy
+from functools import lru_cache
+from pathlib import Path
 from uuid import uuid4
+from warnings import warn
 
 import networkx as nx
+import ruamel.yaml as yaml
 import traitlets as trt
 
 from ..core import Base
@@ -16,6 +21,10 @@ class SysML2LabeledPropertyGraph(Base):
     FILTERED_DATA_KEYS: tuple = ("@context",)
     ATTRIBUTE_TO_EDGES: tuple = (
         # dict(attribute="owner", new_type="Owned", reversed=True),
+    )
+    SYSML_SUBGRAPH_RECIPES: dict = yaml.load(
+        (Path(__file__).parent / "sysml_subgraphs.yml").read_text(),
+        Loader=yaml.RoundTripLoader,
     )
 
     graph: nx.MultiDiGraph = trt.Instance(nx.MultiDiGraph, args=tuple())
@@ -82,6 +91,8 @@ class SysML2LabeledPropertyGraph(Base):
         ]
 
     def update(self, elements: dict, merge=None):
+        self.adapt.cache_clear()
+
         merge = self.merge if merge is None else merge
 
         new_edges = [
@@ -177,16 +188,47 @@ class SysML2LabeledPropertyGraph(Base):
 
             self.graph = graph
 
-    def _get_subgraph(self,
-        excluded_edge_types: (list, set, tuple) = None,
+    def make_sysml_subgraph(self, subgraph: str) -> nx.MultiDiGraph:
+        instructions = self.SYSML_SUBGRAPH_RECIPES.get(subgraph)
+        if not instructions:
+            raise ValueError(f"Could not find SysML Adapter: '{instructions}'")
+
+        for key in tuple(instructions):
+            if key.startswith("included_") and key.endswith("_types"):
+                # revert included for excluded types
+                included_types = instructions.pop(key)
+                types_key = key.replace("included_", "")
+                types = set(getattr(self, types_key)).difference(included_types)
+                instructions[f"excluded_{types_key}"] = tuple(sorted(types))
+
+        return self.adapt(**instructions)
+
+    @lru_cache
+    def adapt(self,
         excluded_node_types: (list, set, tuple) = None,
+        excluded_edge_types: (list, set, tuple) = None,
         reversed_edge_types: (list, set, tuple) = None,
     ):
+        """
+            Using the existing graph, filter by node and edge types, and/or
+            reverse certain edge types.
+        """
+
         graph = self.graph
 
         excluded_edge_types = excluded_edge_types or []
         excluded_node_types = excluded_node_types or []
         reversed_edge_types = reversed_edge_types or []
+
+        mismatched_node_types = set(excluded_node_types).difference(self.node_types)
+        if mismatched_node_types:
+            warn(f"These node types are not in the graph: {mismatched_node_types}.")
+
+        mismatched_edge_types = {
+            (*excluded_edge_types, *reversed_edge_types)
+        }.difference(self.edge_types)
+        if mismatched_edge_types:
+            warn(f"These edge types are not in the graph: {mismatched_edge_types}.")
 
         included_nodes = sum(
             [
@@ -196,26 +238,28 @@ class SysML2LabeledPropertyGraph(Base):
             ],
             [],
         )
-        graph = graph.__class__(graph.subgraph(included_nodes))
+        subgraph = graph.__class__(graph.subgraph(included_nodes))
+
+        def _process_edge(src, tgt, typ, data, rev_types):
+            if typ in rev_types:
+                tgt, src = src, tgt
+                typ += "^-1"
+                data = deepcopy(data)
+                data["@type"] = typ
+            return src, tgt, typ, data
 
         edges = [
-            (edge[::-1][1:])
-            if edge[2] in reversed_edge_types
-            else [*edge[:2]] + [edge[2]]
-            for edge in graph.edges
+            _process_edge(src, tgt, typ, data, reversed_edge_types)
+            for (src, tgt, typ), data in subgraph.edges.items()
+            if typ not in excluded_edge_types
         ]
-        if excluded_edge_types:
-            edges = [
-                (source, target, type_)
-                for source, target, type_ in edges
-                if type_ not in excluded_edge_types
-            ]
 
-        subgraph = graph.__class__()
-        subgraph.add_edges_from(edges)
-        return subgraph
+        new_graph = graph.__class__()
+        new_graph.add_edges_from(edges)
+        return new_graph
 
-    def _make_undirected(self, graph):
+    @staticmethod
+    def _make_undirected(graph):
         if graph.is_multigraph():
             return nx.MultiGraph(graph)
         else:
