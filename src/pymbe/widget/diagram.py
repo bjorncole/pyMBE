@@ -85,6 +85,7 @@ def a_subsetting_endpoint(r=6, closed=False):
 class Mapper:
     to_map: dict = field(repr=False)
     from_map: dict = field(default=None, repr=False)
+    unified_map: dict = field(default=None, repr=False)
 
     def __len__(self):
         return len(self.to_map)
@@ -94,16 +95,17 @@ class Mapper:
 
     def __post_init__(self, *args, **kwargs):
         self.from_map = {v: k for k, v in self.to_map.items()}
+        common_keys = set(self.from_map).intersection(self.to_map)
+        if common_keys:
+            raise ValueError(f"Found common keys in the mapper: {common_keys}")
+        self.unified_map = self.to_map.copy()
+        self.unified_map.update(self.from_map)
 
     def get(self, *items):
-        found = [
-            self.to_map.get(item, self.from_map.get(item))
-            for item in items
-        ]
         return [
-            item
-            for item in found
-            if item is not None
+            self.unified_map[item]
+            for item in items
+            if item in self.unified_map
         ]
 
 
@@ -527,8 +529,7 @@ class SysML2ElkDiagram(ipyw.Box):
         name = value
         if name is None:
             name = (
-                # FIXME: hack to get M1 label created by containment tree
-                data.get("m1_label")
+                data.get("label")
                 or data.get("name")
                 or data["@id"]
             )

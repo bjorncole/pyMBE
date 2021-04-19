@@ -1,7 +1,7 @@
 # Module for computing useful labels and signatures for SysML v2 elements
 
 
-def get_m1_signature_label(element: dict, all_elements: dict) -> str:
+def get_label(element: dict, all_elements: dict) -> str:
     name = element.get("name")
     metatype = element.get("@type")
 
@@ -29,15 +29,14 @@ def get_m1_signature_label(element: dict, all_elements: dict) -> str:
         type_ = type_names[0] if type_names else metatype.replace("Literal", "")
         return f"""{element["value"]} «{type_}»"""
     elif metatype == "MultiplicityRange":
-        return _get_m1_signature_label_for_multiplicities(
-            element=element,
+        return get_label_for_multiplicity(
+            multiplicity=element,
             all_elements=all_elements,
         )
     elif metatype.endswith("Expression"):
-        return _get_m1_signature_label_for_expressions(
-            element=element,
+        return get_label_for_expression(
+            expression=element,
             all_elements=all_elements,
-            metatype=metatype,
             type_names=type_names,
         )
     elif "@id" in element:
@@ -46,12 +45,12 @@ def get_m1_signature_label(element: dict, all_elements: dict) -> str:
         return "blank"
 
 
-def _get_m1_signature_label_for_expressions(
-    element: dict,
+def get_label_for_expression(
+    expression: dict,
     all_elements: dict,
-    metatype: str,
     type_names: list,
 ) -> str:
+    metatype = expression["@type"]
     if metatype not in (
         "Expression",
         "FeatureReferenceExpression",
@@ -63,7 +62,7 @@ def _get_m1_signature_label_for_expressions(
         )
 
     if metatype == "FeatureReferenceExpression":
-        referent_id = (element["referent"] or {}).get("@id")
+        referent_id = (expression["referent"] or {}).get("@id")
         referent = all_elements.get(referent_id)
         if referent:
             referent_name = referent["name"]
@@ -81,36 +80,36 @@ def _get_m1_signature_label_for_expressions(
     prefix = ""
     input_ids = [
         expression_input["@id"]
-        for expression_input in element["input"]
+        for expression_input in expression["input"]
     ]
     input_names = [
         all_elements[input_id]["name"]
         for input_id in input_ids
     ]
-    result_id = (element["result"] or {}).get("@id")
+    result_id = (expression["result"] or {}).get("@id")
     result_name = all_elements.get(result_id, {}).get("name")
 
     if metatype == "Expression":
         parameter_members = [result_id] + input_ids
         # Scan memberships to find non-parameter members
         non_parameter_members = [
-            get_m1_signature_label(
+            get_label(
                 element=all_elements[owned_member["@id"]],
                 all_elements=all_elements,
             )
-            for owned_member in element["ownedMember"]
+            for owned_member in expression["ownedMember"]
             if owned_member["@id"] not in parameter_members
         ]
         prefix = non_parameter_members[0] if non_parameter_members else ""
     elif metatype == "OperatorExpression":
-        prefix = element["operator"]
+        prefix = expression["operator"]
     elif metatype == "InvocationExpression":
         prefix = type_names[0] if type_names else ""
     return f"""{prefix} ({", ".join(input_names)}) => {result_name}"""
 
 
-def _get_m1_signature_label_for_multiplicities(
-    element: dict,
+def get_label_for_multiplicity(
+    multiplicity: dict,
     all_elements: dict,
 ) -> str:
     limits = {
@@ -119,7 +118,7 @@ def _get_m1_signature_label_for_multiplicities(
     }
     values = {}
     for limit, default in limits.items():
-        literal_id = (element[f"{limit}Bound"] or {}).get("@id")
+        literal_id = (multiplicity[f"{limit}Bound"] or {}).get("@id")
         if literal_id is None:
             values[limit] = default
             continue
