@@ -82,9 +82,6 @@ def random_generator_playbook(
     visited_nodes = set(instances_dict.keys())
     unvisted_nodes = set(scg.nodes) - visited_nodes
 
-    print(visited_nodes)
-    print(unvisted_nodes)
-
     # "Roll up" the graph by looking at the successors to visited nodes that are unvisited, then forming a union
     # of the sets of the unvisited node's predecessors
 
@@ -100,8 +97,10 @@ def random_generator_playbook(
                 if gen in visited_nodes:
                     break
                 if is_node_covered_by_subsets(lpg, gen, instances_dict) and gen not in node_visits:
-                    instances_dict.update(generate_superset_instances(scg, gen, visited_nodes, instances_dict))
-                    node_visits.append(gen)
+                    update_dict = generate_superset_instances(scg, gen, visited_nodes, instances_dict)
+                    instances_dict.update(update_dict)
+                    if len(update_dict.keys()) > 0:
+                        node_visits.append(gen)
 
         for touched_node in node_visits:
             visited_nodes.add(touched_node)
@@ -168,6 +167,6 @@ def generate_superset_instances(
         for subset_node in part_def_graph.predecessors(superset_node):
             new_superset.extend(instances_dict[subset_node])
     else:
-        pass
+        return {}
 
     return {superset_node: new_superset}
