@@ -27,16 +27,17 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
         ipyw.SelectMultiple,
         kw=dict(rows=10),
     )
+    subgraph_selector: ipyw.Dropdown = trt.Instance(ipyw.Dropdown)
 
     max_type_selector_rows: int = trt.Int(default_value=10, min=5)
 
     update_diagram: ipyw.Button = trt.Instance(ipyw.Button)
 
     filter_to_path: ipyw.Button = trt.Instance(ipyw.Button)
-    path_directionality: ipyw.Checkbox = trt.Instance(
+    enforce_directionality: ipyw.Checkbox = trt.Instance(
         ipyw.Checkbox,
         kw=dict(
-            default_value=False,
+            default_value=True,
             description="Enforce Edge Directions",
         ),
     )
@@ -47,7 +48,6 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
         kw=dict(default_valud=1, min=1, max=4),
     )
 
-    # Revisit this when the diagram selector mapper is fixed
     selector_link: trt.link = trt.Instance(trt.link, allow_none=True)
 
     @trt.default("update_diagram")
@@ -65,9 +65,10 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
     def _make_filter_to_path_button(self) -> ipyw.Button:
         button = ipyw.Button(
             description="",
+            disabled=True,
             icon="project-diagram",  # share-alt
+            layout=dict(height="40px", width="40px"),
             tooltip="Filter To Path",
-            layout=dict(height="40px", width="40px")
         )
         button.on_click(self._update_diagram_graph)
         return button
@@ -76,12 +77,24 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
     def _make_filter_by_dist_button(self) -> ipyw.Button:
         button = ipyw.Button(
             description="",
+            disabled=True,
             icon="sitemap",  # hubspot
+            layout=dict(height="40px", width="40px"),
             tooltip="Filter by Distance",
-            layout=dict(height="40px", width="40px")
         )
         button.on_click(self._update_diagram_graph)
         return button
+
+    @trt.default("subgraph_selector")
+    def _make_subgraph_selector(self) -> ipyw.Dropdown:
+        dropdown = ipyw.Dropdown(
+            options=tuple(self.SYSML_SUBGRAPH_RECIPES),
+            rows=self.max_type_selector_rows,
+        )
+        def draw_subgraph(*_):
+            self.diagram.graph = self.get_projection(dropdown.value)
+        dropdown.observe(draw_subgraph, "value")
+        return dropdown
 
     @trt.validate("children")
     def _validate_children(self, proposal):
@@ -101,8 +114,6 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
 
     @trt.observe("diagram")
     def _update_diagram_observers(self, *_):
-        # TODO: add back in after resolving issue with ipyelk indexing
-        pass
         if self.selector_link:
             self.selector_link.unlink()
         self.selector_link = trt.link(
@@ -128,7 +139,7 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
             if edge_type in self.edge_types
         }
 
-        self.edge_type_reverser.options = self.edge_types
+        self.edge_type_reverser.options = tuple(set(self.edge_types))
         self._update_rows_in_multiselect(
             selectors=[self.edge_type_selector, self.edge_type_reverser],
         )
@@ -209,7 +220,7 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
         )
 
     def _update_diagram_graph(self, button=None):
-        directed = self.path_directionality.value
+        directed = self.enforce_directionality.value
         if self.edge_type_reverser.value and not directed:
             raise ValueError(
                 f"Reversing edge types: {reversed_edge_types} makes no "
@@ -234,7 +245,7 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
                 self.log.warning(
                     "Could not find path between " 
                     f"""{" and ".join(self.selected)}, with directionality """
-                    f"""{"not" if not self.path_directionality else ""} """ 
+                    f"""{"not" if not self.enforce_directionality else ""} """ 
                     "enforced."
                 )
         elif button is self.filter_by_dist:
@@ -261,24 +272,23 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
         diagram = self.diagram
         accordion = {**diagram.toolbar_accordion}
 
-        sub_accordion = ipyw.Accordion(
-            _titles={0: "Node Types", 1: "Edge Types"},
-            children=[
-                self.node_type_selector,
-                self.edge_type_selector,
-            ],
-            selected_index=None,
-        )
         accordion.update({
-            # TODO: enable this after the functionality is complete
-            # "Reverse Edges": self.edge_type_reverser,
-            "Filter": ipyw.VBox([
-                self.path_directionality,
+            "Filter": ipyw.Accordion(
+                _titles={0: "Node Types", 1: "Edge Types"},
+                children=[
+                    self.node_type_selector,
+                    self.edge_type_selector,
+                ],
+                selected_index=None,
+            ),
+            "Reverse Edges": self.edge_type_reverser,
+            "Subgraphs":self.subgraph_selector,
+            "Explore": ipyw.VBox([
+                self.enforce_directionality,
                 ipyw.Label("Shortest Path:"),
                 ipyw.HBox([self.filter_to_path, ]),
                 ipyw.Label("Distance:"),
                 ipyw.HBox([self.filter_by_dist, self.max_distance]),
-                sub_accordion,
             ]),
         })
 

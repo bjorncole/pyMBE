@@ -13,7 +13,12 @@ import random
 # In both cases, use a reference sequence to find the minimal length intepretations
 #### Both classifiers and features can be made this way, just difference of lengths
 
-def create_set_with_new_instances(sequence_template: list, quantities: list, name_hints: dict) -> list:
+
+def create_set_with_new_instances(
+    sequence_template: list,
+    quantities: list,
+    name_hints: dict,
+) -> list:
     """
     Generate a tuple of tuples with pre-set quantities and templates based on M1 model Types.
 
@@ -62,7 +67,13 @@ def create_set_with_new_instances(sequence_template: list, quantities: list, nam
 
     return cartesian_of_lists
 
-def extend_sequences_by_sampling(previous_sequences: list, lower_mult: int, upper_mult: int, sample_set: list) -> list:
+
+def extend_sequences_by_sampling(
+    previous_sequences: list,
+    lower_mult: int,
+    upper_mult: int,
+    sample_set: list,
+) -> list:
     """
     Extends a set of sequences by random numbers of instances drawn from a sample set
 

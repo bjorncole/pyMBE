@@ -173,7 +173,7 @@ class SysML2LabeledPropertyGraph(Base):
                 node_type: [
                     node
                     for node in graph.nodes
-                    if graph.nodes[node].get("@type", None) == node_type
+                    if graph.nodes[node].get("@type") == node_type
                 ]
                 for node_type in self.node_types
             }

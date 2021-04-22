@@ -1,10 +1,10 @@
+import typing as ty
+
 import ipytree as ipyt
 import ipywidgets as ipyw
 import traitlets as trt
-import typing as ty
 
 from .core import BaseWidget
-from .labeling import get_m1_signature_label
 
 
 class Element(ipyt.Node):
@@ -162,25 +162,16 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
     def _make_node(self, element):
         element_id = element["@id"]
 
-        icon = self.icons_by_type.get(element["@type"], self.default_icon)
-
-        name = get_m1_signature_label(element, self.elements_by_id)
-
-        # TODO: do this in a better place
-        self.elements_by_id[element_id]["m1_label"] = name
-
-        owner = (
-            element.get("owner", None)
-            or element.get("owningRelatedElement", None)
-            or {}
-        ).get("@id", None)
-
         return Element(
-            icon=icon,
-            name=name,
+            icon=self.icons_by_type.get(element["@type"], self.default_icon),
+            name=element["label"],
             _data=element,
             _identifier=element_id,
-            _owner=owner,
+            _owner=(
+                element.get("owner")
+                or element.get("owningRelatedElement")
+                or {}
+            ).get("@id"),
             _type=element["@type"],
         )
 

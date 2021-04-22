@@ -8,6 +8,7 @@ import sysml_v2_api_client as sysml2
 import traitlets as trt
 
 from .core import Base
+from .label import get_label
 
 
 TIMEZONES = {
@@ -151,10 +152,17 @@ class SysML2Client(Base):
             for element in elements
             if "relatedElement" in element
         })
-        self.elements_by_id = {
+        elements_by_id = {
             element["@id"]: element
             for element in elements
         }
+        for element in elements:
+            if "label" not in element:
+                element["label"] = get_label(
+                    element,
+                    all_elements=elements_by_id,
+                )
+        self.elements_by_id = elements_by_id
 
     @property
     def host(self):
