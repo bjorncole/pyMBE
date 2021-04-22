@@ -12,9 +12,10 @@ from ..query.query import *
 
 def random_generator_playbook(
     lpg: SysML2LabeledPropertyGraph,
-    all_elements: dict,
     name_hints: dict
 ) -> dict:
+
+    all_elements = lpg.nodes
 
     # PHASE 1: Create a set of instances for part definitions based on usage multiplicities
 
@@ -51,8 +52,6 @@ def random_generator_playbook(
                     else:
                         full_multiplicities.update({edg[1]: feat_multiplicity})
 
-    print(full_multiplicities)
-
     instances_dict = {}
 
     for type_id, number in full_multiplicities.items():
@@ -66,7 +65,49 @@ def random_generator_playbook(
 
     # PHASE 2: Combine sets of instances into sets that are marked as more general in the user model
 
+    # Find nodes in the part definition graph that aren't already in the instances dict but have no subsets
 
+    leaves = [node for node in scg.nodes if scg.in_degree(node) == 0]
+
+    for leaf in leaves:
+        if leaf not in instances_dict:
+            new_instances = create_set_with_new_instances(
+                sequence_template=[all_elements[leaf]],
+                quantities=[1],
+                name_hints=name_hints
+            )
+
+            instances_dict.update({leaf: new_instances})
+
+    visited_nodes = set(instances_dict.keys())
+    unvisted_nodes = set(scg.nodes) - visited_nodes
+
+    print(visited_nodes)
+    print(unvisted_nodes)
+
+    # "Roll up" the graph by looking at the successors to visited nodes that are unvisited, then forming a union
+    # of the sets of the unvisited node's predecessors
+
+    safety = 0
+
+    while len(unvisted_nodes) > 0 and safety < 100:
+
+        node_visits = []
+
+        for key in visited_nodes:
+            for gen in scg.successors(key):
+                # bail if we've already been here
+                if gen in visited_nodes:
+                    break
+                if is_node_covered_by_subsets(lpg, gen, instances_dict) and gen not in node_visits:
+                    instances_dict.update(generate_superset_instances(scg, gen, visited_nodes, instances_dict))
+                    node_visits.append(gen)
+
+        for touched_node in node_visits:
+            visited_nodes.add(touched_node)
+            unvisted_nodes.remove(touched_node)
+
+        safety = safety + 1
 
     return instances_dict
 
@@ -83,7 +124,7 @@ def build_sequence_templates(
 
     return sorted_feature_groups
 
-def check_subset_coverage_in_graph(
+def is_node_covered_by_subsets(
     lpg: SysML2LabeledPropertyGraph,
     tested_node_id: str,
     instances_in_process: dict
@@ -110,46 +151,23 @@ def check_subset_coverage_in_graph(
 
 # FIXME: Fix to match new steps
 
-def push_classifiers_more_general(self):
+def generate_superset_instances(
+        part_def_graph: nx.MultiDiGraph,
+        superset_node: str,
+        visited_nodes: set,
+        instances_dict: dict
+) -> dict:
     """
     Take specific classifiers and push the calculated instances to more general classifiers
     :return:
     """
-    white_list = []
 
-    for classifier_instance_dict in self.classifier_instance_dicts:
-        # TODO: Use sets and set differencing to remove visited nodes
-        white_list = list(self.session.graph_manager.superclassing_graph.nodes())
-        black_list = list(classifier_instance_dict.keys())
-        for black in black_list:
-            white_list.remove(black)
-        root_drop = []
-        for white in white_list:
-            # try to pull out items with no incoming links
-            if self.session.graph_manager.superclassing_graph.in_degree(white) == 0:
-                classifier_instance_dict.update({white: []})
-                root_drop.append(white)
-        for rd in root_drop:
-            black_list.append(rd)
-            white_list.remove(rd)
+    new_superset = []
+    subset_nodes = part_def_graph.predecessors(superset_node)
+    if all(subset_node in visited_nodes for subset_node in subset_nodes):
+        for subset_node in part_def_graph.predecessors(superset_node):
+            new_superset.extend(instances_dict[subset_node])
+    else:
+        pass
 
-        first_pass_dict = {}
-
-        # try to cover all white list nodes with inputs from black-listed nodes, first pass is pulling data
-        # from classifier_instance_dict as is
-
-        for key in classifier_instance_dict:
-            for gen in self.session.graph_manager.superclassing_graph.successors(key):
-                # bail if we've already been here
-                if gen in black_list:
-                    break
-                gen_covered = check_subset_coverage_in_graph()
-                if gen_covered:
-                    #if the current node is white and all predecessors are black, then can roll instances up
-                    first_pass_dict.update({gen: instance_working_list})
-                    white_list.remove(gen)
-                    black_list.append(gen)
-
-        classifier_instance_dict.update(first_pass_dict)
-
-    return len(white_list)
+    return {superset_node: new_superset}
