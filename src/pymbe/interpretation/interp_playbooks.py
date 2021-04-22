@@ -1,7 +1,6 @@
 from .set_builders import create_set_with_new_instances
 import networkx as nx
 import random
-from ..widget.labeling import get_m1_signature_label
 from ..query.query import *
 
 # The playbooks here work to use set building steps to build up sets of instances from a given model
@@ -21,9 +20,8 @@ def random_generator_playbook(
 
     # work from part definitions
 
-    ptg = lpg.get_projection("part_typing_graph")
-    scg = lpg.get_projection("part_def_graph")
-    banded = lpg.get_projection("banded_graph")
+    ptg = lpg.get_projection("Part Typing Graph")
+    scg = lpg.get_projection("Part Definition Graph")
 
     feature_sequences = build_sequence_templates(lpg=lpg)
 
@@ -75,7 +73,7 @@ def random_generator_playbook(
 def build_sequence_templates(
     lpg: SysML2LabeledPropertyGraph
 ) -> list:
-    part_featuring_graph = lpg.get_projection("part_featuring_graph")
+    part_featuring_graph = lpg.get_projection("Part Featuring Graph")
     sorted_feature_groups = []
     for comp in nx.connected_components(part_featuring_graph.to_undirected()):
         connected_sub = nx.subgraph(part_featuring_graph, list(comp))
@@ -98,7 +96,7 @@ def check_subset_coverage_in_graph(
     :return: verdict on coverage
     """
 
-    scg = lpg.get_projection("part_def_graph")
+    scg = lpg.get_projection("Part Definition Graph")
 
     next_level = scg.predecessors(tested_node_id)
 
@@ -110,6 +108,8 @@ def check_subset_coverage_in_graph(
 
     return covered
 
+# FIXME: Fix to match new steps
+
 def push_classifiers_more_general(self):
     """
     Take specific classifiers and push the calculated instances to more general classifiers
@@ -118,6 +118,7 @@ def push_classifiers_more_general(self):
     white_list = []
 
     for classifier_instance_dict in self.classifier_instance_dicts:
+        # TODO: Use sets and set differencing to remove visited nodes
         white_list = list(self.session.graph_manager.superclassing_graph.nodes())
         black_list = list(classifier_instance_dict.keys())
         for black in black_list:
