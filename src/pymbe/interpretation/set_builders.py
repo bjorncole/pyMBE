@@ -13,7 +13,7 @@ import random
 # In both cases, use a reference sequence to find the minimal length intepretations
 #### Both classifiers and features can be made this way, just difference of lengths
 
-def create_set_with_new_instances(sequence_template: list, quantities: list, name_hints: list) -> list:
+def create_set_with_new_instances(sequence_template: list, quantities: list, name_hints: dict) -> list:
     """
     Generate a tuple of tuples with pre-set quantities and templates based on M1 model Types.
 

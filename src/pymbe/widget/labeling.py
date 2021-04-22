@@ -32,6 +32,11 @@ def get_m1_signature_label(element: dict, all_elements: dict) -> str:
             metatype=metatype,
             type_names=type_names,
         )
+    elif metatype.startswith("Literal"):
+        return _get_m1_signature_label_for_literals(
+            element=element,
+            metatype=metatype
+        )
     elif "@id" in element:
         return f"""{element["@id"]} «{metatype}»"""
     else:
@@ -99,3 +104,10 @@ def _get_m1_signature_label_for_expressions(
     elif metatype == "InvocationExpression":
         prefix = type_names[0] if type_names else ""
     return f"""{prefix} ({", ".join(input_names)}) => {result_name}"""
+
+def _get_m1_signature_label_for_literals(element: dict, metatype: str) -> str:
+    if 'value' not in element:
+        raise ValueError(
+            f"Cannot create M1 signature for element with no value field"
+        )
+    return str(element['value'])
