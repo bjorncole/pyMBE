@@ -455,7 +455,7 @@ class SysML2ElkDiagram(ipyw.Box):
 
         container.labels += [
             Label(text="""«Diagram»"""),
-            Label(text=f"""{len(self.graph)} Elements"""),
+            Label(text=f"""{len(self.graph.nodes)} Elements"""),
             Label(text=f"""{len(self.graph.edges)} Relationships"""),
             Label(text=f"""Created: {datetime.now().strftime("%Y-%m-%d")}"""),
         ]

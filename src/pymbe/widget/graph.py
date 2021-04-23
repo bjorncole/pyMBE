@@ -109,6 +109,10 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
         layout.width = "auto"
         return layout
 
+    @trt.observe("sysml_projections")
+    def _update_projection_selector(self, *_):
+        self.projection_selector.options = tuple(self.sysml_projections)
+
     @trt.observe("diagram")
     def _update_diagram_observers(self, *_):
         if self.selector_link:
@@ -158,10 +162,6 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
                 self.max_type_selector_rows,
                 len(selector.options)
             )
-
-    @trt.observe("graph")
-    def _on_graph_update(self, *_):
-        self.diagram.graph = self.graph
 
     @trt.observe("selected")
     def _update_based_on_selection(self, *_):
@@ -289,7 +289,7 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
         return failed
 
     def _update_diagram_toolbar(self):
-        # Append elements to the elk_app toolbar
+        # Add elements to the elk_app toolbar
         diagram = self.diagram
 
         accordion = {
