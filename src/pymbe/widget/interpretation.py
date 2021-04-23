@@ -29,7 +29,10 @@ class Interpreter(ipyw.VBox, BaseWidget):
         if children:
             return children
         return [
-            ipyw.HBox([self.strategy_selector, self.update]),
+            ipyw.HBox(
+                children=[self.strategy_selector, self.update],
+                layout=dict(overflow_y="hidden"),
+            ),
             self.instances_box,
         ]
 
