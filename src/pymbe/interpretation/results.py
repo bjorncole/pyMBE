@@ -2,7 +2,7 @@
 from ..label import get_label
 
 
-def pprint_interpretation(interpretation: dict, all_elements: dict) -> str:
+def pprint_interpretation(interpretation: dict, all_elements: dict) -> list:
     print_lines = []
     for key, val in interpretation.items():
         print_lines.append(get_label(all_elements[key], all_elements) + ', id = ' + key + ', size = ' + str(len(val)))
