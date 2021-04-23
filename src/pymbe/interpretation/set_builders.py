@@ -13,10 +13,11 @@ import random
 # In both cases, use a reference sequence to find the minimal length intepretations
 #### Both classifiers and features can be made this way, just difference of lengths
 
+
 def create_set_with_new_instances(
     sequence_template: list,
     quantities: list,
-    name_hints: list,
+    name_hints: dict,
 ) -> list:
     """
     Generate a tuple of tuples with pre-set quantities and templates based on M1 model Types.
@@ -100,14 +101,14 @@ def extend_sequences_by_sampling(
     for indx, seq in enumerate(previous_sequences):
 
         for pull in pulled_instances[last_draw:last_draw+draws_per[indx]]:
-            new_seq = []
-            for step in seq:
-                new_seq.append(step)
-            for item in pull:
-                new_seq.append(item)
+            new_seq = seq + pull
+
+            # TODO: Look at making a generator instead
 
             set_extended.append(new_seq)
 
         last_draw = last_draw + draws_per[indx]
 
     return set_extended
+
+# TODO: Add step for derived union from subsets

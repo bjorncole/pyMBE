@@ -27,3 +27,29 @@ Expanded Banded Graph:
   - FeatureValue
   - ParameterMembership
   - ReturnParameterMembership
+
+Part Definition Graph:
+  description: |
+    Generate library settings for a graph that just looks at superclassing and part definitions
+  included_node_types:
+  - PartDefinition
+  included_edge_types:
+  - Superclassing
+
+Part Featuring Graph:
+  description: |
+    Generate library settings for a graph that just looks at part definition and usage
+  included_node_types:
+  - PartDefinition
+  - PartUsage
+  included_edge_types:
+  - FeatureMembership
+
+Part Typing Graph:
+  description: |
+    Generate library settings for a graph that just looks at part definition and usage typing
+  included_node_types:
+  - PartDefinition
+  - PartUsage
+  included_edge_types:
+  - FeatureTyping

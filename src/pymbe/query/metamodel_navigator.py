@@ -17,4 +17,5 @@ def feature_multiplicity(
         multiplicity = all_elements[multiplicity_id]
         if "@id" in multiplicity[bound]:
             return all_elements[multiplicity[bound]["@id"]]["value"]
+
     return 1
