@@ -1,7 +1,9 @@
 from .set_builders import create_set_with_new_instances
+from .set_builders import extend_sequences_by_sampling
 import networkx as nx
 import random
 from ..query.query import *
+from ..label import get_label
 
 # The playbooks here work to use set building steps to build up sets of instances from a given model
 
@@ -107,6 +109,26 @@ def random_generator_playbook(
             unvisted_nodes.remove(touched_node)
 
         safety = safety + 1
+
+    # PHASE 3: Expand the dictionaries out into feature sequences by pulling from instances developed here
+
+    for feat_seq in feature_sequences:
+        working_sequences = []
+        for indx, feat in enumerate(feat_seq):
+            print(get_label(all_elements[feat], all_elements) + ', id ' + feat)
+            # sample set will be the last element in the sequence for classifiers
+
+            if indx == 0:
+                first_sequences = extend_sequences_by_sampling(
+                    [],
+                    1,
+                    1,
+                    instances_dict[feat]
+                )
+                working_sequences.append(first_sequences)
+            else:
+                # get the type
+                pass
 
     return instances_dict
 
