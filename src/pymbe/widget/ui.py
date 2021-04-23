@@ -6,6 +6,7 @@ from wxyz.lab import DockPop, DockBox
 from .client import SysML2ClientWidget
 from .containment import ContainmentTree
 from .inspector import ElementInspector
+from .interpretation import Interpreter
 from .graph import SysML2LPGWidget
 
 
@@ -17,24 +18,29 @@ class UI(DockBox):
     client: SysML2ClientWidget = trt.Instance(SysML2ClientWidget)
     tree: ContainmentTree = trt.Instance(ContainmentTree, args=())
     inspector: ElementInspector = trt.Instance(ElementInspector, args=())
+    interpreter: Interpreter = trt.Instance(Interpreter, args=())
     lpg: SysML2LPGWidget = trt.Instance(SysML2LPGWidget, args=())
 
     # links
     data_links: list = trt.List()
     selector_links: list = trt.List()
 
+    # config parameters
     lpg_height: int = trt.Int(default_value=65, min=25, max=100)
 
     def __init__(self, host_url, *args, **kwargs):
-        self.client = SysML2ClientWidget(host_url=host_url)
         super().__init__(*args, **kwargs)
         self.description = "SysML Model"
+
+        self.client = SysML2ClientWidget(host_url=host_url)
+        self.interpreter.lpg = self.lpg
 
         self.children = [
             self.client,
             self.tree,
             self.inspector,
             self.lpg,
+            self.interpreter
         ]
 
         self.dock_layout = dict(
@@ -47,7 +53,11 @@ class UI(DockBox):
                     orientation="horizontal",
                     children=[
                         dict(type="tab-area", widgets=[1], currentIndex=0),
-                        dict(type="tab-area", widgets=[2, 3], currentIndex=0),
+                        dict(
+                            type="tab-area",
+                            widgets=[2, 3, 4],
+                            currentIndex=0,
+                        ),
                     ],
                     sizes=[0.22, 0.78],
                 ),
@@ -72,7 +82,7 @@ class UI(DockBox):
                 (self.tree, "selected"),
                 (widget, "selected"),
             )
-            for widget in (self.inspector, self.lpg)
+            for widget in (self.inspector, self.lpg, self.interpreter)
         ]
 
     @trt.observe("lpg_height")

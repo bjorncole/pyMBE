@@ -3,8 +3,6 @@ import copy
 
 import networkx as nx
 
-from ..graph import SysML2LabeledPropertyGraph
-
 
 def retrieve_element(elements: dict, element: (dict, str), strict: bool = True) -> dict:
     input_element = element
@@ -37,22 +35,6 @@ def get_feature_upper_multiplicity(
         return None
 
     return upper_bound.get("value")
-
-
-def make_banded_featuring_graph(lpg: SysML2LabeledPropertyGraph) -> nx.DiGraph:
-    excluded_edge_types = set(lpg.edge_types).difference((
-        "FeatureMembership",
-        "FeatureTyping",
-        "Redefinition",
-        "Superclassing",
-    ))
-    return lpg.adapt(
-        excluded_edge_types=excluded_edge_types,
-        reversed_edge_types=(
-            "FeatureMembership",
-            "FeatureTyping",
-        )
-    )
 
 
 class InstanceGenerationStrategy:
@@ -413,7 +395,6 @@ class RandomGenerationStrategy(InstanceGenerationStrategy):
         return feature_sequence_dictionaries
 
     def generate_value_holders(self):
-
         attribute_dictionaries = []
 
         full_attribute_list = [att['@id'] for att in self.session.get_all_of_metaclass(metaclass_name="AttributeUsage")]
@@ -484,6 +465,7 @@ class RandomGenerationStrategy(InstanceGenerationStrategy):
 
         return attribute_dictionaries
 
+
 class Instance:
     """
     A class to represent instances of real things in the M0 universe interpreted from the model.
@@ -528,7 +510,9 @@ def shorten_name(name, shorten_pre_bake=None):
     :param shorten_pre_bake: A pre-computed dictionary mapping long names to custom short names
     :return: a shortened version of the input name if the input is longer than five characters
     """
-    short_name = ''
+    short_name = ""
+    if not name:
+        return "Unnamed"
     if len(name) > 5:
         if shorten_pre_bake is not None:
             if name in shorten_pre_bake:
