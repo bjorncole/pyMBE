@@ -104,8 +104,14 @@ class Interpreter(ipyw.VBox, BaseWidget):
         ]
 
     def _update_instances(self, *_):
-        self.instances = self.strategy_selector.value(
-            lpg=self.lpg,
-            name_hints=dict(),
-        )
-        self._on_updated_selected()
+        try:
+            self.update.disabled = True
+            self.instances = self.strategy_selector.value(
+                lpg=self.lpg,
+                name_hints=dict(),
+            )
+            self._on_updated_selected()
+        except Exception as exc:
+            self.log.warn(f"Ran into an issue while updating instances: {exc}")
+        finally:
+            self.update.disabled = False
