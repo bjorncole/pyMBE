@@ -1,8 +1,8 @@
-from .set_builders import create_set_with_new_instances
 import networkx as nx
 import random
-from ..widget.labeling import get_m1_signature_label
+from ..label import get_label
 from ..query.query import *
+from .set_builders import create_set_with_new_instances
 
 # The playbooks here work to use set building steps to build up sets of instances from a given model
 
@@ -11,19 +11,19 @@ from ..query.query import *
 # This playbook is an initial playbook that will randomly generate sequences to fill in sets that are interpretations
 # of the user model
 
+
 def random_generator_playbook(
     lpg: SysML2LabeledPropertyGraph,
     all_elements: dict,
-    name_hints: dict
+    name_hints: dict,
 ) -> dict:
 
     # PHASE 1: Create a set of instances for part definitions based on usage multiplicities
 
     # work from part definitions
 
-    ptg = lpg.get_projection("part_typing_graph")
-    scg = lpg.get_projection("part_def_graph")
-    banded = lpg.get_projection("banded_graph")
+    ptg = lpg.get_projection("Part Typing Graph")
+    scg = lpg.get_projection("Part Definition Graph")
 
     feature_sequences = build_sequence_templates(lpg=lpg)
 
@@ -68,14 +68,13 @@ def random_generator_playbook(
 
     # PHASE 2: Combine sets of instances into sets that are marked as more general in the user model
 
-
-
     return instances_dict
+
 
 def build_sequence_templates(
     lpg: SysML2LabeledPropertyGraph
 ) -> list:
-    part_featuring_graph = lpg.get_projection("part_featuring_graph")
+    part_featuring_graph = lpg.get_projection("Part Featuring Graph")
     sorted_feature_groups = []
     for comp in nx.connected_components(part_featuring_graph.to_undirected()):
         connected_sub = nx.subgraph(part_featuring_graph, list(comp))
@@ -84,6 +83,7 @@ def build_sequence_templates(
         )
 
     return sorted_feature_groups
+
 
 def check_subset_coverage_in_graph(
     lpg: SysML2LabeledPropertyGraph,
@@ -98,7 +98,7 @@ def check_subset_coverage_in_graph(
     :return: verdict on coverage
     """
 
-    scg = lpg.get_projection("part_def_graph")
+    scg = lpg.get_projection("Part Definition Graph")
 
     next_level = scg.predecessors(tested_node_id)
 
@@ -109,6 +109,7 @@ def check_subset_coverage_in_graph(
             covered = False
 
     return covered
+
 
 def push_classifiers_more_general(self):
     """
