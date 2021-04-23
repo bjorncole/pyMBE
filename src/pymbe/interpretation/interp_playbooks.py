@@ -4,6 +4,7 @@ import networkx as nx
 import random
 from ..query.query import *
 from ..label import get_label
+from .set_builders import create_set_with_new_instances
 
 # The playbooks here work to use set building steps to build up sets of instances from a given model
 
@@ -12,9 +13,10 @@ from ..label import get_label
 # This playbook is an initial playbook that will randomly generate sequences to fill in sets that are interpretations
 # of the user model
 
+
 def random_generator_playbook(
     lpg: SysML2LabeledPropertyGraph,
-    name_hints: dict
+    name_hints: dict,
 ) -> dict:
 
     all_elements = lpg.nodes
@@ -29,18 +31,24 @@ def random_generator_playbook(
     feature_sequences = build_sequence_templates(lpg=lpg)
 
     # will sub-divide abstract multiplicity
-    abstracts = [node for node in ptg.nodes if all_elements[node]['isAbstract']]
+    abstracts = [
+        node
+        for node in ptg.nodes
+        if all_elements[node].get("isAbstract")
+    ]
 
     full_multiplicities = {}
-
     # look at all the types in the feature sequences
     for seq in feature_sequences:
         for feat in seq:
-            for edg in ptg.out_edges(feat):
-                if 'FeatureTyping' in list(ptg.get_edge_data(edg[0], edg[1]).keys()):
-                    feat_multiplicity = roll_up_upper_multiplicity(lpg, all_elements[feat])
-                    if (edg[1] in abstracts):
-                        specifics = list(scg.predecessors(edg[1]))
+            for source, target in ptg.out_edges(feat):
+                if 'FeatureTyping' in ptg.get_edge_data(source, target):
+                    feat_multiplicity = roll_up_upper_multiplicity(
+                        lpg=lpg,
+                        feature=all_elements[feat],
+                    )
+                    if target in abstracts:
+                        specifics = list(scg.predecessors(target))
                         taken = 0
                         no_splits = len(specifics)
                         # need to sub-divide the abstract quantities
@@ -52,7 +60,7 @@ def random_generator_playbook(
                                 draw = feat_multiplicity - taken
                             full_multiplicities.update({specific: draw})
                     else:
-                        full_multiplicities.update({edg[1]: feat_multiplicity})
+                        full_multiplicities.update({target: feat_multiplicity})
 
     instances_dict = {}
 
@@ -60,7 +68,7 @@ def random_generator_playbook(
         new_instances = create_set_with_new_instances(
             sequence_template=[all_elements[type_id]],
             quantities=[number],
-            name_hints=name_hints
+            name_hints=name_hints,
         )
 
         instances_dict.update({type_id: new_instances})
@@ -76,7 +84,7 @@ def random_generator_playbook(
             new_instances = create_set_with_new_instances(
                 sequence_template=[all_elements[leaf]],
                 quantities=[1],
-                name_hints=name_hints
+                name_hints=name_hints,
             )
 
             instances_dict.update({leaf: new_instances})
@@ -88,11 +96,8 @@ def random_generator_playbook(
     # of the sets of the unvisited node's predecessors
 
     safety = 0
-
     while len(unvisted_nodes) > 0 and safety < 100:
-
         node_visits = []
-
         for key in visited_nodes:
             for gen in scg.successors(key):
                 # bail if we've already been here
@@ -132,6 +137,7 @@ def random_generator_playbook(
 
     return instances_dict
 
+
 def build_sequence_templates(
     lpg: SysML2LabeledPropertyGraph
 ) -> list:
@@ -144,6 +150,7 @@ def build_sequence_templates(
         )
 
     return sorted_feature_groups
+
 
 def is_node_covered_by_subsets(
     lpg: SysML2LabeledPropertyGraph,
@@ -170,8 +177,8 @@ def is_node_covered_by_subsets(
 
     return covered
 
-# FIXME: Fix to match new steps
 
+# FIXME: Fix to match new steps
 def generate_superset_instances(
         part_def_graph: nx.MultiDiGraph,
         superset_node: str,

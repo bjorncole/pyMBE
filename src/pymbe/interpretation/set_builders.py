@@ -1,6 +1,7 @@
-from ..api import Instance
 import itertools
 import random
+
+from .interpretation import Instance
 
 # Adaptations to simplify dictionary production
 
