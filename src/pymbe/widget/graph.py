@@ -272,10 +272,6 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
                     f"{self.max_distance.value} from these seeds: " 
                     f"{self.selected}."
                 )
-        # new_graph.update(nodes={
-        #     node: self.graph.nodes.get(node)
-        #     for node in new_graph.nodes
-        # }.items())
 
         self.diagram.graph = new_graph
         # self.diagram.elk_app.refresh()
