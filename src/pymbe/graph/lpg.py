@@ -20,16 +20,15 @@ class SysML2LabeledPropertyGraph(Base):
 
     FILTERED_DATA_KEYS: tuple = ("@context",)
     ATTRIBUTE_TO_EDGES: tuple = (
+        # Adds additional relationships (edges) based on element attributes
         # dict(attribute="owner", new_type="Owned", reversed=True),
     )
-    SYSML_SUBGRAPH_RECIPES: dict = yaml.load(
-        (Path(__file__).parent / "sysml_subgraphs.yml").read_text(),
-        Loader=yaml.RoundTripLoader,
-    )
+    sysml_projections: dict = trt.Dict()
 
     graph: nx.MultiDiGraph = trt.Instance(nx.MultiDiGraph, args=tuple())
 
-    merge: bool = trt.Bool(default=False)
+    max_graph_size: int = trt.Int(default_value=256)
+    merge: bool = trt.Bool(default_value=False)
 
     nodes: dict = trt.Dict()
     edges: dict = trt.Dict()
@@ -50,6 +49,18 @@ class SysML2LabeledPropertyGraph(Base):
 
     def __getitem__(self, *args):
         return self.graph.__getitem__(*args)
+
+    @trt.observe("graph", "max_graph_size")
+    def _update_projections(self, *_):
+        projections = yaml.load(
+            stream=(Path(__file__).parent / "sysml_subgraphs.yml").read_text(),
+            Loader=yaml.RoundTripLoader,
+        )
+        # TODO: Look into filtering the other projections
+        if len(self.graph) > self.max_graph_size:
+            projections.pop("Complete", None)
+
+        self.sysml_projections = projections
 
     @staticmethod
     def _make_new_edge(data: dict, edge_mapper: dict) -> list:
@@ -188,31 +199,33 @@ class SysML2LabeledPropertyGraph(Base):
 
             self.graph = graph
 
-    def get_projection(self, projection: str) -> nx.Graph:
-        instructions = self.SYSML_SUBGRAPH_RECIPES.get(projection)
+    def get_projection_instructions(self, projection: str) -> dict:
+        instructions = {**self.sysml_projections.get(projection, {})}
         if not instructions:
             raise ValueError(
                 f"Could not find SysML Project: '{projection}'.\n"
-                f"Options available are: {tuple(SYSML_SUBGRAPH_RECIPES)}"
+                f"Options available are: {tuple(self.sysml_projections)}"
             )
 
         for key in tuple(instructions):
+            # revert included for excluded types
             if key.startswith("included_") and key.endswith("_types"):
-                # revert included for excluded types
                 included_types = instructions.pop(key)
                 types_key = key.replace("included_", "")
                 types = set(getattr(self, types_key)).difference(included_types)
                 instructions[f"excluded_{types_key}"] = tuple(sorted(types))
 
         function_attributes = self.adapt.__annotations__
-        instructions = {
+        return {
             key: value
             for key, value in instructions.items()
             if key in function_attributes
         }
 
-        return self.adapt(**instructions)
-
+    def get_projection(self, projection: str) -> nx.Graph:
+        return self.adapt(**self.get_projection_instructions(
+            projection=projection,
+        ))
 
     def adapt(self,
         excluded_node_types: (list, set, tuple) = None,
@@ -239,7 +252,6 @@ class SysML2LabeledPropertyGraph(Base):
         excluded_edge_types: (list, set, tuple) = None,
         reversed_edge_types: (list, set, tuple) = None,
     ):
-
         graph = self.graph
 
         mismatched_node_types = set(excluded_node_types).difference(self.node_types)
@@ -262,22 +274,26 @@ class SysML2LabeledPropertyGraph(Base):
         )
         subgraph = graph.__class__(graph.subgraph(included_nodes))
 
-        def _process_edge(src, tgt, typ, data, rev_types):
+        def _process_edge(src, tgt, typ, rev_types):
+            data = deepcopy(self.graph.edges.get((src, tgt, typ), {}))
             if typ in rev_types:
                 tgt, src = src, tgt
                 typ += "^-1"
-                data = deepcopy(data)
                 data["@type"] = typ
             return src, tgt, typ, data
 
         edges = [
-            _process_edge(src, tgt, typ, data, reversed_edge_types)
-            for (src, tgt, typ), data in subgraph.edges.items()
+            _process_edge(src, tgt, typ, reversed_edge_types)
+            for src, tgt, typ in subgraph.edges
             if typ not in excluded_edge_types
         ]
 
         new_graph = graph.__class__()
         new_graph.add_edges_from(edges)
+        new_graph.update(nodes={
+            node: self.graph.nodes.get(node)
+            for node in new_graph.nodes
+        }.items())
         return new_graph
 
     @staticmethod

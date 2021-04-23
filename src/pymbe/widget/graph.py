@@ -27,7 +27,7 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
         ipyw.SelectMultiple,
         kw=dict(rows=10),
     )
-    subgraph_selector: ipyw.Dropdown = trt.Instance(ipyw.Dropdown)
+    projection_selector: ipyw.Dropdown = trt.Instance(ipyw.Dropdown, args=())
 
     max_type_selector_rows: int = trt.Int(default_value=10, min=5)
 
@@ -85,15 +85,12 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
         button.on_click(self._update_diagram_graph)
         return button
 
-    @trt.default("subgraph_selector")
-    def _make_subgraph_selector(self) -> ipyw.Dropdown:
-        dropdown = ipyw.Dropdown(
-            options=tuple(self.SYSML_SUBGRAPH_RECIPES),
-            rows=self.max_type_selector_rows,
-        )
-        def draw_subgraph(*_):
-            self.diagram.graph = self.get_projection(dropdown.value)
-        dropdown.observe(draw_subgraph, "value")
+    @trt.validate("projection_selector")
+    def _validate_proj_selector(self, proposal: trt.Bunch) -> ipyw.Dropdown:
+        dropdown = proposal.value
+        if not dropdown.options:
+            dropdown.options = tuple(self.sysml_projections)
+        dropdown.rows = self.max_type_selector_rows
         return dropdown
 
     @trt.validate("children")
@@ -111,6 +108,10 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
         layout.height = "100%"
         layout.width = "auto"
         return layout
+
+    @trt.observe("sysml_projections")
+    def _update_projection_selector(self, *_):
+        self.projection_selector.options = tuple(self.sysml_projections)
 
     @trt.observe("diagram")
     def _update_diagram_observers(self, *_):
@@ -161,10 +162,6 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
                 self.max_type_selector_rows,
                 len(selector.options)
             )
-
-    @trt.observe("graph")
-    def _on_graph_update(self, *_):
-        self.diagram.graph = self.graph
 
     @trt.observe("selected")
     def _update_based_on_selection(self, *_):
@@ -220,6 +217,10 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
         )
 
     def _update_diagram_graph(self, button=None):
+        instructions: dict = self.get_projection_instructions(
+            projection=self.projection_selector.value,
+        )
+
         directed = self.enforce_directionality.value
         if self.edge_type_reverser.value and not directed:
             raise ValueError(
@@ -227,9 +228,18 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
                 "sense since directional is False")
 
         new_graph = self.adapt(
-            excluded_edge_types=self.excluded_edge_types,
-            excluded_node_types=self.excluded_node_types,
-            reversed_edge_types=self.edge_type_reverser.value,
+            excluded_edge_types={
+                *instructions.get("excluded_edge_types", []),
+                *self.excluded_edge_types,
+            },
+            excluded_node_types={
+                *instructions.get("excluded_node_types", []),
+                *self.excluded_node_types,
+            },
+            reversed_edge_types={
+                *instructions.get("reversed_edge_types", []),
+                *self.edge_type_reverser.value,
+            },
         )
 
         if button is self.filter_to_path:
@@ -262,18 +272,22 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
                     f"{self.max_distance.value} from these seeds: " 
                     f"{self.selected}."
                 )
+        # new_graph.update(nodes={
+        #     node: self.graph.nodes.get(node)
+        #     for node in new_graph.nodes
+        # }.items())
 
         self.diagram.graph = new_graph
         # self.diagram.elk_app.refresh()
         self.diagram.elk_app.diagram.fit()
 
     def _update_diagram_toolbar(self):
-        # Append elements to the elk_app toolbar
+        # Add elements to the elk_app toolbar
         diagram = self.diagram
-        accordion = {**diagram.toolbar_accordion}
 
-        accordion.update({
-            "Filter": ipyw.Accordion(
+        accordion = {
+            "Projection": self.projection_selector,
+            "Type Filter": ipyw.Accordion(
                 _titles={0: "Node Types", 1: "Edge Types"},
                 children=[
                     self.node_type_selector,
@@ -282,7 +296,6 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
                 selected_index=None,
             ),
             "Reverse Edges": self.edge_type_reverser,
-            "Subgraphs":self.subgraph_selector,
             "Explore": ipyw.VBox([
                 self.enforce_directionality,
                 ipyw.Label("Shortest Path:"),
@@ -290,7 +303,8 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
                 ipyw.Label("Distance:"),
                 ipyw.HBox([self.filter_by_dist, self.max_distance]),
             ]),
-        })
+        }
+        accordion.update(**diagram.toolbar_accordion)
 
         buttons = [*diagram.toolbar_buttons]
         buttons += [self.update_diagram]

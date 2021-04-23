@@ -1,5 +1,11 @@
 # These adapters describe how to make SysML subgraphs of the LPG
 
+Complete:
+  description: |
+    This is the complete graph, it will be stripped if the size of the graph exceeds 'max_graph_size' traitlet in the LPG.
+  excluded_edge_types: []
+  excluded_node_types: []
+
 Banded Graph:
   description: |
     Generate library settings for a "banded graph" of types, generalization, and feature membership to capture both SysML v1 and v2 styled composition structures
