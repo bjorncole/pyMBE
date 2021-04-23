@@ -10,7 +10,7 @@ from ..graph.lpg import SysML2LabeledPropertyGraph
 class Interpreter(ipyw.VBox, BaseWidget):
 
     STRATEGIES = {
-        "random": random_generator_playbook,
+        "Random Generator": random_generator_playbook,
     }
 
     description = trt.Unicode("Interpretation").tag(sync=True)
@@ -28,7 +28,10 @@ class Interpreter(ipyw.VBox, BaseWidget):
         children = proposal.value
         if children:
             return children
-        return [self.instances_box]
+        return [
+            ipyw.HBox([self.strategy_selector, self.update]),
+            self.instances_box,
+        ]
 
     @trt.default("instances")
     def _make_instances(self):
@@ -39,13 +42,20 @@ class Interpreter(ipyw.VBox, BaseWidget):
 
     @trt.default("update")
     def _make_update_button(self):
-        button = ipyw.Button(icon="update")
+        button = ipyw.Button(
+            icon="retweet",
+            layout=dict(height="40px", width="40px"),
+            tooltip="Generate new instances",
+        )
         button.on_click(self._update_instances)
         return button
 
     @trt.default("strategy_selector")
     def _make_strategy_selector(self):
-        return ipyw.Dropdown(options=self.STRATEGIES)
+        return ipyw.Dropdown(
+            options=self.STRATEGIES,
+            layout=dict(height="40px", width="auto"),
+        )
 
     @trt.observe("lpg")
     def _on_lpg_update(self, change: trt.Bunch = None):
@@ -61,11 +71,35 @@ class Interpreter(ipyw.VBox, BaseWidget):
 
     @trt.observe("selected")
     def _on_updated_selected(self, *_):
+        def make_element_label(element_id):
+            name = self.lpg.elements_by_id.get(element_id, {}).get(
+                "name",
+                f"Unnamed Element: {element_id}",
+            )
+            return ipyw.HTML(
+                value=f"""<h2>{name}</h2>"""
+            )
         self.instances_box.children = [
-            ipyw.Label(str(name))
+            ipyw.VBox(
+                [make_element_label(element_id)] +
+                [
+                    ipyw.Box(
+                        children=[
+                            ipyw.ToggleButton(
+                                description=f"{instance}",
+                                layout=ipyw.Layout(min_width="10%"),
+                            )
+                            for instances in self.instances[element_id]
+                            for instance in instances
+                        ],
+                        layout=ipyw.Layout(
+                            flex_flow="wrap",
+                            width="100%",
+                        ),
+                    ),
+                ],
+            )
             for element_id in self.selected
-            for instances in self.instances[element_id]
-            for name in instances
             if element_id in self.instances
         ]
 
@@ -74,3 +108,4 @@ class Interpreter(ipyw.VBox, BaseWidget):
             lpg=self.lpg,
             name_hints=dict(),
         )
+        self._on_updated_selected()
