@@ -1,9 +1,8 @@
-from .set_builders import create_set_with_new_instances
 from .set_builders import extend_sequences_by_sampling
 import networkx as nx
 import random
 from ..query.query import *
-from ..label import get_label
+from ..query.metamodel_navigator import *
 from .set_builders import create_set_with_new_instances
 
 # The playbooks here work to use set building steps to build up sets of instances from a given model
@@ -75,7 +74,8 @@ def random_generator_playbook(
 
     # PHASE 2: Combine sets of instances into sets that are marked as more general in the user model
 
-    # Find nodes in the part definition graph that aren't already in the instances dict but have no subsets
+    # "Roll up" the graph by looking at the successors to visited nodes that are unvisited, then forming a union
+    # of the sets of the unvisited node's predecessors
 
     leaves = [node for node in scg.nodes if scg.in_degree(node) == 0]
 
@@ -91,9 +91,6 @@ def random_generator_playbook(
 
     visited_nodes = set(instances_dict.keys())
     unvisted_nodes = set(scg.nodes) - visited_nodes
-
-    # "Roll up" the graph by looking at the successors to visited nodes that are unvisited, then forming a union
-    # of the sets of the unvisited node's predecessors
 
     safety = 0
     while len(unvisted_nodes) > 0 and safety < 100:
@@ -115,25 +112,57 @@ def random_generator_playbook(
 
         safety = safety + 1
 
+    # Fill in any part definitions that don't have instances yet
+
+    # TODO: Probably better done with real filter
+    finishing_list = []
+    for node_id, node in all_elements.items():
+        if node['@type'] == 'PartDefinition':
+            if node['@id'] not in instances_dict:
+                finishing_list.append(node)
+
+    for element in finishing_list:
+        new_instances = create_set_with_new_instances(
+            sequence_template=[element],
+            quantities=[1],
+            name_hints=name_hints,
+        )
+
+        instances_dict.update({element['@id']: new_instances})
+
     # PHASE 3: Expand the dictionaries out into feature sequences by pulling from instances developed here
+
+    print(feature_sequences)
 
     for feat_seq in feature_sequences:
         working_sequences = []
         for indx, feat in enumerate(feat_seq):
-            print(get_label(all_elements[feat], all_elements) + ', id ' + feat)
             # sample set will be the last element in the sequence for classifiers
 
-            if indx == 0:
-                first_sequences = extend_sequences_by_sampling(
-                    [],
-                    1,
-                    1,
-                    instances_dict[feat]
-                )
-                working_sequences.append(first_sequences)
+            if all_elements[feat]['@type'] == 'PartUsage':
+                if feat in list(ptg.nodes):
+                    types = list(ptg.successors(feat))
+                else:
+                    raise NotImplementedError("Cannot handle untyped features!")
+
+                if len(types) > 1:
+                    raise NotImplementedError("Cannot handle features with multiple types yet!")
+                else:
+                    typ = types[0]
             else:
-                # get the type
-                pass
+                typ = feat
+
+            if indx == 0:
+                new_sequences = instances_dict[typ]
+            else:
+                new_sequences = extend_sequences_by_sampling(
+                    new_sequences,
+                    feature_multiplicity(all_elements[feat], all_elements, "lower"),
+                    feature_multiplicity(all_elements[feat], all_elements, "upper"),
+                    [item for seq in instances_dict[typ] for item in seq]
+                )
+
+            instances_dict.update({feat: new_sequences})
 
     return instances_dict
 
@@ -145,9 +174,15 @@ def build_sequence_templates(
     sorted_feature_groups = []
     for comp in nx.connected_components(part_featuring_graph.to_undirected()):
         connected_sub = nx.subgraph(part_featuring_graph, list(comp))
-        sorted_feature_groups.append(
-            [node for node in nx.topological_sort(connected_sub)]
-        )
+        leaves = [node for node in connected_sub.nodes if connected_sub.out_degree(node) == 0]
+        root = [node for node in connected_sub.nodes if connected_sub.in_degree(node) == 0][0]
+        for leaf in leaves:
+            leaf_path = nx.shortest_path(connected_sub, root, leaf)
+            sorted_feature_groups.append(leaf_path)
+
+        #sorted_feature_groups.append(
+        #    [node for node in nx.topological_sort(connected_sub)]
+        #)
 
     return sorted_feature_groups
 

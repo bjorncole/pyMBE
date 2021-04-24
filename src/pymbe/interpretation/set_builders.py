@@ -95,14 +95,19 @@ def extend_sequences_by_sampling(
         total_draw = total_draw + draw
         draws_per.append(draw)
 
+    print(previous_sequences)
+    print(total_draw)
+    print(sample_set)
+
     pulled_instances = random.sample(sample_set, total_draw)
 
     last_draw = 0
 
     for indx, seq in enumerate(previous_sequences):
-
         for pull in pulled_instances[last_draw:last_draw+draws_per[indx]]:
-            new_seq = seq + pull
+            new_seq = []
+            new_seq = new_seq + seq
+            new_seq.append(pull)
 
             # TODO: Look at making a generator instead
 
