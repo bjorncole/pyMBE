@@ -16,7 +16,7 @@ class ValueHolder:
     Sequences of instances and value holders are intended to follow the mathematical base semantics of SysML v2.
     Additionally, the value holders are meant to be variables in numerical analyses.
     """
-    def __init__(self, path, name, value, base_att):
+    def __init__(self, path, name, value, base_att, index):
         # path is list of instance references
         self.holder_string = ''
         for indx, step in enumerate(path):
@@ -24,7 +24,7 @@ class ValueHolder:
                 self.holder_string = str(step)
             else:
                 self.holder_string = self.holder_string + '.' + str(step)
-        self.holder_string = self.holder_string + '.' + name
+        self.holder_string = self.holder_string + '.' + name + '#' + str(index)
         self.value = value
         self.base_att = base_att
 

@@ -211,7 +211,8 @@ def random_generator_playbook(
                 elif all_elements[feat]['@type'] == 'Feature':
                     new_sequences = extend_sequences_with_new_value_holder(
                         new_sequences,
-                        all_elements[feat]['name']
+                        all_elements[feat]['name'],
+                        all_elements[feat]
                     )
                 else:
                     new_sequences = extend_sequences_by_sampling(

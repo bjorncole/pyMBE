@@ -178,7 +178,8 @@ def extend_sequences_with_new_expr(
 
 def extend_sequences_with_new_value_holder(
     previous_sequences: list,
-    base_name: str
+    base_name: str,
+    base_ele: dict
 ) -> list:
 
     new_sequences = []
@@ -187,8 +188,9 @@ def extend_sequences_with_new_value_holder(
         new_holder = ValueHolder(
             seq,
             base_name,
-            indx,
-            None
+            None,
+            base_ele,
+            indx
         )
 
         new_sequence = []

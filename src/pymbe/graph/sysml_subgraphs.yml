@@ -42,11 +42,28 @@ Expression Value Graph:
   - FeatureValue
   - ParameterMembership
   - ReturnParameterMembership
+  - ResultExpressionMembership
   reversed_edge_types:
   - FeatureMembership
   - FeatureValue
   - ParameterMembership
   - ReturnParameterMembership
+  - ResultExpressionMembership
+
+Expression Evaluation Graph:
+  description: |
+    A graph to hint at the direction of computation flow in a model
+  included_edge_types:
+    - FeatureMembership
+    - FeatureValue
+    - ParameterMembership
+    - ReturnParameterMembership
+    - ResultExpressionMembership
+  reversed_edge_types:
+    - FeatureMembership
+    - FeatureValue
+    - ParameterMembership
+    - ResultExpressionMembership
 
 Part Definition Graph:
   description: |
