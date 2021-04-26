@@ -1,7 +1,8 @@
 import itertools
 import random
 
-from .interpretation import Instance
+from .interpretation import Instance, ValueHolder, LiveExpressionNode
+from ..label import get_label
 
 # Adaptations to simplify dictionary production
 
@@ -74,6 +75,9 @@ def extend_sequences_by_sampling(
     lower_mult: int,
     upper_mult: int,
     sample_set: list,
+    fallback_to_generate: bool,
+    fallback_type: dict,
+    all_elements: dict
 ) -> list:
     """
     Extends a set of sequences by random numbers of instances drawn from a sample set
@@ -82,6 +86,9 @@ def extend_sequences_by_sampling(
     :param lower_mult: lower bound on how many to draw from the sample set
     :param upper_mult: upper bound on how many to draw from the sample set
     :param sample_set: the set of Instances from which to draw to extend input sequences
+    :param fallback_to_generate: Whether or not to make new instances if a sample set is not present
+    :param fallback_type: The type to use as the fallback
+    :param all_elements: Reference to all elements (for label generation)
     :return:
     """
 
@@ -90,26 +97,106 @@ def extend_sequences_by_sampling(
     total_draw = 0
     draws_per = []
 
-    for n in range(0, len(previous_sequences)):
-        draw = random.randint(lower_mult, upper_mult)
-        total_draw = total_draw + draw
-        draws_per.append(draw)
+    if len(sample_set) == 0 and fallback_to_generate:
+        new_list = []
+        last_draw = 0
 
-    pulled_instances = random.sample(sample_set, total_draw)
+        for n in range(0, len(previous_sequences)):
+            draw = random.randint(lower_mult, upper_mult)
+            total_draw = total_draw + draw
+            draws_per.append(draw)
 
-    last_draw = 0
+        for m in range(0, total_draw):
+            new_instance = Instance(
+                get_label(fallback_type, all_elements),
+                m,
+                []
+            )
 
-    for indx, seq in enumerate(previous_sequences):
+            new_list.append(new_instance)
 
-        for pull in pulled_instances[last_draw:last_draw+draws_per[indx]]:
-            new_seq = seq + pull
+        for indx, seq in enumerate(previous_sequences):
+            for pull in new_list[last_draw:last_draw + draws_per[indx]]:
+                new_seq = []
+                new_seq = new_seq + seq
+                new_seq.append(pull)
 
-            # TODO: Look at making a generator instead
+                # TODO: Look at making a generator instead
 
-            set_extended.append(new_seq)
+                set_extended.append(new_seq)
 
-        last_draw = last_draw + draws_per[indx]
+            last_draw = last_draw + draws_per[indx]
+    else:
+
+        for n in range(0, len(previous_sequences)):
+            draw = random.randint(lower_mult, upper_mult)
+            total_draw = total_draw + draw
+            draws_per.append(draw)
+
+        pulled_instances = random.sample(sample_set, total_draw)
+
+        last_draw = 0
+
+        for indx, seq in enumerate(previous_sequences):
+            for pull in pulled_instances[last_draw:last_draw+draws_per[indx]]:
+                new_seq = []
+                new_seq = new_seq + seq
+                new_seq.append(pull)
+
+                # TODO: Look at making a generator instead
+
+                set_extended.append(new_seq)
+
+            last_draw = last_draw + draws_per[indx]
 
     return set_extended
 
-# TODO: Add step for derived union from subsets
+
+def extend_sequences_with_new_expr(
+    previous_sequences: list,
+    expr_string: str,
+    expr: dict
+) -> list:
+
+    new_sequences = []
+
+    for indx, seq in enumerate(previous_sequences):
+        new_holder = LiveExpressionNode(
+            seq,
+            expr_string,
+            expr
+        )
+
+        new_sequence = []
+        new_sequence = new_sequence + seq
+        new_sequence.append(new_holder)
+
+        new_sequences.append(new_sequence)
+
+    return new_sequences
+
+
+def extend_sequences_with_new_value_holder(
+    previous_sequences: list,
+    base_name: str,
+    base_ele: dict
+) -> list:
+
+    new_sequences = []
+
+    for indx, seq in enumerate(previous_sequences):
+        new_holder = ValueHolder(
+            seq,
+            base_name,
+            None,
+            base_ele,
+            indx
+        )
+
+        new_sequence = []
+        new_sequence = new_sequence + seq
+        new_sequence.append(new_holder)
+
+        new_sequences.append(new_sequence)
+
+    return new_sequences
