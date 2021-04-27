@@ -10,13 +10,10 @@ class Base(trt.HasTraits):
         key_trait=trt.Unicode(),
         value_trait=trt.Dict(),
     )
-
     elements_by_type: ty.Dict[str, ty.Tuple[str]] = trt.Dict(
         key_trait=trt.Unicode(),
         value_trait=trt.Tuple(),
     )
-
-    relationship_types: ty.Tuple[str] = trt.Tuple()
 
     def update(self, elements: dict):
         """Subclasses must implement this!"""
@@ -33,4 +30,14 @@ class Base(trt.HasTraits):
 
     @trt.observe("elements_by_id")
     def _update_elements(self, *_):
+        elements = tuple(self.elements_by_id.values())
+        element_types = {element["@type"] for element in elements}
+        self.elements_by_type = {
+            element_type: tuple([
+                element["@id"]
+                for element in elements
+                if element["@type"] == element_type
+            ])
+            for element_type in element_types
+        }
         self.update(elements=self.elements_by_id)

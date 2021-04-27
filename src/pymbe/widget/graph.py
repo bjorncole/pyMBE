@@ -140,7 +140,7 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
             if edge_type in self.edge_types
         }
 
-        self.edge_type_reverser.options = tuple(set(self.edge_types))
+        self.edge_type_reverser.options = sorted(set(self.edge_types))
         self._update_rows_in_multiselect(
             selectors=[self.edge_type_selector, self.edge_type_reverser],
         )
