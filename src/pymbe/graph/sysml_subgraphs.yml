@@ -59,6 +59,7 @@ Expression Evaluation Graph:
     - ParameterMembership
     - ReturnParameterMembership
     - ResultExpressionMembership
+    - ImpliedParameterFeedforward
   reversed_edge_types:
     - FeatureMembership
     - FeatureValue
