@@ -22,55 +22,58 @@ def feature_multiplicity(
     return 1
 
 
-def map_inputs_to_results(
-    lpg: SysML2LabeledPropertyGraph
-) -> list:
-    implied_edges = []
-
+def map_inputs_to_results(lpg: SysML2LabeledPropertyGraph) -> list:
     eeg = lpg.get_projection("Expression Evaluation Graph")
 
-    edge_dict = {}
-    for edge in lpg.edges.values():
-        edge_dict.update({edge['@id']: edge})
+    edge_dict = {
+        edge["@id"]: edge
+        for edge in lpg.edges.values()
+    }
+    return_parameter_memberships = [
+        lpg.edges[(source, target, kind)]
+        for source, target, kind in lpg.edges
+        if kind == "ReturnParameterMembership"
+    ]
 
-    rpms = [lpg.edges[edg] for edg in list(lpg.edges.keys()) if edg[2] == 'ReturnParameterMembership']
+    implied_edges = []
+    for membership in return_parameter_memberships:
+        for result_feeder_id in eeg.predecessors(membership["memberElement"]["@id"]):
+            result_feeder = lpg.nodes[result_feeder_id]
+            rf_metatype = result_feeder["@type"]
+            # we only want Expressions that have at least one input parameter
+            if "Expression" not in rf_metatype or rf_metatype in ["FeatureReferenceExpression"]:
+                continue
 
-    for rpm in rpms:
-        for result_feeder in eeg.predecessors(rpm['memberElement']['@id']):
-            # I think what we really want is Expressions that have at least one input parameter
-            if 'Expression' in lpg.nodes[result_feeder]['@type'] and lpg.nodes[result_feeder][
-                    '@type'] != 'FeatureReferenceExpression':
-                expr_members = []
-                para_members = []
-                expr_results = []
-                result_members = []
-                # assume that the members of an expression that are themselves members are referenced in the same
-                # order as parameters - results of an expression should feed into the input parameter owned by its
-                # owner
+            expr_results = []
+            expr_members, para_members, result_members = [], [], []
+            # assume that the members of an expression that are themselves
+            # members are referenced in the same order as parameters - results
+            # of an expression should feed into the input parameter owned by
+            # its owner
 
-                ownedMemberships = lpg.nodes[result_feeder]['ownedMembership']
-                for om in ownedMemberships:
-                    if 'Parameter' in edge_dict[om['@id']]['@type'] and edge_dict[om['@id']]['@type']:
-                        if 'ReturnParameter' in edge_dict[om['@id']]['@type']:
-                            result_members.append(edge_dict[om['@id']]['memberElement']['@id'])
-                        else:
-                            para_members.append(edge_dict[om['@id']]['memberElement']['@id'])
-                    elif 'Membership' in edge_dict[om['@id']]['@type'] or 'Result' in edge_dict[om['@id']]['@type']:
-                        # print(edge_dict[om['@id']])
-                        edge_member = edge_dict[om['@id']]['memberElement']['@id']
-                        expr_members.append(edge_dict[om['@id']]['memberElement']['@id'])
-                        if 'result' in lpg.nodes[edge_member]:
-                            expr_result = lpg.nodes[edge_member]['result']['@id']
-                            expr_results.append(expr_result)
-                edge_stack = []
-                for indx, expr in enumerate(expr_members):
-                    if indx < len(expr_results) and indx < len(para_members):
-                        edge_stack.append(
-                            get_label(lpg.nodes[expr], lpg.nodes) + ' --[' +
-                            lpg.nodes[expr_results[indx]]['@id'] + ']--> ' +
-                            get_label(lpg.nodes[para_members[indx]], lpg.nodes)
-                        )
+            owned_memberships = result_feeder["ownedMembership"]
+            for om_id in owned_memberships:
+                relationship = edge_dict[om_id["@id"]]
+                relationship_metatype = relationship["@type"]
+                edge_member_id = relationship["memberElement"]["@id"]
+                if "Parameter" in relationship_metatype:
+                    if "ReturnParameter" in relationship_metatype:
+                        result_members.append(edge_member_id)
+                    else:
+                        para_members.append(edge_member_id)
+                elif any(
+                    kind in relationship_metatype
+                    for kind in ("Membership", "Result")
+                ):
+                    expr_members.append(edge_member_id)
+                    edge_member_result_id = lpg.nodes[edge_member_id].get("result", {}).get("@id")
+                    if edge_member_result_id:
+                        expr_results.append(edge_member_result_id)
 
-                        implied_edges.append((expr_results[indx], para_members[indx], "ImpliedParameterFeedforward"))
+            implied_edges += [
+                (expr_results[index], para_members[index], "ImpliedParameterFeedforward")
+                for index, expr in enumerate(expr_members)
+                if index < len(expr_results) and index < len(para_members)
+            ]
 
     return implied_edges
