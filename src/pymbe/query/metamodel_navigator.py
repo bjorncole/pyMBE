@@ -1,7 +1,6 @@
 # a collection of convenience methods to navigate the metamodel when inspecting user models
 
 from ..graph.lpg import SysML2LabeledPropertyGraph
-from ..label import get_label
 
 
 def feature_multiplicity(
@@ -52,6 +51,13 @@ def map_inputs_to_results(lpg: SysML2LabeledPropertyGraph) -> list:
             # its owner
 
             owned_memberships = result_feeder["ownedMembership"]
+
+            # NOTE: There is a special case for when there is a ResultExpressionMembership:
+            # A ResultExpressionMembership is a FeatureMembership that indicates that the ownedResultExpression
+            # provides the result values for the Function or Expression that owns it. The owning Function or
+            # Expression must contain a BindingConnector between the result parameter of the ownedResultExpression
+            # and the result parameter of the Function or Expression.
+            rem_flag = False
             for om_id in owned_memberships:
                 relationship = edge_dict[om_id["@id"]]
                 relationship_metatype = relationship["@type"]
@@ -61,14 +67,27 @@ def map_inputs_to_results(lpg: SysML2LabeledPropertyGraph) -> list:
                         result_members.append(edge_member_id)
                     else:
                         para_members.append(edge_member_id)
-                elif any(
-                    kind in relationship_metatype
-                    for kind in ("Membership", "Result")
-                ):
-                    expr_members.append(edge_member_id)
-                    edge_member_result_id = lpg.nodes[edge_member_id].get("result", {}).get("@id")
-                    if edge_member_result_id:
-                        expr_results.append(edge_member_result_id)
+                elif "Result" in relationship_metatype:
+                    rem_owning_type = lpg.nodes[relationship["owningType"]["@id"]]
+                    rem_owned_ele = lpg.nodes[relationship["ownedMemberElement"]["@id"]]
+                    rem_flag = True
+                elif "Membership" in relationship_metatype:
+                    # print(edge_dict[om["@id"]])
+                    edge_member = relationship["memberElement"]["@id"]
+                    expr_members.append(edge_member)
+                    if "result" in lpg.nodes[edge_member]:
+                        expr_result = lpg.nodes[edge_member]["result"]["@id"]
+                        expr_results.append(expr_result)
+
+            # FIXME: This is a bit of a mess
+            if rem_flag:
+                rem_cheat_expr = rem_owned_ele["@id"]
+                rem_cheat_result = rem_owned_ele["result"]["@id"]
+                rem_cheat_para = rem_owning_type["result"]["@id"]
+
+                expr_members = [rem_cheat_expr]
+                expr_results = [rem_cheat_result]
+                para_members = [rem_cheat_para]
 
             implied_edges += [
                 (expr_results[index], para_members[index], "ImpliedParameterFeedforward")
