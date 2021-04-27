@@ -58,7 +58,7 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
             tooltip="Update diagram",
             layout=dict(height="40px", width="40px")
         )
-        button.on_click(self._update_diagram_graph)
+        button.on_click(self._on_button_click)
         return button
 
     @trt.default("filter_to_path")
@@ -70,7 +70,7 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
             layout=dict(height="40px", width="40px"),
             tooltip="Filter To Path",
         )
-        button.on_click(self._update_diagram_graph)
+        button.on_click(self._on_button_click)
         return button
 
     @trt.default("filter_by_dist")
@@ -82,7 +82,7 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
             layout=dict(height="40px", width="40px"),
             tooltip="Filter by Distance",
         )
-        button.on_click(self._update_diagram_graph)
+        button.on_click(self._on_button_click)
         return button
 
     @trt.validate("projection_selector")
@@ -140,7 +140,7 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
             if edge_type in self.edge_types
         }
 
-        self.edge_type_reverser.options = tuple(set(self.edge_types))
+        self.edge_type_reverser.options = sorted(set(self.edge_types))
         self._update_rows_in_multiselect(
             selectors=[self.edge_type_selector, self.edge_type_reverser],
         )
@@ -216,17 +216,27 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
             if id_ in self.graph.edges
         )
 
-    def _update_diagram_graph(self, button=None):
-        instructions: dict = self.get_projection_instructions(
-            projection=self.projection_selector.value,
-        )
+    def _on_button_click(self, button: ipyw.Button):
+        button.disabled = failed = True
+        try:
+            failed = self._update_diagram_graph(button=button)
+        except Exception as exc:
+            self.log.warning(f"Button click for {button} failed: {exc}")
+        finally:
+            button.disabled = failed
 
-        directed = self.enforce_directionality.value
-        if self.edge_type_reverser.value and not directed:
+    def _update_diagram_graph(self, button=None):
+        failed = False
+
+        enforce_directionality = self.enforce_directionality.value
+        if self.edge_type_reverser.value and not enforce_directionality:
             raise ValueError(
                 f"Reversing edge types: {reversed_edge_types} makes no "
                 "sense since directional is False")
 
+        instructions: dict = self.get_projection_instructions(
+            projection=self.projection_selector.value,
+        )
         new_graph = self.adapt(
             excluded_edge_types={
                 *instructions.get("excluded_edge_types", []),
@@ -248,10 +258,10 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
                 graph=new_graph,
                 source=source,
                 target=target,
-                directed=directed,
+                enforce_directionality=enforce_directionality,
             )
             if not new_graph:
-                self.filter_to_path.disabled = True
+                failed = True
                 self.log.warning(
                     "Could not find path between " 
                     f"""{" and ".join(self.selected)}, with directionality """
@@ -263,10 +273,10 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
                 graph=new_graph,
                 seeds=self.selected,
                 max_distance=self.max_distance.value,
-                directed=directed,
+                enforce_directionality=enforce_directionality,
             )
             if not new_graph:
-                self.filter_by_dist.disabled = True
+                failed = True
                 self.log.warning(
                     "Could not find a spanning graph of distance "
                     f"{self.max_distance.value} from these seeds: " 
@@ -276,6 +286,7 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
         self.diagram.graph = new_graph
         # self.diagram.elk_app.refresh()
         self.diagram.elk_app.diagram.fit()
+        return failed
 
     def _update_diagram_toolbar(self):
         # Add elements to the elk_app toolbar
@@ -300,10 +311,8 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
                 ipyw.HBox([self.filter_by_dist, self.max_distance]),
             ]),
         }
-        accordion.update(**diagram.toolbar_accordion)
-
-        buttons = [*diagram.toolbar_buttons]
-        buttons += [self.update_diagram]
+        accordion.update({**diagram.toolbar_accordion})
+        buttons = [*diagram.toolbar_buttons] + [self.update_diagram]
 
         with diagram.hold_trait_notifications():
             diagram.toolbar_accordion = accordion

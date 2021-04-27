@@ -259,7 +259,8 @@ class SysML2LabeledPropertyGraph(Base):
             warn(f"These node types are not in the graph: {mismatched_node_types}.")
 
         mismatched_edge_types = {
-            (*excluded_edge_types, *reversed_edge_types)
+            *excluded_edge_types,
+            *reversed_edge_types,
         }.difference(self.edge_types)
         if mismatched_edge_types:
             warn(f"These edge types are not in the graph: {mismatched_edge_types}.")
@@ -308,30 +309,38 @@ class SysML2LabeledPropertyGraph(Base):
         graph: nx.Graph,
         source: str,
         target: str,
-        directed: bool = True,
+        enforce_directionality: bool = True,
+        try_reverse: bool = True,
     ):
         """Make a new graph with the shortest paths between two nodes"""
-        if not directed:
-            graph = self._make_undirected(graph)
+        new_graph = graph if enforce_directionality else self._make_undirected(graph)
         try:
             nodes = set(sum(map(
                 list,
-                nx.all_shortest_paths(graph, source, target)
+                nx.all_shortest_paths(new_graph, source, target)
             ), []))
             return graph.__class__(graph.subgraph(nodes))
 
         except (nx.NetworkXError, nx.NetworkXException) as exc:
             self.log.warning(exc)
-            return None
+            if try_reverse:
+                return self.get_path_graph(
+                    graph=graph,
+                    source=target,
+                    target=source,
+                    enforce_directionality=enforce_directionality,
+                    try_reverse=False,
+                )
+            return graph.__class__()
 
     def get_spanning_graph(
         self,
         graph: nx.Graph,
         seeds: (list, set, tuple),
         max_distance: int = 2,
-        directed: bool = True,
+        enforce_directionality: bool = True,
     ):
-        if not directed:
+        if not enforce_directionality:
             graph = self._make_undirected(graph)
         seed_nodes = {
             id_: max_distance

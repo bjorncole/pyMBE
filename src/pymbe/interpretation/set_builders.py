@@ -22,7 +22,7 @@ def create_set_with_new_instances(
     name_hints: dict,
 ) -> list:
     """
-    Generate a tuple of tuples with pre-set quantities and templates based on M1 model Types.
+    Generate a list of lists with pre-set quantities and templates based on M1 model Types.
 
     New Instances will be constructed at each position in the sequence.
     :param sequence_template: Sequence of Types (full data) to use as data sources for new Instances
@@ -31,42 +31,29 @@ def create_set_with_new_instances(
     :return: A set of instances built into a Cartesian product based on a type sequence
     """
 
-    individual_lists = []
-
-    # walk the sequence and generate an appropriately named instance
-
-    for indx, m1_type in enumerate(sequence_template):
-
-        new_list = []
-
-        for m in range(0, quantities[indx]):
-
-            new_instance = Instance(
+    individual_lists = [
+        [
+            Instance(
                 m1_type['name'],
                 m,
                 name_hints
             )
+            for m in range(0, quantities[index])
+        ]
+        for index, m1_type in enumerate(sequence_template)
+    ]
 
-            new_list.append(new_instance)
-
-        individual_lists.append(new_list)
-
+    # walk the sequence and generate an appropriately named instance
     if len(sequence_template) > 1:
-        cartesian_of_lists = []
-        cartesian = itertools.product(*individual_lists)
-        # TODO: There *must* be an easier way to turn the tuple from itertools into a list
-
-        for cart in cartesian:
-            line = []
-            for item in cart:
-                line.append(item)
-
-            cartesian_of_lists.append(line)
+        cartesian_of_lists = [
+            list(cartesian)
+            for cartesian in itertools.product(*individual_lists)
+        ]
     else:
-        cartesian_of_lists = []
-        for ind in individual_lists[0]:
-            cartesian_of_lists.append([ind])
-
+        cartesian_of_lists = [
+            [individual]
+            for individual in individual_lists[0]
+        ]
     return cartesian_of_lists
 
 
@@ -92,31 +79,27 @@ def extend_sequences_by_sampling(
     :return:
     """
 
+    total_draw, draws_per = 0, []
+    for _ in range(0, len(previous_sequences)):
+        draw = random.randint(lower_mult, upper_mult)
+        total_draw = total_draw + draw
+        draws_per.append(draw)
+
     set_extended = []
-
-    total_draw = 0
-    draws_per = []
-
     if len(sample_set) == 0 and fallback_to_generate:
         new_list = []
         last_draw = 0
-
-        for n in range(0, len(previous_sequences)):
-            draw = random.randint(lower_mult, upper_mult)
-            total_draw = total_draw + draw
-            draws_per.append(draw)
-
         for m in range(0, total_draw):
             new_instance = Instance(
                 get_label(fallback_type, all_elements),
                 m,
-                []
+                [],
             )
 
             new_list.append(new_instance)
 
-        for indx, seq in enumerate(previous_sequences):
-            for pull in new_list[last_draw:last_draw + draws_per[indx]]:
+        for index, seq in enumerate(previous_sequences):
+            for pull in new_list[last_draw:last_draw + draws_per[index]]:
                 new_seq = []
                 new_seq = new_seq + seq
                 new_seq.append(pull)
@@ -125,20 +108,13 @@ def extend_sequences_by_sampling(
 
                 set_extended.append(new_seq)
 
-            last_draw = last_draw + draws_per[indx]
+            last_draw = last_draw + draws_per[index]
     else:
-
-        for n in range(0, len(previous_sequences)):
-            draw = random.randint(lower_mult, upper_mult)
-            total_draw = total_draw + draw
-            draws_per.append(draw)
-
         pulled_instances = random.sample(sample_set, total_draw)
 
         last_draw = 0
-
-        for indx, seq in enumerate(previous_sequences):
-            for pull in pulled_instances[last_draw:last_draw+draws_per[indx]]:
+        for index, seq in enumerate(previous_sequences):
+            for pull in pulled_instances[last_draw:last_draw+draws_per[index]]:
                 new_seq = []
                 new_seq = new_seq + seq
                 new_seq.append(pull)
@@ -147,7 +123,7 @@ def extend_sequences_by_sampling(
 
                 set_extended.append(new_seq)
 
-            last_draw = last_draw + draws_per[indx]
+            last_draw = last_draw + draws_per[index]
 
     return set_extended
 

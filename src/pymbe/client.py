@@ -147,11 +147,6 @@ class SysML2Client(Base):
     @trt.observe("selected_commit")
     def _update_elements(self, *_, elements=None):
         elements = elements or []
-        self.relationship_types = sorted({
-            element["@type"]
-            for element in elements
-            if "relatedElement" in element
-        })
         elements_by_id = {
             element["@id"]: element
             for element in elements
@@ -196,16 +191,8 @@ class SysML2Client(Base):
         return self._retrieve_data(self.elements_url)
 
     def update(self, elements: dict):
-        elements = tuple(elements.values())
-        element_types = {element["@type"] for element in elements}
-        self.elements_by_type = {
-            element_type: tuple([
-                element["@id"]
-                for element in elements
-                if element["@type"] == element_type
-            ])
-            for element_type in element_types
-        }
+        """All the functionality for the update is already handled"""
+        pass
 
     def _download_elements(self):
         elements = self._get_elements_from_server()
