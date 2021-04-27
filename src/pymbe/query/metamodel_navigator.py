@@ -48,20 +48,44 @@ def map_inputs_to_results(
                 # order as parameters - results of an expression should feed into the input parameter owned by its
                 # owner
 
+                # NOTE: There is a special case for when there is a ResultExpressionMembership:
+                # A ResultExpressionMembership is a FeatureMembership that indicates that the ownedResultExpression
+                # provides the result values for the Function or Expression that owns it. The owning Function or
+                # Expression must contain a BindingConnector between the result parameter of the ownedResultExpression
+                # and the result parameter of the Function or Expression.
+
                 ownedMemberships = lpg.nodes[result_feeder]['ownedMembership']
+                rem_flag = False
+
                 for om in ownedMemberships:
                     if 'Parameter' in edge_dict[om['@id']]['@type'] and edge_dict[om['@id']]['@type']:
                         if 'ReturnParameter' in edge_dict[om['@id']]['@type']:
                             result_members.append(edge_dict[om['@id']]['memberElement']['@id'])
                         else:
                             para_members.append(edge_dict[om['@id']]['memberElement']['@id'])
-                    elif 'Membership' in edge_dict[om['@id']]['@type'] or 'Result' in edge_dict[om['@id']]['@type']:
+                    elif 'Result' in edge_dict[om['@id']]['@type']:
+                        rem_owning_type = lpg.nodes[edge_dict[om['@id']]['owningType']['@id']]
+                        rem_owned_ele = lpg.nodes[edge_dict[om['@id']]['ownedMemberElement']['@id']]
+                        rem_flag = True
+                    elif 'Membership' in edge_dict[om['@id']]['@type']:
                         # print(edge_dict[om['@id']])
                         edge_member = edge_dict[om['@id']]['memberElement']['@id']
-                        expr_members.append(edge_dict[om['@id']]['memberElement']['@id'])
+                        expr_members.append(edge_member)
                         if 'result' in lpg.nodes[edge_member]:
                             expr_result = lpg.nodes[edge_member]['result']['@id']
                             expr_results.append(expr_result)
+
+                # FIXME: This is a bit of a mess
+
+                if rem_flag:
+                    rem_cheat_expr = rem_owned_ele['@id']
+                    rem_cheat_result = rem_owned_ele['result']['@id']
+                    rem_cheat_para = rem_owning_type['result']['@id']
+
+                    expr_members = [rem_cheat_expr]
+                    expr_results = [rem_cheat_result]
+                    para_members = [rem_cheat_para]
+
                 edge_stack = []
                 for indx, expr in enumerate(expr_members):
                     if indx < len(expr_results) and indx < len(para_members):
