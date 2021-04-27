@@ -1,11 +1,7 @@
-import networkx as nx
-import random
 from ..query.query import *
 from ..query.metamodel_navigator import *
 from .set_builders import *
-from ..label import get_label
 from ..label import get_label_for_expression
-from .interpretation import ValueHolder, LiveExpressionNode
 
 # The playbooks here work to use set building steps to build up sets of instances from a given model
 
@@ -43,7 +39,7 @@ def random_generator_playbook(
     for seq in feature_sequences:
         for feat in seq:
             for source, target in ptg.out_edges(feat):
-                if 'FeatureTyping' in ptg.get_edge_data(source, target):
+                if "FeatureTyping" in ptg.get_edge_data(source, target):
                     feat_multiplicity = roll_up_upper_multiplicity(
                         lpg=lpg,
                         feature=all_elements[feat],
@@ -53,8 +49,8 @@ def random_generator_playbook(
                         taken = 0
                         no_splits = len(specifics)
                         # need to sub-divide the abstract quantities
-                        for indx, specific in enumerate(specifics):
-                            if indx < no_splits - 1:
+                        for index, specific in enumerate(specifics):
+                            if index < (no_splits - 1):
                                 draw = random.randint(0, feat_multiplicity)
                                 taken = taken + draw
                             else:
@@ -117,11 +113,12 @@ def random_generator_playbook(
     # Fill in any part definitions that don't have instances yet
 
     # TODO: Probably better done with real filter
-    finishing_list = []
-    for node_id, node in all_elements.items():
-        if node['@type'] == 'PartDefinition':
-            if node['@id'] not in instances_dict:
-                finishing_list.append(node)
+    finishing_list = [
+        node
+        for node_id, node in all_elements.items()
+        if node["@type"] == "PartDefinition"
+        and node["@id"] not in instances_dict
+    ]
 
     for element in finishing_list:
         new_instances = create_set_with_new_instances(
@@ -130,18 +127,18 @@ def random_generator_playbook(
             name_hints=name_hints,
         )
 
-        instances_dict.update({element['@id']: new_instances})
+        instances_dict.update({element["@id"]: new_instances})
 
     # PHASE 3: Expand the dictionaries out into feature sequences by pulling from instances developed here
 
-    for feat_seq in feature_sequences:
+    for feature_sequence in feature_sequences:
         new_sequences = []
-        for indx, feat in enumerate(feat_seq):
+        for index, feature_id in enumerate(feature_sequence):
             # sample set will be the last element in the sequence for classifiers
-
-            if all_elements[feat]['@type'] == 'PartUsage':
-                if feat in list(ptg.nodes):
-                    types = list(ptg.successors(feat))
+            feature = all_elements[feature_id]
+            if feature["@type"] == "PartUsage":
+                if feature_id in list(ptg.nodes):
+                    types = list(ptg.successors(feature_id))
                 else:
                     raise NotImplementedError("Cannot handle untyped features!")
 
@@ -152,14 +149,13 @@ def random_generator_playbook(
             else:
                 typ = feat
 
-            if indx == 0:
+            if index == 0:
                 new_sequences = instances_dict[typ]
             else:
-
                 new_sequences = extend_sequences_by_sampling(
                     new_sequences,
-                    feature_multiplicity(all_elements[feat], all_elements, "lower"),
-                    feature_multiplicity(all_elements[feat], all_elements, "upper"),
+                    feature_multiplicity(feature, all_elements, "lower"),
+                    feature_multiplicity(feature, all_elements, "upper"),
                     [item for seq in instances_dict[typ] for item in seq],
                     False,
                     {},
@@ -172,24 +168,23 @@ def random_generator_playbook(
 
     expr_sequences = build_expression_sequence_templates(lpg=lpg)
 
-    #for indx, seq in enumerate(expr_sequences):
+    # for indx, seq in enumerate(expr_sequences):
     #    print("Sequence number " + str(indx))
     #    for item in seq:
     #        print(get_label(all_elements[item], all_elements) + ", id = " + item)
 
     # Move through existing sequences and then start to pave further with new steps
-
     for expr_seq in expr_sequences:
         new_sequences = []
-        for indx, feat in enumerate(expr_seq):
+        for feature_id in expr_seq:
             # sample set will be the last element in the sequence for classifiers
-
+            feature_data = all_elements[feature_id]
             if feat in instances_dict:
-                new_sequences = instances_dict[feat]
+                new_sequences = instances_dict[feature_id]
             else:
-                if 'Expression' in all_elements[feat]['@type']:
+                if "Expression" in feature_data["@type"]:
                     # Get the element type(s)
-                    types: list = all_elements[feat].get("type") or []
+                    types: list = feature_data.get("type") or []
                     if isinstance(types, dict):
                         types = [types]
                     type_names = [
@@ -205,14 +200,14 @@ def random_generator_playbook(
 
                     new_sequences = extend_sequences_with_new_expr(
                         new_sequences,
-                        get_label_for_expression(all_elements[feat], all_elements, type_names),
-                        all_elements[feat]
+                        get_label_for_expression(feature_data, all_elements, type_names),
+                        feature_data
                     )
-                elif all_elements[feat]['@type'] == 'Feature':
+                elif feature_data["@type"] == "Feature":
                     new_sequences = extend_sequences_with_new_value_holder(
                         new_sequences,
-                        all_elements[feat]['name'],
-                        all_elements[feat]
+                        feature_data["name"],
+                        feature_data
                     )
                 else:
                     new_sequences = extend_sequences_by_sampling(
@@ -221,12 +216,10 @@ def random_generator_playbook(
                         1,
                         [],
                         True,
-                        all_elements[feat],
+                        feature_data,
                         all_elements
                     )
-
                 instances_dict.update({feat: new_sequences})
-
     return instances_dict
 
 
@@ -262,18 +255,15 @@ def is_node_covered_by_subsets(
     :param instances_in_process: instance list produced so far
     :return: verdict on coverage
     """
-
     scg = lpg.get_projection("Part Definition Graph")
+    instances_in_process = tuple(instances_in_process)
 
-    next_level = scg.predecessors(tested_node_id)
+    all_covered = all(
+        next_instance in instances_in_process
+        for next_instance in scg.predecessors(tested_node_id)
+    )
+    return all_covered
 
-    covered = True
-
-    for next in next_level:
-        if next not in list(instances_in_process.keys()):
-            covered = False
-
-    return covered
 
 def generate_superset_instances(
         part_def_graph: nx.MultiDiGraph,
@@ -297,9 +287,7 @@ def generate_superset_instances(
     return {superset_node: new_superset}
 
 
-def build_expression_sequence_templates(
-    lpg: SysML2LabeledPropertyGraph
-) -> list:
+def build_expression_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list:
     all_elements = lpg.nodes
     evg = lpg.get_projection("Expression Value Graph")
     sorted_feature_groups = []
@@ -311,19 +299,19 @@ def build_expression_sequence_templates(
             for root in roots:
                 try:
                     leaf_path = nx.shortest_path(connected_sub, root, leaf)
-                    has_expression = False
-                    for step in leaf_path:
-                        if 'Expression' in all_elements[step]['@type'] or 'Literal' in all_elements[step]['@type']:
-                            has_expression = True
+                    has_expression = any([
+                        "Expression" in all_elements[step]["@type"]
+                        or "Literal" in all_elements[step]["@type"]
+                        for step in leaf_path
+                    ])
                     if has_expression:
                         leaf_path.reverse()
                         sorted_feature_groups.append(leaf_path)
                 except:
                     pass
 
-        #sorted_feature_groups.append(
+        # sorted_feature_groups.append(
         #    [node for node in nx.topological_sort(connected_sub)]
-        #)
+        # )
 
     return sorted_feature_groups
-
