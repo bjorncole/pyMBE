@@ -1,7 +1,5 @@
 # a collection of convenience methods to navigate the metamodel when inspecting user models
 
-from ..graph.lpg import SysML2LabeledPropertyGraph
-
 
 def feature_multiplicity(
     feature: dict,
@@ -19,80 +17,3 @@ def feature_multiplicity(
             return all_elements[multiplicity[bound]["@id"]]["value"]
 
     return 1
-
-
-def map_inputs_to_results(lpg: SysML2LabeledPropertyGraph) -> list:
-    eeg = lpg.get_projection("Expression Evaluation Graph")
-
-    edge_dict = {
-        edge["@id"]: edge
-        for edge in lpg.edges.values()
-    }
-    return_parameter_memberships = [
-        lpg.edges[(source, target, kind)]
-        for source, target, kind in lpg.edges
-        if kind == "ReturnParameterMembership"
-    ]
-
-    implied_edges = []
-    for membership in return_parameter_memberships:
-        for result_feeder_id in eeg.predecessors(membership["memberElement"]["@id"]):
-            result_feeder = lpg.nodes[result_feeder_id]
-            rf_metatype = result_feeder["@type"]
-            # we only want Expressions that have at least one input parameter
-            if "Expression" not in rf_metatype or rf_metatype in ["FeatureReferenceExpression"]:
-                continue
-
-            expr_results = []
-            expr_members, para_members, result_members = [], [], []
-            # assume that the members of an expression that are themselves
-            # members are referenced in the same order as parameters - results
-            # of an expression should feed into the input parameter owned by
-            # its owner
-
-            owned_memberships = result_feeder["ownedMembership"]
-
-            # NOTE: There is a special case for when there is a ResultExpressionMembership:
-            # A ResultExpressionMembership is a FeatureMembership that indicates that the ownedResultExpression
-            # provides the result values for the Function or Expression that owns it. The owning Function or
-            # Expression must contain a BindingConnector between the result parameter of the ownedResultExpression
-            # and the result parameter of the Function or Expression.
-            rem_flag = False
-            for om_id in owned_memberships:
-                relationship = edge_dict[om_id["@id"]]
-                relationship_metatype = relationship["@type"]
-                edge_member_id = relationship["memberElement"]["@id"]
-                if "Parameter" in relationship_metatype:
-                    if "ReturnParameter" in relationship_metatype:
-                        result_members.append(edge_member_id)
-                    else:
-                        para_members.append(edge_member_id)
-                elif "Result" in relationship_metatype:
-                    rem_owning_type = lpg.nodes[relationship["owningType"]["@id"]]
-                    rem_owned_ele = lpg.nodes[relationship["ownedMemberElement"]["@id"]]
-                    rem_flag = True
-                elif "Membership" in relationship_metatype:
-                    # print(edge_dict[om["@id"]])
-                    edge_member = relationship["memberElement"]["@id"]
-                    expr_members.append(edge_member)
-                    if "result" in lpg.nodes[edge_member]:
-                        expr_result = lpg.nodes[edge_member]["result"]["@id"]
-                        expr_results.append(expr_result)
-
-            # FIXME: This is a bit of a mess
-            if rem_flag:
-                rem_cheat_expr = rem_owned_ele["@id"]
-                rem_cheat_result = rem_owned_ele["result"]["@id"]
-                rem_cheat_para = rem_owning_type["result"]["@id"]
-
-                expr_members = [rem_cheat_expr]
-                expr_results = [rem_cheat_result]
-                para_members = [rem_cheat_para]
-
-            implied_edges += [
-                (expr_results[index], para_members[index], "ImpliedParameterFeedforward")
-                for index, expr in enumerate(expr_members)
-                if index < len(expr_results) and index < len(para_members)
-            ]
-
-    return implied_edges
