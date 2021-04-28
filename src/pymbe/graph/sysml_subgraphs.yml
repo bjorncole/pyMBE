@@ -1,14 +1,17 @@
 # These adapters describe how to make SysML subgraphs of the LPG
 
 Complete:
-  description: |
-    This is the complete graph, it will be stripped if the size of the graph exceeds 'max_graph_size' traitlet in the LPG.
+  description: >
+    This is the complete graph, it will be stripped if the size of
+    the graph exceeds 'max_graph_size' traitlet in the LPG.
   excluded_edge_types: []
   excluded_node_types: []
 
 Banded Graph:
-  description: |
-    Generate library settings for a "banded graph" of types, generalization, and feature membership to capture both SysML v1 and v2 styled composition structures
+  description: >
+    Generate library settings for a "banded graph" of types,
+    generalization, and feature membership to capture both SysML v1
+    and v2 styled composition structures
   included_edge_types:
   - FeatureMembership
   - FeatureTyping
@@ -18,8 +21,9 @@ Banded Graph:
   - FeatureTyping
 
 Expanded Banded Graph:
-  description: |
-    Generate library settings for a expanded version of banded graph to accommodate expression tree relationships
+  description: >
+    Generate library settings for a expanded version of banded graph
+    to accommodate expression tree relationships
   included_edge_types:
   - FeatureMembership
   - FeatureTyping
@@ -35,8 +39,9 @@ Expanded Banded Graph:
   - ReturnParameterMembership
 
 Expression Value Graph:
-  description: |
-    Generate library settings for a expanded version of banded graph to accommodate expression tree relationships
+  description: >
+    Generate library settings for a expanded version of banded graph
+    to accommodate expression tree relationships
   included_edge_types:
   - FeatureMembership
   - FeatureValue
@@ -51,7 +56,7 @@ Expression Value Graph:
   - ResultExpressionMembership
 
 Expression Evaluation Graph:
-  description: |
+  description: >
     A graph to hint at the direction of computation flow in a model
   included_edge_types:
     - FeatureMembership
@@ -67,16 +72,18 @@ Expression Evaluation Graph:
     - ResultExpressionMembership
 
 Part Definition Graph:
-  description: |
-    Generate library settings for a graph that just looks at superclassing and part definitions
+  description: >
+    Generate library settings for a graph that just looks at
+    superclassing and part definitions
   included_node_types:
   - PartDefinition
   included_edge_types:
   - Superclassing
 
 Part Featuring Graph:
-  description: |
-    Generate library settings for a graph that just looks at part definition and usage
+  description: >
+    Generate library settings for a graph that just looks at part
+    definition and usage
   included_node_types:
   - PartDefinition
   - PartUsage
@@ -84,8 +91,9 @@ Part Featuring Graph:
   - FeatureMembership
 
 Part Typing Graph:
-  description: |
-    Generate library settings for a graph that just looks at part definition and usage typing
+  description: >
+    Generate library settings for a graph that just looks at part
+    definition and usage typing
   included_node_types:
   - PartDefinition
   - PartUsage

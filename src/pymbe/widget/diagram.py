@@ -148,7 +148,10 @@ class Relationship(Edge):
         if not edge_data:
             return
         properties = self.properties
-        properties["@id"] = edge_data["@id"]
+        properties["@id"] = id_ = edge_data["@id"]
+
+        if id_.startswith("_"):
+            self.add_class("dashed")
 
         self.labels.append(Label(text=f"""«{edge_data["@type"]}»"""))
 
@@ -285,7 +288,13 @@ class PartContainer(Partition):
         # Necessary for having the viewport use the whole vertical height
         " .lm-Widget.jp-ElkView .sprotty > .sprotty-root > svg.sprotty-graph": {
             "height": "unset!important",
-        }
+        },
+        " .dashed.elkedge > path ": {
+            "stroke-dasharray": "3 3",
+        },
+        " text.elklabel.node_type_label": {
+            "font-style": "italic",
+        },
     }
 
 
@@ -329,20 +338,8 @@ class SysML2ElkDiagram(ipyw.Box):
         key_trait=trt.Unicode(),
         value_trait=trt.Instance(Part),
     )
-
     selected: ty.Tuple[str] = trt.Tuple()
-
-    style: ty.Dict[str, dict] = trt.Dict(
-        kw={
-            " text.elklabel.node_type_label": {
-                "font-style": "italic",
-            },
-            " parents": {
-                "org.eclipse.elk.direction": "RIGHT",
-                "org.eclipse.elk.nodeLabels.placement": "H_CENTER V_TOP INSIDE",
-            },
-        },
-    )
+    style: ty.Dict[str, dict] = trt.Dict(kw={})
 
     @trt.validate("children")
     def _validate_children(self, proposal):
@@ -468,7 +465,7 @@ class SysML2ElkDiagram(ipyw.Box):
             # owner = self.parts.get((part.data.get("owner") or {}).get("@id"), container)
             # owner.add_child(child=part, key=id_)
 
-        for (source, target, type_), edge in self.graph.edges.items():
+        for (source, target, type_), edge_data in self.graph.edges.items():
             if source not in parts:
                 self.log.warn(
                     f"Could not map source: {source} in '{type_}' with {target}"
@@ -484,8 +481,8 @@ class SysML2ElkDiagram(ipyw.Box):
                 target=parts[target],
                 cls=RELATIONSHIP_TYPES.get(type_, DEFAULT_RELATIONSHIP),
             )
-            if edge:
-                new_relationship.update(edge)
+            if edge_data:
+                new_relationship.update(edge_data)
 
         container.defs = {**container.defs}
         self.container = container
