@@ -21,7 +21,7 @@ class SysML2LabeledPropertyGraph(Base):
     FILTERED_DATA_KEYS: tuple = ("@context",)
     ATTRIBUTE_TO_EDGES: tuple = (
         # Adds additional relationships (edges) based on element attributes
-        # dict(attribute="owner", new_type="Owned", reversed=True),
+        # dict(attribute="owner", metatype="Owned", reversed=True),
     )
     IMPLIED_GENERATORS: tuple = (
         # Adds additional implied edges based on a tuple of generators
@@ -67,11 +67,29 @@ class SysML2LabeledPropertyGraph(Base):
         self.sysml_projections = projections
 
     @staticmethod
-    def _make_new_edge(data: dict, edge_mapper: dict) -> list:
+    def _make_nx_multi_edge(source, target, metatype, **data):
+        return (
+            source,                           # source
+            target,                           # target
+            metatype,                         # edge type
+            {                                 # edge data
+                "@id": f"_{uuid4()}",
+                "@type": metatype,
+                "relatedElement": [
+                    {"@id": source},
+                    {"@id": target},
+                ],
+                "source": [{"@id": source}],
+                "target": [{"@id": target}],
+                **data
+            },
+        )
+
+    def _make_new_edge(self, data: dict, edge_mapper: dict) -> list:
         attribute = edge_mapper["attribute"]
         if not data.get(attribute, {}):
             return []
-        edge_type = edge_mapper["new_type"]
+        metatype = edge_mapper["metatype"]
         sources = [data["@id"]]
         targets =data[attribute]
         if isinstance(targets, (list, tuple, set)):
@@ -88,21 +106,8 @@ class SysML2LabeledPropertyGraph(Base):
         if edge_mapper.get("reversed", False):
             sources, targets = targets, sources
         return [
-            [
-                source,                           # source
-                target,                           # target
-                edge_type,                        # edge type
-                {                                 # edge data
-                    "@id": f"_{uuid4()}",
-                    "source": [{"@id": source}],
-                    "target": [{"@id": target}],
-                    "@type": f"_{edge_type}",
-                    "relatedElement": [
-                        {"@id": source},
-                        {"@id": target},
-                    ],
-                },
-            ] for source, target in zip(sources, targets)
+            self._make_nx_multi_edge(source, target, metatype)
+            for source, target in zip(sources, targets)
         ]
 
     def update(self, elements: dict, merge=None):
@@ -250,17 +255,17 @@ class SysML2LabeledPropertyGraph(Base):
 
                 expr_results = []
                 expr_members, para_members, result_members = [], [], []
-                # assume that the members of an expression that are themselves members are 
-                # referenced in the same order as parameters - results of an expression 
+                # assume that the members of an expression that are themselves members are
+                # referenced in the same order as parameters - results of an expression
                 # should feed into the input parameter owned by its owner
 
                 owned_memberships = result_feeder["ownedMembership"]
 
                 # NOTE: There is a special case for when there is a ResultExpressionMembership:
-                # A ResultExpressionMembership is a FeatureMembership that indicates that the 
-                # ownedResultExpression provides the result values for the Function or Expression 
-                # that owns it. The owning Function or Expression must contain a BindingConnector 
-                # between the result parameter of the ownedResultExpression and the result 
+                # A ResultExpressionMembership is a FeatureMembership that indicates that the
+                # ownedResultExpression provides the result values for the Function or Expression
+                # that owns it. The owning Function or Expression must contain a BindingConnector
+                # between the result parameter of the ownedResultExpression and the result
                 # parameter of the Function or Expression.
                 rem_flag = False
                 for om_id in owned_memberships:
@@ -306,17 +311,7 @@ class SysML2LabeledPropertyGraph(Base):
         for edge_generator_name in self.IMPLIED_GENERATORS:
             edge_generator = getattr(self, edge_generator_name)
             new_edges += [
-                (source, target, metatype, {
-                    "@id": f"_{uuid4()}",
-                    "@type": metatype,
-                    "label": metatype,
-                    "relatedElement": [
-                        {"@id": source},
-                        {"@id": target},
-                    ],
-                    "source": [{"@id": source}],
-                    "target": [{"@id": target}],
-                })
+                self._make_nx_multi_edge(source, target, metatype, label=metatype)
                 for source, target, metatype in edge_generator()
             ]
         return new_edges
