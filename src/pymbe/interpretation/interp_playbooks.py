@@ -16,6 +16,11 @@ def random_generator_playbook(
     name_hints: dict,
 ) -> dict:
 
+    can_interpret = validate_working_data(lpg)
+
+    if not can_interpret:
+        return {}
+
     all_elements = lpg.nodes
 
     # PHASE 1: Create a set of instances for part definitions based on usage multiplicities
@@ -133,6 +138,7 @@ def random_generator_playbook(
 
     for feature_sequence in feature_sequences:
         new_sequences = []
+        feat = None
         for index, feature_id in enumerate(feature_sequence):
             # sample set will be the last element in the sequence for classifiers
             feature = all_elements[feature_id]
@@ -147,7 +153,7 @@ def random_generator_playbook(
                 else:
                     typ = types[0]
             else:
-                typ = feat
+                typ = feature_id
 
             if index == 0:
                 new_sequences = instances_dict[typ]
@@ -162,7 +168,7 @@ def random_generator_playbook(
                     {}
                 )
 
-            instances_dict.update({feat: new_sequences})
+            instances_dict.update({feature_id: new_sequences})
 
     # PHASE 4: Expand sequences to support computations
 
@@ -179,7 +185,7 @@ def random_generator_playbook(
         for feature_id in expr_seq:
             # sample set will be the last element in the sequence for classifiers
             feature_data = all_elements[feature_id]
-            if feat in instances_dict:
+            if feature_id in instances_dict:
                 new_sequences = instances_dict[feature_id]
             else:
                 if "Expression" in feature_data["@type"]:
@@ -219,7 +225,7 @@ def random_generator_playbook(
                         feature_data,
                         all_elements
                     )
-                instances_dict.update({feat: new_sequences})
+                instances_dict.update({feature_id: new_sequences})
     return instances_dict
 
 
@@ -315,3 +321,30 @@ def build_expression_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list
         # )
 
     return sorted_feature_groups
+
+def validate_working_data(
+    lpg: SysML2LabeledPropertyGraph
+) -> bool:
+    """
+    Helper method to check that the user model is valid for instance generation
+    :return: A Boolean indicating that the user model is ready to be interpreted
+    """
+
+    # check that all the elements of the graph are in fact proper model elements
+
+    all_non_relations = lpg.nodes
+    for nr_key, nr in all_non_relations.items():
+        try:
+            nr_type = nr['@type']
+        except KeyError:
+            print("No type found in " + str(nr))
+            return False
+        except TypeError:
+            print("Expecting dict of model element data, got string = " + nr)
+        try:
+            nr_id = nr["@id"]
+        except KeyError:
+            print("No type found in " + str(nr))
+            return False
+
+    return True
