@@ -102,6 +102,7 @@ env_specs:
     - notebook
     - numpy
     - pip
+    - pytest
     - rdflib
     - rdflib-jsonld
     - ruamel.yaml
