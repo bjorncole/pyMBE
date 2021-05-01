@@ -223,7 +223,7 @@ class SysML2LabeledPropertyGraph(Base):
             if key in function_attributes
         }
 
-    def get_projection(self, projection: str) -> nx.Graph:
+    def get_projection(self, projection: str) -> nx.DiGraph:
         return self.adapt(**self.get_projection_instructions(
             projection=projection,
         ))
@@ -232,7 +232,7 @@ class SysML2LabeledPropertyGraph(Base):
         excluded_node_types: (list, set, tuple) = None,
         excluded_edge_types: (list, set, tuple) = None,
         reversed_edge_types: (list, set, tuple) = None,
-    ) -> nx.Graph:
+    ) -> nx.DiGraph:
         """
             Using the existing graph, filter by node and edge types, and/or
             reverse certain edge types.
