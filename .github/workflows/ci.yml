@@ -129,6 +129,6 @@ jobs:
         with:
           name: ${{ job.status }} reports ${{ matrix.os }} ${{ github.run_number }}
           path: |
-            ./build/htmcov
+            ./build/htmlcov
             ./build/pytest.html
         if: always()
