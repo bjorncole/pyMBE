@@ -32,11 +32,10 @@ commands:
   lint:
     description: lint the code
     env_spec: developer
-    unix: ^
-      python isort
-      python black
-    windows: ^
-      python isort & python black
+    unix: |
+      isort .
+      black src/
+    windows: python isort . & python black .
   package:
     description: make a source distribution
     env_spec: developer
