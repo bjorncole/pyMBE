@@ -15,6 +15,7 @@ class SysML2ClientWidget(SysML2Client, ipyw.GridspecLayout):
 
     description = trt.Unicode("API Client").tag(sync=True)
 
+    # file_uploader: ipyw.FileUpload = trt.Instance(ipyw.FileUpload)
     host_url_input: ipyw.Text = trt.Instance(ipyw.Text)
     host_port_input: ipyw.IntText = trt.Instance(ipyw.IntText)
     project_selector: ipyw.Dropdown = trt.Instance(ipyw.Dropdown)
@@ -45,9 +46,8 @@ class SysML2ClientWidget(SysML2Client, ipyw.GridspecLayout):
 
     def _set_layout(self):
         layout = self.layout
-        layout.height = "auto"
         layout.overflow_y = "hidden"
-        layout.width = "auto"
+        layout.width, layout.height = ["auto"] * 2
 
         idx = self.n_columns - 1
         self[0, :idx] = self.host_url_input

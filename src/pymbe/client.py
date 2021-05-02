@@ -192,7 +192,6 @@ class SysML2Client(Base):
 
     def update(self, elements: dict):
         """All the functionality for the update is already handled"""
-        pass
 
     def _download_elements(self):
         elements = self._get_elements_from_server()
