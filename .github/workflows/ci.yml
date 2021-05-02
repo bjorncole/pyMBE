@@ -39,7 +39,6 @@ jobs:
         uses: mamba-org/provision-with-micromamba@main
         with:
           environment-file: .github/environment.yml
-          use-only-tar-bz2: true
 
       - name: build
         shell: bash -l {0}
@@ -99,7 +98,6 @@ jobs:
         uses: mamba-org/provision-with-micromamba@main
         with:
           environment-file: .github/environment.yml
-          use-only-tar-bz2: true
 
       - uses: actions/download-artifact@v2
         with:
