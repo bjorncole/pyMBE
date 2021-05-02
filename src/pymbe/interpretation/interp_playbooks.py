@@ -136,39 +136,7 @@ def random_generator_playbook(
 
     # PHASE 3: Expand the dictionaries out into feature sequences by pulling from instances developed here
 
-    for feature_sequence in feature_sequences:
-        new_sequences = []
-        feat = None
-        for index, feature_id in enumerate(feature_sequence):
-            # sample set will be the last element in the sequence for classifiers
-            feature = all_elements[feature_id]
-            if feature["@type"] == "PartUsage":
-                if feature_id in list(ptg.nodes):
-                    types = list(ptg.successors(feature_id))
-                else:
-                    raise NotImplementedError("Cannot handle untyped features!")
-
-                if len(types) > 1:
-                    raise NotImplementedError("Cannot handle features with multiple types yet!")
-                else:
-                    typ = types[0]
-            else:
-                typ = feature_id
-
-            if index == 0:
-                new_sequences = instances_dict[typ]
-            else:
-                new_sequences = extend_sequences_by_sampling(
-                    new_sequences,
-                    feature_multiplicity(feature, all_elements, "lower"),
-                    feature_multiplicity(feature, all_elements, "upper"),
-                    [item for seq in instances_dict[typ] for item in seq],
-                    False,
-                    {},
-                    {}
-                )
-
-            instances_dict.update({feature_id: new_sequences})
+    random_generator_playbook_phase_3(feature_sequences, all_elements, ptg, instances_dict)
 
     # PHASE 4: Expand sequences to support computations
 
@@ -229,6 +197,47 @@ def random_generator_playbook(
     return instances_dict
 
 
+def random_generator_playbook_phase_3(
+    feature_sequences: list,
+    all_elements: dict,
+    ptg: nx.DiGraph,
+    instances_dict: dict
+) -> None:
+    for feature_sequence in feature_sequences:
+        new_sequences = []
+        feat = None
+        for index, feature_id in enumerate(feature_sequence):
+            # sample set will be the last element in the sequence for classifiers
+            feature = all_elements[feature_id]
+            if feature["@type"] == "PartUsage":
+                if feature_id in list(ptg.nodes):
+                    types = list(ptg.successors(feature_id))
+                else:
+                    raise NotImplementedError("Cannot handle untyped features!")
+
+                if len(types) > 1:
+                    raise NotImplementedError("Cannot handle features with multiple types yet!")
+                else:
+                    typ = types[0]
+            else:
+                typ = feature_id
+
+            if index == 0:
+                new_sequences = instances_dict[typ]
+            else:
+                new_sequences = extend_sequences_by_sampling(
+                    new_sequences,
+                    feature_multiplicity(feature, all_elements, "lower"),
+                    feature_multiplicity(feature, all_elements, "upper"),
+                    [item for seq in instances_dict[typ] for item in seq],
+                    False,
+                    {},
+                    {}
+                )
+
+            instances_dict.update({feature_id: new_sequences})
+
+
 def build_sequence_templates(
     lpg: SysML2LabeledPropertyGraph
 ) -> list:
@@ -237,10 +246,14 @@ def build_sequence_templates(
     for comp in nx.connected_components(part_featuring_graph.to_undirected()):
         connected_sub = nx.subgraph(part_featuring_graph, list(comp))
         leaves = [node for node in connected_sub.nodes if connected_sub.in_degree(node) == 0]
-        root = [node for node in connected_sub.nodes if connected_sub.out_degree(node) == 0][0]
+        roots = [node for node in connected_sub.nodes if connected_sub.out_degree(node) == 0]
         for leaf in leaves:
-            leaf_path = nx.shortest_path(connected_sub, leaf, root)
-            sorted_feature_groups.append(leaf_path)
+            for root in roots:
+                try:
+                    leaf_path = nx.shortest_path(connected_sub, leaf, root)
+                    sorted_feature_groups.append(leaf_path)
+                except:
+                    pass
 
         #sorted_feature_groups.append(
         #    [node for node in nx.topological_sort(connected_sub)]
