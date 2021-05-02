@@ -1,3 +1,6 @@
+from ..interpretation.interpretation import LiveExpressionNode
+from ..graph.lpg import SysML2LabeledPropertyGraph
+
 def sequence_dot_operator(left_item, right_side_seqs):
     left_len = len(left_item)
     right_len = len(right_side_seqs[0])
@@ -15,3 +18,14 @@ def sequence_dot_operator(left_item, right_side_seqs):
 
     return matched_items
 
+def evaluate_collect(
+    m0_expr: LiveExpressionNode,
+    full_seq: list,
+    lpg: SysML2LabeledPropertyGraph
+) -> list:
+    # FIXME: Implement collector over the embedded sequence
+
+    # Look at the base attribute in the expression node to find which sequences to collect from and apply the
+    # sequence dot operator and others as needed
+
+    pass
