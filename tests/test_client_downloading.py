@@ -1,6 +1,8 @@
 from pymbe.client import SysML2Client
 from pymbe.graph import SysML2LabeledPropertyGraph
 
+from .fixtures.data_loader import kerbal_model_loaded_client
+
 def test_all_downloaded():
     """
     Test that all elements in a given project actually downloaded
@@ -61,3 +63,14 @@ def test_eles_populated():
     :return: test result
     """
     assert True
+
+
+def test_local_client():
+    """
+    Test that the local client for fixture support runs without exception
+    :return: test result
+    """
+
+    pre_loaded = kerbal_model_loaded_client()
+
+    assert pre_loaded is not None

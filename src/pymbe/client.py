@@ -4,6 +4,7 @@ from functools import lru_cache
 from warnings import warn
 
 import requests
+import json
 import sysml_v2_api_client as sysml2
 import traitlets as trt
 
@@ -200,3 +201,9 @@ class SysML2Client(Base):
         if len(elements) == max_elements:
             warn("There are probably more elements that were not retrieved!")
         self._update_elements(elements=elements)
+
+    def _load_disk_elements(self, location: str):
+        local_element_file = open(location, "r")
+        elements = json.loads(local_element_file.read())
+        self._update_elements(elements=elements)
+        local_element_file.close()
