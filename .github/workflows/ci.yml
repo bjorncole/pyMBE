@@ -43,7 +43,7 @@ jobs:
       - name: build
         shell: bash -l {0}
         run: |
-          ap run package || exit 1
+          anaconda-project run package || exit 1
 
       - name: publish dists
         uses: actions/upload-artifact@v2
