@@ -17,7 +17,7 @@ locking_enabled: true
 env_specs:
   user:
     locked: true
-    env_spec_hash: 4b455522711683708acb7531e3927a7c0e36042a
+    env_spec_hash: beb8dc58dcd4f81880d63c6f755f87f284431952
     platforms:
     - linux-64
     - osx-64
@@ -375,13 +375,14 @@ env_specs:
       - zstd=1.4.9=h6255e5f_0
   developer:
     locked: true
-    env_spec_hash: 49ea00947c0b7d77aaf05d709e2c77dc4f402889
+    env_spec_hash: 8ec7288910333abb715a066bb174658dba564f02
     platforms:
     - linux-64
     - osx-64
     - win-64
     packages:
       all:
+      - apipkg=1.5=py_0
       - appdirs=1.4.4=pyh9f0ad1d_0
       - async-lru=1.0.2=py_0
       - async_generator=1.10=py_0
@@ -399,6 +400,7 @@ env_specs:
       - decorator=4.4.2=py_0
       - defusedxml=0.7.1=pyhd8ed1ab_0
       - deprecation=2.1.0=pyh9f0ad1d_0
+      - execnet=1.8.0=pyh44b312d_0
       - frozendict=1.2=pyh9f0ad1d_3
       - html5lib=1.1=pyh9f0ad1d_0
       - idna=2.10=pyh9f0ad1d_0
@@ -443,6 +445,10 @@ env_specs:
       - pyopenssl=20.0.1=pyhd8ed1ab_0
       - pyparsing=2.4.7=pyh9f0ad1d_0
       - pytest-cov=2.11.1=pyh44b312d_0
+      - pytest-forked=1.3.0=pyhd3deb0d_0
+      - pytest-html=3.1.1=pyhd8ed1ab_0
+      - pytest-metadata=1.11.0=pyhd3deb0d_0
+      - pytest-xdist=2.2.1=pyhd8ed1ab_0
       - python-dateutil=2.8.1=py_0
       - python_abi=3.9=1_cp39
       - pytz=2021.1=pyhd8ed1ab_0
@@ -567,6 +573,7 @@ env_specs:
       - pyqtwebengine=5.12.1=py39h0fcd23e_7
       - pyrsistent=0.17.3=py39h3811e60_2
       - pysocks=1.7.1=py39hf3d152e_3
+      - pytest-asyncio=0.14.0=py39hf3d152e_0
       - pytest=6.2.3=py39hf3d152e_0
       - python=3.9.2=hffdb5ce_0_cpython
       - pyzmq=22.0.3=py39h37b5a0c_1
@@ -663,6 +670,7 @@ env_specs:
       - pluggy=0.13.1=py39h6e9494a_4
       - pyrsistent=0.17.3=py39hcbf5805_2
       - pysocks=1.7.1=py39h6e9494a_3
+      - pytest-asyncio=0.14.0=py39h6e9494a_0
       - pytest=6.2.3=py39h6e9494a_0
       - python=3.9.2=h2502468_0_cpython
       - pyzmq=22.0.3=py39h7fec2f1_1
@@ -754,6 +762,7 @@ env_specs:
       - pyqtwebengine=5.12.1=py39h415ef7b_7
       - pyrsistent=0.17.3=py39hb82d6ee_2
       - pysocks=1.7.1=py39hcbf5309_3
+      - pytest-asyncio=0.14.0=py39hcbf5309_0
       - pytest=6.2.3=py39hcbf5309_0
       - python=3.9.2=h7840368_0_cpython
       - pywin32=300=py39hb82d6ee_0

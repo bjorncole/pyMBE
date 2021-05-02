@@ -127,11 +127,14 @@ env_specs:
     description: The environment for developing pymbe
     inherit_from: user
     packages:
-    - coverage
     - black
+    - coverage
     - git
     - isort
     - pip
     - pytest
+    - pytest-asyncio
     - pytest-cov
+    - pytest-html
+    - pytest-xdist
     - wheel
