@@ -4,7 +4,8 @@ import json
 
 def download_to_local(
     host_url: str = "http://sysml2-sst.intercax.com",
-    project_id: str = "Test",
+    project_name: str = "Name",
+    project_id: str = "",
     commit_id: str = "",
     download_root: str = ""
 ):
@@ -14,11 +15,12 @@ def download_to_local(
     grabber.selected_project = project_id
     grabber.selected_commit = commit_id
 
-    grabber._download_elements()
+    server_elements = grabber._get_elements_from_server()
 
-    os.mkdir(download_root + "/" + project_id)
+    print(grabber.elements_url)
 
-    for ele, data in grabber.elements_by_id.items():
-        data_file = open(download_root + "/" + project_id + "/" + ele + ".json", "w")
-        data_file.write(json.dumps(data, indent=4, sort_keys=False))
-        data_file.close()
+    os.mkdir(download_root + "/" + project_name)
+
+    data_file = open(download_root + "/" + project_name + "/elements.json", "w")
+    data_file.write(json.dumps(server_elements, indent=4, sort_keys=False))
+    data_file.close()
