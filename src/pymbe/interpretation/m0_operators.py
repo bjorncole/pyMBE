@@ -29,3 +29,37 @@ def evaluate_collect(
     # sequence dot operator and others as needed
 
     pass
+
+def evaluate_fre(
+    m0_expr: LiveExpressionNode,
+    instance_dict: dict
+) -> list:
+    """
+    Evaluate a feature reference expression at m0, e.g., return the list of sequences
+    :param m0_expr:
+    :param instance_dict:
+    :return:
+    """
+
+    referent_id = m0_expr.base_att['referent']['@id']
+    if referent_id in instance_dict:
+        return instance_dict[referent_id]
+    else:
+        return []
+
+def evaluate_and_apply_literal(
+    m0_expr: LiveExpressionNode,
+    instance_dict: dict
+) -> list:
+    """
+    Evaluate a literal expression at m0, pushing the value to all instances of a viable result feature
+    :param m0_expr:
+    :param instance_dict:
+    :return:
+    """
+
+    literal_value = m0_expr.base_att['value']
+    literal_result = m0_expr.base_att['result']['@id']
+    target_list = instance_dict[literal_result]
+    for target in target_list:
+        target[-1].value = literal_value

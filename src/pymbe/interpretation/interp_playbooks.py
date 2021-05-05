@@ -156,7 +156,7 @@ def random_generator_playbook(
             if feature_id in instances_dict:
                 new_sequences = instances_dict[feature_id]
             else:
-                if "Expression" in feature_data["@type"]:
+                if "Expression" in feature_data["@type"] or "Literal" in feature_data["@type"]:
                     # Get the element type(s)
                     types: list = feature_data.get("type") or []
                     if isinstance(types, dict):
@@ -174,7 +174,7 @@ def random_generator_playbook(
 
                     new_sequences = extend_sequences_with_new_expr(
                         new_sequences,
-                        get_label_for_expression(feature_data, all_elements, type_names),
+                        get_label(feature_data, all_elements),
                         feature_data
                     )
                 elif feature_data["@type"] == "Feature":
@@ -321,6 +321,7 @@ def build_expression_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list
                     has_expression = any([
                         "Expression" in all_elements[step]["@type"]
                         or "Literal" in all_elements[step]["@type"]
+                        or "AttributeUsage" == all_elements[step]["@type"]
                         for step in leaf_path
                     ])
                     if has_expression:
