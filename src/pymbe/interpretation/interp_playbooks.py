@@ -93,25 +93,17 @@ def random_generator_playbook(
             instances_dict.update({leaf: new_instances})
 
     visited_nodes = set(instances_dict.keys())
-    unvisted_nodes = set(scg.nodes) - visited_nodes
+    unvisited_nodes = set(scg.nodes) - visited_nodes
 
     safety = 0
     while len(unvisted_nodes) > 0 and safety < 100:
-        node_visits = []
-        for key in visited_nodes:
-            for gen in scg.successors(key):
-                # bail if we've already been here
-                if gen in visited_nodes:
-                    break
-                if is_node_covered_by_subsets(lpg, gen, instances_dict) and gen not in node_visits:
-                    update_dict = generate_superset_instances(scg, gen, visited_nodes, instances_dict)
-                    instances_dict.update(update_dict)
-                    if len(update_dict.keys()) > 0:
-                        node_visits.append(gen)
-
-        for touched_node in node_visits:
-            visited_nodes.add(touched_node)
-            unvisted_nodes.remove(touched_node)
+        random_generator_playbook_phase_2_rollup(
+            visited_nodes,
+            unvisited_nodes,
+            lpg,
+            scg,
+            instances_dict
+        )
 
         safety = safety + 1
 
@@ -196,6 +188,29 @@ def random_generator_playbook(
                 instances_dict.update({feature_id: new_sequences})
     return instances_dict
 
+
+def random_generator_playbook_phase_2_rollup(
+    visited_nodes: list,
+    unvisited_nodes: list,
+    lpg: SysML2LabeledPropertyGraph,
+    scg: nx.MultiDiGraph,
+    instances_dict: dict
+) -> None:
+    node_visits = []
+    for key in visited_nodes:
+        for gen in scg.successors(key):
+            # bail if we've already been here
+            if gen in visited_nodes:
+                break
+            if is_node_covered_by_subsets(lpg, gen, instances_dict) and gen not in node_visits:
+                update_dict = generate_superset_instances(scg, gen, visited_nodes, instances_dict)
+                instances_dict.update(update_dict)
+                if len(update_dict.keys()) > 0:
+                    node_visits.append(gen)
+
+    for touched_node in node_visits:
+        visited_nodes.add(touched_node)
+        unvisited_nodes.remove(touched_node)
 
 def random_generator_playbook_phase_3(
     feature_sequences: list,
