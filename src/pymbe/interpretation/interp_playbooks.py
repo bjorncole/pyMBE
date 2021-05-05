@@ -96,7 +96,7 @@ def random_generator_playbook(
     unvisited_nodes = set(scg.nodes) - visited_nodes
 
     safety = 0
-    while len(unvisted_nodes) > 0 and safety < 100:
+    while len(unvisited_nodes) > 0 and safety < 100:
         random_generator_playbook_phase_2_rollup(
             visited_nodes,
             unvisited_nodes,
