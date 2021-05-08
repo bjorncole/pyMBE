@@ -1,5 +1,6 @@
-from ..interpretation.interpretation import LiveExpressionNode
+from ..interpretation.interpretation import LiveExpressionNode, ValueHolder
 from ..graph.lpg import SysML2LabeledPropertyGraph
+from ..label import get_label_for_id
 
 def sequence_dot_operator(left_item, right_side_seqs):
     left_len = len(left_item)
@@ -18,19 +19,23 @@ def sequence_dot_operator(left_item, right_side_seqs):
 
     return matched_items
 
-def evaluate_collect(
+def evaluate_and_apply_collect(
     m0_expr: LiveExpressionNode,
-    full_seq: list,
-    lpg: SysML2LabeledPropertyGraph
-) -> list:
-    # FIXME: Implement collector over the embedded sequence
+    instance_dict: dict,
+    m0_collection_input: ValueHolder,
+    m0_collection_path: ValueHolder
+) -> None:
 
-    # Look at the base attribute in the expression node to find which sequences to collect from and apply the
-    # sequence dot operator and others as needed
+    print("Applying collect to " + str(m0_collection_input))
+    # apply the dot operator
+    path_result = []
+    for collect_seq in m0_collection_input.value:
+        collect_match = sequence_dot_operator(collect_seq, m0_collection_path.value)
+        path_result.append(collect_match)
+    collect_result = m0_expr.base_att['result']['@id']
+    print("Collect result is " + str(collect_result))
 
-    pass
-
-def evaluate_fre(
+def evaluate_and_apply_fre(
     m0_expr: LiveExpressionNode,
     instance_dict: dict
 ) -> list:
@@ -43,14 +48,18 @@ def evaluate_fre(
 
     referent_id = m0_expr.base_att['referent']['@id']
     if referent_id in instance_dict:
+        fre_result = m0_expr.base_att['result']['@id']
+        target_list = instance_dict[fre_result]
+        for target in target_list:
+            target[-1].value = instance_dict[referent_id]
         return instance_dict[referent_id]
     else:
-        return []
+        return
 
 def evaluate_and_apply_literal(
     m0_expr: LiveExpressionNode,
     instance_dict: dict
-) -> list:
+) -> None:
     """
     Evaluate a literal expression at m0, pushing the value to all instances of a viable result feature
     :param m0_expr:

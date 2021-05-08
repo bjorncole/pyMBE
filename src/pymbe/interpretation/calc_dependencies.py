@@ -1,17 +1,21 @@
 import networkx as nx
 from ..interpretation.results import pprint_double_id_list
+from ..label import get_label_for_id
 from ..graph.lpg import SysML2LabeledPropertyGraph
 
 def build_dependency_graph(
     lpg: SysML2LabeledPropertyGraph,
     instance_dict: dict
-) -> nx.DiGraph:
+) -> nx.MultiDiGraph:
     """
     Generate a dependency graph between specific sequences in the m0 interpretation
     :return:
     """
+
     all_elements = lpg.nodes
     eeg = lpg.get_projection("Expression Evaluation Graph")
+
+    dependency_graph = nx.MultiDiGraph()
 
     sorted_feature_groups = []
     for comp in nx.connected_components(eeg.to_undirected()):
@@ -21,6 +25,8 @@ def build_dependency_graph(
         for leaf in leaves:
             for root in roots:
                 try:
+                    # FIXME: This seems to be missing some connections in the graph
+                    # FIXME: Remember - don't need to sort!
                     leaf_path = nx.shortest_path(connected_sub, root, leaf)
                     has_expression = any([
                         "Expression" in all_elements[step]["@type"]
@@ -34,6 +40,16 @@ def build_dependency_graph(
                 except:
                     pass
 
-    print(pprint_double_id_list(sorted_feature_groups, all_elements))
+    for sorted in sorted_feature_groups:
+        for index, item in enumerate(sorted):
+            # ignore first element to build edges
+            if index > 0:
+                source_instances = instance_dict[sorted[index - 1]]
+                target_instances = instance_dict[item]
 
-    return None
+                for jndx, source_inst in enumerate(source_instances):
+                    tuple_key_source = (sorted[index-1], jndx, len(source_inst))
+                    tuple_key_target = (item, jndx, len(target_instances[jndx]))
+                    dependency_graph.add_edge(tuple_key_source, tuple_key_target)
+
+    return dependency_graph

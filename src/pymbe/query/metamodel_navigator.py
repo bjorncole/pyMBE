@@ -22,6 +22,9 @@ def feature_multiplicity(
 
 
 def map_inputs_to_results(lpg: SysML2LabeledPropertyGraph) -> list:
+
+    # TODO: Need a hack to feed result parameters into collection expressions
+
     eeg = lpg.get_projection("Expression Evaluation Graph")
 
     edge_dict = {
@@ -94,5 +97,12 @@ def map_inputs_to_results(lpg: SysML2LabeledPropertyGraph) -> list:
                 for index, expr in enumerate(expr_members)
                 if index < len(expr_results) and index < len(para_members)
             ]
+
+            # FIXME: Another hack to deal with collect inputs
+            if rf_metatype == 'Expression':
+                expr_owner = result_feeder['owner']['@id']
+                expr_result_id = result_feeder['result']['@id']
+
+                implied_edges+=[(expr_result_id, expr_owner, "ImpliedParameterFeedforward")]
 
     return implied_edges
