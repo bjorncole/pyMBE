@@ -123,6 +123,7 @@ class CalculationLabeledPropertyGraph():
                                         m0_prev_obj = self.instance_dict[prev_step[0]][prev_step[1]][prev_step[2] - 1]
 
                                     evaluate_and_apply_collect(
+                                        self.instance_dict[step[0]][step[1]][0],
                                         m0_obj,
                                         self.instance_dict,
                                         m0_collection,

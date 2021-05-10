@@ -1,4 +1,4 @@
-from ..interpretation.interpretation import LiveExpressionNode, ValueHolder
+from ..interpretation.interpretation import LiveExpressionNode, ValueHolder, Instance
 from ..graph.lpg import SysML2LabeledPropertyGraph
 from ..label import get_label_for_id
 
@@ -20,6 +20,7 @@ def sequence_dot_operator(left_item, right_side_seqs):
     return matched_items
 
 def evaluate_and_apply_collect(
+    base_scope: Instance,
     m0_expr: LiveExpressionNode,
     instance_dict: dict,
     m0_collection_input: ValueHolder,
@@ -30,7 +31,10 @@ def evaluate_and_apply_collect(
     #print("Applying collect to " + str(m0_collection_input))
     # apply the dot operator
     path_result = []
-    for collect_seq in m0_collection_input.value:
+    first_step = sequence_dot_operator([base_scope], m0_collection_input.value)
+    print("First step:")
+    print(first_step)
+    for collect_seq in first_step:
         collect_match = sequence_dot_operator(collect_seq, m0_collection_path.value)
         path_result.append(collect_match)
     collect_result = m0_expr.base_att['result']['@id']
