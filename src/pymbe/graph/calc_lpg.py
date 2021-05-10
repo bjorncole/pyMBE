@@ -113,10 +113,8 @@ class CalculationLabeledPropertyGraph():
                                     for prev_step in prev_steps:
                                         m0_prev_obj = self.instance_dict[prev_step[0]][prev_step[1]][prev_step[2] - 1]
                                         if m0_prev_obj.base_att['name'] == '$collection':
-                                            print("Collection = " + str(m0_prev_obj))
                                             m0_collection = m0_prev_obj
                                         else:
-                                            print("Path includes " + str(m0_prev_obj))
                                             m0_path = m0_prev_obj
                                     if len(prev_steps) == 1:
                                         prev_step = prev_steps[0]
@@ -130,7 +128,5 @@ class CalculationLabeledPropertyGraph():
                                         m0_path,
                                         prev_step[1]
                                     )
-
-                    print(self.instance_dict[step[0]][step[1]][step[2] - 1])
 
 

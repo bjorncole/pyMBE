@@ -32,16 +32,12 @@ def evaluate_and_apply_collect(
     # apply the dot operator
     path_result = []
     first_step = sequence_dot_operator([base_scope], m0_collection_input.value)
-    print("First step:")
-    print(first_step)
     for collect_seq in first_step:
         collect_match = sequence_dot_operator(collect_seq, m0_collection_path.value)
         path_result.append(collect_match)
     collect_result = m0_expr.base_att['result']['@id']
     target_result = instance_dict[collect_result][result_index][-1]
     target_result.value = path_result
-    print("Collected as:")
-    print(target_result)
 
 def evaluate_and_apply_fre(
     m0_expr: LiveExpressionNode,
