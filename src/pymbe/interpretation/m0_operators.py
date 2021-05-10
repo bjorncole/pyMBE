@@ -23,17 +23,21 @@ def evaluate_and_apply_collect(
     m0_expr: LiveExpressionNode,
     instance_dict: dict,
     m0_collection_input: ValueHolder,
-    m0_collection_path: ValueHolder
+    m0_collection_path: ValueHolder,
+    result_index: int
 ) -> None:
 
-    print("Applying collect to " + str(m0_collection_input))
+    #print("Applying collect to " + str(m0_collection_input))
     # apply the dot operator
     path_result = []
     for collect_seq in m0_collection_input.value:
         collect_match = sequence_dot_operator(collect_seq, m0_collection_path.value)
         path_result.append(collect_match)
     collect_result = m0_expr.base_att['result']['@id']
-    print("Collect result is " + str(collect_result))
+    target_result = instance_dict[collect_result][result_index][-1]
+    target_result.value = path_result
+    print("Collected as:")
+    print(target_result)
 
 def evaluate_and_apply_fre(
     m0_expr: LiveExpressionNode,
