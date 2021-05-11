@@ -1,6 +1,8 @@
 from dateutil import parser
 from datetime import timezone
 from functools import lru_cache
+from pathlib import Path
+from typing import Union
 from warnings import warn
 
 import requests
@@ -193,7 +195,6 @@ class SysML2Client(Base):
 
     def update(self, elements: dict):
         """All the functionality for the update is already handled"""
-        pass
 
     def _download_elements(self):
         elements = self._get_elements_from_server()
@@ -202,8 +203,13 @@ class SysML2Client(Base):
             warn("There are probably more elements that were not retrieved!")
         self._update_elements(elements=elements)
 
-    def _load_disk_elements(self, location: str):
-        local_element_file = open(location, "r")
-        elements = json.loads(local_element_file.read())
-        self._update_elements(elements=elements)
-        local_element_file.close()
+    def _load_from_file(self, file_path: Union[str, Path]):
+        if isinstance(file_path, str):
+            file_path = Path(file_path)
+        elif not isinstance(file_path, Path):
+            raise TypeError(f"'{file_path}' needs to be a string or a Path, not a {type(file_path)}")
+
+        if not file_path.exists():
+            raise ValueError(f"Cannot find {file_path}!")
+
+        self._update_elements(elements=json.loads(file_path.read_text()))

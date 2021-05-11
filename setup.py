@@ -1,9 +1,7 @@
 """ look in setup.cfg """
 # pylint: disable=invalid-name
 import re
-
 from pathlib import Path
-
 
 HERE = Path(__file__).parent
 VERSION = HERE / "src" / "pymbe" / "_version.py"

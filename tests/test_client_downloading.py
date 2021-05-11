@@ -1,7 +1,7 @@
 from pymbe.client import SysML2Client
 from pymbe.graph import SysML2LabeledPropertyGraph
+from .data_loader import kerbal_model_loaded_client
 
-from .fixtures.data_loader import kerbal_model_loaded_client
 
 def test_all_downloaded():
     """
@@ -48,6 +48,7 @@ def test_ele_v_relationship():
 
     assert len(trial_graph.nodes) == 66
     assert len(trial_graph.edges) == (143 - 66)
+
 
 def test_ele_types():
     """

@@ -15,23 +15,38 @@ description: |
 commands:
   lab:
     description: launch lab
-    env_spec: user
+    env_spec: developer
     unix: &lab jupyter lab --no-browser --debug
     windows: *lab
   setup:
     description: setup development environment
-    env_spec: user
+    env_spec: developer
     unix: |
+      git submodule update --init
       pip install git+https://github.com/Systems-Modeling/SysML-v2-API-Python-Client.git --no-dependencies
       pip install -e . --no-dependencies
     windows: |
-      pip install git+https://github.com/Systems-Modeling/SysML-v2-API-Python-Client.git --no-dependencies & pip install -e . --no-dependencies
-  notebooks/KerML Nested Features.ipynb:
+      git submodule update --init & pip install git+https://github.com/Systems-Modeling/SysML-v2-API-Python-Client.git --no-dependencies & pip install -e . --no-dependencies
+  lint:
+    description: lint the code
+    env_spec: developer
+    unix: |
+      isort .
+      black src/
+    windows: python isort . & python black .
+  package:
+    description: make a source distribution
+    env_spec: developer
+    unix: python setup.py sdist
+    windows: python setup.py sdist
+  test:
+    description: run the tests
+    env_spec: developer
+    unix: py.test
+    windows: py.test
+  notebooks/Tutorial.ipynb:
     env_spec: user
-    notebook: notebooks/KerML Nested Features.ipynb
-  notebooks/Kerbal Model.ipynb:
-    env_spec: user
-    notebook: notebooks/Kerbal Model.ipynb
+    notebook: notebooks/Tutorial.ipynb
 
 #
 # In the variables section, list any environment variables your code depends on.
@@ -93,19 +108,33 @@ env_specs:
   user:
     description: The environment for running the notebooks
     packages:
-    - openmdao >=3.0
-    - tabulate
-    - ipyelk >=1.0,<2.0
-    - ipytree >=0.2.1,<1.0
+    - ipyelk >=1.0,<2
+    - ipytree >=0.2.1,<1
     - jupyterlab >=3.0,<4
     - matplotlib
     - networkx >=2.0,<3
     - notebook
     - numpy
-    - pip
-    - pytest
+    - openmdao >=3.0,<4
+    - pyld
     - rdflib
     - rdflib-jsonld
     - ruamel.yaml
-    - wheel
+    - tabulate
     - wxyz_lab
+  developer:
+    description: The environment for developing pymbe
+    inherit_from:
+    - user
+    packages:
+    - black
+    - coverage
+    - git
+    - isort
+    - pip
+    - pytest
+    - pytest-asyncio
+    - pytest-cov
+    - pytest-html
+    - pytest-xdist
+    - wheel

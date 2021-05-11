@@ -7,6 +7,7 @@ from warnings import warn
 import networkx as nx
 import ruamel.yaml as yaml
 import traitlets as trt
+import typing as ty
 
 from ..core import Base
 
@@ -332,7 +333,7 @@ class SysML2LabeledPropertyGraph(Base):
         excluded_node_types: (list, set, tuple) = None,
         excluded_edge_types: (list, set, tuple) = None,
         reversed_edge_types: (list, set, tuple) = None,
-    ) -> nx.DiGraph:
+    ) -> ty.Union[nx.Graph, nx.DiGraph]:
         """
             Using the existing graph, filter by node and edge types, and/or
             reverse certain edge types.
@@ -352,7 +353,7 @@ class SysML2LabeledPropertyGraph(Base):
         excluded_node_types: (list, set, tuple) = None,
         excluded_edge_types: (list, set, tuple) = None,
         reversed_edge_types: (list, set, tuple) = None,
-    ):
+    ) -> nx.Graph:
         graph = self.graph
 
         mismatched_node_types = set(excluded_node_types).difference(self.node_types)
