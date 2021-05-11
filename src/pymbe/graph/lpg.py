@@ -133,7 +133,8 @@ class SysML2LabeledPropertyGraph(Base):
                 for key, value in element_data.items()
                 if key not in filtered_keys
             }
-            for element_id, element_data in elements.items()
+            # check that elements actually have data
+            for element_id, element_data in elements.items() if len(element_data.items()) > 0
         }
 
         relationship_element_ids = {
@@ -331,7 +332,7 @@ class SysML2LabeledPropertyGraph(Base):
         excluded_node_types: (list, set, tuple) = None,
         excluded_edge_types: (list, set, tuple) = None,
         reversed_edge_types: (list, set, tuple) = None,
-    ) -> nx.Graph:
+    ) -> nx.DiGraph:
         """
             Using the existing graph, filter by node and edge types, and/or
             reverse certain edge types.

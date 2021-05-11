@@ -16,6 +16,11 @@ def random_generator_playbook(
     name_hints: dict,
 ) -> dict:
 
+    can_interpret = validate_working_data(lpg)
+
+    if not can_interpret:
+        return {}
+
     all_elements = lpg.nodes
 
     # PHASE 1: Create a set of instances for part definitions based on usage multiplicities
@@ -88,25 +93,17 @@ def random_generator_playbook(
             instances_dict.update({leaf: new_instances})
 
     visited_nodes = set(instances_dict.keys())
-    unvisted_nodes = set(scg.nodes) - visited_nodes
+    unvisited_nodes = set(scg.nodes) - visited_nodes
 
     safety = 0
-    while len(unvisted_nodes) > 0 and safety < 100:
-        node_visits = []
-        for key in visited_nodes:
-            for gen in scg.successors(key):
-                # bail if we've already been here
-                if gen in visited_nodes:
-                    break
-                if is_node_covered_by_subsets(lpg, gen, instances_dict) and gen not in node_visits:
-                    update_dict = generate_superset_instances(scg, gen, visited_nodes, instances_dict)
-                    instances_dict.update(update_dict)
-                    if len(update_dict.keys()) > 0:
-                        node_visits.append(gen)
-
-        for touched_node in node_visits:
-            visited_nodes.add(touched_node)
-            unvisted_nodes.remove(touched_node)
+    while len(unvisited_nodes) > 0 and safety < 100:
+        random_generator_playbook_phase_2_rollup(
+            visited_nodes,
+            unvisited_nodes,
+            lpg,
+            scg,
+            instances_dict
+        )
 
         safety = safety + 1
 
@@ -131,38 +128,7 @@ def random_generator_playbook(
 
     # PHASE 3: Expand the dictionaries out into feature sequences by pulling from instances developed here
 
-    for feature_sequence in feature_sequences:
-        new_sequences = []
-        for index, feature_id in enumerate(feature_sequence):
-            # sample set will be the last element in the sequence for classifiers
-            feature = all_elements[feature_id]
-            if feature["@type"] == "PartUsage":
-                if feature_id in list(ptg.nodes):
-                    types = list(ptg.successors(feature_id))
-                else:
-                    raise NotImplementedError("Cannot handle untyped features!")
-
-                if len(types) > 1:
-                    raise NotImplementedError("Cannot handle features with multiple types yet!")
-                else:
-                    typ = types[0]
-            else:
-                typ = feat
-
-            if index == 0:
-                new_sequences = instances_dict[typ]
-            else:
-                new_sequences = extend_sequences_by_sampling(
-                    new_sequences,
-                    feature_multiplicity(feature, all_elements, "lower"),
-                    feature_multiplicity(feature, all_elements, "upper"),
-                    [item for seq in instances_dict[typ] for item in seq],
-                    False,
-                    {},
-                    {}
-                )
-
-            instances_dict.update({feat: new_sequences})
+    random_generator_playbook_phase_3(feature_sequences, all_elements, ptg, instances_dict)
 
     # PHASE 4: Expand sequences to support computations
 
@@ -179,10 +145,10 @@ def random_generator_playbook(
         for feature_id in expr_seq:
             # sample set will be the last element in the sequence for classifiers
             feature_data = all_elements[feature_id]
-            if feat in instances_dict:
+            if feature_id in instances_dict:
                 new_sequences = instances_dict[feature_id]
             else:
-                if "Expression" in feature_data["@type"]:
+                if "Expression" in feature_data["@type"] or "Literal" in feature_data["@type"]:
                     # Get the element type(s)
                     types: list = feature_data.get("type") or []
                     if isinstance(types, dict):
@@ -200,7 +166,7 @@ def random_generator_playbook(
 
                     new_sequences = extend_sequences_with_new_expr(
                         new_sequences,
-                        get_label_for_expression(feature_data, all_elements, type_names),
+                        get_label(feature_data, all_elements),
                         feature_data
                     )
                 elif feature_data["@type"] == "Feature":
@@ -219,8 +185,72 @@ def random_generator_playbook(
                         feature_data,
                         all_elements
                     )
-                instances_dict.update({feat: new_sequences})
+                instances_dict.update({feature_id: new_sequences})
     return instances_dict
+
+
+def random_generator_playbook_phase_2_rollup(
+    visited_nodes: list,
+    unvisited_nodes: list,
+    lpg: SysML2LabeledPropertyGraph,
+    scg: nx.MultiDiGraph,
+    instances_dict: dict
+) -> None:
+    node_visits = []
+    for key in visited_nodes:
+        for gen in scg.successors(key):
+            # bail if we've already been here
+            if gen in visited_nodes:
+                break
+            if is_node_covered_by_subsets(lpg, gen, instances_dict) and gen not in node_visits:
+                update_dict = generate_superset_instances(scg, gen, visited_nodes, instances_dict)
+                instances_dict.update(update_dict)
+                if len(update_dict.keys()) > 0:
+                    node_visits.append(gen)
+
+    for touched_node in node_visits:
+        visited_nodes.add(touched_node)
+        unvisited_nodes.remove(touched_node)
+
+def random_generator_playbook_phase_3(
+    feature_sequences: list,
+    all_elements: dict,
+    ptg: nx.DiGraph,
+    instances_dict: dict
+) -> None:
+    for feature_sequence in feature_sequences:
+        new_sequences = []
+        feat = None
+        for index, feature_id in enumerate(feature_sequence):
+            # sample set will be the last element in the sequence for classifiers
+            feature = all_elements[feature_id]
+            if feature["@type"] == "PartUsage":
+                if feature_id in list(ptg.nodes):
+                    types = list(ptg.successors(feature_id))
+                else:
+                    raise NotImplementedError("Cannot handle untyped features!")
+
+                if len(types) > 1:
+                    raise NotImplementedError("Cannot handle features with multiple types yet!")
+                else:
+                    typ = types[0]
+            else:
+                typ = feature_id
+
+            if index == 0:
+                new_sequences = instances_dict[typ]
+            else:
+                new_sequences = extend_sequences_by_sampling(
+                    new_sequences,
+                    feature_multiplicity(feature, all_elements, "lower"),
+                    feature_multiplicity(feature, all_elements, "upper"),
+                    [item for seq in instances_dict[typ] for item in seq],
+                    False,
+                    {},
+                    {}
+                )
+
+            instances_dict.update({feature_id: new_sequences})
 
 
 def build_sequence_templates(
@@ -231,10 +261,14 @@ def build_sequence_templates(
     for comp in nx.connected_components(part_featuring_graph.to_undirected()):
         connected_sub = nx.subgraph(part_featuring_graph, list(comp))
         leaves = [node for node in connected_sub.nodes if connected_sub.in_degree(node) == 0]
-        root = [node for node in connected_sub.nodes if connected_sub.out_degree(node) == 0][0]
+        roots = [node for node in connected_sub.nodes if connected_sub.out_degree(node) == 0]
         for leaf in leaves:
-            leaf_path = nx.shortest_path(connected_sub, leaf, root)
-            sorted_feature_groups.append(leaf_path)
+            for root in roots:
+                try:
+                    leaf_path = nx.shortest_path(connected_sub, leaf, root)
+                    sorted_feature_groups.append(leaf_path)
+                except:
+                    pass
 
         #sorted_feature_groups.append(
         #    [node for node in nx.topological_sort(connected_sub)]
@@ -302,6 +336,7 @@ def build_expression_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list
                     has_expression = any([
                         "Expression" in all_elements[step]["@type"]
                         or "Literal" in all_elements[step]["@type"]
+                        or "AttributeUsage" == all_elements[step]["@type"]
                         for step in leaf_path
                     ])
                     if has_expression:
@@ -315,3 +350,30 @@ def build_expression_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list
         # )
 
     return sorted_feature_groups
+
+def validate_working_data(
+    lpg: SysML2LabeledPropertyGraph
+) -> bool:
+    """
+    Helper method to check that the user model is valid for instance generation
+    :return: A Boolean indicating that the user model is ready to be interpreted
+    """
+
+    # check that all the elements of the graph are in fact proper model elements
+
+    all_non_relations = lpg.nodes
+    for nr_key, nr in all_non_relations.items():
+        try:
+            nr_type = nr['@type']
+        except KeyError:
+            print("No type found in " + str(nr))
+            return False
+        except TypeError:
+            print("Expecting dict of model element data, got string = " + nr)
+        try:
+            nr_id = nr["@id"]
+        except KeyError:
+            print("No type found in " + str(nr))
+            return False
+
+    return True

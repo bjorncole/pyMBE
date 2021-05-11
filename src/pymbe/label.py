@@ -44,6 +44,10 @@ def get_label(element: dict, all_elements: dict) -> str:
     else:
         return "blank"
 
+def get_label_for_id(
+    element_id: str, all_elements: dict
+) -> str:
+    return get_label(all_elements[element_id], all_elements)
 
 def get_label_for_expression(
     expression: dict,
