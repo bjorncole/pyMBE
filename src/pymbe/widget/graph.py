@@ -231,8 +231,9 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, BaseWidget, ipyw.Box):
         enforce_directionality = self.enforce_directionality.value
         if self.edge_type_reverser.value and not enforce_directionality:
             raise ValueError(
-                f"Reversing edge types: {reversed_edge_types} makes no "
-                "sense since directional is False")
+                f"Reversing edge types: {self.edge_type_reverser.value} "
+                "makes no sense since edges are not being enforced."
+            )
 
         instructions: dict = self.get_projection_instructions(
             projection=self.projection_selector.value,

@@ -330,9 +330,9 @@ class SysML2LabeledPropertyGraph(Base):
         ))
 
     def adapt(self,
-        excluded_node_types: (list, set, tuple) = None,
-        excluded_edge_types: (list, set, tuple) = None,
-        reversed_edge_types: (list, set, tuple) = None,
+        excluded_node_types: ty.Union[list, set, tuple] = None,
+        excluded_edge_types: ty.Union[list, set, tuple] = None,
+        reversed_edge_types: ty.Union[list, set, tuple] = None,
     ) -> ty.Union[nx.Graph, nx.DiGraph]:
         """
             Using the existing graph, filter by node and edge types, and/or
@@ -350,9 +350,9 @@ class SysML2LabeledPropertyGraph(Base):
 
     @lru_cache
     def _adapt(self,
-        excluded_node_types: (list, set, tuple) = None,
-        excluded_edge_types: (list, set, tuple) = None,
-        reversed_edge_types: (list, set, tuple) = None,
+        excluded_node_types: ty.Union[list, set, tuple] = None,
+        excluded_edge_types: ty.Union[list, set, tuple] = None,
+        reversed_edge_types: ty.Union[list, set, tuple] = None,
     ) -> nx.Graph:
         graph = self.graph
 
@@ -438,7 +438,7 @@ class SysML2LabeledPropertyGraph(Base):
     def get_spanning_graph(
         self,
         graph: nx.Graph,
-        seeds: (list, set, tuple),
+        seeds: ty.Union[list, set, tuple],
         max_distance: int = 2,
         enforce_directionality: bool = True,
     ):
