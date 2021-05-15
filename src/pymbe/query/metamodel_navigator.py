@@ -106,3 +106,20 @@ def map_inputs_to_results(lpg: SysML2LabeledPropertyGraph) -> list:
                 implied_edges+=[(expr_result_id, expr_owner, "ImpliedParameterFeedforward")]
 
     return implied_edges
+
+
+def safe_get_type_by_id(
+    lpg: SysML2LabeledPropertyGraph,
+    feature_id: str
+):
+    feature = lpg.nodes[feature_id]
+    if 'type' not in feature:
+        raise ValueError("Tried to get the type on an element without a type!")
+
+    no_types = len(feature['type'])
+    if no_types == 0:
+        return None
+    elif no_types == 1:
+        return lpg.nodes[feature['type'][0]['@id']]
+    else:
+        raise NotImplementedError("No logic for multiple types!")

@@ -32,37 +32,7 @@ def random_generator_playbook(
 
     feature_sequences = build_sequence_templates(lpg=lpg)
 
-    # will sub-divide abstract multiplicity
-    abstracts = [
-        node
-        for node in ptg.nodes
-        if all_elements[node].get("isAbstract")
-    ]
-
-    full_multiplicities = {}
-    # look at all the types in the feature sequences
-    for seq in feature_sequences:
-        for feat in seq:
-            for source, target in ptg.out_edges(feat):
-                if "FeatureTyping" in ptg.get_edge_data(source, target):
-                    feat_multiplicity = roll_up_upper_multiplicity(
-                        lpg=lpg,
-                        feature=all_elements[feat],
-                    )
-                    if target in abstracts:
-                        specifics = list(scg.predecessors(target))
-                        taken = 0
-                        no_splits = len(specifics)
-                        # need to sub-divide the abstract quantities
-                        for index, specific in enumerate(specifics):
-                            if index < (no_splits - 1):
-                                draw = random.randint(0, feat_multiplicity)
-                                taken = taken + draw
-                            else:
-                                draw = feat_multiplicity - taken
-                            full_multiplicities.update({specific: draw})
-                    else:
-                        full_multiplicities.update({target: feat_multiplicity})
+    full_multiplicities = random_generator_phase_1_multiplicities(lpg, ptg, scg)
 
     instances_dict = {}
 
@@ -75,37 +45,18 @@ def random_generator_playbook(
 
         instances_dict.update({type_id: new_instances})
 
+    random_generator_playbook_phase_1_singletons(lpg, scg, instances_dict)
+
     # PHASE 2: Combine sets of instances into sets that are marked as more general in the user model
 
     # "Roll up" the graph by looking at the successors to visited nodes that are unvisited, then forming a union
     # of the sets of the unvisited node's predecessors
 
-    leaves = [node for node in scg.nodes if scg.in_degree(node) == 0]
-
-    for leaf in leaves:
-        if leaf not in instances_dict:
-            new_instances = create_set_with_new_instances(
-                sequence_template=[all_elements[leaf]],
-                quantities=[1],
-                name_hints=name_hints,
-            )
-
-            instances_dict.update({leaf: new_instances})
-
-    visited_nodes = set(instances_dict.keys())
-    unvisited_nodes = set(scg.nodes) - visited_nodes
-
-    safety = 0
-    while len(unvisited_nodes) > 0 and safety < 100:
-        random_generator_playbook_phase_2_rollup(
-            visited_nodes,
-            unvisited_nodes,
+    random_generator_playbook_phase_2_rollup(
             lpg,
             scg,
             instances_dict
         )
-
-        safety = safety + 1
 
     # Fill in any part definitions that don't have instances yet
 
@@ -189,28 +140,95 @@ def random_generator_playbook(
     return instances_dict
 
 
-def random_generator_playbook_phase_2_rollup(
-    visited_nodes: list,
-    unvisited_nodes: list,
+def random_generator_phase_1_multiplicities(
     lpg: SysML2LabeledPropertyGraph,
-    scg: nx.MultiDiGraph,
+    ptg: nx.DiGraph,
+    scg: nx.DiGraph
+) -> dict:
+    # will sub-divide abstract multiplicity
+    abstracts = [
+        node
+        for node in ptg.nodes
+        if lpg.nodes[node].get("isAbstract")
+    ]
+
+    # find the maximal amount of types directly based on instances
+
+    type_multiplicities = {}
+    for pt in ptg.nodes:
+        if lpg.nodes[pt]['@type'] in ('PartDefinition'):
+            mult = roll_up_multiplicity_for_type(
+                lpg,
+                lpg.nodes[pt],
+                "upper"
+            )
+            type_multiplicities.update({pt: mult})
+
+    full_multiplicities = {}
+    # look at all the types in the feature sequences
+    for typ, mult in type_multiplicities.items():
+        if typ in abstracts:
+            specifics = list(scg.successors(typ))
+            taken = 0
+            no_splits = len(specifics)
+            # need to sub-divide the abstract quantities
+            for index, specific in enumerate(specifics):
+                if index < (no_splits - 1):
+                    draw = random.randint(0, mult)
+                    taken = taken + draw
+                else:
+                    draw = mult - taken
+                full_multiplicities.update({specific: draw})
+        else:
+            full_multiplicities.update({typ: mult})
+
+    return full_multiplicities
+
+
+def random_generator_playbook_phase_1_singletons(
+    lpg: SysML2LabeledPropertyGraph,
+    scg: nx.DiGraph,
     instances_dict: dict
 ) -> None:
-    node_visits = []
-    for key in visited_nodes:
-        for gen in scg.successors(key):
-            # bail if we've already been here
-            if gen in visited_nodes:
-                break
-            if is_node_covered_by_subsets(lpg, gen, instances_dict) and gen not in node_visits:
-                update_dict = generate_superset_instances(scg, gen, visited_nodes, instances_dict)
-                instances_dict.update(update_dict)
-                if len(update_dict.keys()) > 0:
-                    node_visits.append(gen)
 
-    for touched_node in node_visits:
-        visited_nodes.add(touched_node)
-        unvisited_nodes.remove(touched_node)
+    all_elements = lpg.nodes
+
+    # need to generate single instances at leaves that don't match types
+    leaves = [node for node in scg.nodes if scg.out_degree(node) == 0]
+
+    for leaf in leaves:
+        if leaf not in instances_dict:
+            new_instances = create_set_with_new_instances(
+                sequence_template=[all_elements[leaf]],
+                quantities=[1],
+                name_hints=[],
+            )
+
+            instances_dict.update({leaf: new_instances})
+
+
+def random_generator_playbook_phase_2_rollup(
+    lpg: SysML2LabeledPropertyGraph,
+    scg: nx.DiGraph,
+    instances_dict: dict
+) -> None:
+
+    roots = [node for node in scg.nodes if scg.in_degree(node) == 0]
+
+    for root in roots:
+        bfs_dict = dict(nx.bfs_successors(scg, root))
+        bfs_list = list(bfs_dict.keys())
+        bfs_list.reverse()
+
+        for gen in bfs_list:
+            new_superset = []
+            # use the BFS dictionary to be assured that everything is covered
+            #update_dict = generate_superset_instances(scg, gen, visited_nodes, instances_dict)
+
+            for subset_node in bfs_dict[gen]:
+                new_superset.extend(instances_dict[subset_node])
+
+            instances_dict.update({gen: new_superset})
 
 def random_generator_playbook_phase_3(
     feature_sequences: list,

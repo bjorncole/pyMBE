@@ -69,6 +69,8 @@ Part Definition Graph:
   - PartDefinition
   included_edge_types:
   - Superclassing
+  reversed_edge_types:
+  - Superclassing
 
 Part Featuring Graph:
   description: |
