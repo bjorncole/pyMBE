@@ -87,6 +87,27 @@ def random_stage_2_complete(kerbal_lpg, random_stage_1_complete) -> dict:
     return random_stage_1_complete
 
 
+@pytest.fixture
+def random_stage_3_complete(kerbal_lpg, random_stage_2_complete) -> dict:
+    ptg = kerbal_lpg.get_projection("Part Typing Graph")
+    all_elements = kerbal_lpg.nodes
+    feature_sequences = build_sequence_templates(lpg=kerbal_lpg)
+
+    random_generator_playbook_phase_3(feature_sequences, all_elements, ptg, random_stage_2_complete)
+
+    return random_stage_2_complete
+
+
+@pytest.fixture
+def random_stage_4_complete(kerbal_lpg, random_stage_3_complete) -> dict:
+
+    expr_sequences = build_expression_sequence_templates(lpg=kerbal_lpg)
+
+    random_generator_playbook_phase_4(expr_sequences, kerbal_lpg, random_stage_3_complete)
+
+    return random_stage_3_complete
+
+
 def test_type_multiplicity_dict_building(kerbal_lpg):
 
     solid_stage_id = '818da4ef-ebf0-409d-873f-77beacbae681'
@@ -171,22 +192,26 @@ def test_phase_2_instance_creation(kerbal_lpg, random_stage_1_complete):
     assert len(random_stage_1_complete[krp_id]) == 272
 
 
-def test_phase_3_instance_sampling(kerbal_lpg, random_stage_2_complete):
+def test_phase_3_instance_sampling(kerbal_lpg, random_stage_3_complete):
     coupler_usage_id = '7a7bd380-1dde-4544-bcd6-187f0f5b6d20'
 
-    seq_templates = build_sequence_templates(kerbal_lpg)
+    assert coupler_usage_id in random_stage_3_complete
+    assert len(random_stage_3_complete[coupler_usage_id]) == 0 or len(random_stage_3_complete[coupler_usage_id][0]) == 3
 
-    ptg = kerbal_lpg.get_projection("Part Typing Graph")
 
-    random_generator_playbook_phase_3(
-        seq_templates,
-        kerbal_lpg.nodes,
-        ptg,
-        random_stage_2_complete
-    )
+def test_phase_4_instance_sampling(kerbal_lpg, random_stage_4_complete):
+    top_plus_expr_id = 'd05c42b2-3453-4c94-bf18-5bbc38949d19'
+    sum_1_id = '64d50fe9-ab5c-42b4-9968-4988101da642'
+    collect_1_id = '30cb30dd-1a08-4da8-8274-3e397df281de'
+    collect_1_result = '243251f8-0b65-48b2-8fbb-8a3ce502f41f'
 
-    assert coupler_usage_id in random_stage_2_complete
-    assert len(random_stage_2_complete[coupler_usage_id]) == 0 or len(random_stage_2_complete[coupler_usage_id][0]) == 3
+    liquid_stage_id = '6c18b7a9-8bf9-49ff-87c5-a53dd73aeb58'
+
+    assert len(random_stage_4_complete[collect_1_id]) > 0 or \
+        len(random_stage_4_complete[liquid_stage_id]) == 0
+
+    assert len(random_stage_4_complete[collect_1_result]) > 0 or \
+           len(random_stage_4_complete[liquid_stage_id]) == 0
 
 
 # should move these to a separate file but need the common fixtures

@@ -82,6 +82,9 @@ def test_expression_sequence_templates(kerbal_client, kerbal_lpg):
     for seq in expr_sequences:
         if 'Literal' in kerbal_lpg.nodes[seq[0]]['@type']:
             direct_literals += 1
+            assert len(seq) == 2
+        # each sequence should end with the result
+        assert kerbal_lpg.nodes[seq[len(seq) - 1]]['@type'] == 'Feature'
 
     assert top_plus_paths == 11
     assert direct_literals == 26

@@ -87,54 +87,10 @@ def random_generator_playbook(
     #        print(get_label(all_elements[item], all_elements) + ", id = " + item)
 
     # Move through existing sequences and then start to pave further with new steps
-    for expr_seq in expr_sequences:
-        new_sequences = []
-        for feature_id in expr_seq:
-            # sample set will be the last element in the sequence for classifiers
-            feature_data = all_elements[feature_id]
-            if feature_id in instances_dict:
-                new_sequences = instances_dict[feature_id]
-            else:
-                if "Expression" in feature_data["@type"] or "Literal" in feature_data["@type"]:
-                    # Get the element type(s)
-                    types: list = feature_data.get("type") or []
-                    if isinstance(types, dict):
-                        types = [types]
-                    type_names = [
-                        all_elements[type_["@id"]].get("name")
-                        for type_ in types
-                        if type_ and "@id" in type_
-                    ]
-                    type_names = [
-                        str(type_name)
-                        for type_name in type_names
-                        if type_name
-                    ]
 
-                    new_sequences = extend_sequences_with_new_expr(
-                        new_sequences,
-                        get_label(feature_data, all_elements),
-                        feature_data
-                    )
-                elif feature_data["@type"] == "Feature":
-                    new_sequences = extend_sequences_with_new_value_holder(
-                        new_sequences,
-                        feature_data["name"],
-                        feature_data
-                    )
-                else:
-                    new_sequences = extend_sequences_by_sampling(
-                        new_sequences,
-                        1,
-                        1,
-                        [],
-                        True,
-                        feature_data,
-                        all_elements
-                    )
-                instances_dict.update({feature_id: new_sequences})
+    random_generator_playbook_phase_4(expr_sequences, lpg, instances_dict)
+
     return instances_dict
-
 
 def random_generator_phase_0_interpreting_edges(
     client: SysML2Client,
@@ -315,6 +271,67 @@ def random_generator_playbook_phase_3(
                 )
 
             instances_dict.update({feature_id: new_sequences})
+
+
+def random_generator_playbook_phase_4(
+    expr_sequences: list,
+    lpg: SysML2LabeledPropertyGraph,
+    instances_dict: dict
+) -> None:
+
+    all_elements = lpg.nodes
+
+    for expr_seq in expr_sequences:
+        new_sequences = []
+        # get the featuring type of the first expression
+
+        seq_featuring_type = safe_get_featuring_type_by_id(lpg, expr_seq[0])
+        new_sequences = instances_dict[seq_featuring_type['@id']]
+
+        for feature_id in expr_seq:
+            # sample set will be the last element in the sequence for classifiers
+            feature_data = all_elements[feature_id]
+            if feature_id in instances_dict:
+                new_sequences = instances_dict[feature_id]
+            else:
+                if "Expression" in feature_data["@type"] or "Literal" in feature_data["@type"]:
+                    # Get the element type(s)
+                    types: list = feature_data.get("type") or []
+                    if isinstance(types, dict):
+                        types = [types]
+                    type_names = [
+                        all_elements[type_["@id"]].get("name")
+                        for type_ in types
+                        if type_ and "@id" in type_
+                    ]
+                    type_names = [
+                        str(type_name)
+                        for type_name in type_names
+                        if type_name
+                    ]
+
+                    new_sequences = extend_sequences_with_new_expr(
+                        new_sequences,
+                        get_label(feature_data, all_elements),
+                        feature_data
+                    )
+                elif feature_data["@type"] == "Feature":
+                    new_sequences = extend_sequences_with_new_value_holder(
+                        new_sequences,
+                        feature_data["name"],
+                        feature_data
+                    )
+                else:
+                    new_sequences = extend_sequences_by_sampling(
+                        new_sequences,
+                        1,
+                        1,
+                        [],
+                        True,
+                        feature_data,
+                        all_elements
+                    )
+                instances_dict.update({feature_id: new_sequences})
 
 
 def build_sequence_templates(

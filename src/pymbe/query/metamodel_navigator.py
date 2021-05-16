@@ -123,3 +123,19 @@ def safe_get_type_by_id(
         return lpg.nodes[feature['type'][0]['@id']]
     else:
         raise NotImplementedError("No logic for multiple types!")
+
+def safe_get_featuring_type_by_id(
+    lpg: SysML2LabeledPropertyGraph,
+    feature_id: str
+):
+    feature = lpg.nodes[feature_id]
+    if 'featuringType' not in feature:
+        raise ValueError("Tried to get the type on an element without a featuring type!")
+
+    no_types = len(feature['featuringType'])
+    if no_types == 0:
+        return None
+    elif no_types == 1:
+        return lpg.nodes[feature['featuringType'][0]['@id']]
+    else:
+        raise NotImplementedError("No logic for multiple types!")
