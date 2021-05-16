@@ -35,19 +35,3 @@ def kerbal_lpg() -> SysML2LabeledPropertyGraph:
     new_lpg.update(client.elements_by_id, False)
 
     return new_lpg
-
-
-def test_new_instances(kerbal_lpg):
-
-    part_defs = kerbal_lpg.nodes_by_type['PartDefinition']
-
-    new_instances = {}
-
-    for part_def in part_defs:
-        new_instances[part_def] = create_set_with_new_instances(
-            sequence_template=[kerbal_lpg.nodes[part_def]],
-            quantities=[10],
-            name_hints=[],
-        )
-
-    assert len(new_instances) == 17

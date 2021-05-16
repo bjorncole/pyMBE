@@ -2,6 +2,9 @@ from ..query.query import *
 from ..query.metamodel_navigator import *
 from .set_builders import *
 from ..label import get_label_for_expression
+from ..client import SysML2Client
+from uuid import uuid4
+from copy import deepcopy
 
 # The playbooks here work to use set building steps to build up sets of instances from a given model
 
@@ -12,6 +15,7 @@ from ..label import get_label_for_expression
 
 
 def random_generator_playbook(
+    client: SysML2Client,
     lpg: SysML2LabeledPropertyGraph,
     name_hints: dict,
 ) -> dict:
@@ -23,9 +27,13 @@ def random_generator_playbook(
 
     all_elements = lpg.nodes
 
+    # PHASE 0: Add implicit relationships between parameters to assure equation solving
+
+    random_generator_phase_0_interpreting_edges(client, lpg)
+
     # PHASE 1: Create a set of instances for part definitions based on usage multiplicities
 
-    # work from part definitions
+    # work from part definitions to establish how many definitions are needed
 
     ptg = lpg.get_projection("Part Typing Graph")
     scg = lpg.get_projection("Part Definition Graph")
@@ -45,12 +53,14 @@ def random_generator_playbook(
 
         instances_dict.update({type_id: new_instances})
 
+    # pick up the definitions that aren't matched to a usage yet
+
     random_generator_playbook_phase_1_singletons(lpg, scg, instances_dict)
 
     # PHASE 2: Combine sets of instances into sets that are marked as more general in the user model
 
-    # "Roll up" the graph by looking at the successors to visited nodes that are unvisited, then forming a union
-    # of the sets of the unvisited node's predecessors
+    # "Roll up" the graph through a breadth-first search from the most general classifier down to the most specific
+    # and then move in reverse order from the specific (subset) to the general (superset)
 
     random_generator_playbook_phase_2_rollup(
             lpg,
@@ -58,24 +68,10 @@ def random_generator_playbook(
             instances_dict
         )
 
-    # Fill in any part definitions that don't have instances yet
+    # Fill in any part definitions that still don't have instances yet (because they get filtered out by the
+    # Part Definition pre-defined graph (neither typed nor subclassed))
 
-    # TODO: Probably better done with real filter
-    finishing_list = [
-        node
-        for node_id, node in all_elements.items()
-        if node["@type"] == "PartDefinition"
-        and node["@id"] not in instances_dict
-    ]
-
-    for element in finishing_list:
-        new_instances = create_set_with_new_instances(
-            sequence_template=[element],
-            quantities=[1],
-            name_hints=name_hints,
-        )
-
-        instances_dict.update({element["@id"]: new_instances})
+    random_generator_playbook_phase_2_unconnected(all_elements, instances_dict)
 
     # PHASE 3: Expand the dictionaries out into feature sequences by pulling from instances developed here
 
@@ -139,6 +135,34 @@ def random_generator_playbook(
                 instances_dict.update({feature_id: new_sequences})
     return instances_dict
 
+
+def random_generator_phase_0_interpreting_edges(
+    client: SysML2Client,
+    lpg: SysML2LabeledPropertyGraph
+):
+    new_edges = [
+        (source, target, metatype, {
+            "@id": f"_{uuid4()}",
+            "@type": metatype,
+            "label": metatype,
+            "relatedElement": [
+                {"@id": source},
+                {"@id": target},
+            ],
+            "source": [{"@id": source}],
+            "target": [{"@id": target}],
+        })
+        for source, target, metatype in map_inputs_to_results(lpg)
+    ]
+    new_elements = {
+        data["@id"]: data
+        for *_, data in new_edges
+    }
+
+    client.elements_by_id = {**client.elements_by_id, **new_elements}
+    for edg in new_edges:
+        new_edg = {(edg[0:3]): edg[3]}
+        lpg.edges.update(new_edg)
 
 def random_generator_phase_1_multiplicities(
     lpg: SysML2LabeledPropertyGraph,
@@ -229,6 +253,28 @@ def random_generator_playbook_phase_2_rollup(
                 new_superset.extend(instances_dict[subset_node])
 
             instances_dict.update({gen: new_superset})
+
+def random_generator_playbook_phase_2_unconnected(
+    all_elements: dict,
+    instances_dict: dict
+) -> None:
+
+    finishing_list = [
+        node
+        for node_id, node in all_elements.items()
+        if node["@type"] == "PartDefinition"
+           and node["@id"] not in instances_dict
+    ]
+
+    for element in finishing_list:
+        new_instances = create_set_with_new_instances(
+            sequence_template=[element],
+            quantities=[1],
+            name_hints=[],
+        )
+
+        instances_dict.update({element["@id"]: new_instances})
+
 
 def random_generator_playbook_phase_3(
     feature_sequences: list,
@@ -347,25 +393,13 @@ def build_expression_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list
         connected_sub = nx.subgraph(evg, list(comp))
         leaves = [node for node in connected_sub.nodes if connected_sub.out_degree(node) == 0]
         roots = [node for node in connected_sub.nodes if connected_sub.in_degree(node) == 0]
-        for leaf in leaves:
-            for root in roots:
+        for root in roots:
+            for leaf in leaves:
                 try:
                     leaf_path = nx.shortest_path(connected_sub, root, leaf)
-                    has_expression = any([
-                        "Expression" in all_elements[step]["@type"]
-                        or "Literal" in all_elements[step]["@type"]
-                        or "AttributeUsage" == all_elements[step]["@type"]
-                        for step in leaf_path
-                    ])
-                    if has_expression:
-                        leaf_path.reverse()
-                        sorted_feature_groups.append(leaf_path)
+                    sorted_feature_groups.append(leaf_path)
                 except:
                     pass
-
-        # sorted_feature_groups.append(
-        #    [node for node in nx.topological_sort(connected_sub)]
-        # )
 
     return sorted_feature_groups
 

@@ -37,16 +37,16 @@ Expanded Banded Graph:
 Expression Value Graph:
   description: |
     Generate library settings for a expanded version of banded graph to accommodate expression tree relationships
+  included_node_types:
+  - OperatorExpression
+  - InvocationExpression
+  - FeatureReferenceExpression
+  - Expression
+  - Feature
+  - LiteralReal
+  - LiteralInteger
   included_edge_types:
   - FeatureMembership
-  - FeatureValue
-  - ParameterMembership
-  - ReturnParameterMembership
-  - ResultExpressionMembership
-  reversed_edge_types:
-  - FeatureMembership
-  - FeatureValue
-  - ParameterMembership
   - ReturnParameterMembership
   - ResultExpressionMembership
 
