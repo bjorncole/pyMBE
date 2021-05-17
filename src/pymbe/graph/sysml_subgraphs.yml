@@ -57,10 +57,24 @@ Expression Evaluation Graph:
     - ParameterMembership
     - ReturnParameterMembership
     - ResultExpressionMembership
-    - ImpliedParameterFeedforward
+    - FeatureValue
   reversed_edge_types:
     - ParameterMembership
     - ResultExpressionMembership
+
+Expression Inferred Graph:
+  description: |
+    A graph to hint at the direction of computation flow in a model
+  included_edge_types:
+    - ParameterMembership
+    - ReturnParameterMembership
+    - ResultExpressionMembership
+    - ImpliedParameterFeedforward
+    - Redefinition
+  reversed_edge_types:
+    - ImpliedParameterFeedforward
+    - ReturnParameterMembership
+    - Redefinition
 
 Part Definition Graph:
   description: |

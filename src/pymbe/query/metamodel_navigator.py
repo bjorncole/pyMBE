@@ -37,7 +37,24 @@ def map_inputs_to_results(lpg: SysML2LabeledPropertyGraph) -> list:
         if kind == "ReturnParameterMembership"
     ]
 
+    feature_values = [
+        (source, target, kind)
+        for source, target, kind in lpg.edges
+        if kind == "FeatureValue"
+    ]
+
     implied_edges = []
+
+    fres = [lpg.nodes[fre] for fre in eeg.nodes if lpg.nodes[fre]['@type'] == 'FeatureReferenceExpression']
+
+    for fre in fres:
+        implied_edges += [(fre['referent']['@id'], fre['@id'], "ImpliedParameterFeedforward")]
+
+    for feature_val in feature_values:
+        target_result_id = lpg.nodes[feature_val[1]]['result']['@id']
+        implied_edges += [(target_result_id, feature_val[0], "ImpliedParameterFeedforward")]
+
+
     for membership in return_parameter_memberships:
         for result_feeder_id in eeg.predecessors(membership["memberElement"]["@id"]):
             result_feeder = lpg.nodes[result_feeder_id]

@@ -120,6 +120,16 @@ def random_generator_phase_0_interpreting_edges(
         new_edg = {(edg[0:3]): edg[3]}
         lpg.edges.update(new_edg)
 
+    lpg.graph.add_edges_from([
+            [
+                edg[0],  # source node (str id)
+                edg[1],  # target node (str id)
+                edg[2],                     # edge type (str name)
+                edg[3],                              # edge data (dict)
+            ]
+            for edg in new_edges
+        ])
+
 def random_generator_phase_1_multiplicities(
     lpg: SysML2LabeledPropertyGraph,
     ptg: nx.DiGraph,

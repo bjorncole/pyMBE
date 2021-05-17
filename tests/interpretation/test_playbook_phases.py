@@ -137,7 +137,7 @@ def test_phase_0_implied_relationships(kerbal_client, kerbal_lpg):
     implied_edges = [edg for edg in all_edge_keys if edg[2] == 'ImpliedParameterFeedforward']
 
     assert any([typ == 'ImpliedParameterFeedforward' for typ in all_edge_types])
-    assert len(implied_edges) == 10
+    assert len(implied_edges) == 30
 
 
 def test_phase_1_instance_creation(random_stage_1_instances):
@@ -213,6 +213,43 @@ def test_phase_4_instance_sampling(kerbal_lpg, random_stage_4_complete):
     assert len(random_stage_4_complete[collect_1_result]) > 0 or \
            len(random_stage_4_complete[liquid_stage_id]) == 0
 
+    if len(random_stage_4_complete[liquid_stage_id]) > 0:
+        assert len(random_stage_4_complete[top_plus_expr_id][0]) == 2
+
+    if len(random_stage_4_complete[liquid_stage_id]) > 0:
+        assert len(random_stage_4_complete[sum_1_id][0]) == 3
+
+
+def test_expression_inferred_graph(kerbal_client, kerbal_lpg):
+    # inferred graph provides a reliable order of execution for expressions
+
+    random_generator_phase_0_interpreting_edges(kerbal_client, kerbal_lpg)
+
+    all_edge_keys = list(kerbal_lpg.edges.keys())
+    all_edge_types = [edg[2] for edg in all_edge_keys]
+    implied_edges = [edg for edg in all_edge_keys if edg[2] == 'ImpliedParameterFeedforward']
+
+    assert any([typ == 'ImpliedParameterFeedforward' for typ in all_edge_types])
+    assert len(implied_edges) == 30
+
+    eig = kerbal_lpg.get_projection("Expression Inferred Graph")
+
+    top_plus_expr_id = 'd05c42b2-3453-4c94-bf18-5bbc38949d19'
+    fl_200_full_mass_id = 'c3344ffd-6a7f-499b-90cf-e7e311e309f5'
+    x_feature = '1159649f-b211-42c1-84e7-0bf3fc88417f'
+    deep_mass_feature = '0bc0b127-ffcb-44a8-ad65-2c34745e9b2d'
+
+    for comp in nx.connected_components(eig.to_undirected()):
+        connected_sub = nx.subgraph(eig, list(comp))
+        if top_plus_expr_id in list(comp):
+            assert len(list(comp)) == 44
+
+
+def test_dependency_graph(kerbal_lpg, random_stage_4_complete):
+    # see how fully solved sequences go to make the dependency graph for computation
+
+
+    assert True
 
 # should move these to a separate file but need the common fixtures
 def test_new_instances(kerbal_lpg):
