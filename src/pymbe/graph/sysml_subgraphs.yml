@@ -47,6 +47,7 @@ Expression Value Graph:
   - LiteralInteger
   included_edge_types:
   - FeatureMembership
+  - ParameterMembership
   - ReturnParameterMembership
   - ResultExpressionMembership
 

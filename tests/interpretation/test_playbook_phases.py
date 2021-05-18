@@ -43,8 +43,6 @@ def random_stage_1_instances(kerbal_client, kerbal_lpg) -> dict:
     ptg = kerbal_lpg.get_projection("Part Typing Graph")
     scg = kerbal_lpg.get_projection("Part Definition Graph")
 
-    flea_id = '68f08797-0e68-47b1-bad5-9e734af2742f'
-
     random_generator_phase_0_interpreting_edges(kerbal_client, kerbal_lpg)
 
     full_multiplicities = random_generator_phase_1_multiplicities(kerbal_lpg, ptg, scg)
@@ -110,12 +108,12 @@ def random_stage_4_complete(kerbal_lpg, random_stage_3_complete) -> dict:
 
 def test_type_multiplicity_dict_building(kerbal_lpg):
 
-    solid_stage_id = '818da4ef-ebf0-409d-873f-77beacbae681'
-    liquid_stage_id = '6c18b7a9-8bf9-49ff-87c5-a53dd73aeb58'
-    flea_id = '68f08797-0e68-47b1-bad5-9e734af2742f'
-    hammer_id = '628929a4-1dc2-4c34-aefb-2653faaa46fe'
-    f100_tank = '2abf7097-1621-4264-a5d3-4b7aa3819a24'
-    f200_tank = 'c94930cd-8cb4-43f6-9986-90341e85e66b'
+    solid_stage_id = 'b473978d-40de-4809-acef-4793f738c44e'
+    liquid_stage_id = 'e6c22f19-e5e0-4a4b-9a3f-af2f01382465'
+    flea_id = '5be56a39-f4a4-4fbb-872c-12f3e717593c'
+    hammer_id = '8851ab1c-0d7f-4fe2-bee0-8b29d408c897'
+    f100_tank = '1eca9960-e445-4d2f-be3f-cd7a6882435d'
+    f200_tank = 'cc585eec-c66c-48aa-b319-1395a0c8e292'
 
     ptg = kerbal_lpg.get_projection("Part Typing Graph")
     scg = kerbal_lpg.get_projection("Part Definition Graph")
@@ -142,9 +140,9 @@ def test_phase_0_implied_relationships(kerbal_client, kerbal_lpg):
 
 def test_phase_1_instance_creation(random_stage_1_instances):
 
-    flea_id = '68f08797-0e68-47b1-bad5-9e734af2742f'
-    solid_stage_id = '818da4ef-ebf0-409d-873f-77beacbae681'
-    solid_booster_id = 'e4cee07b-5813-4214-8ee7-e9d3d05a4d62'
+    flea_id = '5be56a39-f4a4-4fbb-872c-12f3e717593c'
+    solid_stage_id = 'b473978d-40de-4809-acef-4793f738c44e'
+    solid_booster_id = '24a0a10e-77ba-4bfa-9618-f2525a8a7042'
 
     assert flea_id in random_stage_1_instances
     assert solid_stage_id in random_stage_1_instances
@@ -153,10 +151,10 @@ def test_phase_1_instance_creation(random_stage_1_instances):
 
 
 def test_phase_1_singleton_instances(random_stage_1_complete):
-    flea_id = '68f08797-0e68-47b1-bad5-9e734af2742f'
-    solid_stage_id = '818da4ef-ebf0-409d-873f-77beacbae681'
-    solid_booster_id = 'e4cee07b-5813-4214-8ee7-e9d3d05a4d62'
-    pod_id = '4594d3d3-f76f-435a-a68f-092237f0c241'
+    flea_id = '5be56a39-f4a4-4fbb-872c-12f3e717593c'
+    solid_stage_id = 'b473978d-40de-4809-acef-4793f738c44e'
+    solid_booster_id = '24a0a10e-77ba-4bfa-9618-f2525a8a7042'
+    pod_id = '62f8fd9a-6b7e-4af1-9fad-52641da6c854'
 
     assert flea_id in random_stage_1_complete
     assert solid_stage_id in random_stage_1_complete
@@ -165,13 +163,13 @@ def test_phase_1_singleton_instances(random_stage_1_complete):
     assert solid_booster_id not in random_stage_1_complete
 
 def test_phase_2_instance_creation(kerbal_lpg, random_stage_1_complete):
-    solid_stage_id = '818da4ef-ebf0-409d-873f-77beacbae681'
-    liquid_stage_id = '6c18b7a9-8bf9-49ff-87c5-a53dd73aeb58'
-    flea_id = '68f08797-0e68-47b1-bad5-9e734af2742f'
-    pod_id = '86329d0b-c6cb-49a7-b780-8ad2d2401ea6'
-    krp_id = '63f5c455-261b-4a80-9a3b-5a9bef2361da'
-    solid_booster_id = 'e4cee07b-5813-4214-8ee7-e9d3d05a4d62'
-    rocket_id = '4c792c29-5fd0-4846-b4e5-800a0bc037f1'
+    solid_stage_id = 'b473978d-40de-4809-acef-4793f738c44e'
+    liquid_stage_id = 'e6c22f19-e5e0-4a4b-9a3f-af2f01382465'
+    flea_id = '5be56a39-f4a4-4fbb-872c-12f3e717593c'
+    pod_id = '62f8fd9a-6b7e-4af1-9fad-52641da6c854'
+    krp_id = 'f2d4d0c1-83dd-41c0-848a-fc00d4bc99d6'
+    solid_booster_id = '24a0a10e-77ba-4bfa-9618-f2525a8a7042'
+    rocket_id = '62fc7eb7-0637-4201-add7-4d2758980d2f'
 
     scg = kerbal_lpg.get_projection("Part Definition Graph")
 
@@ -200,12 +198,12 @@ def test_phase_3_instance_sampling(kerbal_lpg, random_stage_3_complete):
 
 
 def test_phase_4_instance_sampling(kerbal_lpg, random_stage_4_complete):
-    top_plus_expr_id = 'd05c42b2-3453-4c94-bf18-5bbc38949d19'
-    sum_1_id = '64d50fe9-ab5c-42b4-9968-4988101da642'
-    collect_1_id = '30cb30dd-1a08-4da8-8274-3e397df281de'
-    collect_1_result = '243251f8-0b65-48b2-8fbb-8a3ce502f41f'
+    top_plus_expr_id = 'b51bb349-e210-4be8-be64-e749ea4e563b'
+    sum_1_id = '700d97d1-410a-459c-ad09-8792c27e2803'
+    collect_1_id = 'd6644a0a-6eef-49c1-a770-60886073554c'
+    collect_1_result = '2caccce7-a0b4-4926-8f24-0dbffb92f6ad'
 
-    liquid_stage_id = '6c18b7a9-8bf9-49ff-87c5-a53dd73aeb58'
+    liquid_stage_id = 'e6c22f19-e5e0-4a4b-9a3f-af2f01382465'
 
     assert len(random_stage_4_complete[collect_1_id]) > 0 or \
         len(random_stage_4_complete[liquid_stage_id]) == 0
@@ -249,6 +247,7 @@ def test_dependency_graph(kerbal_lpg, random_stage_4_complete):
     # see how fully solved sequences go to make the dependency graph for computation
 
 
+
     assert True
 
 # should move these to a separate file but need the common fixtures
@@ -270,11 +269,7 @@ def test_new_instances(kerbal_lpg):
 def test_instance_sampling(kerbal_lpg):
     # what we really need here is a fixture that generates a healthy instance dictionary from the playbook phases
 
-    solid_booster_id = '818da4ef-ebf0-409d-873f-77beacbae681'
-    boosters_id = 'a75c2967-b3ef-4434-8c0f-5f708b96711c'
-    liquid_stage_id = '6c18b7a9-8bf9-49ff-87c5-a53dd73aeb58'
-    engines_id = '48e94e73-52ad-44df-8005-8fa6225176d8'
-    tanks_id = 'ae3db8b5-6d8e-4ac4-af46-9f37ad0fd988'
+    solid_booster_id = '24a0a10e-77ba-4bfa-9618-f2525a8a7042'
 
     # try creating the boosters under solid stage
 

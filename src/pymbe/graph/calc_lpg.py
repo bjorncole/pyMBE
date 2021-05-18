@@ -23,6 +23,8 @@ class CalculationLabeledPropertyGraph():
         # evaluating the expression tree is a reverse-order breadth-first search (cover all children of a given
         # node and then move up to that node)
 
+        # use the solving order from
+
         for m, comp in enumerate(self.components):
             connected_sub = nx.subgraph(self.graph, list(comp))
             if len(comp) == 2:
