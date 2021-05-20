@@ -129,6 +129,7 @@ env_specs:
     packages:
     - black
     - coverage
+    - doit
     - git
     - isort
     - pip

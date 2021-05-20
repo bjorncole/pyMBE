@@ -375,7 +375,7 @@ env_specs:
       - zstd=1.4.9=h6255e5f_0
   developer:
     locked: true
-    env_spec_hash: 8ec7288910333abb715a066bb174658dba564f02
+    env_spec_hash: 0d612ba26bb2adfddd42904203cf6762984f530f
     platforms:
     - linux-64
     - osx-64
@@ -395,11 +395,13 @@ env_specs:
       - bleach=3.3.0=pyh44b312d_0
       - cachetools=4.2.2=pyhd8ed1ab_0
       - click=7.1.2=pyh9f0ad1d_0
+      - cloudpickle=1.6.0=py_0
       - cycler=0.10.0=py_2
       - dataclasses=0.8=pyhc8e2a94_1
       - decorator=4.4.2=py_0
       - defusedxml=0.7.1=pyhd8ed1ab_0
       - deprecation=2.1.0=pyh9f0ad1d_0
+      - doit=0.33.1=py39hde42818_1
       - execnet=1.8.0=pyh44b312d_0
       - frozendict=1.2=pyh9f0ad1d_3
       - html5lib=1.1=pyh9f0ad1d_0
@@ -566,6 +568,7 @@ env_specs:
       - pillow=8.1.2=py39hf95b381_1
       - pluggy=0.13.1=py39hf3d152e_4
       - pthread-stubs=0.4=h36c2ea0_1001
+      - pyinotify=0.9.6=py39hf3d152e_1003
       - pyqt-impl=5.12.3=py39h0fcd23e_7
       - pyqt5-sip=4.19.18=py39he80948d_7
       - pyqt=5.12.3=py39hf3d152e_7
@@ -651,6 +654,7 @@ env_specs:
       - llvm-openmp=11.1.0=hda6cdc1_1
       - lxml=4.6.3=py39hf41e7f8_0
       - lz4-c=1.9.3=h046ec9c_0
+      - macfsevents=0.8.1=py39hb5aae12_1001
       - markupsafe=1.1.1=py39hcbf5805_3
       - matplotlib-base=3.4.1=py39hb07454d_0
       - matplotlib=3.4.1=py39h6e9494a_0
