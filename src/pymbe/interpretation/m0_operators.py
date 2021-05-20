@@ -62,7 +62,7 @@ def evaluate_and_apply_fre(
 
 def evaluate_and_apply_literal(
     m0_expr: LiveExpressionNode,
-    instance_dict: dict
+    m0_result: ValueHolder
 ) -> None:
     """
     Evaluate a literal expression at m0, pushing the value to all instances of a viable result feature
@@ -72,7 +72,4 @@ def evaluate_and_apply_literal(
     """
 
     literal_value = m0_expr.base_att['value']
-    literal_result = m0_expr.base_att['result']['@id']
-    target_list = instance_dict[literal_result]
-    for target in target_list:
-        target[-1].value = literal_value
+    m0_result.value = literal_value

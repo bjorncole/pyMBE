@@ -42,15 +42,16 @@ Expression Value Graph:
   description: >
     Generate library settings for a expanded version of banded graph
     to accommodate expression tree relationships
+  included_node_types:
+  - OperatorExpression
+  - InvocationExpression
+  - FeatureReferenceExpression
+  - Expression
+  - Feature
+  - LiteralReal
+  - LiteralInteger
   included_edge_types:
   - FeatureMembership
-  - FeatureValue
-  - ParameterMembership
-  - ReturnParameterMembership
-  - ResultExpressionMembership
-  reversed_edge_types:
-  - FeatureMembership
-  - FeatureValue
   - ParameterMembership
   - ReturnParameterMembership
   - ResultExpressionMembership
@@ -62,10 +63,24 @@ Expression Evaluation Graph:
     - ParameterMembership
     - ReturnParameterMembership
     - ResultExpressionMembership
-    - ImpliedParameterFeedforward
+    - FeatureValue
   reversed_edge_types:
     - ParameterMembership
     - ResultExpressionMembership
+
+Expression Inferred Graph:
+  description: |
+    A graph to hint at the direction of computation flow in a model
+  included_edge_types:
+    - ParameterMembership
+    - ReturnParameterMembership
+    - ResultExpressionMembership
+    - ImpliedParameterFeedforward
+    - Redefinition
+  reversed_edge_types:
+    - ImpliedParameterFeedforward
+    - ReturnParameterMembership
+    - Redefinition
 
 Part Definition Graph:
   description: >
@@ -73,7 +88,10 @@ Part Definition Graph:
     superclassing and part definitions
   included_node_types:
   - PartDefinition
+  - AttributeDefinition
   included_edge_types:
+  - Superclassing
+  reversed_edge_types:
   - Superclassing
 
 Part Featuring Graph:
@@ -83,6 +101,9 @@ Part Featuring Graph:
   included_node_types:
   - PartDefinition
   - PartUsage
+  - DataType
+  - AttributeDefinition
+  - AttributeUsage
   included_edge_types:
   - FeatureMembership
 
@@ -93,5 +114,8 @@ Part Typing Graph:
   included_node_types:
   - PartDefinition
   - PartUsage
+  - DataType
+  - AttributeDefinition
+  - AttributeUsage
   included_edge_types:
   - FeatureTyping

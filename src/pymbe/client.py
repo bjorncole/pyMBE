@@ -77,6 +77,8 @@ class SysML2Client(Base):
 
     projects = trt.Dict()
 
+    name_hints = trt.Dict()
+
     @trt.default("_api_configuration")
     def _make_api_configuration(self):
         return sysml2.Configuration(host=self.host)

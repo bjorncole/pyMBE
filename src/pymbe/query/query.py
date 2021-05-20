@@ -39,7 +39,7 @@ def roll_up_multiplicity(
         if banded_featuring_graph.out_degree(node) < 1
     ]
 
-    all_elements = lpg.elements_by_id
+    all_elements = lpg.nodes
 
     corrected_mult = 1
     for part_tree_root in banded_roots:
@@ -61,3 +61,23 @@ def roll_up_multiplicity(
             corrected_mult = feature_multiplicity(feature, all_elements, bound)
 
     return corrected_mult
+
+def roll_up_multiplicity_for_type(
+    lpg: SysML2LabeledPropertyGraph,
+    typ: dict,
+    bound: str
+) -> int:
+
+    running_total = 0
+    ptg = lpg.get_projection("Part Typing Graph")
+    if typ['@id'] in ptg.nodes:
+        feat_ids = ptg.predecessors(typ['@id'])
+        for feat_id in feat_ids:
+            running_total += roll_up_multiplicity(
+                lpg,
+                lpg.nodes[feat_id],
+                bound
+            )
+        return running_total
+    else:
+        return 0
