@@ -31,17 +31,30 @@ def create_set_with_new_instances(
     :return: A set of instances built into a Cartesian product based on a type sequence
     """
 
-    individual_lists = [
-        [
-            Instance(
-                m1_type['name'],
-                m,
-                name_hints
-            )
-            for m in range(0, quantities[index])
-        ]
-        for index, m1_type in enumerate(sequence_template)
-    ]
+    individual_lists = []
+
+    for index, m1_type in enumerate(sequence_template):
+        new_list = []
+        for m in range(0, quantities[index]):
+            if m1_type['@type'] not in ('AttributeDefinition', 'AttributeUsage', 'DataType'):
+                new_list.append(
+                    Instance(
+                        m1_type['name'],
+                        m,
+                        name_hints
+                    )
+                )
+            else:
+                new_list.append(
+                    ValueHolder(
+                        [],
+                        m1_type['name'],
+                        None,
+                        m1_type,
+                        m
+                    )
+                )
+        individual_lists.append(new_list)
 
     # walk the sequence and generate an appropriately named instance
     if len(sequence_template) > 1:
@@ -79,6 +92,8 @@ def extend_sequences_by_sampling(
     :return:
     """
 
+    # FIXME: Need to be sure that each instance is drawn once even when multiple features have the same type!
+
     total_draw, draws_per = 0, []
     for _ in range(0, len(previous_sequences)):
         draw = random.randint(lower_mult, upper_mult)
@@ -110,20 +125,23 @@ def extend_sequences_by_sampling(
 
             last_draw = last_draw + draws_per[index]
     else:
-        pulled_instances = random.sample(sample_set, total_draw)
+        try:
+            pulled_instances = random.sample(sample_set, total_draw)
 
-        last_draw = 0
-        for index, seq in enumerate(previous_sequences):
-            for pull in pulled_instances[last_draw:last_draw+draws_per[index]]:
-                new_seq = []
-                new_seq = new_seq + seq
-                new_seq.append(pull)
+            last_draw = 0
+            for index, seq in enumerate(previous_sequences):
+                for pull in pulled_instances[last_draw:last_draw+draws_per[index]]:
+                    new_seq = []
+                    new_seq = new_seq + seq
+                    new_seq.append(pull)
 
-                # TODO: Look at making a generator instead
+                    # TODO: Look at making a generator instead
 
-                set_extended.append(new_seq)
+                    set_extended.append(new_seq)
 
-            last_draw = last_draw + draws_per[index]
+                last_draw = last_draw + draws_per[index]
+        except ValueError:
+            raise ValueError("Tried to pull " + str(total_draw) + " instances from a length of " + str(len(sample_set)))
 
     return set_extended
 

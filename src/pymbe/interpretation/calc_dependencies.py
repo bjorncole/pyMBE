@@ -32,6 +32,8 @@ def generate_execution_order(
 
                 if all_elements[node_child]['@type'] == 'Feature' and all_elements[node]['@type'] == 'Feature':
                     kind = 'Assignment'
+                elif all_elements[node_child]['@type'] == 'AttributeUsage' and all_elements[node]['@type'] == 'AttributeUsage':
+                    kind = 'Assignment'
                 elif all_elements[node_child]['@type'] == 'Feature' and all_elements[node]['@type'] == 'AttributeUsage':
                     kind = 'ValueBinding'
                 elif (node_child, node, 'ReturnParameterMembership') in lpg.edges_by_type['ReturnParameterMembership']:

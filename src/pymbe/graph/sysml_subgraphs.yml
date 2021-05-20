@@ -82,6 +82,7 @@ Part Definition Graph:
     Generate library settings for a graph that just looks at superclassing and part definitions
   included_node_types:
   - PartDefinition
+  - AttributeDefinition
   included_edge_types:
   - Superclassing
   reversed_edge_types:
@@ -93,6 +94,9 @@ Part Featuring Graph:
   included_node_types:
   - PartDefinition
   - PartUsage
+  - DataType
+  - AttributeDefinition
+  - AttributeUsage
   included_edge_types:
   - FeatureMembership
 
@@ -102,5 +106,8 @@ Part Typing Graph:
   included_node_types:
   - PartDefinition
   - PartUsage
+  - DataType
+  - AttributeDefinition
+  - AttributeUsage
   included_edge_types:
   - FeatureTyping

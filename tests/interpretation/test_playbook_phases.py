@@ -114,16 +114,18 @@ def test_type_multiplicity_dict_building(kerbal_lpg):
     hammer_id = '8851ab1c-0d7f-4fe2-bee0-8b29d408c897'
     f100_tank = '1eca9960-e445-4d2f-be3f-cd7a6882435d'
     f200_tank = 'cc585eec-c66c-48aa-b319-1395a0c8e292'
+    real_id = 'ede2b2e7-9280-4932-9453-134bf460892f'
 
     ptg = kerbal_lpg.get_projection("Part Typing Graph")
     scg = kerbal_lpg.get_projection("Part Definition Graph")
 
     full_multiplicities = random_generator_phase_1_multiplicities(kerbal_lpg, ptg, scg)
 
-    assert len(full_multiplicities) == 8
+    assert len(full_multiplicities) == 9
     assert full_multiplicities[solid_stage_id] + full_multiplicities[liquid_stage_id] == 5
     assert full_multiplicities[flea_id] + full_multiplicities[hammer_id] == 40
     assert full_multiplicities[f100_tank] + full_multiplicities[f200_tank] == 150
+    assert full_multiplicities[real_id] == 1970
 
 
 def test_phase_0_implied_relationships(kerbal_client, kerbal_lpg):
@@ -143,9 +145,11 @@ def test_phase_1_instance_creation(random_stage_1_instances):
     flea_id = '5be56a39-f4a4-4fbb-872c-12f3e717593c'
     solid_stage_id = 'b473978d-40de-4809-acef-4793f738c44e'
     solid_booster_id = '24a0a10e-77ba-4bfa-9618-f2525a8a7042'
+    real_id = 'ede2b2e7-9280-4932-9453-134bf460892f'
 
     assert flea_id in random_stage_1_instances
     assert solid_stage_id in random_stage_1_instances
+    assert real_id in random_stage_1_instances
     # don't expect abstract member at this point
     assert solid_booster_id not in random_stage_1_instances
 
@@ -191,7 +195,7 @@ def test_phase_2_instance_creation(kerbal_lpg, random_stage_1_complete):
 
 
 def test_phase_3_instance_sampling(kerbal_lpg, random_stage_3_complete):
-    coupler_usage_id = '7a7bd380-1dde-4544-bcd6-187f0f5b6d20'
+    coupler_usage_id = '3a609e5a-3e6f-4eb4-97ff-5a32b23122bf'
 
     assert coupler_usage_id in random_stage_3_complete
     assert len(random_stage_3_complete[coupler_usage_id]) == 0 or len(random_stage_3_complete[coupler_usage_id][0]) == 3

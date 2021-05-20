@@ -42,13 +42,16 @@ def test_feature_sequence_templates(kerbal_client, kerbal_lpg):
 
     seq_templates = build_sequence_templates(kerbal_lpg)
 
-    assert len(seq_templates) == 4
+    assert len(seq_templates) == 39
 
     solid_booster_id = '818da4ef-ebf0-409d-873f-77beacbae681'
     boosters_id = 'a75c2967-b3ef-4434-8c0f-5f708b96711c'
     liquid_stage_id = '6c18b7a9-8bf9-49ff-87c5-a53dd73aeb58'
     engines_id = '48e94e73-52ad-44df-8005-8fa6225176d8'
     tanks_id = 'ae3db8b5-6d8e-4ac4-af46-9f37ad0fd988'
+    krp_mass_id = 'f0403f3c-b5b8-4d2e-814b-bbe7cff60d3f'
+
+    assert(any([krp_mass_id in seq for seq in seq_templates]))
 
     for seq in seq_templates:
         if solid_booster_id in seq:

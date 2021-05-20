@@ -1,4 +1,5 @@
 from ..query.query import *
+from ..interpretation.results import *
 from ..query.metamodel_navigator import *
 from .set_builders import *
 from ..label import get_label_for_expression
@@ -146,7 +147,7 @@ def random_generator_phase_1_multiplicities(
 
     type_multiplicities = {}
     for pt in ptg.nodes:
-        if lpg.nodes[pt]['@type'] in ('PartDefinition'):
+        if lpg.nodes[pt]['@type'] in ('PartDefinition', 'DataType', 'AttributeDefinition'):
             mult = roll_up_multiplicity_for_type(
                 lpg,
                 lpg.nodes[pt],
@@ -248,13 +249,24 @@ def random_generator_playbook_phase_3(
     ptg: nx.DiGraph,
     instances_dict: dict
 ) -> None:
+    already_drawn = {}
+    last_sequence = []
     for feature_sequence in feature_sequences:
         new_sequences = []
+
+        for step in last_sequence:
+            for feat in feature_sequence:
+                if step == feat:
+                    new_sequences = instances_dict[feat]
+
         feat = None
         for index, feature_id in enumerate(feature_sequence):
+            if feature_id in instances_dict:
+                # don't repeat draws if you encounter the same feature again
+                continue
             # sample set will be the last element in the sequence for classifiers
             feature = all_elements[feature_id]
-            if feature["@type"] == "PartUsage":
+            if feature["@type"] in ("PartUsage", "AttributeUsage"):
                 if feature_id in list(ptg.nodes):
                     types = list(ptg.successors(feature_id))
                 else:
@@ -270,17 +282,31 @@ def random_generator_playbook_phase_3(
             if index == 0:
                 new_sequences = instances_dict[typ]
             else:
+
+                if typ in already_drawn:
+                    remaining = [item for seq in instances_dict[typ] for item in seq if item not in already_drawn[typ]]
+                else:
+                    remaining = [item for seq in instances_dict[typ] for item in seq]
+
                 new_sequences = extend_sequences_by_sampling(
                     new_sequences,
                     feature_multiplicity(feature, all_elements, "lower"),
                     feature_multiplicity(feature, all_elements, "upper"),
-                    [item for seq in instances_dict[typ] for item in seq],
+                    remaining,
                     False,
                     {},
                     {}
                 )
 
+                freshly_drawn = [seq[-1] for seq in new_sequences]
+                if typ in already_drawn:
+                    already_drawn[typ].extend(freshly_drawn)
+                else:
+                    already_drawn.update({typ: freshly_drawn})
+
             instances_dict.update({feature_id: new_sequences})
+
+        last_sequence = feature_sequence
 
 
 def random_generator_playbook_phase_4(
