@@ -441,6 +441,18 @@ def generate_superset_instances(
 def build_expression_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list:
     all_elements = lpg.nodes
     evg = lpg.get_projection("Expression Value Graph")
+
+    # FIXME: Need projections to work correctly
+
+    to_remove = []
+
+    for edg in evg.edges:
+        if edg[2] == 'ImpliedParameterFeedforward':
+            to_remove.append(edg)
+
+    for remover in to_remove:
+        evg.remove_edge(remover[0], remover[1])
+
     sorted_feature_groups = []
     for comp in nx.connected_components(evg.to_undirected()):
         connected_sub = nx.subgraph(evg, list(comp))

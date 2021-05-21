@@ -28,7 +28,7 @@ class CalculationGroup():
 
                     if len(target_instances) == 0:
                         print(source_instances)
-                        print(get_label_for_id(step[1], lpg.nodes) + " has no elements")
+                        print(get_label_for_id(step[1], lpg.nodes) + ", id = " + step[1] + " has no elements")
                     else:
 
                         for index, source in enumerate(source_instances):
