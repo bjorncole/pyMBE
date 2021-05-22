@@ -1,6 +1,7 @@
 import networkx as nx
 from ..interpretation.m0_operators import *
 from ..interpretation.interpretation import Instance, ValueHolder, LiveExpressionNode
+from ..interpretation.results import *
 
 class CalculationGroup():
     """
@@ -35,6 +36,7 @@ class CalculationGroup():
                             target_instances[index][-1].value = source[-1].value
             elif step[2] == 'Output':
                 if 'Literal' in lpg.nodes[step[0]]['@type']:
+
                     source_instances = self.instance_dict[step[0]]
                     target_instances = self.instance_dict[step[1]]
 
@@ -46,7 +48,7 @@ class CalculationGroup():
 
                     self.unsolved_nodes.remove(step[0])
                     self.unsolved_nodes.remove(step[1])
-                elif lpg.nodes[step[0]] == 'FeatureReferenceExpression':
+                elif lpg.nodes[step[0]]['@type'] == 'FeatureReferenceExpression':
                     source_instances = self.instance_dict[step[0]]
                     target_instances = self.instance_dict[step[1]]
 
@@ -62,22 +64,45 @@ class CalculationGroup():
                     self.unsolved_nodes.remove(step[0])
                     self.unsolved_nodes.remove(step[1])
 
-                elif lpg.nodes[step[0]] == 'OperatorExpression':
-                    if m0_obj.base_att['operator'] == 'collect':
+                elif lpg.nodes[step[0]]['@type'] == 'OperatorExpression':
+                    if lpg.nodes[step[0]]['operator'] == 'collect':
                         source_instances = self.instance_dict[step[0]]
                         target_instances = self.instance_dict[step[1]]
 
-                        print(source_instances)
-                        print(target_instances)
+                        collect_sub_expressions = []
+                        collect_sub_expression_results = []
+                        collect_sub_inputs = []
+                        for member in lpg.nodes[step[0]]['member']:
+                            if lpg.nodes[member['@id']]['@type'] in ('Expression', 'FeatureReferenceExpression'):
+                                collect_sub_expressions.append(lpg.nodes[member['@id']])
+                                collect_sub_expression_results.append(lpg.nodes[lpg.nodes[member['@id']]['result']['@id']])
 
-                        evaluate_and_apply_collect(
-                            self.instance_dict[step[0]][step[1]][0],
-                            m0_obj,
-                            self.instance_dict,
-                            m0_collection,
-                            m0_path,
-                            prev_step[1]
-                        )
+                        for member in lpg.nodes[step[0]]['input']:
+                            collect_sub_inputs.append(lpg.nodes[member['@id']])
+
+                        for index, m0_operator_seq in enumerate(source_instances):
+                            input_point = None
+                            input_instances = self.instance_dict[collect_sub_inputs[0]['@id']]
+                            for input_inst in input_instances:
+                                if input_inst[0] == m0_operator_seq[0]:
+                                    input_point = input_inst[-1]
+                            path_point = None
+                            input_instances = self.instance_dict[collect_sub_expression_results[1]['@id']]
+                            for input_inst in input_instances:
+                                if input_inst[0] == m0_operator_seq[0]:
+                                    path_point = input_inst[-1]
+
+                            print("Calling collect with base = " + str(m0_operator_seq[0]) + ", collection input " +
+                                  str(input_point) + ", and path input " + str(path_point))
+
+                            evaluate_and_apply_collect(
+                                m0_operator_seq[0],
+                                m0_operator_seq[-1],
+                                self.instance_dict,
+                                input_point,
+                                path_point,
+                                target_instances[index][-1]
+                            )
 
                         self.solved_nodes.append(step[0])
                         self.solved_nodes.append(step[1])
