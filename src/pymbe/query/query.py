@@ -3,6 +3,7 @@ import networkx as nx
 import math
 from ..graph.lpg import SysML2LabeledPropertyGraph
 from .metamodel_navigator import *
+from ..interpretation.results import *
 
 
 def roll_up_lower_multiplicity(
@@ -33,6 +34,18 @@ def roll_up_multiplicity(
     bound: str,
 ) -> int:
     banded_featuring_graph = lpg.get_projection("Expanded Banded Graph")
+
+    # FIXME: Need projections to work correctly
+
+    to_remove = []
+
+    for edg in banded_featuring_graph.edges:
+        if edg[2] == 'ImpliedParameterFeedforward':
+            to_remove.append(edg)
+
+    for remover in to_remove:
+        banded_featuring_graph.remove_edge(remover[0], remover[1])
+
     banded_roots = [
         node
         for node in banded_featuring_graph.nodes
@@ -68,8 +81,21 @@ def roll_up_multiplicity_for_type(
     bound: str
 ) -> int:
 
+    rdg = lpg.get_projection("Redefinition Graph")
+    # FIXME: Need projections to work correctly
+
+    to_remove = []
+
+    for edg in rdg.edges:
+        if edg[2] == 'ImpliedParameterFeedforward':
+            to_remove.append(edg)
+
+    for remover in to_remove:
+        rdg.remove_edge(remover[0], remover[1])
+
     running_total = 0
     ptg = lpg.get_projection("Part Typing Graph")
+
     if typ['@id'] in ptg.nodes:
         feat_ids = ptg.predecessors(typ['@id'])
         for feat_id in feat_ids:
@@ -78,6 +104,14 @@ def roll_up_multiplicity_for_type(
                 lpg.nodes[feat_id],
                 bound
             )
+            if feat_id in rdg:
+                redef_ids = rdg.predecessors(feat_id)
+                for redef_id in redef_ids:
+                    running_total += roll_up_multiplicity(
+                        lpg,
+                        lpg.nodes[redef_id],
+                        bound
+                )
         return running_total
     else:
         return 0

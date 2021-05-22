@@ -261,7 +261,7 @@ def random_generator_playbook_phase_3(
 
         feat = None
         for index, feature_id in enumerate(feature_sequence):
-            if feature_id in instances_dict:
+            if feature_id in instances_dict and index > 0:
                 # don't repeat draws if you encounter the same feature again
                 continue
             # sample set will be the last element in the sequence for classifiers
