@@ -34,6 +34,18 @@ class CalculationGroup():
 
                         for index, source in enumerate(source_instances):
                             target_instances[index][-1].value = source[-1].value
+            elif step[2] == 'Redefinition':
+                if step[0] in self.instance_dict:
+                    source_instances = self.instance_dict[step[0]]
+                    target_instances = self.instance_dict[step[1]]
+
+                    for indx, sorc in enumerate(source_instances):
+                        for jndx, targ in enumerate(target_instances):
+                            sorce_base = sorc[0:-1]
+                            targ_base = targ[0:-1]
+                            if sorce_base == targ_base:
+                                targ[-1].value = sorc[-1].value
+
             elif step[2] == 'Output':
                 if 'Literal' in lpg.nodes[step[0]]['@type']:
 
@@ -92,8 +104,8 @@ class CalculationGroup():
                                 if input_inst[0] == m0_operator_seq[0]:
                                     path_point = input_inst[-1]
 
-                            print("Calling collect with base = " + str(m0_operator_seq[0]) + ", collection input " +
-                                  str(input_point) + ", and path input " + str(path_point))
+                            #print("Calling collect with base = " + str(m0_operator_seq[0]) + ", collection input " +
+                            #      str(input_point) + ", and path input " + str(path_point))
 
                             evaluate_and_apply_collect(
                                 m0_operator_seq[0],
