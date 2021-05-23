@@ -3,6 +3,8 @@ from ..graph.lpg import SysML2LabeledPropertyGraph
 from ..label import get_label_for_id
 
 def sequence_dot_operator(left_item, right_side_seqs):
+    if not (left_item and right_side_seqs):
+        return []
     left_len = len(left_item)
     right_len = len(right_side_seqs[0])
     # print('Left is ' + str(left_len) + ' right is ' + str(right_len))
