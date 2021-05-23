@@ -39,6 +39,7 @@ jobs:
         uses: mamba-org/provision-with-micromamba@main
         with:
           environment-file: .github/environment.yml
+          environment-name: pymbe-ci
 
       - name: build
         shell: bash -l {0}
@@ -118,7 +119,7 @@ jobs:
 
       - name: test (windows)
         if: ${{ contains(matrix.os, 'windows') }}
-        shell: cmd /C CALL {0}
+        shell: powershell
         env:
           ATEST_PROCESSES: 1
           WIN_CI: 1
