@@ -31,13 +31,18 @@ def generate_execution_order(
         bfs_list.reverse()
 
         for node in bfs_list:
+            bfs_check = []
             for node_child in bfs_dict[node]:
                 kind = ''
 
                 if all_elements[node_child]['@type'] == 'Feature' and all_elements[node]['@type'] == 'Feature':
                     kind = 'Assignment'
                 elif all_elements[node_child]['@type'] == 'AttributeUsage' and all_elements[node]['@type'] == 'AttributeUsage':
-                    kind = 'Assignment'
+                    relevant_edge_types = [edg[2] for edg in eig.edges if edg[0] == node and edg[1] == node_child]
+                    if "Redefinition^-1" in relevant_edge_types:
+                        kind = 'Redefinition'
+                    else:
+                        kind = 'Assignment'
                 elif all_elements[node_child]['@type'] == 'Feature' and all_elements[node]['@type'] == 'AttributeUsage':
                     kind = 'ValueBinding'
                 elif (node_child, node, 'ReturnParameterMembership') in lpg.edges_by_type['ReturnParameterMembership']:
@@ -46,7 +51,33 @@ def generate_execution_order(
                     kind = 'Input'
 
                 execution_pairs.append([node_child, node, kind])
+                bfs_check.append([node_child, node])
 
                 execution_contexts[context].append(node_child)
+
+            # need to account for fact that BFS only visit nodes once ... need to fill in additional edges
+            for pred in eig.successors(node):
+                if [pred, node] in bfs_check:
+                    pass
+                    #print("Matched edge from BFS")
+                else:
+                    print("Need to add edge for " + str([pred, node]))
+                    kind = ''
+
+                    if all_elements[node_child]['@type'] == 'Feature' and all_elements[node]['@type'] == 'Feature':
+                        kind = 'Assignment'
+                    elif all_elements[node_child]['@type'] == 'AttributeUsage' and all_elements[node][
+                        '@type'] == 'AttributeUsage':
+                        kind = 'Assignment'
+                    elif all_elements[node_child]['@type'] == 'Feature' and all_elements[node][
+                        '@type'] == 'AttributeUsage':
+                        kind = 'ValueBinding'
+                    elif (node_child, node, 'ReturnParameterMembership') in lpg.edges_by_type[
+                        'ReturnParameterMembership']:
+                        kind = 'Output'
+                    elif (node, node_child, 'ParameterMembership') in lpg.edges_by_type['ParameterMembership']:
+                        kind = 'Input'
+
+                    execution_pairs.append([pred, node, kind])
 
     return execution_pairs
