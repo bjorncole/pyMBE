@@ -107,14 +107,17 @@ class CalculationGroup():
                             #print("Calling collect with base = " + str(m0_operator_seq[0]) + ", collection input " +
                             #      str(input_point) + ", and path input " + str(path_point))
 
-                            evaluate_and_apply_collect(
-                                m0_operator_seq[0],
-                                m0_operator_seq[-1],
-                                self.instance_dict,
-                                input_point,
-                                path_point,
-                                target_instances[index][-1]
-                            )
+                            if path_point.value is None:
+                                print("Path point value is empty! " + str(path_point))
+                            else:
+                                evaluate_and_apply_collect(
+                                    m0_operator_seq[0],
+                                    m0_operator_seq[-1],
+                                    self.instance_dict,
+                                    input_point,
+                                    path_point,
+                                    target_instances[index][-1]
+                                )
 
                         self.solved_nodes.append(step[0])
                         self.solved_nodes.append(step[1])
