@@ -2,7 +2,8 @@ import networkx as nx
 from ..interpretation.m0_operators import *
 from ..interpretation.interpretation import Instance, ValueHolder, LiveExpressionNode
 
-class CalculationGroup():
+
+class CalculationGroup:
     """
     A graph to represent the active expression tree in a model.
     """
