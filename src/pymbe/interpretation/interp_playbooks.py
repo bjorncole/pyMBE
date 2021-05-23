@@ -261,7 +261,7 @@ def random_generator_playbook_phase_3(
 
         feat = None
         for index, feature_id in enumerate(feature_sequence):
-            if feature_id in instances_dict:
+            if feature_id in instances_dict and index > 0:
                 # don't repeat draws if you encounter the same feature again
                 continue
             # sample set will be the last element in the sequence for classifiers
@@ -441,6 +441,18 @@ def generate_superset_instances(
 def build_expression_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list:
     all_elements = lpg.nodes
     evg = lpg.get_projection("Expression Value Graph")
+
+    # FIXME: Need projections to work correctly
+
+    to_remove = []
+
+    for edg in evg.edges:
+        if edg[2] == 'ImpliedParameterFeedforward':
+            to_remove.append(edg)
+
+    for remover in to_remove:
+        evg.remove_edge(remover[0], remover[1])
+
     sorted_feature_groups = []
     for comp in nx.connected_components(evg.to_undirected()):
         connected_sub = nx.subgraph(evg, list(comp))

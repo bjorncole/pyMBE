@@ -119,3 +119,9 @@ Part Typing Graph:
   - AttributeUsage
   included_edge_types:
   - FeatureTyping
+
+Redefinition Graph:
+  description: |
+    Generate a graph that covers redefinition relationships between features
+  included_edge_types:
+  - Redefinition

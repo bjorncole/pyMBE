@@ -66,9 +66,17 @@ def test_feature_sequence_templates(kerbal_client, kerbal_lpg):
 
 def test_expression_sequence_templates(kerbal_client, kerbal_lpg):
 
-    full_mass_sum_id = 'adc0c319-af84-4051-ada8-4e3e83b5db4e'
-    fre_result_id = 'adc92747-b3a1-4a0d-93b2-bc80c673e3f5'
-    top_plus_id = 'd05c42b2-3453-4c94-bf18-5bbc38949d19'
+    fts_full_mass = '004a1b5f-4bfc-4460-9f38-1e7b4caba6e5'
+    ft200_full_mass = '1e5a0ed7-8b41-4ab4-a433-8f7eedd75833'
+    ft100_full_mass = 'a57b423b-5c0c-4057-be6b-689abcb536b2'
+    liquid_stage_full_mass = '7beafac8-c1c1-4b1b-ae21-d3c9a733531c'
+    top_plus = 'b51bb349-e210-4be8-be64-e749ea4e563b'
+    tank_mass_sum_1 = '700d97d1-410a-459c-ad09-8792c27e2803'
+    collect_1 = 'd6644a0a-6eef-49c1-a770-60886073554c'
+    collect_1_result = '31f8c4bd-9700-4bc3-9970-3eb5451f0203'
+    full_mass_dot = 'ad0bff53-eebe-4446-a8df-4db0b7187707'
+    fre_1 = '2665fb1b-1f12-4f13-a977-0f060915773e'
+    fre_1_result = '6cfb516b-6045-454e-a521-83b747acef7e'
 
     random_generator_phase_0_interpreting_edges(kerbal_client, kerbal_lpg)
 
@@ -76,10 +84,14 @@ def test_expression_sequence_templates(kerbal_client, kerbal_lpg):
     top_plus_paths = 0
     direct_literals = 0
 
+    fre_result_found = False
+
     # big roll-up
     for seq in expr_sequences:
-        if top_plus_id in seq:
+        if top_plus in seq:
             top_plus_paths += 1
+        if fre_1_result in seq:
+            fre_result_found = True
 
     # individual literal expression value assignments
     for seq in expr_sequences:
@@ -92,3 +104,5 @@ def test_expression_sequence_templates(kerbal_client, kerbal_lpg):
     assert top_plus_paths == 7
     assert direct_literals == 26
     assert len(expr_sequences) == 33
+
+    assert fre_result_found

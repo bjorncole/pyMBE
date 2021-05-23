@@ -198,17 +198,28 @@ def test_phase_2_instance_creation(kerbal_lpg, random_stage_1_complete):
 def test_phase_3_instance_sampling(kerbal_lpg, random_stage_3_complete):
     coupler_usage_id = '3a609e5a-3e6f-4eb4-97ff-5a32b23122bf'
 
+    booster_empty_mass_id = '645ee1b3-3cb3-494e-8cb2-ec32e377c9f6'
+    booster_isp_id = '2b1351f4-a0fb-470b-bb22-1b924dde38f7'
+    rt_10_isp_id = 'eb09ff1c-1791-4571-8016-c0534906faa4'
+
     assert coupler_usage_id in random_stage_3_complete
     assert len(random_stage_3_complete[coupler_usage_id]) == 0 or len(random_stage_3_complete[coupler_usage_id][0]) == 3
 
+    assert len(random_stage_3_complete[booster_isp_id]) > 0
+    assert len(random_stage_3_complete[rt_10_isp_id]) > 0
+    assert len(random_stage_3_complete[booster_empty_mass_id]) > 0
 
 def test_phase_4_instance_sampling(kerbal_lpg, random_stage_4_complete):
     top_plus_expr_id = 'b51bb349-e210-4be8-be64-e749ea4e563b'
     sum_1_id = '700d97d1-410a-459c-ad09-8792c27e2803'
     collect_1_id = 'd6644a0a-6eef-49c1-a770-60886073554c'
-    collect_1_result = '2caccce7-a0b4-4926-8f24-0dbffb92f6ad'
+    collect_1_result = '31f8c4bd-9700-4bc3-9970-3eb5451f0203'
 
     liquid_stage_id = 'e6c22f19-e5e0-4a4b-9a3f-af2f01382465'
+
+    booster_empty_mass_id = '645ee1b3-3cb3-494e-8cb2-ec32e377c9f6'
+    booster_isp_id = '2b1351f4-a0fb-470b-bb22-1b924dde38f7'
+    rt_10_isp_id = 'eb09ff1c-1791-4571-8016-c0534906faa4'
 
     assert len(random_stage_4_complete[collect_1_id]) > 0 or \
         len(random_stage_4_complete[liquid_stage_id]) == 0
@@ -221,6 +232,10 @@ def test_phase_4_instance_sampling(kerbal_lpg, random_stage_4_complete):
 
     if len(random_stage_4_complete[liquid_stage_id]) > 0:
         assert len(random_stage_4_complete[sum_1_id][0]) == 3
+
+    assert len(random_stage_4_complete[booster_isp_id]) > 0
+    assert len(random_stage_4_complete[rt_10_isp_id]) > 0
+    assert len(random_stage_4_complete[booster_empty_mass_id]) > 0
 
 
 def test_expression_inferred_graph(kerbal_client, kerbal_lpg):

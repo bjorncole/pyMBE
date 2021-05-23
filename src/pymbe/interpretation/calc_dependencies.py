@@ -16,12 +16,16 @@ def generate_execution_order(
     eig = lpg.get_projection("Expression Inferred Graph")
 
     execution_pairs = []
+    execution_contexts = {}
 
     # use the BFS rollup method from the playbook phase 2
 
     roots = [node for node in eig.nodes if eig.in_degree(node) == 0]
 
     for root in roots:
+        context = all_elements[root]['featuringType'][0]['@id']
+        execution_contexts.update({context: []})
+
         bfs_dict = dict(nx.bfs_successors(eig, root))
         bfs_list = list(bfs_dict.keys())
         bfs_list.reverse()
@@ -42,5 +46,7 @@ def generate_execution_order(
                     kind = 'Input'
 
                 execution_pairs.append([node_child, node, kind])
+
+                execution_contexts[context].append(node_child)
 
     return execution_pairs
