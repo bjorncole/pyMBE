@@ -33,13 +33,11 @@ def evaluate_and_apply_collect(
     path_result = []
     first_step = sequence_dot_operator([base_scope], m0_collection_input.value)
     for collect_seq in first_step:
-        collect_match = sequence_dot_operator(collect_seq, m0_collection_path.value)
-        print("Collect match is now " + str(collect_match))
+        collect_match = sequence_dot_operator(collect_seq, m0_collection_path.value)[0]
         path_result.append(collect_match)
     collect_result = m0_expr.base_att['result']['@id']
-    print("Collected result = " + str(path_result))
-    print("Target result holder = " + str(result_holder))
-    result_holder.value = path_result
+    final_answer = [coll[-1] for coll in path_result]
+    result_holder.value = final_answer
 
 def evaluate_and_apply_fre(
     m0_expr: LiveExpressionNode,
