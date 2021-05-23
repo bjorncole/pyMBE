@@ -1,5 +1,6 @@
-from pymbe.client import SysML2Client
 from pathlib import Path
+
+from pymbe.client import SysML2Client
 
 
 def kerbal_model_loaded_client() -> SysML2Client:

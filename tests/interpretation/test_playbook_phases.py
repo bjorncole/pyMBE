@@ -1,9 +1,12 @@
-from ..data_loader import kerbal_model_loaded_client
-from pymbe.graph.lpg import SysML2LabeledPropertyGraph
+import pytest
+import networkx as nx
+
 from pymbe.client import SysML2Client
+from pymbe.graph.lpg import SysML2LabeledPropertyGraph
 from pymbe.interpretation.interp_playbooks import *
 from pymbe.interpretation.set_builders import *
-import pytest
+
+from ..data_loader import kerbal_model_loaded_client
 
 
 # there must be a way to reuse from other modules ..
@@ -266,9 +269,8 @@ def test_expression_inferred_graph(kerbal_client, kerbal_lpg):
 def test_dependency_graph(kerbal_lpg, random_stage_4_complete):
     # see how fully solved sequences go to make the dependency graph for computation
 
-
-
     assert True
+
 
 # should move these to a separate file but need the common fixtures
 def test_new_instances(kerbal_lpg):
@@ -280,7 +282,7 @@ def test_new_instances(kerbal_lpg):
         new_instances[part_def] = create_set_with_new_instances(
             sequence_template=[kerbal_lpg.nodes[part_def]],
             quantities=[10],
-            name_hints=[],
+            name_hints={},
         )
 
     assert len(new_instances) == 17

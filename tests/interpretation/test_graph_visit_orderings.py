@@ -1,14 +1,16 @@
-from ..data_loader import kerbal_model_loaded_client
-from pymbe.graph.lpg import SysML2LabeledPropertyGraph
-from pymbe.client import SysML2Client
-from pymbe.interpretation.interp_playbooks import *
 import pytest
 import networkx as nx
+
+from pymbe.client import SysML2Client
+from pymbe.graph.lpg import SysML2LabeledPropertyGraph
+from pymbe.interpretation.interp_playbooks import *
+
+from ..data_loader import kerbal_model_loaded_client
+
 
 # there must be a way to reuse from other modules ..
 @pytest.fixture
 def kerbal_client() -> SysML2Client:
-
     return kerbal_model_loaded_client()
 
 

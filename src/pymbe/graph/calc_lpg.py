@@ -1,4 +1,5 @@
 import networkx as nx
+
 from ..interpretation.m0_operators import *
 from ..interpretation.interpretation import Instance, ValueHolder, LiveExpressionNode
 from ..interpretation.results import *
@@ -110,5 +111,3 @@ class CalculationGroup:
 
                         self.unsolved_nodes.remove(step[0])
                         self.unsolved_nodes.remove(step[1])
-
-
