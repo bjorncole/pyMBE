@@ -51,6 +51,18 @@ def test_feature_sequence_templates(kerbal_client, kerbal_lpg):
     tanks_id = 'ae3db8b5-6d8e-4ac4-af46-9f37ad0fd988'
     krp_mass_id = 'f0403f3c-b5b8-4d2e-814b-bbe7cff60d3f'
 
+    rocket_id = '62fc7eb7-0637-4201-add7-4d2758980d2f'
+    stages_feature_id = '442722b5-8d08-46e4-ad5f-e6e2dd28d6f6'
+    couple_feature_id = '3a609e5a-3e6f-4eb4-97ff-5a32b23122bf'
+
+    print(seq_templates)
+
+    assert [
+        '62fc7eb7-0637-4201-add7-4d2758980d2f',
+        '442722b5-8d08-46e4-ad5f-e6e2dd28d6f6',
+        '3a609e5a-3e6f-4eb4-97ff-5a32b23122bf',
+        '7f5e38cb-6647-482d-b8fe-5c266d73ab42'] in seq_templates
+
     assert(any([krp_mass_id in seq for seq in seq_templates]))
 
     for seq in seq_templates:
@@ -101,8 +113,8 @@ def test_expression_sequence_templates(kerbal_client, kerbal_lpg):
         # each sequence should end with the result
         assert kerbal_lpg.nodes[seq[len(seq) - 1]]['@type'] == 'Feature'
 
-    assert top_plus_paths == 7
+    assert top_plus_paths == 17
     assert direct_literals == 26
-    assert len(expr_sequences) == 33
+    assert len(expr_sequences) == 43
 
     assert fre_result_found

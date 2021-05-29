@@ -254,11 +254,6 @@ def random_generator_playbook_phase_3(
     for feature_sequence in feature_sequences:
         new_sequences = []
 
-        for step in last_sequence:
-            for feat in feature_sequence:
-                if step == feat:
-                    new_sequences = instances_dict[feat]
-
         feat = None
         for index, feature_id in enumerate(feature_sequence):
             if feature_id in instances_dict and index > 0:
@@ -282,6 +277,11 @@ def random_generator_playbook_phase_3(
             if index == 0:
                 new_sequences = instances_dict[typ]
             else:
+
+                for step in last_sequence:
+                    for feat in feature_sequence:
+                        if step == feat:
+                            new_sequences = instances_dict[feat]
 
                 if typ in already_drawn:
                     remaining = [item for seq in instances_dict[typ] for item in seq if item not in already_drawn[typ]]

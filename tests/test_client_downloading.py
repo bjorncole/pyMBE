@@ -11,8 +11,8 @@ def test_all_downloaded():
     # hardcode to try out while waiting to learn how fixtures work
     # values here correspond to the Part Usage Unit Test model
     api_url = 'http://sysml2-sst.intercax.com'
-    project_id = 'd27e2bc7-d4a2-423e-bb04-f8a9d48393e7'
-    commit_id = 'a489eed4-a93e-4ea9-a079-80fafa7cbcb5'
+    project_id = 'a4f6a618-e4eb-4ac8-84b8-d6bcd3badcec'
+    commit_id = 'c48aea9b-42fb-49b3-9a3e-9c39385408d7'
 
     client_object = SysML2Client()
     client_object.host_url = api_url
@@ -22,4 +22,4 @@ def test_all_downloaded():
     client_object._download_elements()
 
     # Number should match the status when model committed to server - I think
-    assert len(client_object.elements_by_id) == 143
+    assert len(client_object.elements_by_id) == 389
