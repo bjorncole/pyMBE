@@ -109,17 +109,74 @@ class CalculationGroup:
                             #print("Calling collect with base = " + str(m0_operator_seq[0]) + ", collection input " +
                             #      str(input_point) + ", and path input " + str(path_point))
 
-                            evaluate_and_apply_collect(
-                                m0_operator_seq[0],
-                                m0_operator_seq[-1],
-                                self.instance_dict,
-                                input_point,
-                                path_point,
-                                target_instances[index][-1]
-                            )
+                            if path_point.value is None:
+                                print("Path point value is empty! " + str(path_point))
+                            else:
+                                evaluate_and_apply_collect(
+                                    m0_operator_seq[0],
+                                    m0_operator_seq[-1],
+                                    self.instance_dict,
+                                    input_point,
+                                    path_point,
+                                    target_instances[index][-1]
+                                )
 
                         self.solved_nodes.append(step[0])
                         self.solved_nodes.append(step[1])
 
                         self.unsolved_nodes.remove(step[0])
                         self.unsolved_nodes.remove(step[1])
+
+                    elif lpg.nodes[step[0]]['operator'] == '+':
+                        source_instances = self.instance_dict[step[0]]
+                        target_instances = self.instance_dict[step[1]]
+
+                        for member in lpg.nodes[step[0]]['input']:
+                            collect_sub_inputs.append(lpg.nodes[member['@id']])
+
+                        plus_inputs = []
+
+                        for member in lpg.nodes[step[0]]['input']:
+                            plus_inputs.append(lpg.nodes[member['@id']])
+
+                        for index, m0_operator_seq in enumerate(source_instances):
+                            x_point = None
+                            y_point = None
+                            for input_index, input in enumerate(plus_inputs):
+                                input_instances = self.instance_dict[input['@id']]
+                                for input_inst in input_instances:
+                                    if input_inst[0] == m0_operator_seq[0]:
+                                        if input_index == 0:
+                                            x_point = input_inst[-1]
+                                        elif input_index == 1:
+                                            y_point = input_inst[-1]
+
+                            evaluate_and_apply_plus(
+                                x_point,
+                                y_point,
+                                target_instances[index][-1]
+                            )
+
+                elif lpg.nodes[step[0]]['@type'] == "InvocationExpression":
+                    invoke_type = lpg.nodes[lpg.nodes[step[0]]['type'][0]['@id']]
+
+                    source_instances = self.instance_dict[step[0]]
+                    target_instances = self.instance_dict[step[1]]
+
+                    if invoke_type['name'] == 'sum':
+                        sum_inputs = []
+
+                        for member in lpg.nodes[step[0]]['input']:
+                            sum_inputs.append(lpg.nodes[member['@id']])
+
+                        for index, m0_operator_seq in enumerate(source_instances):
+                            input_point = None
+                            input_instances = self.instance_dict[sum_inputs[0]['@id']]
+                            for input_inst in input_instances:
+                                if input_inst[0] == m0_operator_seq[0]:
+                                    input_point = input_inst[-1]
+
+                            evaluate_and_apply_sum(
+                                input_point,
+                                target_instances[index][-1]
+                            )

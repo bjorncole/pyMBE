@@ -38,8 +38,8 @@ def kerbal_lpg(kerbal_client) -> SysML2LabeledPropertyGraph:
 
 def test_feature_multiplicity_rollup(kerbal_client, kerbal_lpg):
 
-    engines_feat = '48e94e73-52ad-44df-8005-8fa6225176d8'
-    stages_feat = 'dc4339cc-021c-423e-acb2-ca1165f9b64e'
+    engines_feat = '32c847a1-2184-4486-ba48-dbf6125ca638'
+    stages_feat = '442722b5-8d08-46e4-ad5f-e6e2dd28d6f6'
 
     assert engines_feat in list(kerbal_lpg.nodes.keys())
     assert stages_feat in list(kerbal_lpg.nodes.keys())
@@ -73,13 +73,13 @@ def test_feature_multiplicity_rollup(kerbal_client, kerbal_lpg):
 
 def test_type_multiplicity_rollup(kerbal_lpg):
 
-    real_type = '53623375-04a7-4829-84ab-a859a218aa1a'
-    liquid_engine_type = 'b5d0df54-49cc-47a8-a0fa-9b332c289d19'
-    rokcet_type = '4c792c29-5fd0-4846-b4e5-800a0bc037f1'
+    real_type = 'ede2b2e7-9280-4932-9453-134bf460892f'
+    liquid_engine_type = '79cf7d24-37f7-404c-94b4-395cd1d0ee51'
+    rocket_type = '62fc7eb7-0637-4201-add7-4d2758980d2f'
 
     real_ele = kerbal_lpg.nodes[real_type]
     liquid_engine_ele = kerbal_lpg.nodes[liquid_engine_type]
-    rocket_ele = kerbal_lpg.nodes[rokcet_type]
+    rocket_ele = kerbal_lpg.nodes[rocket_type]
 
     liquid_upper = roll_up_multiplicity_for_type(
         kerbal_lpg,

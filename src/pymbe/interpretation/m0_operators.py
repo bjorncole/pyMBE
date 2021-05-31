@@ -75,3 +75,21 @@ def evaluate_and_apply_literal(
 
     literal_value = m0_expr.base_att['value']
     m0_result.value = literal_value
+
+def evaluate_and_apply_sum(
+    m0_expr: ValueHolder,
+    m0_result: ValueHolder
+) -> None:
+
+    total = 0
+    for item in m0_expr.value:
+        total+= item.value
+    m0_result.value = total
+
+def evaluate_and_apply_plus(
+    x_expr: ValueHolder,
+    y_expr: ValueHolder,
+    m0_result: ValueHolder
+) -> None:
+
+    m0_result.value = x_expr.value + y_expr.value
