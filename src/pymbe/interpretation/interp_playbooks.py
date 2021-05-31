@@ -394,28 +394,6 @@ def build_sequence_templates(
     return sorted_feature_groups
 
 
-def is_node_covered_by_subsets(
-    lpg: SysML2LabeledPropertyGraph,
-    tested_node_id: str,
-    instances_in_process: dict
-) -> bool:
-    """
-    Check that the specializing types (subsets in instance sets) of a given node have fully defined instance sets
-    :param lpg: Working label property graph
-    :param tested_node_id: node to check
-    :param instances_in_process: instance list produced so far
-    :return: verdict on coverage
-    """
-    scg = lpg.get_projection("Part Definition Graph")
-    instances_in_process = tuple(instances_in_process)
-
-    all_covered = all(
-        next_instance in instances_in_process
-        for next_instance in scg.predecessors(tested_node_id)
-    )
-    return all_covered
-
-
 def generate_superset_instances(
         part_def_graph: nx.MultiDiGraph,
         superset_node: str,

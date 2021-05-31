@@ -60,6 +60,7 @@ def get_label_for_expression(
         "FeatureReferenceExpression",
         "InvocationExpression",
         "OperatorExpression",
+        "PathStepExpression"
     ):
         raise NotImplementedError(
             f"Cannot create M1 signature for: {metatype}"
@@ -109,6 +110,18 @@ def get_label_for_expression(
         prefix = expression["operator"]
     elif metatype == "InvocationExpression":
         prefix = type_names[0] if type_names else ""
+    elif metatype == "PathStepExpression":
+        path_step_names = []
+        for owned_fm_id in expression['ownedFeatureMembership']:
+            owned_fm = all_elements[owned_fm_id['@id']]
+            if owned_fm['@type'] == 'FeatureMembership':
+                member = all_elements[owned_fm['memberElement']['@id']]
+                # expect FRE here
+                if 'referent' in member:
+                    refered = all_elements[member['referent']['@id']]
+                    path_step_names.append(refered['name'])
+
+        prefix = '.'.join(path_step_names)
     return f"""{prefix} ({", ".join(input_names)}) => {result_name}"""
 
 
@@ -130,3 +143,22 @@ def get_label_for_multiplicity(
             all_elements.get(literal_id) or {}
         ).get("value", default)
     return f"""{values["lower"]}..{values["upper"]}"""
+
+
+def get_qualified_label(element: dict, all_elements: dict) -> str:
+
+    earlier_name = ''
+
+    try:
+        if 'owner' in element:
+            if element['owner'] is not None:
+                element_owner = all_elements[element['owner']['@id']]
+                earlier_name = get_qualified_label(element_owner, all_elements)
+        else:
+            return element['name']
+
+        earlier_name = earlier_name + '::' + get_label(element, all_elements)
+    except TypeError:
+        print(all_elements)
+
+    return earlier_name

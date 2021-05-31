@@ -180,3 +180,16 @@ class CalculationGroup:
                                 input_point,
                                 target_instances[index][-1]
                             )
+
+    def solve_graph_with_openmdao(self, lpg):
+        """
+        Similar to solve graph, but use OpenMDAO to fill in values rather than literal expressions
+        :param lpg:
+        :return:
+        """
+        pass
+
+        # Look through the calculation list and the relevant sequences, use this to build needed alternative
+        # OpenMDAO problems - turn over passing of variables to OpenMDAO - ignore the Assignment / Value Binding steps
+
+        # Once problems are built, execute and bring results back to input / result parameter sequences as needed
