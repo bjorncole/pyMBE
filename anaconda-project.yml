@@ -42,8 +42,8 @@ commands:
   test:
     description: run the tests
     env_spec: developer
-    unix: py.test
-    windows: py.test
+    unix: py.test tests/
+    windows: py.test tests/
   notebooks/Tutorial.ipynb:
     env_spec: user
     notebook: notebooks/Tutorial.ipynb
