@@ -8,21 +8,27 @@ import traitlets as trt
 import typing as ty
 
 import ipyelk
-import ipyelk.nx
-import ipyelk.contrib.shapes.connectors as conn
-
-from ipyelk.contrib.elements import (
+from ipyelk.contrib.library.block import (
+    Aggregation,
+    Block,
+    BlockDiagram,
+    Composition,
+)
+from ipyelk.contrib.molds import connectors as conn, structures
+from ipyelk.diagram import Exporter
+import ipyelk.tools
+from ipyelk.elements import (
     Compartment,
-    Compound,
     Edge,
     Label,
-    Partition,
+    Mark,
+    MarkFactory,
+    Node,
+    Port,
     Record,
-    element,
-    elements,
+    layout_options as opt,
+    shapes,
 )
-from ipyelk.diagram.symbol import Def
-from ipyelk.tools import tools as elk_tools
 
 
 def an_arrow_endpoint(r=6, closed=False):
