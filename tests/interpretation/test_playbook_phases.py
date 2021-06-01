@@ -43,11 +43,11 @@ def kerbal_lpg() -> SysML2LabeledPropertyGraph:
 
 
 @pytest.fixture
-def random_stage_1_instances(kerbal_lpg) -> dict:
+def random_stage_1_instances(kerbal_client, kerbal_lpg) -> dict:
     ptg = kerbal_lpg.get_projection("Part Typing Graph")
     scg = kerbal_lpg.get_projection("Part Definition Graph")
 
-    random_generator_phase_0_interpreting_edges(kerbal_lpg)
+    random_generator_phase_0_interpreting_edges(kerbal_client, kerbal_lpg)
 
     full_multiplicities = random_generator_phase_1_multiplicities(kerbal_lpg, ptg, scg)
 
@@ -132,17 +132,13 @@ def test_type_multiplicity_dict_building(kerbal_lpg):
     assert full_multiplicities[real_id] == 3010
 
 
-def test_phase_0_implied_relationships(kerbal_lpg):
+def test_phase_0_implied_relationships(kerbal_client, kerbal_lpg):
 
-    random_generator_phase_0_interpreting_edges(kerbal_lpg)
+    random_generator_phase_0_interpreting_edges(kerbal_client, kerbal_lpg)
 
     all_edge_keys = list(kerbal_lpg.edges.keys())
     all_edge_types = [edg[2] for edg in all_edge_keys]
-    implied_edges = [
-        edg
-        for edg in all_edge_keys
-        if edg[2] == 'ImpliedParameterFeedforward'
-    ]
+    implied_edges = [edg for edg in all_edge_keys if edg[2] == 'ImpliedParameterFeedforward']
 
     assert any([typ == 'ImpliedParameterFeedforward' for typ in all_edge_types])
     assert len(implied_edges) == 30
@@ -247,10 +243,10 @@ def test_phase_4_instance_sampling(kerbal_lpg, random_stage_4_complete):
     assert len(random_stage_4_complete[booster_empty_mass_id]) > 0
 
 
-def test_expression_inferred_graph(kerbal_lpg):
+def test_expression_inferred_graph(kerbal_client, kerbal_lpg):
     # inferred graph provides a reliable order of execution for expressions
 
-    random_generator_phase_0_interpreting_edges(kerbal_lpg)
+    random_generator_phase_0_interpreting_edges(kerbal_client, kerbal_lpg)
 
     all_edge_keys = list(kerbal_lpg.edges.keys())
     all_edge_types = [edg[2] for edg in all_edge_keys]
