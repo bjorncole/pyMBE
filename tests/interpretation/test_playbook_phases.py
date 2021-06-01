@@ -1,8 +1,6 @@
 import pytest
-import networkx as nx
 
 from pymbe.client import SysML2Client
-from pymbe.graph.lpg import SysML2LabeledPropertyGraph
 from pymbe.interpretation.interp_playbooks import *
 from pymbe.interpretation.set_builders import *
 
@@ -12,15 +10,12 @@ from ..data_loader import kerbal_model_loaded_client
 # there must be a way to reuse from other modules ..
 @pytest.fixture
 def kerbal_client() -> SysML2Client:
-
     return kerbal_model_loaded_client()
 
 
 @pytest.fixture
 def kerbal_ids_by_type(kerbal_client) -> dict:
-
     ids_dict = {}
-
     all_elements = kerbal_client.elements_by_id
 
     for ele_id, ele in all_elements.items():
@@ -43,11 +38,11 @@ def kerbal_lpg() -> SysML2LabeledPropertyGraph:
 
 
 @pytest.fixture
-def random_stage_1_instances(kerbal_client, kerbal_lpg) -> dict:
+def random_stage_1_instances(kerbal_lpg) -> dict:
     ptg = kerbal_lpg.get_projection("Part Typing Graph")
     scg = kerbal_lpg.get_projection("Part Definition Graph")
 
-    random_generator_phase_0_interpreting_edges(kerbal_client, kerbal_lpg)
+    random_generator_phase_0_interpreting_edges(kerbal_lpg)
 
     full_multiplicities = random_generator_phase_1_multiplicities(kerbal_lpg, ptg, scg)
 
@@ -81,11 +76,8 @@ def random_stage_1_complete(kerbal_lpg, random_stage_1_instances) -> dict:
 @pytest.fixture
 def random_stage_2_complete(kerbal_lpg, random_stage_1_complete) -> dict:
     scg = kerbal_lpg.get_projection("Part Definition Graph")
-
     random_generator_playbook_phase_2_rollup(kerbal_lpg, scg, random_stage_1_complete)
-
     random_generator_playbook_phase_2_unconnected(kerbal_lpg.nodes, random_stage_1_complete)
-
     return random_stage_1_complete
 
 
@@ -102,16 +94,12 @@ def random_stage_3_complete(kerbal_lpg, random_stage_2_complete) -> dict:
 
 @pytest.fixture
 def random_stage_4_complete(kerbal_lpg, random_stage_3_complete) -> dict:
-
     expr_sequences = build_expression_sequence_templates(lpg=kerbal_lpg)
-
     random_generator_playbook_phase_4(expr_sequences, kerbal_lpg, random_stage_3_complete)
-
     return random_stage_3_complete
 
 
 def test_type_multiplicity_dict_building(kerbal_lpg):
-
     solid_stage_id = 'b473978d-40de-4809-acef-4793f738c44e'
     liquid_stage_id = 'e6c22f19-e5e0-4a4b-9a3f-af2f01382465'
     flea_id = '5be56a39-f4a4-4fbb-872c-12f3e717593c'
@@ -132,9 +120,8 @@ def test_type_multiplicity_dict_building(kerbal_lpg):
     assert full_multiplicities[real_id] == 3010
 
 
-def test_phase_0_implied_relationships(kerbal_client, kerbal_lpg):
-
-    random_generator_phase_0_interpreting_edges(kerbal_client, kerbal_lpg)
+def test_phase_0_implied_relationships(kerbal_lpg):
+    random_generator_phase_0_interpreting_edges(kerbal_lpg)
 
     all_edge_keys = list(kerbal_lpg.edges.keys())
     all_edge_types = [edg[2] for edg in all_edge_keys]
@@ -169,6 +156,7 @@ def test_phase_1_singleton_instances(random_stage_1_complete):
     assert pod_id in random_stage_1_complete
     # don't expect abstract member at this point
     assert solid_booster_id not in random_stage_1_complete
+
 
 def test_phase_2_instance_creation(kerbal_lpg, random_stage_1_complete):
     solid_stage_id = 'b473978d-40de-4809-acef-4793f738c44e'
@@ -214,6 +202,7 @@ def test_phase_3_instance_sampling(kerbal_lpg, random_stage_3_complete):
     assert len(random_stage_3_complete[rt_10_isp_id]) > 0
     assert len(random_stage_3_complete[booster_empty_mass_id]) > 0
 
+
 def test_phase_4_instance_sampling(kerbal_lpg, random_stage_4_complete):
     top_plus_expr_id = 'b51bb349-e210-4be8-be64-e749ea4e563b'
     sum_1_id = '700d97d1-410a-459c-ad09-8792c27e2803'
@@ -243,10 +232,9 @@ def test_phase_4_instance_sampling(kerbal_lpg, random_stage_4_complete):
     assert len(random_stage_4_complete[booster_empty_mass_id]) > 0
 
 
-def test_expression_inferred_graph(kerbal_client, kerbal_lpg):
+def test_expression_inferred_graph(kerbal_lpg):
     # inferred graph provides a reliable order of execution for expressions
-
-    random_generator_phase_0_interpreting_edges(kerbal_client, kerbal_lpg)
+    random_generator_phase_0_interpreting_edges(kerbal_lpg)
 
     all_edge_keys = list(kerbal_lpg.edges.keys())
     all_edge_types = [edg[2] for edg in all_edge_keys]
@@ -270,23 +258,20 @@ def test_expression_inferred_graph(kerbal_client, kerbal_lpg):
 
 def test_dependency_graph(kerbal_lpg, random_stage_4_complete):
     # see how fully solved sequences go to make the dependency graph for computation
-
     assert True
 
 
-# should move these to a separate file but need the common fixtures
 def test_new_instances(kerbal_lpg):
+    # TODO: should move these to a separate file but need the common fixtures
     part_defs = kerbal_lpg.nodes_by_type['PartDefinition']
-
-    new_instances = {}
-
-    for part_def in part_defs:
-        new_instances[part_def] = create_set_with_new_instances(
+    new_instances = {
+        part_def: create_set_with_new_instances(
             sequence_template=[kerbal_lpg.nodes[part_def]],
             quantities=[10],
             name_hints={},
         )
-
+        for part_def in part_defs
+    }
     assert len(new_instances) == 17
 
 

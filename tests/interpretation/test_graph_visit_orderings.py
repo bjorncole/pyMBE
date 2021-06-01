@@ -18,7 +18,6 @@ def kerbal_client() -> SysML2Client:
 def kerbal_ids_by_type(kerbal_client) -> dict:
 
     ids_dict = {}
-
     all_elements = kerbal_client.elements_by_id
 
     for ele_id, ele in all_elements.items():
@@ -34,13 +33,11 @@ def kerbal_ids_by_type(kerbal_client) -> dict:
 def kerbal_lpg() -> SysML2LabeledPropertyGraph:
     new_lpg = SysML2LabeledPropertyGraph()
     client = kerbal_model_loaded_client()
-
-    new_lpg.update(client.elements_by_id, False)
-
+    new_lpg.elements_by_id = client.elements_by_id
     return new_lpg
 
 
-def test_feature_sequence_templates(kerbal_client, kerbal_lpg):
+def test_feature_sequence_templates(kerbal_lpg):
 
     seq_templates = build_sequence_templates(kerbal_lpg)
 
@@ -78,7 +75,7 @@ def test_feature_sequence_templates(kerbal_client, kerbal_lpg):
                 assert seq.index(liquid_stage_id) < seq.index(tanks_id)
 
 
-def test_expression_sequence_templates(kerbal_client, kerbal_lpg):
+def test_expression_sequence_templates(kerbal_lpg):
 
     fts_full_mass = '004a1b5f-4bfc-4460-9f38-1e7b4caba6e5'
     ft200_full_mass = '1e5a0ed7-8b41-4ab4-a433-8f7eedd75833'
@@ -92,7 +89,7 @@ def test_expression_sequence_templates(kerbal_client, kerbal_lpg):
     fre_1 = '2665fb1b-1f12-4f13-a977-0f060915773e'
     fre_1_result = '6cfb516b-6045-454e-a521-83b747acef7e'
 
-    random_generator_phase_0_interpreting_edges(kerbal_client, kerbal_lpg)
+    random_generator_phase_0_interpreting_edges(kerbal_lpg)
 
     expr_sequences = build_expression_sequence_templates(lpg=kerbal_lpg)
     top_plus_paths = 0
