@@ -1,10 +1,6 @@
-from copy import deepcopy
 from uuid import uuid4
 
 from .set_builders import *
-from ..interpretation.results import *
-from ..label import get_label_for_expression
-from ..query.metamodel_navigator import *
 from ..query.query import *
 
 # The playbooks here work to use set building steps to build up sets of instances from a given model
@@ -19,7 +15,6 @@ def random_generator_playbook(
     lpg: SysML2LabeledPropertyGraph,
     name_hints: dict,
 ) -> dict:
-
     can_interpret = validate_working_data(lpg)
 
     if not can_interpret:
@@ -180,7 +175,6 @@ def random_generator_playbook_phase_1_singletons(
     scg: nx.DiGraph,
     instances_dict: dict
 ) -> None:
-
     all_elements = lpg.nodes
 
     # need to generate single instances at leaves that don't match types
@@ -202,7 +196,6 @@ def random_generator_playbook_phase_2_rollup(
     scg: nx.DiGraph,
     instances_dict: dict
 ) -> None:
-
     roots = [node for node in scg.nodes if scg.in_degree(node) == 0]
 
     for root in roots:
@@ -249,11 +242,9 @@ def random_generator_playbook_phase_3(
     ptg: nx.DiGraph,
     instances_dict: dict
 ) -> None:
-    already_drawn = {}
-    last_sequence = []
+    already_drawn, last_sequence = {}, []
     for feature_sequence in feature_sequences:
         new_sequences = []
-
         feat = None
         for index, feature_id in enumerate(feature_sequence):
             if feature_id in instances_dict and index > 0:
@@ -314,9 +305,7 @@ def random_generator_playbook_phase_4(
     lpg: SysML2LabeledPropertyGraph,
     instances_dict: dict
 ) -> None:
-
     all_elements = lpg.nodes
-
     for expr_seq in expr_sequences:
         new_sequences = []
         # get the featuring type of the first expression
@@ -386,11 +375,9 @@ def build_sequence_templates(
                     sorted_feature_groups.append(leaf_path)
                 except:
                     pass
-
         #sorted_feature_groups.append(
         #    [node for node in nx.topological_sort(connected_sub)]
         #)
-
     return sorted_feature_groups
 
 
@@ -404,7 +391,6 @@ def generate_superset_instances(
     Take specific classifiers and push the calculated instances to more general classifiers
     :return:
     """
-
     new_superset = []
     subset_nodes = part_def_graph.predecessors(superset_node)
     if all(subset_node in visited_nodes for subset_node in subset_nodes):
@@ -422,11 +408,11 @@ def build_expression_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list
 
     # FIXME: Need projections to work correctly
 
-    to_remove = []
-
-    for edg in evg.edges:
-        if edg[2] == 'ImpliedParameterFeedforward':
-            to_remove.append(edg)
+    to_remove = [
+        edg
+        for edg in evg.edges
+        if edg[2] == "ImpliedParameterFeedforward"
+    ]
 
     for remover in to_remove:
         evg.remove_edge(remover[0], remover[1])
@@ -454,9 +440,7 @@ def validate_working_data(
     Helper method to check that the user model is valid for instance generation
     :return: A Boolean indicating that the user model is ready to be interpreted
     """
-
     # check that all the elements of the graph are in fact proper model elements
-
     all_non_relations = lpg.nodes
     for nr_key, nr in all_non_relations.items():
         try:
