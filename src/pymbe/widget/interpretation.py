@@ -87,15 +87,17 @@ class Interpreter(ipyw.VBox, BaseWidget):
             ipyw.VBox(
                 [make_element_label(element_id)] +
                 [
-                    ipyw.Box(
+                    ipyw.VBox(
                         children=[
-                            ipyw.HBox([
-                                ipyw.ToggleButton(
-                                    description=f"{instance}",
-                                    layout=ipyw.Layout(min_width="10%"),
-                                )
-                                for instance in instances
-                            ])
+                            ipyw.HBox(
+                                children=[
+                                    ipyw.ToggleButton(
+                                        description=f"{instance}",
+                                        layout=ipyw.Layout(min_width="10%"),
+                                    )
+                                    for instance in instances
+                                ],
+                            )
                             for instances in self.instances[element_id]
                         ],
                         layout=ipyw.Layout(
