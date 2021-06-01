@@ -1,11 +1,13 @@
 import networkx as nx
+
+from ..graph.lpg import SysML2LabeledPropertyGraph
 from ..interpretation.results import pprint_double_id_list, pprint_single_id_list
 from ..label import get_label_for_id
-from ..graph.lpg import SysML2LabeledPropertyGraph
+
 
 def generate_execution_order(
     lpg: SysML2LabeledPropertyGraph,
-    instance_dict: dict
+    instance_dict: dict,
 ) -> list:
     """
     Generate a dependency graph between specific sequences in the m0 interpretation

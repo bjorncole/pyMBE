@@ -175,7 +175,6 @@ def extend_sequences_with_new_value_holder(
     base_name: str,
     base_ele: dict
 ) -> list:
-
     new_sequences = []
 
     for indx, seq in enumerate(previous_sequences):

@@ -38,7 +38,8 @@ class Interpreter(ipyw.VBox, BaseWidget):
 
     @trt.default("instances")
     def _make_instances(self):
-        return random_generator_playbook(
+        instance_generator = self.STRATEGIES[self.strategy_selector.value]
+        return instance_generator(
             lpg=self.lpg,
             name_hints=dict(),
         )
@@ -88,12 +89,14 @@ class Interpreter(ipyw.VBox, BaseWidget):
                 [
                     ipyw.Box(
                         children=[
-                            ipyw.ToggleButton(
-                                description=f"{instance}",
-                                layout=ipyw.Layout(min_width="10%"),
-                            )
+                            ipyw.HBox([
+                                ipyw.ToggleButton(
+                                    description=f"{instance}",
+                                    layout=ipyw.Layout(min_width="10%"),
+                                )
+                                for instance in instances
+                            ])
                             for instances in self.instances[element_id]
-                            for instance in instances
                         ],
                         layout=ipyw.Layout(
                             flex_flow="wrap",

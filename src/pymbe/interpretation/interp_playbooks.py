@@ -1,11 +1,11 @@
-from ..query.query import *
-from ..interpretation.results import *
-from ..query.metamodel_navigator import *
-from .set_builders import *
-from ..label import get_label_for_expression
-from ..client import SysML2Client
-from uuid import uuid4
 from copy import deepcopy
+from uuid import uuid4
+
+from .set_builders import *
+from ..interpretation.results import *
+from ..label import get_label_for_expression
+from ..query.metamodel_navigator import *
+from ..query.query import *
 
 # The playbooks here work to use set building steps to build up sets of instances from a given model
 
@@ -16,7 +16,6 @@ from copy import deepcopy
 
 
 def random_generator_playbook(
-    client: SysML2Client,
     lpg: SysML2LabeledPropertyGraph,
     name_hints: dict,
 ) -> dict:
@@ -30,7 +29,7 @@ def random_generator_playbook(
 
     # PHASE 0: Add implicit relationships between parameters to assure equation solving
 
-    random_generator_phase_0_interpreting_edges(client, lpg)
+    random_generator_phase_0_interpreting_edges(lpg)
 
     # PHASE 1: Create a set of instances for part definitions based on usage multiplicities
 
@@ -64,10 +63,10 @@ def random_generator_playbook(
     # and then move in reverse order from the specific (subset) to the general (superset)
 
     random_generator_playbook_phase_2_rollup(
-            lpg,
-            scg,
-            instances_dict
-        )
+        lpg,
+        scg,
+        instances_dict
+    )
 
     # Fill in any part definitions that still don't have instances yet (because they get filtered out by the
     # Part Definition pre-defined graph (neither typed nor subclassed))
@@ -93,8 +92,8 @@ def random_generator_playbook(
 
     return instances_dict
 
+
 def random_generator_phase_0_interpreting_edges(
-    client: SysML2Client,
     lpg: SysML2LabeledPropertyGraph
 ):
     new_edges = [
@@ -116,7 +115,7 @@ def random_generator_phase_0_interpreting_edges(
         for *_, data in new_edges
     }
 
-    client.elements_by_id = {**client.elements_by_id, **new_elements}
+    lpg.elements_by_id = {**lpg.elements_by_id, **new_elements}
     for edg in new_edges:
         new_edg = {(edg[0:3]): edg[3]}
         lpg.edges.update(new_edg)
@@ -125,11 +124,12 @@ def random_generator_phase_0_interpreting_edges(
             [
                 edg[0],  # source node (str id)
                 edg[1],  # target node (str id)
-                edg[2],                     # edge type (str name)
-                edg[3],                              # edge data (dict)
+                edg[2],  # edge type (str name)
+                edg[3],  # edge data (dict)
             ]
             for edg in new_edges
         ])
+
 
 def random_generator_phase_1_multiplicities(
     lpg: SysML2LabeledPropertyGraph,
@@ -144,7 +144,6 @@ def random_generator_phase_1_multiplicities(
     ]
 
     # find the maximal amount of types directly based on instances
-
     type_multiplicities = {}
     for pt in ptg.nodes:
         if lpg.nodes[pt]['@type'] in ('PartDefinition', 'DataType', 'AttributeDefinition'):
@@ -220,6 +219,7 @@ def random_generator_playbook_phase_2_rollup(
                 new_superset.extend(instances_dict[subset_node])
 
             instances_dict.update({gen: new_superset})
+
 
 def random_generator_playbook_phase_2_unconnected(
     all_elements: dict,
@@ -446,6 +446,7 @@ def build_expression_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list
 
     return sorted_feature_groups
 
+
 def validate_working_data(
     lpg: SysML2LabeledPropertyGraph
 ) -> bool:
@@ -470,5 +471,4 @@ def validate_working_data(
         except KeyError:
             print("No type found in " + str(nr))
             return False
-
     return True
