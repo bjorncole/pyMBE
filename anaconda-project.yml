@@ -87,7 +87,8 @@ packages: []
 #
 channels:
 - conda-forge
-- nodefaults 
+- conda-forge/label/ipyelk_alpha
+- nodefaults
 
 #
 # In the platforms section, list platforms the project should work on
@@ -109,7 +110,7 @@ env_specs:
   user:
     description: The environment for running the notebooks
     packages:
-    # - ipyelk >=2.0,<3
+    - ipyelk >=2.0.0a0,<3
     - ipytree >=0.2.1,<1
     - jupyterlab >=3.0,<4
     - matplotlib
