@@ -43,18 +43,18 @@ def random_stage_1_instances(kerbal_lpg) -> dict:
     scg = kerbal_lpg.get_projection("Part Definition Graph")
 
     random_generator_phase_0_interpreting_edges(kerbal_lpg)
-
-    full_multiplicities = random_generator_phase_1_multiplicities(kerbal_lpg, ptg, scg)
-
+    full_multiplicities = random_generator_phase_1_multiplicities(
+        kerbal_lpg,
+        ptg,
+        scg,
+    )
     instances_dict = {}
-
     for type_id, number in full_multiplicities.items():
         new_instances = create_set_with_new_instances(
             sequence_template=[kerbal_lpg.nodes[type_id]],
             quantities=[number],
             name_hints=[],
         )
-
         instances_dict.update({type_id: new_instances})
 
     return instances_dict

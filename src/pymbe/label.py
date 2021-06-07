@@ -19,15 +19,15 @@ def get_label(element: dict, all_elements: dict) -> str:
         for type_name in type_names
         if type_name
     ]
-
+    value = element.get("value")
     if name:
         if type_names:
             # TODO: look into using other types (if there are any)
             name += f": {type_names[0]}"
         return name
-    elif metatype.startswith("Literal"):
-        type_ = type_names[0] if type_names else metatype.replace("Literal", "Occurred Literal")
-        return f"""{element["value"]} «{type_}»"""
+    elif value and metatype.startswith("Literal"):
+        metatype = type_names[0] if type_names else metatype.replace("Literal", "Occurred Literal")
+        return f"{value} «{metatype}»"
     elif metatype == "MultiplicityRange":
         return get_label_for_multiplicity(
             multiplicity=element,
@@ -44,10 +44,12 @@ def get_label(element: dict, all_elements: dict) -> str:
     else:
         return "blank"
 
+
 def get_label_for_id(
     element_id: str, all_elements: dict
 ) -> str:
     return get_label(all_elements[element_id], all_elements)
+
 
 def get_label_for_expression(
     expression: dict,

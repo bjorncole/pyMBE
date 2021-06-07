@@ -135,7 +135,7 @@ def random_generator_phase_1_multiplicities(
     abstracts = [
         node
         for node in ptg.nodes
-        if lpg.nodes[node].get("isAbstract")
+        if lpg.nodes.get(node, {}).get("isAbstract")
     ]
 
     # find the maximal amount of types directly based on instances
