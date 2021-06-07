@@ -51,6 +51,11 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):
         kw=dict(default_valud=1, min=1, max=4),
     )
 
+    elk_layout: ipyelk.nx.XELKTypedLayout = trt.Instance(
+        ipyelk.nx.XELKTypedLayout,
+        kw=dict(selected_index=None),  # makes layout start collapsed
+    )
+
     max_type_selector_rows: int = trt.Int(default_value=10, min=5)
 
     @trt.default("update_diagram")
@@ -159,3 +164,20 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):
         with self.hold_trait_notifications():
             self.toolbar_accordion = accordion
             self.toolbar_buttons = buttons
+
+    def _make_command_palette(self) -> ipyw.VBox:
+        titles, widgets = zip(*self.toolbar_accordion.items())
+        titles = {
+            idx: title
+            for idx, title in enumerate(titles)
+        }
+        return ipyw.VBox(
+            [
+                ipyw.HBox(self.toolbar_buttons),
+                ipyw.Accordion(
+                    _titles=titles,
+                    children=widgets,
+                    selected_index=None,
+                ),
+            ],
+        )

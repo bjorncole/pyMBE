@@ -305,4 +305,9 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
             new_selections = self.id_mapper.get(*selections)
         return tuple(new_selections)
 
-
+    @trt.observe("elk_layout")
+    def _update_observers_for_layout(self, change: trt.Bunch):
+        if change.old not in (None, trt.Undefined):
+            change.old.unobserve(self._element_type_opt_change)
+            del change.old
+        change.new.observe(self._element_type_opt_change, "value")
