@@ -83,6 +83,7 @@ Part Definition Graph:
   included_node_types:
   - PartDefinition
   - AttributeDefinition
+  - PortDefinition
   included_edge_types:
   - Superclassing
   reversed_edge_types:
@@ -97,6 +98,8 @@ Part Featuring Graph:
   - DataType
   - AttributeDefinition
   - AttributeUsage
+  - PortDefinition
+  - PortUsage
   included_edge_types:
   - FeatureMembership
 
@@ -109,6 +112,8 @@ Part Typing Graph:
   - DataType
   - AttributeDefinition
   - AttributeUsage
+  - PortDefinition
+  - PortUsage
   included_edge_types:
   - FeatureTyping
 

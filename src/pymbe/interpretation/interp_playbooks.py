@@ -147,7 +147,7 @@ def random_generator_phase_1_multiplicities(
 
     type_multiplicities = {}
     for pt in ptg.nodes:
-        if lpg.nodes[pt]['@type'] in ('PartDefinition', 'DataType', 'AttributeDefinition'):
+        if lpg.nodes[pt]['@type'] in ('PartDefinition', 'DataType', 'AttributeDefinition', 'PortDefinition'):
             mult = roll_up_multiplicity_for_type(
                 lpg,
                 lpg.nodes[pt],
@@ -261,11 +261,12 @@ def random_generator_playbook_phase_3(
                 continue
             # sample set will be the last element in the sequence for classifiers
             feature = all_elements[feature_id]
-            if feature["@type"] in ("PartUsage", "AttributeUsage"):
+            if feature["@type"] in ("PartUsage", "AttributeUsage", "PortUsage"):
                 if feature_id in list(ptg.nodes):
                     types = list(ptg.successors(feature_id))
                 else:
-                    raise NotImplementedError("Cannot handle untyped features!")
+                    raise NotImplementedError("Cannot handle untyped features! Tried on " +
+                                              all_elements[feature_id]["name"])
 
                 if len(types) > 1:
                     raise NotImplementedError("Cannot handle features with multiple types yet!")
@@ -461,14 +462,14 @@ def validate_working_data(
         try:
             nr_type = nr['@type']
         except KeyError:
-            print("No type found in " + str(nr))
+            print("No type found in " + str(nr) + ", id = " + nr_key)
             return False
         except TypeError:
             print("Expecting dict of model element data, got string = " + nr)
         try:
             nr_id = nr["@id"]
         except KeyError:
-            print("No type found in " + str(nr))
+            print("No id found in " + str(nr) + ", id = " + nr_key)
             return False
 
     return True
