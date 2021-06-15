@@ -54,26 +54,29 @@ def roll_up_multiplicity(
 
     all_elements = lpg.nodes
 
-    corrected_mult = 1
+    total_mult = 1
     for part_tree_root in banded_roots:
         try:
-            part_path = nx.shortest_path(
+            #part_path = nx.shortest_path(
+            part_paths = nx.all_simple_paths(
                 banded_featuring_graph,
                 source=feature['@id'],
                 target=part_tree_root,
             )
-            # TODO: check that the path actually exists
-            corrected_mult = math.prod([
-                feature_multiplicity(all_elements[node], all_elements, bound)
-                for node in part_path
-            ])
+            for part_path in part_paths:
+                # TODO: check that the path actually exists
+                corrected_mult = math.prod([
+                    feature_multiplicity(all_elements[node], all_elements, bound)
+                    for node in part_path
+                ])
+                total_mult += corrected_mult
         except nx.NetworkXNoPath:
             pass
         except nx.NodeNotFound:
             # nothing to roll up, so just use own multiplicity
-            corrected_mult = feature_multiplicity(feature, all_elements, bound)
+            total_mult = feature_multiplicity(feature, all_elements, bound)
 
-    return corrected_mult
+    return total_mult
 
 def roll_up_multiplicity_for_type(
     lpg: SysML2LabeledPropertyGraph,
@@ -81,7 +84,7 @@ def roll_up_multiplicity_for_type(
     bound: str
 ) -> int:
 
-    rdg = lpg.get_projection("Redefinition Graph")
+    rdg = lpg.get_projection("Redefinition and Subsetting Graph")
     # FIXME: Need projections to work correctly
 
     to_remove = []
@@ -97,7 +100,8 @@ def roll_up_multiplicity_for_type(
     ptg = lpg.get_projection("Part Typing Graph")
 
     if typ['@id'] in ptg.nodes:
-        feat_ids = ptg.predecessors(typ['@id'])
+        feat_ids = get_features_typed_by_type(lpg, typ['@id'])
+        #feat_ids = ptg.predecessors(typ['@id'])
         for feat_id in feat_ids:
             running_total += roll_up_multiplicity(
                 lpg,
@@ -115,3 +119,53 @@ def roll_up_multiplicity_for_type(
         return running_total
     else:
         return 0
+
+def get_types_for_feature(
+    lpg: SysML2LabeledPropertyGraph,
+    feature_id: str
+) -> list:
+
+    ptg = lpg.get_projection("Part Typing Graph")
+    rdg = lpg.get_projection("Redefinition and Subsetting Graph")
+
+    # approach is to see source and target ends of feature typing and then see if there is a redefinition
+    # path back to the requested feature
+
+    types = []
+
+    if feature_id in list(ptg.nodes):
+        types = list(ptg.successors(feature_id))
+    elif feature_id in list(rdg.nodes):
+        feature_neighbors = list(nx.dfs_preorder_nodes(rdg, feature_id))
+        for neighbor in feature_neighbors:
+            # if the redefinitions along the way point to types, include those types
+            if neighbor in list(ptg.nodes):
+                types += list(ptg.successors(neighbor))
+
+    return types
+
+def get_features_typed_by_type(
+    lpg: SysML2LabeledPropertyGraph,
+    type_id: str
+) -> list:
+
+    ptg = lpg.get_projection("Part Typing Graph")
+    rdg = lpg.get_projection("Redefinition and Subsetting Graph")
+
+    # approach is to look at clusters of redefinitions and see if the most redefined connects to the type
+
+    features = []
+
+    if type_id in list(ptg.nodes):
+        features = list(ptg.predecessors(type_id))
+    elif type_id in list(rdg.nodes):
+        for comp in nx.connected_components(rdg.to_undirected()):
+            connected_sub = nx.subgraph(rdg, list(comp))
+            roots = [node for node in connected_sub.nodes if connected_sub.out_degree(node) == 0]
+            for root in roots:
+                if root in list(ptg.nodes):
+                    for item in list(comp):
+                        if item not in features:
+                            features += item
+
+    return features

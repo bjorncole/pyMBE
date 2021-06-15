@@ -76,7 +76,7 @@ def random_generator_playbook(
 
     # PHASE 3: Expand the dictionaries out into feature sequences by pulling from instances developed here
 
-    random_generator_playbook_phase_3(feature_sequences, all_elements, ptg, instances_dict)
+    random_generator_playbook_phase_3(feature_sequences, all_elements, lpg, ptg, instances_dict)
 
     # PHASE 4: Expand sequences to support computations
 
@@ -147,7 +147,7 @@ def random_generator_phase_1_multiplicities(
 
     type_multiplicities = {}
     for pt in ptg.nodes:
-        if lpg.nodes[pt]['@type'] in ('PartDefinition', 'DataType', 'AttributeDefinition'):
+        if lpg.nodes[pt]['@type'] in ('PartDefinition', 'DataType', 'AttributeDefinition', 'PortDefinition'):
             mult = roll_up_multiplicity_for_type(
                 lpg,
                 lpg.nodes[pt],
@@ -246,6 +246,7 @@ def random_generator_playbook_phase_2_unconnected(
 def random_generator_playbook_phase_3(
     feature_sequences: list,
     all_elements: dict,
+    lpg: SysML2LabeledPropertyGraph,
     ptg: nx.DiGraph,
     instances_dict: dict
 ) -> None:
@@ -261,13 +262,13 @@ def random_generator_playbook_phase_3(
                 continue
             # sample set will be the last element in the sequence for classifiers
             feature = all_elements[feature_id]
-            if feature["@type"] in ("PartUsage", "AttributeUsage"):
-                if feature_id in list(ptg.nodes):
-                    types = list(ptg.successors(feature_id))
-                else:
-                    raise NotImplementedError("Cannot handle untyped features!")
+            if feature["@type"] in ("PartUsage", "AttributeUsage", "PortUsage"):
+                types = get_types_for_feature(lpg, feature['@id'])
 
-                if len(types) > 1:
+                if len(types) == 0:
+                    raise NotImplementedError("Cannot handle untyped features! Tried on " +
+                                            get_label_for_id(feature_id, all_elements), " id = " + feature_id)
+                elif len(types) > 1:
                     raise NotImplementedError("Cannot handle features with multiple types yet!")
                 else:
                     typ = types[0]
@@ -461,14 +462,14 @@ def validate_working_data(
         try:
             nr_type = nr['@type']
         except KeyError:
-            print("No type found in " + str(nr))
+            print("No type found in " + str(nr) + ", id = " + nr_key)
             return False
         except TypeError:
             print("Expecting dict of model element data, got string = " + nr)
         try:
             nr_id = nr["@id"]
         except KeyError:
-            print("No type found in " + str(nr))
+            print("No id found in " + str(nr) + ", id = " + nr_key)
             return False
 
     return True
