@@ -98,6 +98,7 @@ Part Featuring Graph:
   - DataType
   - AttributeDefinition
   - AttributeUsage
+  - ConjugatedPortDefinition
   - PortDefinition
   - PortUsage
   included_edge_types:
@@ -112,13 +113,37 @@ Part Typing Graph:
   - DataType
   - AttributeDefinition
   - AttributeUsage
+  - ConjugatedPortDefinition
   - PortDefinition
   - PortUsage
   included_edge_types:
   - FeatureTyping
+
+Part Typing and Redefinition Graph:
+  description: |
+    Generate library settings for a graph that just looks at part definition and usage typing
+  included_node_types:
+  - PartDefinition
+  - PartUsage
+  - DataType
+  - AttributeDefinition
+  - AttributeUsage
+  - ConjugatedPortDefinition
+  - PortDefinition
+  - PortUsage
+  included_edge_types:
+  - FeatureTyping
+  - Redefinition
 
 Redefinition Graph:
   description: |
     Generate a graph that covers redefinition relationships between features
   included_edge_types:
   - Redefinition
+
+Redefinition and Subsetting Graph:
+  description: |
+    Generate a graph that covers redefinition relationships between features
+  included_edge_types:
+  - Redefinition
+  - Subsetting
