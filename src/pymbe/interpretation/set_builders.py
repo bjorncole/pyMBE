@@ -1,8 +1,8 @@
 import itertools
 import random
 
-from .interpretation import Instance, ValueHolder, LiveExpressionNode
 from ..label import get_label
+from .interpretation import Instance, LiveExpressionNode, ValueHolder
 
 # Adaptations to simplify dictionary production
 
@@ -14,6 +14,8 @@ from ..label import get_label
 
 # In both cases, use a reference sequence to find the minimal length intepretations
 #### Both classifiers and features can be made this way, just difference of lengths
+
+VALUE_HOLDER_TYPES = ('AttributeDefinition', 'AttributeUsage', 'DataType')
 
 
 def create_set_with_new_instances(
@@ -35,24 +37,22 @@ def create_set_with_new_instances(
 
     for index, m1_type in enumerate(sequence_template):
         new_list = []
+        m1_metatype = m1_type["@type"]
+        m1_typename = m1_type["name"]
         for m in range(0, quantities[index]):
-            if m1_type['@type'] not in ('AttributeDefinition', 'AttributeUsage', 'DataType'):
+            if m1_metatype in VALUE_HOLDER_TYPES:
                 new_list.append(
-                    Instance(
-                        m1_type['name'],
+                    ValueHolder(
+                        [],
+                        m1_typename,
+                        None,
+                        m1_type,
                         m,
-                        name_hints
                     )
                 )
             else:
                 new_list.append(
-                    ValueHolder(
-                        [],
-                        m1_type['name'],
-                        None,
-                        m1_type,
-                        m
-                    )
+                    Instance(m1_typename, m, name_hints)
                 )
         individual_lists.append(new_list)
 
@@ -77,7 +77,7 @@ def extend_sequences_by_sampling(
     sample_set: list,
     fallback_to_generate: bool,
     fallback_type: dict,
-    all_elements: dict
+    all_elements: dict,
 ) -> list:
     """
     Extends a set of sequences by random numbers of instances drawn from a sample set
@@ -151,7 +151,7 @@ def extend_sequences_by_sampling(
 def extend_sequences_with_new_expr(
     previous_sequences: list,
     expr_string: str,
-    expr: dict
+    expr: dict,
 ) -> list:
 
     new_sequences = []
@@ -175,7 +175,7 @@ def extend_sequences_with_new_expr(
 def extend_sequences_with_new_value_holder(
     previous_sequences: list,
     base_name: str,
-    base_ele: dict
+    base_ele: dict,
 ) -> list:
 
     new_sequences = []
