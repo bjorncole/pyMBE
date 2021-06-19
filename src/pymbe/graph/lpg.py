@@ -143,22 +143,17 @@ class SysML2LabeledPropertyGraph(Base):
             for element_id, element in elements.items()
             if "relatedElement" in element
         }
-        # Connectors will appear as related items, which will cause them to show up in the graph as nodes at this point
-        # Correct this by added them as nodes also
-        related_side_0_element_ids = [
-            element["relatedElement"][0]['@id']
-            for element_id, element in elements.items()
+        # Connectors will appear as related items, which will cause them to show up in
+        # the graph as nodes at this point, corrected this by adding them as nodes also
+        related_element_ids = {
+            releated_element['@id']
+            for element in elements.values()
+            for releated_element in element["relatedElement"]
             if "relatedElement" in element
-        ]
-        related_side_1_element_ids = [
-            element["relatedElement"][1]['@id']
-            for element_id, element in elements.items()
-            if "relatedElement" in element
-        ]
-        related_elements = set(related_side_0_element_ids).union(related_side_1_element_ids)
+        }
         non_relationship_element_ids = set(elements).difference(
             relationship_element_ids
-        ).union(related_elements)
+        ).union(related_element_ids)
 
         relationships = [
             elements[element_id]
@@ -184,13 +179,11 @@ class SysML2LabeledPropertyGraph(Base):
             [
                 relation["relatedElement"][0]["@id"],  # source node (str id)
                 relation["relatedElement"][1]["@id"],  # target node (str id)
-                relation["@type"],                     # edge type (str name)
+                relation["@type"],                     # edge metatype (str name)
                 relation,                              # edge data (dict)
             ]
             for relation in relationships
         ] + new_edges)
-
-
 
         with self.hold_trait_notifications():
             self.nodes = dict(graph.nodes)
