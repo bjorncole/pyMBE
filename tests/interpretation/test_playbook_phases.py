@@ -12,17 +12,14 @@ from ..data_loader import kerbal_model_loaded_client
 # there must be a way to reuse from other modules ..
 @pytest.fixture
 def kerbal_client() -> SysML2Client:
-
     return kerbal_model_loaded_client()
 
 
 @pytest.fixture
 def kerbal_ids_by_type(kerbal_client) -> dict:
-
     ids_dict = {}
 
     all_elements = kerbal_client.elements_by_id
-
     for ele_id, ele in all_elements.items():
         if ele["@type"] in ids_dict:
             ids_dict[ele["@type"]].append(ele_id)
@@ -57,7 +54,7 @@ def random_stage_1_instances(kerbal_client, kerbal_lpg) -> dict:
         new_instances = create_set_with_new_instances(
             sequence_template=[kerbal_lpg.nodes[type_id]],
             quantities=[number],
-            name_hints=[],
+            name_hints={},
         )
 
         instances_dict.update({type_id: new_instances})
@@ -300,13 +297,13 @@ def test_instance_sampling(kerbal_lpg):
     solid_stage_instances = create_set_with_new_instances(
         sequence_template=[kerbal_lpg.nodes[solid_booster_id]],
         quantities=[5],
-        name_hints=[],
+        name_hints={},
     )
 
     solid_booster_instances = create_set_with_new_instances(
         sequence_template=[kerbal_lpg.nodes[solid_booster_id]],
         quantities=[40],
-        name_hints=[],
+        name_hints={},
     )
 
     booster_feature_instances = extend_sequences_by_sampling(

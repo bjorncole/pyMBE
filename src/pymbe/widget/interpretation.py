@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import ipywidgets as ipyw
 import traitlets as trt
 
@@ -13,7 +15,7 @@ class Interpreter(ipyw.VBox, BaseWidget):
         "Random Generator": random_generator_playbook,
     }
 
-    description = trt.Unicode("Interpretation").tag(sync=True)
+    description: str = trt.Unicode("Interpretation").tag(sync=True)
     instances: dict = trt.Dict()
     instances_box: ipyw.VBox = trt.Instance(ipyw.VBox, args=())
     lpg: SysML2LabeledPropertyGraph = trt.Instance(
@@ -38,10 +40,12 @@ class Interpreter(ipyw.VBox, BaseWidget):
 
     @trt.default("instances")
     def _make_instances(self):
-        return random_generator_playbook(
-            lpg=self.lpg,
-            name_hints=dict(),
-        )
+        with self.hold_trait_notifications():
+            new_lpg = deepcopy(self.lpg)
+            return random_generator_playbook(
+                lpg=new_lpg,
+                name_hints={},
+            )
 
     @trt.default("update")
     def _make_update_button(self):
@@ -111,7 +115,7 @@ class Interpreter(ipyw.VBox, BaseWidget):
             self.update.disabled = True
             self.instances = self.strategy_selector.value(
                 lpg=self.lpg,
-                name_hints=dict(),
+                name_hints={},
             )
             self._on_updated_selected()
         except Exception as exc:
