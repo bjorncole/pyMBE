@@ -95,7 +95,7 @@ def random_generator_playbook(
 
 def random_generator_phase_0_interpreting_edges(
     client: SysML2Client,
-    lpg: SysML2LabeledPropertyGraph
+    lpg: SysML2LabeledPropertyGraph,
 ):
     new_edges = [
         (source, target, metatype, {
@@ -134,7 +134,7 @@ def random_generator_phase_0_interpreting_edges(
 def random_generator_phase_1_multiplicities(
     lpg: SysML2LabeledPropertyGraph,
     ptg: nx.DiGraph,
-    scg: nx.DiGraph
+    scg: nx.DiGraph,
 ) -> dict:
     # will sub-divide abstract multiplicity
     abstracts = [
@@ -179,7 +179,7 @@ def random_generator_phase_1_multiplicities(
 def random_generator_playbook_phase_1_singletons(
     lpg: SysML2LabeledPropertyGraph,
     scg: nx.DiGraph,
-    instances_dict: dict
+    instances_dict: dict,
 ) -> None:
 
     all_elements = lpg.nodes
@@ -201,7 +201,7 @@ def random_generator_playbook_phase_1_singletons(
 def random_generator_playbook_phase_2_rollup(
     lpg: SysML2LabeledPropertyGraph,
     scg: nx.DiGraph,
-    instances_dict: dict
+    instances_dict: dict,
 ) -> None:
 
     roots = [node for node in scg.nodes if scg.in_degree(node) == 0]
@@ -223,7 +223,7 @@ def random_generator_playbook_phase_2_rollup(
 
 def random_generator_playbook_phase_2_unconnected(
     all_elements: dict,
-    instances_dict: dict
+    instances_dict: dict,
 ) -> None:
 
     finishing_list = [
@@ -248,7 +248,7 @@ def random_generator_playbook_phase_3(
     all_elements: dict,
     lpg: SysML2LabeledPropertyGraph,
     ptg: nx.DiGraph,
-    instances_dict: dict
+    instances_dict: dict,
 ) -> None:
     already_drawn = {}
     last_sequence = []
@@ -266,8 +266,11 @@ def random_generator_playbook_phase_3(
                 types = get_types_for_feature(lpg, feature['@id'])
 
                 if len(types) == 0:
-                    raise NotImplementedError("Cannot handle untyped features! Tried on " +
-                                            get_label_for_id(feature_id, all_elements), " id = " + feature_id)
+                    raise NotImplementedError(
+                        "Cannot handle untyped features! Tried on "
+                        f"{get_label_for_id(feature_id, all_elements)}, "
+                        f"id = {feature_id}"
+                    )
                 elif len(types) > 1:
                     raise NotImplementedError("Cannot handle features with multiple types yet!")
                 else:
@@ -313,7 +316,7 @@ def random_generator_playbook_phase_3(
 def random_generator_playbook_phase_4(
     expr_sequences: list,
     lpg: SysML2LabeledPropertyGraph,
-    instances_dict: dict
+    instances_dict: dict,
 ) -> None:
 
     all_elements = lpg.nodes
@@ -371,9 +374,7 @@ def random_generator_playbook_phase_4(
                 instances_dict.update({feature_id: new_sequences})
 
 
-def build_sequence_templates(
-    lpg: SysML2LabeledPropertyGraph
-) -> list:
+def build_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list:
     part_featuring_graph = lpg.get_projection("Part Featuring Graph")
     sorted_feature_groups = []
     for comp in nx.connected_components(part_featuring_graph.to_undirected()):
@@ -399,7 +400,7 @@ def generate_superset_instances(
         part_def_graph: nx.MultiDiGraph,
         superset_node: str,
         visited_nodes: set,
-        instances_dict: dict
+        instances_dict: dict,
 ) -> dict:
     """
     Take specific classifiers and push the calculated instances to more general classifiers
@@ -447,9 +448,7 @@ def build_expression_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list
 
     return sorted_feature_groups
 
-def validate_working_data(
-    lpg: SysML2LabeledPropertyGraph
-) -> bool:
+def validate_working_data(lpg: SysML2LabeledPropertyGraph) -> bool:
     """
     Helper method to check that the user model is valid for instance generation
     :return: A Boolean indicating that the user model is ready to be interpreted
