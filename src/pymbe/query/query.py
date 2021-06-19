@@ -57,7 +57,6 @@ def roll_up_multiplicity(
     total_mult = 1
     for part_tree_root in banded_roots:
         try:
-            #part_path = nx.shortest_path(
             part_paths = nx.all_simple_paths(
                 banded_featuring_graph,
                 source=feature['@id'],
@@ -81,7 +80,7 @@ def roll_up_multiplicity(
 def roll_up_multiplicity_for_type(
     lpg: SysML2LabeledPropertyGraph,
     typ: dict,
-    bound: str
+    bound: str,
 ) -> int:
 
     rdg = lpg.get_projection("Redefinition and Subsetting Graph")
@@ -122,7 +121,7 @@ def roll_up_multiplicity_for_type(
 
 def get_types_for_feature(
     lpg: SysML2LabeledPropertyGraph,
-    feature_id: str
+    feature_id: str,
 ) -> list:
 
     ptg = lpg.get_projection("Part Typing Graph")
@@ -146,7 +145,7 @@ def get_types_for_feature(
 
 def get_features_typed_by_type(
     lpg: SysML2LabeledPropertyGraph,
-    type_id: str
+    type_id: str,
 ) -> list:
 
     ptg = lpg.get_projection("Part Typing Graph")
