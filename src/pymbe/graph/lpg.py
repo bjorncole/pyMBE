@@ -146,10 +146,9 @@ class SysML2LabeledPropertyGraph(Base):
         # Connectors will appear as related items, which will cause them to show up in
         # the graph as nodes at this point, corrected this by adding them as nodes also
         related_element_ids = {
-            releated_element['@id']
+            releated_element["@id"]
             for element in elements.values()
-            for releated_element in element["relatedElement"]
-            if "relatedElement" in element
+            for releated_element in element.get("relatedElement", [])
         }
         non_relationship_element_ids = set(elements).difference(
             relationship_element_ids
