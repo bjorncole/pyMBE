@@ -13,48 +13,48 @@ Banded Graph:
     generalization, and feature membership to capture both SysML v1
     and v2 styled composition structures
   included_edge_types:
-  - FeatureMembership
-  - FeatureTyping
-  - Superclassing
+    - FeatureMembership
+    - FeatureTyping
+    - Superclassing
   reversed_edge_types:
-  - FeatureMembership
-  - FeatureTyping
+    - FeatureMembership
+    - FeatureTyping
 
 Expanded Banded Graph:
   description: >
     Generate library settings for a expanded version of banded graph
     to accommodate expression tree relationships
   included_edge_types:
-  - FeatureMembership
-  - FeatureTyping
-  - FeatureValue
-  - ParameterMembership
-  - ReturnParameterMembership
-  - Superclassing
+    - FeatureMembership
+    - FeatureTyping
+    - FeatureValue
+    - ParameterMembership
+    - ReturnParameterMembership
+    - Superclassing
   reversed_edge_types:
-  - FeatureMembership
-  - FeatureTyping
-  - FeatureValue
-  - ParameterMembership
-  - ReturnParameterMembership
+    - FeatureMembership
+    - FeatureTyping
+    - FeatureValue
+    - ParameterMembership
+    - ReturnParameterMembership
 
 Expression Value Graph:
   description: >
     Generate library settings for a expanded version of banded graph
     to accommodate expression tree relationships
   included_node_types:
-  - OperatorExpression
-  - InvocationExpression
-  - FeatureReferenceExpression
-  - Expression
-  - Feature
-  - LiteralReal
-  - LiteralInteger
+    - Expression
+    - Feature
+    - FeatureReferenceExpression
+    - InvocationExpression
+    - LiteralInteger
+    - LiteralReal
+    - OperatorExpression
   included_edge_types:
-  - FeatureMembership
-  - ParameterMembership
-  - ReturnParameterMembership
-  - ResultExpressionMembership
+    - FeatureMembership
+    - ParameterMembership
+    - ResultExpressionMembership
+    - ReturnParameterMembership
 
 Expression Evaluation Graph:
   description: >
@@ -87,71 +87,71 @@ Part Definition Graph:
     Generate library settings for a graph that just looks at
     superclassing and part definitions
   included_node_types:
-  - PartDefinition
-  - AttributeDefinition
-  - PortDefinition
+    - AttributeDefinition
+    - PartDefinition
+    - PortDefinition
   included_edge_types:
-  - Superclassing
+    - Superclassing
   reversed_edge_types:
-  - Superclassing
+    - Superclassing
 
 Part Featuring Graph:
   description: >
     Generate library settings for a graph that just looks at part
     definition and usage
   included_node_types:
-  - PartDefinition
-  - PartUsage
-  - DataType
-  - AttributeDefinition
-  - AttributeUsage
-  - ConjugatedPortDefinition
-  - PortDefinition
-  - PortUsage
+    - AttributeDefinition
+    - AttributeUsage
+    - ConjugatedPortDefinition
+    - DataType
+    - PartDefinition
+    - PartUsage
+    - PortDefinition
+    - PortUsage
   included_edge_types:
-  - FeatureMembership
+    - FeatureMembership
 
 Part Typing Graph:
   description: >
     Generate library settings for a graph that just looks at part
     definition and usage typing
   included_node_types:
-  - PartDefinition
-  - PartUsage
-  - DataType
-  - AttributeDefinition
-  - AttributeUsage
-  - ConjugatedPortDefinition
-  - PortDefinition
-  - PortUsage
+    - AttributeDefinition
+    - AttributeUsage
+    - ConjugatedPortDefinition
+    - DataType
+    - PartDefinition
+    - PartUsage
+    - PortDefinition
+    - PortUsage
   included_edge_types:
-  - FeatureTyping
+    - FeatureTyping
 
 Part Typing and Redefinition Graph:
   description: |
     Generate library settings for a graph that just looks at part definition and usage typing
   included_node_types:
-  - PartDefinition
-  - PartUsage
-  - DataType
-  - AttributeDefinition
-  - AttributeUsage
-  - ConjugatedPortDefinition
-  - PortDefinition
-  - PortUsage
+    - AttributeDefinition
+    - AttributeUsage
+    - ConjugatedPortDefinition
+    - DataType
+    - PartDefinition
+    - PartUsage
+    - PortDefinition
+    - PortUsage
   included_edge_types:
-  - FeatureTyping
-  - Redefinition
+    - FeatureTyping
+    - Redefinition
 
 Redefinition Graph:
   description: |
     Generate a graph that covers redefinition relationships between features
   included_edge_types:
-  - Redefinition
+    - Redefinition
 
 Redefinition and Subsetting Graph:
   description: |
     Generate a graph that covers redefinition relationships between features
   included_edge_types:
-  - Redefinition
-  - Subsetting
+    - Redefinition
+    - Subsetting
