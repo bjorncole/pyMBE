@@ -139,7 +139,8 @@ def kerbal_random_stage_2_complete(kerbal_lpg, kerbal_random_stage_1_complete) -
 
 @pytest.fixture
 def kerbal_random_stage_3_complete(kerbal_lpg, kerbal_random_stage_2_complete) -> dict:
-    ptg = kerbal_lpg.get_projection("Part Typing Graph")
+    # TODO: Ask Bjorn if we need to bring this back, the phase 3 function only needed the LPG
+    # ptg = kerbal_lpg.get_projection("Part Typing Graph")
     all_elements = kerbal_lpg.nodes
     feature_sequences = build_sequence_templates(lpg=kerbal_lpg)
 
@@ -164,3 +165,19 @@ def kerbal_random_stage_4_complete(kerbal_lpg, kerbal_random_stage_3_complete) -
     )
 
     return kerbal_random_stage_3_complete
+
+
+@pytest.fixture
+def simple_parts_client() -> SysML2Client:
+
+    return simple_parts_model_loaded_client()
+
+
+@pytest.fixture
+def simple_parts_lpg() -> SysML2LabeledPropertyGraph:
+    new_lpg = SysML2LabeledPropertyGraph()
+    client = simple_parts_model_loaded_client()
+
+    new_lpg.update(client.elements_by_id, False)
+
+    return new_lpg

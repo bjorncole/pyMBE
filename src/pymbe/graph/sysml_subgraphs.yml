@@ -20,6 +20,14 @@ Banded Graph:
     - FeatureMembership
     - FeatureTyping
 
+Connection Graph:
+  description: |
+    Generate library settings for a graph focused on connecting model elements
+  included_edge_types:
+  - ConnectionUsageEnd
+  - InterfaceUsageEnd
+  - EndFeatureMembership
+
 Expanded Banded Graph:
   description: >
     Generate library settings for a expanded version of banded graph

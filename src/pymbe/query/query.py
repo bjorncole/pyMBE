@@ -88,6 +88,7 @@ def roll_up_multiplicity_for_type(
 ) -> int:
 
     rdg = lpg.get_projection("Redefinition and Subsetting Graph")
+    cug = lpg.get_projection("Connection Graph")
     # FIXME: Need projections to work correctly
 
     to_remove = []
@@ -111,7 +112,7 @@ def roll_up_multiplicity_for_type(
                 lpg.nodes[feat_id],
                 bound
             )
-            if feat_id in rdg:
+            if feat_id in rdg and feat_id not in cug:
                 redef_ids = rdg.predecessors(feat_id)
                 for redef_id in redef_ids:
                     running_total += roll_up_multiplicity(

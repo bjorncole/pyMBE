@@ -100,19 +100,23 @@ def test_phase_2_instance_creation(kerbal_lpg, kerbal_random_stage_1_complete):
     assert len(kerbal_random_stage_1_complete[krp_id]) == 272
 
 
-def test_phase_3_instance_sampling(kerbal_random_stage_3_complete):
+def test_phase_3_instance_sampling(kerbal_lpg, kerbal_random_stage_3_complete):
     coupler_usage_id = "3a609e5a-3e6f-4eb4-97ff-5a32b23122bf"
+    sep_force_id = "7f5e38cb-6647-482d-b8fe-5c266d73ab42"
 
     booster_empty_mass_id = "645ee1b3-3cb3-494e-8cb2-ec32e377c9f6"
     booster_isp_id = "2b1351f4-a0fb-470b-bb22-1b924dde38f7"
     rt_10_isp_id = "eb09ff1c-1791-4571-8016-c0534906faa4"
 
     assert coupler_usage_id in kerbal_random_stage_3_complete
-    try:
-        assert len(kerbal_random_stage_3_complete[coupler_usage_id]) == 0 or \
-            len(kerbal_random_stage_3_complete[coupler_usage_id][0]) == 3
-    except AssertionError:
-        warn("Failed coupler test for Random Stage 3 Complete fixture")
+
+    if len(kerbal_random_stage_3_complete[coupler_usage_id]) > 0:
+        if len(kerbal_random_stage_3_complete[sep_force_id][0]) == 3:
+            print(kerbal_random_stage_3_complete[sep_force_id][0])
+
+    # not sure what's up with the varying lengths to the sep force sequences
+    assert len(kerbal_random_stage_3_complete[coupler_usage_id]) == 0 or \
+           len(kerbal_random_stage_3_complete[sep_force_id][0]) == 4
 
     assert len(kerbal_random_stage_3_complete[booster_isp_id]) > 0
     assert len(kerbal_random_stage_3_complete[rt_10_isp_id]) > 0
