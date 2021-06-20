@@ -4,7 +4,7 @@ class Instance:
     Sequences of instances are intended to follow the mathematical base semantics of SysML v2.
     """
     def __init__(self, name, index, pre_bake):
-        self.name = shorten_name(name, shorten_pre_bake=pre_bake) + '#' + str(index)
+        self.name = f"{shorten_name(name, shorten_pre_bake=pre_bake)}#{index}"
 
     def __repr__(self):
         return self.name
@@ -18,21 +18,19 @@ class ValueHolder:
     """
     def __init__(self, path, name, value, base_att, index):
         # path is list of instance references
-        self.holder_string = ''
+        self.holder_string = ""
         for indx, step in enumerate(path):
             if indx == 0:
                 self.holder_string = str(step)
             else:
-                self.holder_string = self.holder_string + '.' + str(step)
-        self.holder_string = self.holder_string + '.' + name + '#' + str(index)
+                self.holder_string = f"{self.holder_string}.{step}"
+        self.holder_string = f"{self.holder_string}.{name}#{index}"
         self.value = value
         self.base_att = base_att
 
     def __repr__(self):
-        if self.value is not None:
-            return self.holder_string + ' (' + str(self.value) + ')'
-        else:
-            return self.holder_string + ' (unset)'
+        value = self.value if self.value is not None else "unset"
+        return f"{self.holder_string} ({value})"
 
 
 class LiveExpressionNode:
@@ -51,27 +49,28 @@ class LiveExpressionNode:
         return self.holder_string
 
 
-def shorten_name(name, shorten_pre_bake=None):
+def shorten_name(name: str, shorten_pre_bake: dict = None) -> str:
     """
     Helper to get short names for reporting many instances
+
     :param name: Existing name to shorten
     :param shorten_pre_bake: A pre-computed dictionary mapping long names to custom short names
     :return: a shortened version of the input name if the input is longer than five characters
     """
     short_name = ""
+    shorten_pre_bake = shorten_pre_bake or {}
     if not name:
         return "Unnamed"
     if len(name) > 5:
-        if shorten_pre_bake is not None:
-            if name in shorten_pre_bake:
-                return shorten_pre_bake[name]
-        space_place = name.find(' ')
+        if name in shorten_pre_bake:
+            return shorten_pre_bake[name]
+        space_place = name.find(" ")
         if space_place > -1:
             short_name = short_name + name[0]
             short_name = short_name + name[space_place + 1]
-            next_space = name.find(' ', space_place + 1)
+            next_space = name.find(" ", space_place + 1)
             while next_space > -1:
                 short_name = short_name + name[next_space + 1]
-                next_space = name.find(' ', next_space + 1)
+                next_space = name.find(" ", next_space + 1)
             return short_name
     return name

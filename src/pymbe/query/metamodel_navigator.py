@@ -14,7 +14,10 @@ def feature_multiplicity(
     if multiplicity_id:
         bound += "Bound"
         multiplicity = all_elements[multiplicity_id]
-        if "@id" in multiplicity[bound]:
+        # when a specific multiplicity is specified, lower is None, upper is the number
+        if bound == "lowerBound" and multiplicity[bound] is None:
+            return all_elements[multiplicity["upperBound"]["@id"]]["value"]
+        elif "@id" in multiplicity[bound]:
             return all_elements[multiplicity[bound]["@id"]]["value"]
 
     return 1

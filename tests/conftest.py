@@ -1,14 +1,182 @@
-import json
 from pathlib import Path
+
+import traitlets as trt
 
 import pytest
 
+import pymbe
+from pymbe.client import SysML2Client
+from pymbe.graph import SysML2LabeledPropertyGraph
+from pymbe.interpretation.interp_playbooks import (
+    build_expression_sequence_templates,
+    build_sequence_templates,
+    create_set_with_new_instances,
+    random_generator_phase_0_interpreting_edges,
+    random_generator_phase_1_multiplicities,
+    random_generator_playbook_phase_1_singletons,
+    random_generator_playbook_phase_2_unconnected,
+    random_generator_playbook_phase_2_rollup,
+    random_generator_playbook_phase_3,
+    random_generator_playbook_phase_4,
+)
+
+
+PYMBE_ROOT = Path(pymbe.__file__).parent
+TESTS_ROOT = Path(__file__).parent
+FIXTURES = TESTS_ROOT / "fixtures"
+
+
+def get_client(filename: str) -> SysML2Client:
+    if not filename.endswith(".json"):
+        filename += ".json"
+
+    json_file = FIXTURES / filename
+    if not json_file.exists():
+        fixtures_exists = FIXTURES.exists()
+        contents = ""
+        if fixtures_exists:
+            contents = (
+                "\nContents:\n" +
+                "\n".join(map(str, FIXTURES.glob("*")))
+            )
+        raise ValueError(
+            f"Could not load: '{json_file.absolute()}'!\n"
+            "Did you forget to run git submodules? If so, run:\n"
+            "  git submodule update --init\n"
+            f"pyMBE is here: {PYMBE_ROOT.absolute()}\n"
+            f"{TESTS_ROOT} exists: {TESTS_ROOT.exists()}\n"
+            f"{FIXTURES} exists: {fixtures_exists}"
+            + contents
+        )
+
+    helper_client = SysML2Client()
+    helper_client._load_from_file(json_file)
+
+    return helper_client
+
+
+def kerbal_model_loaded_client() -> SysML2Client:
+    return get_client("Kerbal")
+
+
+def simple_parts_model_loaded_client() -> SysML2Client:
+    return get_client("Simple Parts Model")
+
 
 @pytest.fixture
-def kerbal_elements():
-    return load_json_fixture("Kerbal")
+def kerbal_client() -> SysML2Client:
+    return kerbal_model_loaded_client()
 
 
-def load_json_fixture(name: str) -> dict:
-    here = Path(__file__)
-    return json.loads((here /"fixtures" / f"{name}.json").read_text())
+@pytest.fixture
+def kerbal_ids_by_type(kerbal_client) -> dict:
+    ids_dict = {}
+
+    all_elements = kerbal_client.elements_by_id
+
+    for ele_id, ele in all_elements.items():
+        if ele["@type"] in ids_dict:
+            ids_dict[ele["@type"]].append(ele_id)
+        else:
+            ids_dict.update({ele["@type"]: [ele_id]})
+
+    return ids_dict
+
+
+@pytest.fixture
+def kerbal_lpg() -> SysML2LabeledPropertyGraph:
+    new_lpg = SysML2LabeledPropertyGraph()
+    client = kerbal_model_loaded_client()
+    trt.link(
+        (client, "elements_by_id"),
+        (new_lpg, "elements_by_id"),
+    )
+    return new_lpg
+
+
+@pytest.fixture
+def kerbal_random_stage_1_instances(kerbal_lpg) -> dict:
+    ptg = kerbal_lpg.get_projection("Part Typing Graph")
+    scg = kerbal_lpg.get_projection("Part Definition Graph")
+
+    random_generator_phase_0_interpreting_edges(kerbal_lpg)
+
+    full_multiplicities = random_generator_phase_1_multiplicities(kerbal_lpg, ptg, scg)
+
+    return {
+        type_id: create_set_with_new_instances(
+            sequence_template=[kerbal_lpg.nodes[type_id]],
+            quantities=[number],
+        )
+        for type_id, number in full_multiplicities.items()
+    }
+
+
+@pytest.fixture
+def kerbal_random_stage_1_complete(kerbal_lpg, kerbal_random_stage_1_instances) -> dict:
+    scg = kerbal_lpg.get_projection("Part Definition Graph")
+
+    random_generator_playbook_phase_1_singletons(
+        kerbal_lpg,
+        scg,
+        kerbal_random_stage_1_instances,
+    )
+
+    return kerbal_random_stage_1_instances
+
+
+@pytest.fixture
+def kerbal_random_stage_2_complete(kerbal_lpg, kerbal_random_stage_1_complete) -> dict:
+    scg = kerbal_lpg.get_projection("Part Definition Graph")
+
+    random_generator_playbook_phase_2_rollup(scg, kerbal_random_stage_1_complete)
+
+    random_generator_playbook_phase_2_unconnected(kerbal_lpg.nodes, kerbal_random_stage_1_complete)
+
+    return kerbal_random_stage_1_complete
+
+
+@pytest.fixture
+def kerbal_random_stage_3_complete(kerbal_lpg, kerbal_random_stage_2_complete) -> dict:
+    # TODO: Ask Bjorn if we need to bring this back, the phase 3 function only needed the LPG
+    # ptg = kerbal_lpg.get_projection("Part Typing Graph")
+    all_elements = kerbal_lpg.nodes
+    feature_sequences = build_sequence_templates(lpg=kerbal_lpg)
+
+    random_generator_playbook_phase_3(
+        feature_sequences,
+        all_elements,
+        kerbal_lpg,
+        kerbal_random_stage_2_complete,
+    )
+
+    return kerbal_random_stage_2_complete
+
+
+@pytest.fixture
+def kerbal_random_stage_4_complete(kerbal_lpg, kerbal_random_stage_3_complete) -> dict:
+    expr_sequences = build_expression_sequence_templates(lpg=kerbal_lpg)
+
+    random_generator_playbook_phase_4(
+        expr_sequences,
+        kerbal_lpg,
+        kerbal_random_stage_3_complete,
+    )
+
+    return kerbal_random_stage_3_complete
+
+
+@pytest.fixture
+def simple_parts_client() -> SysML2Client:
+
+    return simple_parts_model_loaded_client()
+
+
+@pytest.fixture
+def simple_parts_lpg() -> SysML2LabeledPropertyGraph:
+    new_lpg = SysML2LabeledPropertyGraph()
+    client = simple_parts_model_loaded_client()
+
+    new_lpg.update(client.elements_by_id, False)
+
+    return new_lpg

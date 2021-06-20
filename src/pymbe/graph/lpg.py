@@ -4,12 +4,16 @@ from pathlib import Path
 from uuid import uuid4
 from warnings import warn
 
+from ruamel.yaml import YAML
+
 import networkx as nx
-import ruamel.yaml as yaml
 import traitlets as trt
 import typing as ty
 
 from ..core import Base
+
+
+yaml = YAML(typ="unsafe", pure=True)
 
 
 class SysML2LabeledPropertyGraph(Base):
@@ -59,13 +63,12 @@ class SysML2LabeledPropertyGraph(Base):
     def _update_projections(self, *_):
         projections = yaml.load(
             stream=(Path(__file__).parent / "sysml_subgraphs.yml").read_text(),
-            Loader=yaml.RoundTripLoader,
         )
         # TODO: Look into filtering the other projections
         if len(self.graph) > self.max_graph_size:
             projections.pop("Complete", None)
 
-        self.sysml_projections = projections
+        self.sysml_projections = dict(projections)
 
     @staticmethod
     def _make_nx_multi_edge(source, target, metatype, **data):
@@ -138,10 +141,19 @@ class SysML2LabeledPropertyGraph(Base):
             for element_id, element_data in elements.items() if len(element_data.items()) > 0
         }
 
+        # Connectors will appear as related items, which will cause them to show up in
+        # the graph as nodes at this point, corrected this by adding them as nodes also
+        relationship_and_type = {
+            element_id: element
+            for element_id, element in elements.items()
+            if "relatedElement" in element
+            and "isAbstract" in element
+        }
         relationship_element_ids = {
             element_id
             for element_id, element in elements.items()
             if "relatedElement" in element
+            and element_id not in relationship_and_type
         }
         non_relationship_element_ids = set(elements).difference(
             relationship_element_ids
@@ -150,6 +162,23 @@ class SysML2LabeledPropertyGraph(Base):
         relationships = [
             elements[element_id]
             for element_id in relationship_element_ids
+            if element_id not in non_relationship_element_ids
+        ]
+
+        # Add the relationship_type edges we removed from relationships
+        new_edges += [
+            [
+                id_,
+                releated_element["@id"],
+                f"""{element["@type"]}End""",
+                {
+                    "@id": f"{id_}_{index + 1}",
+                    "@type": f"""{element["@type"]}End""",
+                    "RelationshipType": True,
+                },
+            ]
+            for id_, element in relationship_and_type.items()
+            for index, releated_element in enumerate(element["relatedElement"])
         ]
 
         graph = nx.MultiDiGraph()
@@ -166,11 +195,12 @@ class SysML2LabeledPropertyGraph(Base):
                 for id_ in non_relationship_element_ids
             }.items()
         )
+
         graph.add_edges_from([
             [
                 relation["relatedElement"][0]["@id"],  # source node (str id)
                 relation["relatedElement"][1]["@id"],  # target node (str id)
-                relation["@type"],                     # edge type (str name)
+                relation["@type"],                     # edge metatype (str name)
                 relation,                              # edge data (dict)
             ]
             for relation in relationships
