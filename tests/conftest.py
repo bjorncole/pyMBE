@@ -32,13 +32,21 @@ def get_client(filename: str) -> SysML2Client:
 
     json_file = FIXTURES / filename
     if not json_file.exists():
+        fixtures_exists = FIXTURES.exists()
+        contents = ""
+        if fixtures_exists:
+            contents = (
+                "\nContents:\n" +
+                "\n".join(map(str, FIXTURES.glob("*")))
+            )
         raise ValueError(
             f"Could not load: '{json_file.absolute()}'!\n"
             "Did you forget to run git submodules? If so, run:\n"
             "  git submodule update --init\n"
             f"pyMBE is here: {PYMBE_ROOT.absolute()}\n"
             f"{TESTS_ROOT} exists: {TESTS_ROOT.exists()}\n"
-            f"{FIXTURES} exists: {FIXTURES.exists()}"
+            f"{FIXTURES} exists: {fixtures_exists}"
+            + contents
         )
 
     helper_client = SysML2Client()
