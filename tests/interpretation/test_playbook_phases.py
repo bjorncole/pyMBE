@@ -3,7 +3,17 @@ import networkx as nx
 
 from pymbe.client import SysML2Client
 from pymbe.graph.lpg import SysML2LabeledPropertyGraph
-from pymbe.interpretation.interp_playbooks import *
+from pymbe.interpretation.interp_playbooks import (
+    build_expression_sequence_templates,
+    build_sequence_templates,
+    random_generator_phase_0_interpreting_edges,
+    random_generator_phase_1_multiplicities,
+    random_generator_playbook_phase_1_singletons,
+    random_generator_playbook_phase_2_rollup,
+    random_generator_playbook_phase_2_unconnected,
+    random_generator_playbook_phase_3,
+    random_generator_playbook_phase_4,
+)
 from pymbe.interpretation.set_builders import *
 
 from ..data_loader import kerbal_model_loaded_client
@@ -167,6 +177,7 @@ def test_phase_1_singleton_instances(random_stage_1_complete):
     # don't expect abstract member at this point
     assert solid_booster_id not in random_stage_1_complete
 
+
 def test_phase_2_instance_creation(kerbal_lpg, random_stage_1_complete):
     solid_stage_id = 'b473978d-40de-4809-acef-4793f738c44e'
     liquid_stage_id = 'e6c22f19-e5e0-4a4b-9a3f-af2f01382465'
@@ -210,6 +221,7 @@ def test_phase_3_instance_sampling(kerbal_lpg, random_stage_3_complete):
     assert len(random_stage_3_complete[booster_isp_id]) > 0
     assert len(random_stage_3_complete[rt_10_isp_id]) > 0
     assert len(random_stage_3_complete[booster_empty_mass_id]) > 0
+
 
 def test_phase_4_instance_sampling(kerbal_lpg, random_stage_4_complete):
     top_plus_expr_id = 'b51bb349-e210-4be8-be64-e749ea4e563b'
@@ -267,7 +279,6 @@ def test_expression_inferred_graph(kerbal_client, kerbal_lpg):
 
 def test_dependency_graph(kerbal_lpg, random_stage_4_complete):
     # see how fully solved sequences go to make the dependency graph for computation
-
     assert True
 
 

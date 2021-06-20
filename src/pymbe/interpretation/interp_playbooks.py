@@ -108,6 +108,7 @@ def random_generator_playbook(
 
     return instances_dict
 
+
 def random_generator_phase_0_interpreting_edges(lpg: SysML2LabeledPropertyGraph):
     new_edges = [
         (source, target, metatype, {
@@ -142,6 +143,7 @@ def random_generator_phase_0_interpreting_edges(lpg: SysML2LabeledPropertyGraph)
             ]
             for edge in new_edges
         ])
+
 
 def random_generator_phase_1_multiplicities(
     lpg: SysML2LabeledPropertyGraph,
@@ -232,6 +234,7 @@ def random_generator_playbook_phase_2_rollup(
                 new_superset.extend(instances_dict[subset_node])
 
             instances_dict.update({gen: new_superset})
+
 
 def random_generator_playbook_phase_2_unconnected(
     all_elements: dict,

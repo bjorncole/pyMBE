@@ -22,7 +22,7 @@ class Interpreter(ipyw.VBox, BaseWidget):
         SysML2LabeledPropertyGraph,
         args=(),
     )
-    update: ipyw.Button = trt.Instance(ipyw.Button)
+    update_btn: ipyw.Button = trt.Instance(ipyw.Button)
     strategy_selector: ipyw.Dropdown = trt.Instance(ipyw.Dropdown)
 
     @trt.validate("children")
@@ -32,7 +32,7 @@ class Interpreter(ipyw.VBox, BaseWidget):
             return children
         return [
             ipyw.HBox(
-                children=[self.strategy_selector, self.update],
+                children=[self.strategy_selector, self.update_btn],
                 layout=dict(overflow_y="hidden"),
             ),
             self.instances_box,
@@ -47,7 +47,7 @@ class Interpreter(ipyw.VBox, BaseWidget):
                 name_hints={},
             )
 
-    @trt.default("update")
+    @trt.default("update_btn")
     def _make_update_button(self):
         button = ipyw.Button(
             icon="retweet",
@@ -112,7 +112,7 @@ class Interpreter(ipyw.VBox, BaseWidget):
 
     def _update_instances(self, *_):
         try:
-            self.update.disabled = True
+            self.update_btn.disabled = True
             self.instances = self.strategy_selector.value(
                 lpg=self.lpg,
                 name_hints={},
@@ -121,4 +121,4 @@ class Interpreter(ipyw.VBox, BaseWidget):
         except Exception as exc:
             self.log.warn(f"Ran into an issue while updating instances: {exc}")
         finally:
-            self.update.disabled = False
+            self.update_btn.disabled = False

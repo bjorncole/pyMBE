@@ -65,7 +65,7 @@ class SysML2LabeledPropertyGraph(Base):
         if len(self.graph) > self.max_graph_size:
             projections.pop("Complete", None)
 
-        self.sysml_projections = projections
+        self.sysml_projections = dict(projections)
 
     @staticmethod
     def _make_nx_multi_edge(source, target, metatype, **data):
@@ -138,25 +138,44 @@ class SysML2LabeledPropertyGraph(Base):
             for element_id, element_data in elements.items() if len(element_data.items()) > 0
         }
 
+        # Connectors will appear as related items, which will cause them to show up in
+        # the graph as nodes at this point, corrected this by adding them as nodes also
+        relationship_and_type = {
+            element_id: element
+            for element_id, element in elements.items()
+            if "relatedElement" in element
+            and "isAbstract" in element
+        }
         relationship_element_ids = {
             element_id
             for element_id, element in elements.items()
             if "relatedElement" in element
-        }
-        # Connectors will appear as related items, which will cause them to show up in
-        # the graph as nodes at this point, corrected this by adding them as nodes also
-        related_element_ids = {
-            releated_element["@id"]
-            for element in elements.values()
-            for releated_element in element.get("relatedElement", [])
+            and element_id not in relationship_and_type
         }
         non_relationship_element_ids = set(elements).difference(
             relationship_element_ids
-        ).union(related_element_ids)
+        )
 
         relationships = [
             elements[element_id]
             for element_id in relationship_element_ids
+            if element_id not in non_relationship_element_ids
+        ]
+
+        # Add the relationship_type edges we removed from relationships
+        new_edges += [
+            [
+                id_,
+                releated_element["@id"],
+                f"""{element["@type"]}End""",
+                {
+                    "@id": f"{id_}_{index + 1}",
+                    "@type": f"""{element["@type"]}End""",
+                    "RelationshipType": True,
+                },
+            ]
+            for id_, element in relationship_and_type.items()
+            for index, releated_element in enumerate(element["relatedElement"])
         ]
 
         graph = nx.MultiDiGraph()
