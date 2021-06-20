@@ -22,20 +22,23 @@ from pymbe.interpretation.interp_playbooks import (
 
 
 PYMBE_ROOT = Path(pymbe.__file__).parent
-TEST_ROOT = Path(__file__).parent
+TESTS_ROOT = Path(__file__).parent
+FIXTURES = TESTS_ROOT / "fixtures"
 
 
 def get_client(filename: str) -> SysML2Client:
     if not filename.endswith(".json"):
         filename += ".json"
 
-    json_file = TEST_ROOT / "fixtures" / filename
+    json_file = FIXTURES / filename
     if not json_file.exists():
         raise ValueError(
             f"Could not load: '{json_file.absolute()}'!\n"
             "Did you forget to run git submodules? If so, run:\n"
             "  git submodule update --init\n"
-            f"pyMBE is here: {PYMBE_ROOT.absolute()}"
+            f"pyMBE is here: {PYMBE_ROOT.absolute()}\n"
+            f"{TESTS_ROOT} exists: {TESTS_ROOT.exists()}\n"
+            f"{FIXTURES} exists: {FIXTURES.exists()}"
         )
 
     helper_client = SysML2Client()
