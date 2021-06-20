@@ -22,14 +22,35 @@ def test_type_to_feature1(kerbal_client, kerbal_lpg):
 
 def test_banded_graph_paths1(kerbal_lpg):
 
-    banded_featuring_graph = kerbal_lpg.get_projection("Expanded Banded Graph")
-
     rocket_id = '62fc7eb7-0637-4201-add7-4d2758980d2f'
     engines_feat = '32c847a1-2184-4486-ba48-dbf6125ca638'
 
     all_paths = nx.all_simple_paths(
         kerbal_lpg.get_projection("Expanded Banded Graph"),
         engines_feat,
+        rocket_id
+    )
+
+    path_lists = list(all_paths)
+
+    for path in path_lists:
+        path_naming = []
+        for item in path:
+            path_naming.append(get_label_for_id(item, kerbal_lpg.nodes))
+
+        print(path_naming)
+
+    assert len(path_lists) == 1
+
+
+def test_banded_graph_paths2(kerbal_lpg):
+
+    rocket_id = '62fc7eb7-0637-4201-add7-4d2758980d2f'
+    ft200_feat_id = 'cc585eec-c66c-48aa-b319-1395a0c8e292'
+
+    all_paths = nx.all_simple_paths(
+        kerbal_lpg.get_projection("Expanded Banded Graph"),
+        ft200_feat_id,
         rocket_id
     )
 

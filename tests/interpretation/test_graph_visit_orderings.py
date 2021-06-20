@@ -3,7 +3,7 @@ from pymbe.interpretation.interp_playbooks import *
 import pytest
 
 
-def test_feature_sequence_templates(kerbal_client, kerbal_lpg):
+def test_feature_sequence_templates1(kerbal_client, kerbal_lpg):
 
     seq_templates = build_sequence_templates(kerbal_lpg)
 
@@ -35,6 +35,40 @@ def test_feature_sequence_templates(kerbal_client, kerbal_lpg):
                 assert seq.index(liquid_stage_id) < seq.index(engines_id)
             elif tanks_id in seq:
                 assert seq.index(liquid_stage_id) < seq.index(tanks_id)
+
+
+def test_feature_sequence_templates2(kerbal_client, kerbal_lpg):
+
+    seq_templates = build_sequence_templates(kerbal_lpg)
+
+    coupler_usage_id = '3a609e5a-3e6f-4eb4-97ff-5a32b23122bf'
+    rocket_id = '62fc7eb7-0637-4201-add7-4d2758980d2f'
+    stages_feat = '442722b5-8d08-46e4-ad5f-e6e2dd28d6f6'
+    sep_force_id = '7f5e38cb-6647-482d-b8fe-5c266d73ab42'
+
+    print(seq_templates)
+
+    assert [
+        rocket_id,
+        stages_feat,
+        coupler_usage_id,
+        sep_force_id] in seq_templates
+
+
+def test_feature_sequence_templates3(kerbal_client, kerbal_lpg):
+
+    seq_templates = build_sequence_templates(kerbal_lpg)
+
+    coupler_usage_id = '3a609e5a-3e6f-4eb4-97ff-5a32b23122bf'
+    rocket_id = '62fc7eb7-0637-4201-add7-4d2758980d2f'
+    sep_force_id = '7f5e38cb-6647-482d-b8fe-5c266d73ab42'
+
+    print(seq_templates)
+
+    assert [
+        rocket_id,
+        coupler_usage_id,
+        sep_force_id] not in seq_templates
 
 
 def test_expression_sequence_templates(kerbal_client, kerbal_lpg):
