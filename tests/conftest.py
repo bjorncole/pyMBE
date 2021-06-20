@@ -4,11 +4,24 @@ import traitlets as trt
 
 import pytest
 
+import pymbe
 from pymbe.client import SysML2Client
-from pymbe.interpretation.interp_playbooks import *
-from pymbe.interpretation.set_builders import *
+from pymbe.graph import SysML2LabeledPropertyGraph
+from pymbe.interpretation.interp_playbooks import (
+    build_expression_sequence_templates,
+    build_sequence_templates,
+    create_set_with_new_instances,
+    random_generator_phase_0_interpreting_edges,
+    random_generator_phase_1_multiplicities,
+    random_generator_playbook_phase_1_singletons,
+    random_generator_playbook_phase_2_unconnected,
+    random_generator_playbook_phase_2_rollup,
+    random_generator_playbook_phase_3,
+    random_generator_playbook_phase_4,
+)
 
 
+PYMBE_ROOT = Path(pymbe.__file__).parent
 TEST_ROOT = Path(__file__).parent
 
 
@@ -19,9 +32,10 @@ def get_client(filename: str) -> SysML2Client:
     json_file = TEST_ROOT / "fixtures" / filename
     if not json_file.exists():
         raise ValueError(
-            f"Could not load: {json_file.absolute()}, did you forget to "
-            "run git submodules?\n\t"
-            "run: git submodule update --init"
+            f"Could not load: '{json_file.absolute()}'!\n"
+            "Did you forget to run git submodules? If so, run:\n"
+            "  git submodule update --init\n"
+            f"pyMBE is here: {PYMBE_ROOT.absolute()}"
         )
 
     helper_client = SysML2Client()
