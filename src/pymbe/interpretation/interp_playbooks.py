@@ -263,6 +263,7 @@ def random_generator_playbook_phase_3(
                 continue
             # sample set will be the last element in the sequence for classifiers
             feature = all_elements[feature_id]
+
             if feature["@type"] in ("PartUsage", "AttributeUsage", "PortUsage", "InterfaceUsage", "ConnectionUsage"):
                 types = get_types_for_feature(lpg, feature['@id'])
 
@@ -280,6 +281,11 @@ def random_generator_playbook_phase_3(
                 if feature["@type"] in ("PartUsage", "AttributeUsage", "PortUsage", "InterfaceUsage", "ConnectionUsage"):
                     # hack for usage at top
                     new_sequences = [instances_dict[typ][0]]
+                    if typ in already_drawn:
+                        pass
+                    else:
+                        new_list = [item for item in new_sequences[0]]
+                        already_drawn.update({typ: new_list})
                 else:
                     new_sequences = instances_dict[typ]
             else:
@@ -307,6 +313,10 @@ def random_generator_playbook_phase_3(
                 # print("Incoming sequences:")
                 # print(new_sequences)
 
+                #print("Instances dict for " + get_label_for_id('eb96afae-0f09-4912-861e-705bb33a4202',
+                #                                               all_elements) + " updated with " +
+                #      str(instances_dict['eb96afae-0f09-4912-861e-705bb33a4202']) + " and index = " + str(index))
+
                 new_sequences = extend_sequences_by_sampling(
                     new_sequences,
                     feature_multiplicity(feature, all_elements, "lower"),
@@ -317,8 +327,11 @@ def random_generator_playbook_phase_3(
                     {}
                 )
 
-                print("Extended sequences:")
-                print(new_sequences)
+                #print("Instances dict for " + get_label_for_id('eb96afae-0f09-4912-861e-705bb33a4202', all_elements) + " updated with " +
+                #      str(instances_dict['eb96afae-0f09-4912-861e-705bb33a4202']) + " and index = " + str(index))
+
+                #print("Extended sequences:")
+                #print(new_sequences)
 
                 freshly_drawn = [seq[-1] for seq in new_sequences]
                 if typ in already_drawn:
@@ -342,7 +355,7 @@ def random_generator_playbook_phase_4(
     for expr_seq in expr_sequences:
         new_sequences = []
         # get the featuring type of the first expression
-        print(expr_seq[0])
+        #print(expr_seq[0])
 
         seq_featuring_type = safe_get_featuring_type_by_id(lpg, expr_seq[0])
         # FIXME: I don't know what it means for binding connectors to own these expressions, but need to figure out eventually

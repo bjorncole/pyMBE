@@ -85,46 +85,61 @@ def kerbal_random_stage_1_instances(kerbal_client, kerbal_lpg) -> dict:
 
 
 @pytest.fixture
-def kerbal_random_stage_1_complete(kerbal_lpg, random_stage_1_instances) -> dict:
+def kerbal_random_stage_1_complete(kerbal_lpg, kerbal_random_stage_1_instances) -> dict:
     scg = kerbal_lpg.get_projection("Part Definition Graph")
 
     random_generator_playbook_phase_1_singletons(
         kerbal_lpg,
         scg,
-        random_stage_1_instances
+        kerbal_random_stage_1_instances
     )
 
-    return random_stage_1_instances
+    return kerbal_random_stage_1_instances
 
 
 @pytest.fixture
-def kerbal_random_stage_2_complete(kerbal_lpg, random_stage_1_complete) -> dict:
+def kerbal_random_stage_2_complete(kerbal_lpg, kerbal_random_stage_1_complete) -> dict:
     scg = kerbal_lpg.get_projection("Part Definition Graph")
 
-    random_generator_playbook_phase_2_rollup(kerbal_lpg, scg, random_stage_1_complete)
+    random_generator_playbook_phase_2_rollup(kerbal_lpg, scg, kerbal_random_stage_1_complete)
 
-    random_generator_playbook_phase_2_unconnected(kerbal_lpg.nodes, random_stage_1_complete)
+    random_generator_playbook_phase_2_unconnected(kerbal_lpg.nodes, kerbal_random_stage_1_complete)
 
-    return random_stage_1_complete
+    return kerbal_random_stage_1_complete
 
 
 @pytest.fixture
-def kerbal_random_stage_3_complete(kerbal_lpg, random_stage_2_complete) -> dict:
+def kerbal_random_stage_3_complete(kerbal_lpg, kerbal_random_stage_2_complete) -> dict:
     ptg = kerbal_lpg.get_projection("Part Typing Graph")
     all_elements = kerbal_lpg.nodes
     feature_sequences = build_sequence_templates(lpg=kerbal_lpg)
 
-    random_generator_playbook_phase_3(feature_sequences, all_elements, ptg, random_stage_2_complete)
+    random_generator_playbook_phase_3(feature_sequences, all_elements, kerbal_lpg, ptg, kerbal_random_stage_2_complete)
 
-    return random_stage_2_complete
+    return kerbal_random_stage_2_complete
 
 
 @pytest.fixture
-def kerbal_random_stage_4_complete(kerbal_lpg, random_stage_3_complete) -> dict:
+def kerbal_random_stage_4_complete(kerbal_lpg, kerbal_random_stage_3_complete) -> dict:
 
     expr_sequences = build_expression_sequence_templates(lpg=kerbal_lpg)
 
-    random_generator_playbook_phase_4(expr_sequences, kerbal_lpg, random_stage_3_complete)
+    random_generator_playbook_phase_4(expr_sequences, kerbal_lpg, kerbal_random_stage_3_complete)
 
-    return random_stage_3_complete
+    return kerbal_random_stage_3_complete
 
+
+@pytest.fixture
+def simple_parts_client() -> SysML2Client:
+
+    return simple_parts_model_loaded_client()
+
+
+@pytest.fixture
+def simple_parts_lpg() -> SysML2LabeledPropertyGraph:
+    new_lpg = SysML2LabeledPropertyGraph()
+    client = simple_parts_model_loaded_client()
+
+    new_lpg.update(client.elements_by_id, False)
+
+    return new_lpg

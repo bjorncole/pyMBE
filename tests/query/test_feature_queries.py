@@ -4,7 +4,7 @@ from pymbe.query.query import *
 import pytest
 
 
-def test_feature_to_type(kerbal_client, kerbal_lpg):
+def test_feature_to_type1(kerbal_client, kerbal_lpg):
 
     engines_feat = '32c847a1-2184-4486-ba48-dbf6125ca638'
     engine_type_feat = '79cf7d24-37f7-404c-94b4-395cd1d0ee51'
@@ -12,7 +12,7 @@ def test_feature_to_type(kerbal_client, kerbal_lpg):
     assert get_types_for_feature(kerbal_lpg, engines_feat) == [engine_type_feat]
 
 
-def test_type_to_feature(kerbal_client, kerbal_lpg):
+def test_type_to_feature1(kerbal_client, kerbal_lpg):
 
     engines_feat = '32c847a1-2184-4486-ba48-dbf6125ca638'
     engine_type_feat = '79cf7d24-37f7-404c-94b4-395cd1d0ee51'
@@ -20,7 +20,7 @@ def test_type_to_feature(kerbal_client, kerbal_lpg):
     assert get_features_typed_by_type(kerbal_lpg, engine_type_feat) == [engines_feat]
 
 
-def test_banded_graph_paths(kerbal_lpg):
+def test_banded_graph_paths1(kerbal_lpg):
 
     banded_featuring_graph = kerbal_lpg.get_projection("Expanded Banded Graph")
 
@@ -44,7 +44,8 @@ def test_banded_graph_paths(kerbal_lpg):
 
     assert len(path_lists) == 1
 
-def test_feature_multiplicity_rollup(kerbal_client, kerbal_lpg):
+
+def test_feature_multiplicity_rollup1(kerbal_client, kerbal_lpg):
 
     engines_feat = '32c847a1-2184-4486-ba48-dbf6125ca638'
     stages_feat = '442722b5-8d08-46e4-ad5f-e6e2dd28d6f6'
@@ -79,7 +80,7 @@ def test_feature_multiplicity_rollup(kerbal_client, kerbal_lpg):
     assert stages_upper_mult == 5
 
 
-def test_type_multiplicity_rollup(kerbal_lpg):
+def test_type_multiplicity_rollup1(kerbal_lpg):
 
     real_type = 'ede2b2e7-9280-4932-9453-134bf460892f'
     liquid_engine_type = '79cf7d24-37f7-404c-94b4-395cd1d0ee51'
@@ -103,10 +104,3 @@ def test_type_multiplicity_rollup(kerbal_lpg):
 
     assert liquid_upper == 40
     assert rocket_upper == 0
-
-def test_attribute_multiplicity_rollup(kerbal_client, kerbal_lpg):
-
-    booster_empty_mass_att = '38a7a711-47ac-48c8-9374-c55e342d74f1'
-    liquid_engine_thrust_att = '912cd6cc-4d02-400b-b6cf-f4be77474cf5'
-
-    assert True
