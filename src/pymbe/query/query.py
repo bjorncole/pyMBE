@@ -54,8 +54,11 @@ def roll_up_multiplicity(
 
     all_elements = lpg.nodes
 
-    total_mult = 1
+    total_mult = 0
     for part_tree_root in banded_roots:
+        # case where the usage is actually top of a nesting set
+        if feature['@id'] == part_tree_root:
+            total_mult = 1
         try:
             #part_path = nx.shortest_path(
             part_paths = nx.all_simple_paths(
@@ -71,6 +74,7 @@ def roll_up_multiplicity(
                 ])
                 total_mult += corrected_mult
         except nx.NetworkXNoPath:
+            print("Found no path when rolling up multiplicity.")
             pass
         except nx.NodeNotFound:
             # nothing to roll up, so just use own multiplicity

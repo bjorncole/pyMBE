@@ -1,7 +1,5 @@
 from pymbe.client import SysML2Client
-from pymbe.graph import SysML2LabeledPropertyGraph
 
-from .fixtures.data_loader import kerbal_model_loaded_client
 
 def test_all_downloaded():
     """

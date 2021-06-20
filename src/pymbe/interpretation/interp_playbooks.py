@@ -147,7 +147,8 @@ def random_generator_phase_1_multiplicities(
 
     type_multiplicities = {}
     for pt in ptg.nodes:
-        if lpg.nodes[pt]['@type'] in ('PartDefinition', 'DataType', 'AttributeDefinition', 'PortDefinition'):
+        if lpg.nodes[pt]['@type'] in ('PartDefinition', 'DataType', 'AttributeDefinition', 'PortDefinition',
+                                      'InterfaceDefinition', 'ConnectionDefinition'):
             mult = roll_up_multiplicity_for_type(
                 lpg,
                 lpg.nodes[pt],
@@ -262,7 +263,7 @@ def random_generator_playbook_phase_3(
                 continue
             # sample set will be the last element in the sequence for classifiers
             feature = all_elements[feature_id]
-            if feature["@type"] in ("PartUsage", "AttributeUsage", "PortUsage"):
+            if feature["@type"] in ("PartUsage", "AttributeUsage", "PortUsage", "InterfaceUsage", "ConnectionUsage"):
                 types = get_types_for_feature(lpg, feature['@id'])
 
                 if len(types) == 0:
@@ -276,18 +277,35 @@ def random_generator_playbook_phase_3(
                 typ = feature_id
 
             if index == 0:
-                new_sequences = instances_dict[typ]
+                if feature["@type"] in ("PartUsage", "AttributeUsage", "PortUsage", "InterfaceUsage", "ConnectionUsage"):
+                    # hack for usage at top
+                    new_sequences = [instances_dict[typ][0]]
+                else:
+                    new_sequences = instances_dict[typ]
             else:
 
-                for step in last_sequence:
-                    for feat in feature_sequence:
-                        if step == feat:
-                            new_sequences = instances_dict[feat]
+                #for step in last_sequence:
+                #    for feat in feature_sequence:
+                #        if step == feat:
+                #            new_sequences = instances_dict[feat]
 
                 if typ in already_drawn:
                     remaining = [item for seq in instances_dict[typ] for item in seq if item not in already_drawn[typ]]
                 else:
                     remaining = [item for seq in instances_dict[typ] for item in seq]
+
+                # print("Calling extend sequences by sampling.....")
+                # print("Working feature sequence:")
+                # seq_print = []
+                # for item in feature_sequence:
+                #     seq_print.append(get_label_for_id(item, all_elements))
+                # print(seq_print)
+                # print("Currently working: " + get_label_for_id(feature_id, all_elements) + " with lower mult = " +
+                #       str(feature_multiplicity(feature, all_elements, "lower")) + " and upper mult = " +
+                #       str(feature_multiplicity(feature, all_elements, "upper"))
+                #       )
+                # print("Incoming sequences:")
+                # print(new_sequences)
 
                 new_sequences = extend_sequences_by_sampling(
                     new_sequences,
@@ -298,6 +316,9 @@ def random_generator_playbook_phase_3(
                     {},
                     {}
                 )
+
+                print("Extended sequences:")
+                print(new_sequences)
 
                 freshly_drawn = [seq[-1] for seq in new_sequences]
                 if typ in already_drawn:
@@ -321,8 +342,12 @@ def random_generator_playbook_phase_4(
     for expr_seq in expr_sequences:
         new_sequences = []
         # get the featuring type of the first expression
+        print(expr_seq[0])
 
         seq_featuring_type = safe_get_featuring_type_by_id(lpg, expr_seq[0])
+        # FIXME: I don't know what it means for binding connectors to own these expressions, but need to figure out eventually
+        if seq_featuring_type['@type'] == 'BindingConnector':
+            continue
         new_sequences = instances_dict[seq_featuring_type['@id']]
 
         for feature_id in expr_seq:

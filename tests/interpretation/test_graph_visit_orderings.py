@@ -1,41 +1,6 @@
-from ..fixtures.data_loader import kerbal_model_loaded_client
-from pymbe.graph.lpg import SysML2LabeledPropertyGraph
-from pymbe.client import SysML2Client
+from tests.conftest import kerbal_model_loaded_client
 from pymbe.interpretation.interp_playbooks import *
 import pytest
-import networkx as nx
-
-# there must be a way to reuse from other modules ..
-@pytest.fixture
-def kerbal_client() -> SysML2Client:
-
-    return kerbal_model_loaded_client()
-
-
-@pytest.fixture()
-def kerbal_ids_by_type(kerbal_client) -> dict:
-
-    ids_dict = {}
-
-    all_elements = kerbal_client.elements_by_id
-
-    for ele_id, ele in all_elements.items():
-        if ele["@type"] in ids_dict:
-            ids_dict[ele["@type"]].append(ele_id)
-        else:
-            ids_dict.update({ele['@type']: [ele_id]})
-
-    return ids_dict
-
-
-@pytest.fixture
-def kerbal_lpg() -> SysML2LabeledPropertyGraph:
-    new_lpg = SysML2LabeledPropertyGraph()
-    client = kerbal_model_loaded_client()
-
-    new_lpg.update(client.elements_by_id, False)
-
-    return new_lpg
 
 
 def test_feature_sequence_templates(kerbal_client, kerbal_lpg):
@@ -50,10 +15,6 @@ def test_feature_sequence_templates(kerbal_client, kerbal_lpg):
     engines_id = '48e94e73-52ad-44df-8005-8fa6225176d8'
     tanks_id = 'ae3db8b5-6d8e-4ac4-af46-9f37ad0fd988'
     krp_mass_id = 'f0403f3c-b5b8-4d2e-814b-bbe7cff60d3f'
-
-    rocket_id = '62fc7eb7-0637-4201-add7-4d2758980d2f'
-    stages_feature_id = '442722b5-8d08-46e4-ad5f-e6e2dd28d6f6'
-    couple_feature_id = '3a609e5a-3e6f-4eb4-97ff-5a32b23122bf'
 
     print(seq_templates)
 

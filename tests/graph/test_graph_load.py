@@ -1,4 +1,4 @@
-from ..fixtures.data_loader import kerbal_model_loaded_client
+from tests.conftest import kerbal_model_loaded_client
 from pymbe.graph.lpg import SysML2LabeledPropertyGraph
 from pymbe.client import SysML2Client
 import pytest

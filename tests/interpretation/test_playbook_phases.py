@@ -1,109 +1,7 @@
-from ..fixtures.data_loader import kerbal_model_loaded_client
-from pymbe.graph.lpg import SysML2LabeledPropertyGraph
-from pymbe.client import SysML2Client
+from tests.conftest import kerbal_model_loaded_client
 from pymbe.interpretation.interp_playbooks import *
 from pymbe.interpretation.set_builders import *
 import pytest
-
-# there must be a way to reuse from other modules ..
-@pytest.fixture
-def kerbal_client() -> SysML2Client:
-
-    return kerbal_model_loaded_client()
-
-
-@pytest.fixture
-def kerbal_ids_by_type(kerbal_client) -> dict:
-
-    ids_dict = {}
-
-    all_elements = kerbal_client.elements_by_id
-
-    for ele_id, ele in all_elements.items():
-        if ele["@type"] in ids_dict:
-            ids_dict[ele["@type"]].append(ele_id)
-        else:
-            ids_dict.update({ele['@type']: [ele_id]})
-
-    return ids_dict
-
-
-@pytest.fixture
-def kerbal_lpg() -> SysML2LabeledPropertyGraph:
-    new_lpg = SysML2LabeledPropertyGraph()
-    client = kerbal_model_loaded_client()
-
-    new_lpg.update(client.elements_by_id, False)
-
-    return new_lpg
-
-
-@pytest.fixture
-def random_stage_1_instances(kerbal_client, kerbal_lpg) -> dict:
-    ptg = kerbal_lpg.get_projection("Part Typing Graph")
-    scg = kerbal_lpg.get_projection("Part Definition Graph")
-
-    random_generator_phase_0_interpreting_edges(kerbal_client, kerbal_lpg)
-
-    full_multiplicities = random_generator_phase_1_multiplicities(kerbal_lpg, ptg, scg)
-
-    instances_dict = {}
-
-    for type_id, number in full_multiplicities.items():
-        new_instances = create_set_with_new_instances(
-            sequence_template=[kerbal_lpg.nodes[type_id]],
-            quantities=[number],
-            name_hints=[],
-        )
-
-        instances_dict.update({type_id: new_instances})
-
-    return instances_dict
-
-
-@pytest.fixture
-def random_stage_1_complete(kerbal_lpg, random_stage_1_instances) -> dict:
-    scg = kerbal_lpg.get_projection("Part Definition Graph")
-
-    random_generator_playbook_phase_1_singletons(
-        kerbal_lpg,
-        scg,
-        random_stage_1_instances
-    )
-
-    return random_stage_1_instances
-
-
-@pytest.fixture
-def random_stage_2_complete(kerbal_lpg, random_stage_1_complete) -> dict:
-    scg = kerbal_lpg.get_projection("Part Definition Graph")
-
-    random_generator_playbook_phase_2_rollup(kerbal_lpg, scg, random_stage_1_complete)
-
-    random_generator_playbook_phase_2_unconnected(kerbal_lpg.nodes, random_stage_1_complete)
-
-    return random_stage_1_complete
-
-
-@pytest.fixture
-def random_stage_3_complete(kerbal_lpg, random_stage_2_complete) -> dict:
-    ptg = kerbal_lpg.get_projection("Part Typing Graph")
-    all_elements = kerbal_lpg.nodes
-    feature_sequences = build_sequence_templates(lpg=kerbal_lpg)
-
-    random_generator_playbook_phase_3(feature_sequences, all_elements, ptg, random_stage_2_complete)
-
-    return random_stage_2_complete
-
-
-@pytest.fixture
-def random_stage_4_complete(kerbal_lpg, random_stage_3_complete) -> dict:
-
-    expr_sequences = build_expression_sequence_templates(lpg=kerbal_lpg)
-
-    random_generator_playbook_phase_4(expr_sequences, kerbal_lpg, random_stage_3_complete)
-
-    return random_stage_3_complete
 
 
 def test_type_multiplicity_dict_building(kerbal_lpg):
@@ -140,33 +38,33 @@ def test_phase_0_implied_relationships(kerbal_client, kerbal_lpg):
     assert len(implied_edges) == 30
 
 
-def test_phase_1_instance_creation(random_stage_1_instances):
+def test_phase_1_instance_creation(kerbal_random_stage_1_instances):
 
     flea_id = '5be56a39-f4a4-4fbb-872c-12f3e717593c'
     solid_stage_id = 'b473978d-40de-4809-acef-4793f738c44e'
     solid_booster_id = '24a0a10e-77ba-4bfa-9618-f2525a8a7042'
     real_id = 'ede2b2e7-9280-4932-9453-134bf460892f'
 
-    assert flea_id in random_stage_1_instances
-    assert solid_stage_id in random_stage_1_instances
-    assert real_id in random_stage_1_instances
+    assert flea_id in kerbal_random_stage_1_instances
+    assert solid_stage_id in kerbal_random_stage_1_instances
+    assert real_id in kerbal_random_stage_1_instances
     # don't expect abstract member at this point
-    assert solid_booster_id not in random_stage_1_instances
+    assert solid_booster_id not in kerbal_random_stage_1_instances
 
 
-def test_phase_1_singleton_instances(random_stage_1_complete):
+def test_phase_1_singleton_instances(kerbal_random_stage_1_complete):
     flea_id = '5be56a39-f4a4-4fbb-872c-12f3e717593c'
     solid_stage_id = 'b473978d-40de-4809-acef-4793f738c44e'
     solid_booster_id = '24a0a10e-77ba-4bfa-9618-f2525a8a7042'
     pod_id = '62f8fd9a-6b7e-4af1-9fad-52641da6c854'
 
-    assert flea_id in random_stage_1_complete
-    assert solid_stage_id in random_stage_1_complete
-    assert pod_id in random_stage_1_complete
+    assert flea_id in kerbal_random_stage_1_complete
+    assert solid_stage_id in kerbal_random_stage_1_complete
+    assert pod_id in kerbal_random_stage_1_complete
     # don't expect abstract member at this point
-    assert solid_booster_id not in random_stage_1_complete
+    assert solid_booster_id not in kerbal_random_stage_1_complete
 
-def test_phase_2_instance_creation(kerbal_lpg, random_stage_1_complete):
+def test_phase_2_instance_creation(kerbal_lpg, kerbal_random_stage_1_complete):
     solid_stage_id = 'b473978d-40de-4809-acef-4793f738c44e'
     liquid_stage_id = 'e6c22f19-e5e0-4a4b-9a3f-af2f01382465'
     flea_id = '5be56a39-f4a4-4fbb-872c-12f3e717593c'
@@ -177,40 +75,41 @@ def test_phase_2_instance_creation(kerbal_lpg, random_stage_1_complete):
 
     scg = kerbal_lpg.get_projection("Part Definition Graph")
 
-    random_generator_playbook_phase_2_rollup(kerbal_lpg, scg, random_stage_1_complete)
+    random_generator_playbook_phase_2_rollup(kerbal_lpg, scg, kerbal_random_stage_1_complete)
 
-    random_generator_playbook_phase_2_unconnected(kerbal_lpg.nodes, random_stage_1_complete)
+    random_generator_playbook_phase_2_unconnected(kerbal_lpg.nodes, kerbal_random_stage_1_complete)
 
-    assert flea_id in random_stage_1_complete
-    assert pod_id in random_stage_1_complete
-    assert krp_id in random_stage_1_complete
-    assert solid_booster_id in random_stage_1_complete
-    assert rocket_id in random_stage_1_complete
+    assert flea_id in kerbal_random_stage_1_complete
+    assert pod_id in kerbal_random_stage_1_complete
+    assert krp_id in kerbal_random_stage_1_complete
+    assert solid_booster_id in kerbal_random_stage_1_complete
+    assert rocket_id in kerbal_random_stage_1_complete
 
-    assert len(random_stage_1_complete[solid_stage_id]) + \
-           len(random_stage_1_complete[liquid_stage_id]) == 5
-    assert len(random_stage_1_complete[solid_booster_id]) == 40
+    assert len(kerbal_random_stage_1_complete[solid_stage_id]) + \
+           len(kerbal_random_stage_1_complete[liquid_stage_id]) == 5
+    assert len(kerbal_random_stage_1_complete[solid_booster_id]) == 40
 
-    assert len(random_stage_1_complete[krp_id]) == 272
+    assert len(kerbal_random_stage_1_complete[krp_id]) == 272
 
 
-def test_phase_3_instance_sampling(kerbal_lpg, random_stage_3_complete):
+def test_phase_3_instance_sampling(kerbal_lpg, kerbal_random_stage_3_complete):
     coupler_usage_id = '3a609e5a-3e6f-4eb4-97ff-5a32b23122bf'
 
     booster_empty_mass_id = '645ee1b3-3cb3-494e-8cb2-ec32e377c9f6'
     booster_isp_id = '2b1351f4-a0fb-470b-bb22-1b924dde38f7'
     rt_10_isp_id = 'eb09ff1c-1791-4571-8016-c0534906faa4'
 
-    print(random_stage_3_complete[coupler_usage_id][0])
+    print(kerbal_random_stage_3_complete[coupler_usage_id][0])
 
-    assert coupler_usage_id in random_stage_3_complete
-    assert len(random_stage_3_complete[coupler_usage_id]) == 0 or len(random_stage_3_complete[coupler_usage_id][0]) == 3
+    assert coupler_usage_id in kerbal_random_stage_3_complete
+    assert len(kerbal_random_stage_3_complete[coupler_usage_id]) == 0 or \
+           len(kerbal_random_stage_3_complete[coupler_usage_id][0]) == 3
 
-    assert len(random_stage_3_complete[booster_isp_id]) > 0
-    assert len(random_stage_3_complete[rt_10_isp_id]) > 0
-    assert len(random_stage_3_complete[booster_empty_mass_id]) > 0
+    assert len(kerbal_random_stage_3_complete[booster_isp_id]) > 0
+    assert len(kerbal_random_stage_3_complete[rt_10_isp_id]) > 0
+    assert len(kerbal_random_stage_3_complete[booster_empty_mass_id]) > 0
 
-def test_phase_4_instance_sampling(kerbal_lpg, random_stage_4_complete):
+def test_phase_4_instance_sampling(kerbal_lpg, kerbal_random_stage_4_complete):
     top_plus_expr_id = 'b51bb349-e210-4be8-be64-e749ea4e563b'
     sum_1_id = '700d97d1-410a-459c-ad09-8792c27e2803'
     collect_1_id = 'd6644a0a-6eef-49c1-a770-60886073554c'
@@ -222,21 +121,21 @@ def test_phase_4_instance_sampling(kerbal_lpg, random_stage_4_complete):
     booster_isp_id = '2b1351f4-a0fb-470b-bb22-1b924dde38f7'
     rt_10_isp_id = 'eb09ff1c-1791-4571-8016-c0534906faa4'
 
-    assert len(random_stage_4_complete[collect_1_id]) > 0 or \
-        len(random_stage_4_complete[liquid_stage_id]) == 0
+    assert len(kerbal_random_stage_4_complete[collect_1_id]) > 0 or \
+        len(kerbal_random_stage_4_complete[liquid_stage_id]) == 0
 
-    assert len(random_stage_4_complete[collect_1_result]) > 0 or \
-           len(random_stage_4_complete[liquid_stage_id]) == 0
+    assert len(kerbal_random_stage_4_complete[collect_1_result]) > 0 or \
+           len(kerbal_random_stage_4_complete[liquid_stage_id]) == 0
 
-    if len(random_stage_4_complete[liquid_stage_id]) > 0:
-        assert len(random_stage_4_complete[top_plus_expr_id][0]) == 2
+    if len(kerbal_random_stage_4_complete[liquid_stage_id]) > 0:
+        assert len(kerbal_random_stage_4_complete[top_plus_expr_id][0]) == 2
 
-    if len(random_stage_4_complete[liquid_stage_id]) > 0:
-        assert len(random_stage_4_complete[sum_1_id][0]) == 3
+    if len(kerbal_random_stage_4_complete[liquid_stage_id]) > 0:
+        assert len(kerbal_random_stage_4_complete[sum_1_id][0]) == 3
 
-    assert len(random_stage_4_complete[booster_isp_id]) > 0
-    assert len(random_stage_4_complete[rt_10_isp_id]) > 0
-    assert len(random_stage_4_complete[booster_empty_mass_id]) > 0
+    assert len(kerbal_random_stage_4_complete[booster_isp_id]) > 0
+    assert len(kerbal_random_stage_4_complete[rt_10_isp_id]) > 0
+    assert len(kerbal_random_stage_4_complete[booster_empty_mass_id]) > 0
 
 
 def test_expression_inferred_graph(kerbal_client, kerbal_lpg):
@@ -264,7 +163,7 @@ def test_expression_inferred_graph(kerbal_client, kerbal_lpg):
             assert len(list(comp)) == 44
 
 
-def test_dependency_graph(kerbal_lpg, random_stage_4_complete):
+def test_dependency_graph(kerbal_lpg, kerbal_random_stage_4_complete):
     # see how fully solved sequences go to make the dependency graph for computation
 
 
