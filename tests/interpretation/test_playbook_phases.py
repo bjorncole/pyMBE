@@ -30,7 +30,7 @@ def test_type_multiplicity_dict_building(kerbal_lpg):
     assert full_multiplicities[solid_stage_id] + full_multiplicities[liquid_stage_id] == 5
     assert full_multiplicities[flea_id] + full_multiplicities[hammer_id] == 40
     assert full_multiplicities[f100_tank] + full_multiplicities[f200_tank] == 150
-    assert full_multiplicities[real_id] == 3010
+    assert full_multiplicities[real_id] == 3038
 
 
 def test_phase_0_implied_relationships(kerbal_client, kerbal_lpg):
@@ -81,7 +81,7 @@ def test_phase_2_instance_creation(kerbal_lpg, kerbal_random_stage_1_complete):
 
     scg = kerbal_lpg.get_projection("Part Definition Graph")
 
-    random_generator_playbook_phase_2_rollup(kerbal_lpg, scg, kerbal_random_stage_1_complete)
+    random_generator_playbook_phase_2_rollup(scg, kerbal_random_stage_1_complete)
 
     random_generator_playbook_phase_2_unconnected(kerbal_lpg.nodes, kerbal_random_stage_1_complete)
 

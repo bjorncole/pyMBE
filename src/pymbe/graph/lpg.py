@@ -4,12 +4,16 @@ from pathlib import Path
 from uuid import uuid4
 from warnings import warn
 
+from ruamel.yaml import YAML
+
 import networkx as nx
-import ruamel.yaml as yaml
 import traitlets as trt
 import typing as ty
 
 from ..core import Base
+
+
+yaml = YAML(typ="unsafe", pure=True)
 
 
 class SysML2LabeledPropertyGraph(Base):
@@ -59,7 +63,6 @@ class SysML2LabeledPropertyGraph(Base):
     def _update_projections(self, *_):
         projections = yaml.load(
             stream=(Path(__file__).parent / "sysml_subgraphs.yml").read_text(),
-            Loader=yaml.RoundTripLoader,
         )
         # TODO: Look into filtering the other projections
         if len(self.graph) > self.max_graph_size:
