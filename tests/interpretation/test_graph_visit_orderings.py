@@ -71,6 +71,22 @@ def test_feature_sequence_templates3(kerbal_client, kerbal_lpg):
         sep_force_id] not in seq_templates
 
 
+def test_feature_sequence_templates4(simple_parts_client, simple_parts_lpg):
+
+    seq_templates = build_sequence_templates(simple_parts_lpg)
+
+    power_group_id = 'eb96afae-0f09-4912-861e-705bb33a4202'
+    power_user_part_id = '648fd9b3-2a6e-40e8-b3e9-b8ebb407ce07'
+    power_in_port_id = '7328c370-26d7-40e4-9a36-c88ef76c7d30'
+
+    print(seq_templates)
+
+    assert [
+        power_group_id,
+        power_user_part_id,
+        power_in_port_id] in seq_templates
+
+
 def test_expression_sequence_templates(kerbal_client, kerbal_lpg):
 
     fts_full_mass = '004a1b5f-4bfc-4460-9f38-1e7b4caba6e5'

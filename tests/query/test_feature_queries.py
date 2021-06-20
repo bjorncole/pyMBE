@@ -20,6 +20,18 @@ def test_type_to_feature1(kerbal_client, kerbal_lpg):
     assert get_features_typed_by_type(kerbal_lpg, engine_type_feat) == [engines_feat]
 
 
+def test_type_to_feature2(simple_parts_client, simple_parts_lpg):
+
+    port_type_id = 'f29c8a2e-a7d3-4685-bfbb-3d54b5dd704c'
+    power_in_id = '7328c370-26d7-40e4-9a36-c88ef76c7d30'
+    power_out_id = 'babeb025-52f3-4ebe-9f0f-0414a4b6240d'
+
+    print(get_features_typed_by_type(simple_parts_lpg, port_type_id))
+
+    assert power_in_id in get_features_typed_by_type(simple_parts_lpg, port_type_id) and \
+            power_out_id in get_features_typed_by_type(simple_parts_lpg, port_type_id)
+
+
 def test_banded_graph_paths1(kerbal_lpg):
 
     rocket_id = '62fc7eb7-0637-4201-add7-4d2758980d2f'
@@ -60,6 +72,37 @@ def test_banded_graph_paths2(kerbal_lpg):
         path_naming = []
         for item in path:
             path_naming.append(get_label_for_id(item, kerbal_lpg.nodes))
+
+        print(path_naming)
+
+    assert len(path_lists) == 1
+
+
+def test_banded_graph_paths3(simple_parts_lpg):
+
+    power_group_id = 'eb96afae-0f09-4912-861e-705bb33a4202'
+    power_in_port_id = '7328c370-26d7-40e4-9a36-c88ef76c7d30'
+
+    ebg = simple_parts_lpg.get_projection("Expanded Banded Graph")
+
+    assert power_group_id in list(simple_parts_lpg.nodes)
+    assert power_in_port_id in list(simple_parts_lpg.nodes)
+
+    assert power_group_id in list(ebg.nodes)
+    assert power_in_port_id in list(ebg.nodes)
+
+    all_paths = nx.all_simple_paths(
+        simple_parts_lpg.get_projection("Expanded Banded Graph"),
+        power_in_port_id,
+        power_group_id
+    )
+
+    path_lists = list(all_paths)
+
+    for path in path_lists:
+        path_naming = []
+        for item in path:
+            path_naming.append(get_label_for_id(item, simple_parts_lpg.nodes))
 
         print(path_naming)
 
@@ -125,3 +168,35 @@ def test_type_multiplicity_rollup1(kerbal_lpg):
 
     assert liquid_upper == 40
     assert rocket_upper == 0
+
+
+def test_type_multiplicity_rollup2(simple_parts_lpg):
+
+    port_type_id = 'f29c8a2e-a7d3-4685-bfbb-3d54b5dd704c'
+    power_in_id = '7328c370-26d7-40e4-9a36-c88ef76c7d30'
+    power_out_id = 'babeb025-52f3-4ebe-9f0f-0414a4b6240d'
+
+    port_type = simple_parts_lpg.nodes[port_type_id]
+
+    port_upper = roll_up_multiplicity_for_type(
+        simple_parts_lpg,
+        port_type,
+        "upper"
+    )
+
+    power_in_mult = roll_up_upper_multiplicity(
+        lpg=simple_parts_lpg,
+        feature=simple_parts_lpg.nodes[power_in_id],
+    )
+
+    power_out_mult = roll_up_upper_multiplicity(
+        lpg=simple_parts_lpg,
+        feature=simple_parts_lpg.nodes[power_out_id],
+    )
+
+    assert power_in_mult == 1
+    assert power_out_mult == 1
+
+    # currently failing because we are counting connector ends as separate instances
+
+    assert port_upper == 2
