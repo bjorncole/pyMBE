@@ -5,8 +5,8 @@ from pathlib import Path
 from typing import Union
 from warnings import warn
 
-import requests
 import json
+import requests
 import sysml_v2_api_client as sysml2
 import traitlets as trt
 
@@ -191,6 +191,15 @@ class SysML2Client(Base):
                 f"reason: {response.reason}"
             )
         return response.json()
+
+    def _get_project_commits(self):
+        # TODO: add more info about the commit when API provides it
+        return [
+            commit.id
+            for commit in self._commits_api.get_commits_by_project(
+                self.selected_project,
+            )
+        ]
 
     def _get_elements_from_server(self):
         return self._retrieve_data(self.elements_url)

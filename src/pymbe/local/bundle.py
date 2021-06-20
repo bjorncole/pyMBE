@@ -1,6 +1,8 @@
-from ..client import SysML2Client
 import os
 import json
+
+from ..client import SysML2Client
+
 
 def download_to_local(
     host_url: str = "http://sysml2-sst.intercax.com",
