@@ -23,6 +23,7 @@ Connection Graph:
   included_edge_types:
   - ConnectionUsageEnd
   - InterfaceUsageEnd
+  - EndFeatureMembership
 
 Expanded Banded Graph:
   description: |

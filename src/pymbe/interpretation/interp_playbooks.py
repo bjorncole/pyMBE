@@ -91,12 +91,24 @@ def random_generator_playbook(
 
     random_generator_playbook_phase_4(expr_sequences, lpg, instances_dict)
 
+    # attached connector ends to sequences(
+
+    random_generator_playbook_phase_5(lpg, lpg.get_projection("Connection Graph"), instances_dict)
+
     return instances_dict
 
 def random_generator_phase_0_interpreting_edges(
     client: SysML2Client,
     lpg: SysML2LabeledPropertyGraph
 ):
+
+    """
+    Pre-work for the interpretation to support expression evaluations
+    :param client: Active SysML Client
+    :param lpg: Working Labeled Property Graph
+    :return: None - side effect is update to LPG with new edges
+    """
+
     new_edges = [
         (source, target, metatype, {
             "@id": f"_{uuid4()}",
@@ -136,7 +148,15 @@ def random_generator_phase_1_multiplicities(
     ptg: nx.DiGraph,
     scg: nx.DiGraph
 ) -> dict:
-    # will sub-divide abstract multiplicity
+    """
+    Calculates the multiplicities for classifiers in the considered model to support initial generation
+    :param lpg: Active SysML graph
+    :param ptg: Part Typing Graph projection from the LPG
+    :param scg: Subclassing Graph projection from the LPG
+    :return: dictionary of multiplicities for instance generation, indexed by classifier ID
+    """
+
+
     abstracts = [
         node
         for node in ptg.nodes
@@ -182,6 +202,14 @@ def random_generator_playbook_phase_1_singletons(
     scg: nx.DiGraph,
     instances_dict: dict
 ) -> None:
+    """
+    Calculates instances for classifiers that aren't directly typed (but may have members or be superclasses for
+    model elements that have sequences generated for them)
+    :param lpg: Active SysML graph
+    :param scg: Subclassing Graph projection from the LPG
+    :param instances_dict: Working dictionary of interpreted sequences for the model
+    :return: None - side effect is addition of new instances to the instances dictionary
+    """
 
     all_elements = lpg.nodes
 
@@ -205,6 +233,15 @@ def random_generator_playbook_phase_2_rollup(
     instances_dict: dict
 ) -> None:
 
+    """
+    Build up set of sequences for classifiers by taking the union of sequences already generated for the classifier
+    subclasses.
+    :param lpg: Active SysML graph
+    :param scg: Subclassing Graph projection from the LPG
+    :param instances_dict: Working dictionary of interpreted sequences for the model
+    :return: None - side effect is addition of new instances to the instances dictionary
+    """
+
     roots = [node for node in scg.nodes if scg.in_degree(node) == 0]
 
     for root in roots:
@@ -226,6 +263,12 @@ def random_generator_playbook_phase_2_unconnected(
     all_elements: dict,
     instances_dict: dict
 ) -> None:
+    """
+    Final pass to generate sequences for classifiers that haven't been given sequences yet
+    :param all_elements: Full dictionary of elements in the working memory
+    :param instances_dict: Working dictionary of interpreted sequences for the model
+    :return: None - side effect is addition of new instances to the instances dictionary
+    """
 
     finishing_list = [
         node
@@ -251,6 +294,18 @@ def random_generator_playbook_phase_3(
     ptg: nx.DiGraph,
     instances_dict: dict
 ) -> None:
+
+    """
+    Begin generating interpreting sequences for Features in the model by extending classifier sequences with randomly
+    selected instances of classifiers that type nested features
+    :param feature_sequences: Sequences that represent the nesting structure of the features
+    :param all_elements: Full dictionary of elements in the working memory
+    :param lpg: Active SysML graph
+    :param ptg: Part Typing Graph projection from the LPG
+    :param instances_dict: Working dictionary of interpreted sequences for the model
+    :return: None - side effect is addition of new instances to the instances dictionary
+    """
+
     already_drawn = {}
     last_sequence = []
     for feature_sequence in feature_sequences:
@@ -349,7 +404,14 @@ def random_generator_playbook_phase_4(
     lpg: SysML2LabeledPropertyGraph,
     instances_dict: dict
 ) -> None:
-
+    """
+    Generate interpreting sequences for Expressions in the model
+    :param expr_sequences: Sequences that represent the membership structure for expressions in the model and the features
+        to which expressions provide values
+    :param lpg: Active SysML graph
+    :param instances_dict: Working dictionary of interpreted sequences for the model
+    :return: None - side effect is addition of new instances to the instances dictionary
+    """
     all_elements = lpg.nodes
 
     for expr_seq in expr_sequences:
@@ -408,6 +470,54 @@ def random_generator_playbook_phase_4(
                     )
                 instances_dict.update({feature_id: new_sequences})
 
+
+def random_generator_playbook_phase_5(
+    lpg: SysML2LabeledPropertyGraph,
+    cug: nx.DiGraph,
+    instances_dict: dict
+):
+
+    # Generate sequences for connection and interface ends
+    for node_id in list(cug.nodes):
+        node = lpg.nodes[node_id]
+        if node['@type'] in ('ConnectionUsage', 'InterfaceUsage'):
+
+            connector_ends = node["connectorEnd"]
+
+            connector_id = node['@id']
+
+            source_feat_id = node['source'][0]['@id']
+            target_feat_id = node['target'][0]['@id']
+
+            source_sequences = instances_dict[source_feat_id]
+            target_sequences = instances_dict[target_feat_id]
+
+            connectors = instances_dict[connector_id]
+
+            extended_source_sequences = []
+            extended_target_sequences = []
+
+            for indx, seq in enumerate(connectors):
+                new_source_seq = []
+                new_target_seq = []
+
+                for item in seq:
+                    new_source_seq.append(item)
+                    new_target_seq.append(item)
+
+                for jndx, item in enumerate(source_sequences[indx]):
+                    if jndx > 0:
+                        new_source_seq.append(item)
+
+                for jndx, item in enumerate(target_sequences[indx]):
+                    if jndx > 0:
+                        new_target_seq.append(item)
+
+                extended_source_sequences.append(new_source_seq)
+                extended_target_sequences.append(new_target_seq)
+
+            instances_dict.update({connector_ends[0]['@id']: extended_source_sequences})
+            instances_dict.update({connector_ends[1]['@id']: extended_target_sequences})
 
 def build_sequence_templates(
     lpg: SysML2LabeledPropertyGraph
