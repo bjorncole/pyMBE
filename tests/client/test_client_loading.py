@@ -1,8 +1,7 @@
 import pytest
 
 from pymbe.client import SysML2Client
-
-from ..data_loader import kerbal_model_loaded_client
+from tests.conftest import kerbal_model_loaded_client
 
 
 @pytest.fixture

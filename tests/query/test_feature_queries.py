@@ -1,40 +1,58 @@
-from ..data_loader import kerbal_model_loaded_client
-from pymbe.graph.lpg import SysML2LabeledPropertyGraph
-from pymbe.client import SysML2Client
-from pymbe.query.query import *
-import pytest
 import networkx as nx
 
-# there must be a way to reuse from other modules ..
-@pytest.fixture
-def kerbal_client() -> SysML2Client:
-
-    return kerbal_model_loaded_client()
-
-
-@pytest.fixture()
-def kerbal_ids_by_type(kerbal_client) -> dict:
-
-    ids_dict = {}
-
-    all_elements = kerbal_client.elements_by_id
-
-    for ele_id, ele in all_elements.items():
-        if ele["@type"] in ids_dict:
-            ids_dict[ele["@type"]].append(ele_id)
-        else:
-            ids_dict.update({ele['@type']: [ele_id]})
-
-    return ids_dict
+from pymbe.query.query import (
+    get_features_typed_by_type,
+    get_label_for_id,
+    get_types_for_feature,
+    roll_up_lower_multiplicity,
+    roll_up_multiplicity_for_type,
+    roll_up_upper_multiplicity,
+)
 
 
-@pytest.fixture
-def kerbal_lpg(kerbal_client) -> SysML2LabeledPropertyGraph:
-    new_lpg = SysML2LabeledPropertyGraph()
+from tests.conftest import kerbal_model_loaded_client
 
-    new_lpg.update(kerbal_client.elements_by_id, False)
 
-    return new_lpg
+def test_feature_to_type(kerbal_client, kerbal_lpg):
+
+    engines_feat = '32c847a1-2184-4486-ba48-dbf6125ca638'
+    engine_type_feat = '79cf7d24-37f7-404c-94b4-395cd1d0ee51'
+
+    assert get_types_for_feature(kerbal_lpg, engines_feat) == [engine_type_feat]
+
+
+def test_type_to_feature(kerbal_client, kerbal_lpg):
+
+    engines_feat = '32c847a1-2184-4486-ba48-dbf6125ca638'
+    engine_type_feat = '79cf7d24-37f7-404c-94b4-395cd1d0ee51'
+
+    assert get_features_typed_by_type(kerbal_lpg, engine_type_feat) == [engines_feat]
+
+
+def test_banded_graph_paths(kerbal_lpg):
+
+    banded_featuring_graph = kerbal_lpg.get_projection("Expanded Banded Graph")
+
+    rocket_id = '62fc7eb7-0637-4201-add7-4d2758980d2f'
+    engines_feat = '32c847a1-2184-4486-ba48-dbf6125ca638'
+
+    all_paths = nx.all_simple_paths(
+        kerbal_lpg.get_projection("Expanded Banded Graph"),
+        engines_feat,
+        rocket_id
+    )
+
+    path_lists = list(all_paths)
+
+    for path in path_lists:
+        path_naming = []
+        for item in path:
+            path_naming.append(get_label_for_id(item, kerbal_lpg.nodes))
+
+        print(path_naming)
+
+    assert len(path_lists) == 1
+
 
 def test_feature_multiplicity_rollup(kerbal_client, kerbal_lpg):
 
@@ -95,6 +113,7 @@ def test_type_multiplicity_rollup(kerbal_lpg):
 
     assert liquid_upper == 40
     assert rocket_upper == 0
+
 
 def test_attribute_multiplicity_rollup(kerbal_client, kerbal_lpg):
 

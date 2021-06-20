@@ -37,6 +37,8 @@ Expanded Banded Graph:
     - FeatureValue
     - ParameterMembership
     - ReturnParameterMembership
+  excluded_node_types:
+    - ReferenceUsage
 
 Expression Value Graph:
   description: >
@@ -50,6 +52,7 @@ Expression Value Graph:
     - LiteralInteger
     - LiteralReal
     - OperatorExpression
+    - PathStepExpression
   included_edge_types:
     - FeatureMembership
     - ParameterMembership
@@ -90,6 +93,8 @@ Part Definition Graph:
     - AttributeDefinition
     - PartDefinition
     - PortDefinition
+    - InterfaceDefinition
+    - ConnectionDefinition
   included_edge_types:
     - Superclassing
   reversed_edge_types:
@@ -102,8 +107,12 @@ Part Featuring Graph:
   included_node_types:
     - AttributeDefinition
     - AttributeUsage
+    - ConnectionDefinition
+    - ConnectionUsage
     - ConjugatedPortDefinition
     - DataType
+    - InterfaceDefinition
+    - InterfaceUsage
     - PartDefinition
     - PartUsage
     - PortDefinition
@@ -118,8 +127,12 @@ Part Typing Graph:
   included_node_types:
     - AttributeDefinition
     - AttributeUsage
+    - ConnectionDefinition
+    - ConnectionUsage
     - ConjugatedPortDefinition
     - DataType
+    - InterfaceDefinition
+    - InterfaceUsage
     - PartDefinition
     - PartUsage
     - PortDefinition
@@ -133,8 +146,12 @@ Part Typing and Redefinition Graph:
   included_node_types:
     - AttributeDefinition
     - AttributeUsage
+    - ConnectionDefinition
+    - ConnectionUsage
     - ConjugatedPortDefinition
     - DataType
+    - InterfaceDefinition
+    - InterfaceUsage
     - PartDefinition
     - PartUsage
     - PortDefinition
