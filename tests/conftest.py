@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import traitlets as trt
+
 import pytest
 
 from pymbe.client import SysML2Client
@@ -10,20 +12,30 @@ from pymbe.interpretation.set_builders import *
 TEST_ROOT = Path(__file__).parent
 
 
-def kerbal_model_loaded_client() -> SysML2Client:
+def get_client(filename: str) -> SysML2Client:
+    if not filename.endswith(".json"):
+        filename += ".json"
+
+    json_file = TEST_ROOT / "fixtures/{filename}"
+    if not json_file.exists():
+        raise ValueError(
+            f"Could not load: {json_file.absolute()}, did you forget to "
+            "run git submodules?\n\t"
+            "run: git submodule update --init"
+        )
+
     helper_client = SysML2Client()
-    file_name = TEST_ROOT / "data/Kerbal/elements.json"
-    helper_client._load_disk_elements(file_name)
+    helper_client._load_from_file(json_file)
 
     return helper_client
+
+
+def kerbal_model_loaded_client() -> SysML2Client:
+    return get_client("Kerbal")
 
 
 def simple_parts_model_loaded_client() -> SysML2Client:
-    helper_client = SysML2Client()
-    file_name = TEST_ROOT / "data/Simple Parts Model/elements.json"
-    helper_client._load_disk_elements(file_name)
-
-    return helper_client
+    return get_client("Simple Parts Model")
 
 
 @pytest.fixture
@@ -50,18 +62,19 @@ def kerbal_ids_by_type(kerbal_client) -> dict:
 def kerbal_lpg() -> SysML2LabeledPropertyGraph:
     new_lpg = SysML2LabeledPropertyGraph()
     client = kerbal_model_loaded_client()
-
-    new_lpg.update(client.elements_by_id, False)
-
+    trt.link(
+        (client, "elements_by_id"),
+        (new_lpg, "elements_by_id"),
+    )
     return new_lpg
 
 
 @pytest.fixture
-def kerbal_random_stage_1_instances(kerbal_client, kerbal_lpg) -> dict:
+def kerbal_random_stage_1_instances(kerbal_lpg) -> dict:
     ptg = kerbal_lpg.get_projection("Part Typing Graph")
     scg = kerbal_lpg.get_projection("Part Definition Graph")
 
-    random_generator_phase_0_interpreting_edges(kerbal_client, kerbal_lpg)
+    random_generator_phase_0_interpreting_edges(kerbal_lpg)
 
     full_multiplicities = random_generator_phase_1_multiplicities(kerbal_lpg, ptg, scg)
 

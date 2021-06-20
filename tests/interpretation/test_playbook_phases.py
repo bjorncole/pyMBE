@@ -34,7 +34,7 @@ def test_type_multiplicity_dict_building(kerbal_lpg):
 
 
 def test_phase_0_implied_relationships(kerbal_client, kerbal_lpg):
-    random_generator_phase_0_interpreting_edges(kerbal_client, kerbal_lpg)
+    random_generator_phase_0_interpreting_edges(kerbal_lpg)
 
     all_edge_keys = list(kerbal_lpg.edges.keys())
     all_edge_types = [edg[2] for edg in all_edge_keys]
@@ -147,7 +147,7 @@ def test_phase_4_instance_sampling(kerbal_lpg, kerbal_random_stage_4_complete):
 
 def test_expression_inferred_graph(kerbal_client, kerbal_lpg):
     # inferred graph provides a reliable order of execution for expressions
-    random_generator_phase_0_interpreting_edges(kerbal_client, kerbal_lpg)
+    random_generator_phase_0_interpreting_edges(kerbal_lpg)
 
     all_edge_keys = list(kerbal_lpg.edges.keys())
     all_edge_types = [edg[2] for edg in all_edge_keys]
