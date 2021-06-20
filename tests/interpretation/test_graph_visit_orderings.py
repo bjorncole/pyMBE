@@ -5,8 +5,7 @@ from pymbe.interpretation.interp_playbooks import (
 )
 
 
-def test_feature_sequence_templates(kerbal_client, kerbal_lpg):
-
+def test_feature_sequence_templates1(kerbal_client, kerbal_lpg):
     seq_templates = build_sequence_templates(kerbal_lpg)
 
     assert len(seq_templates) == 39
@@ -39,8 +38,54 @@ def test_feature_sequence_templates(kerbal_client, kerbal_lpg):
                 assert seq.index(liquid_stage_id) < seq.index(tanks_id)
 
 
-def test_expression_sequence_templates(kerbal_lpg):
+def test_feature_sequence_templates2(kerbal_lpg):
+    seq_templates = build_sequence_templates(kerbal_lpg)
 
+    coupler_usage_id = '3a609e5a-3e6f-4eb4-97ff-5a32b23122bf'
+    rocket_id = '62fc7eb7-0637-4201-add7-4d2758980d2f'
+    stages_feat = '442722b5-8d08-46e4-ad5f-e6e2dd28d6f6'
+    sep_force_id = '7f5e38cb-6647-482d-b8fe-5c266d73ab42'
+
+    print(seq_templates)
+
+    assert [
+        rocket_id,
+        stages_feat,
+        coupler_usage_id,
+        sep_force_id] in seq_templates
+
+
+def test_feature_sequence_templates3(kerbal_lpg):
+    seq_templates = build_sequence_templates(kerbal_lpg)
+
+    coupler_usage_id = '3a609e5a-3e6f-4eb4-97ff-5a32b23122bf'
+    rocket_id = '62fc7eb7-0637-4201-add7-4d2758980d2f'
+    sep_force_id = '7f5e38cb-6647-482d-b8fe-5c266d73ab42'
+
+    print(seq_templates)
+
+    assert [
+        rocket_id,
+        coupler_usage_id,
+        sep_force_id] not in seq_templates
+
+
+def test_feature_sequence_templates4(simple_parts_lpg):
+    seq_templates = build_sequence_templates(simple_parts_lpg)
+
+    power_group_id = 'eb96afae-0f09-4912-861e-705bb33a4202'
+    power_user_part_id = '648fd9b3-2a6e-40e8-b3e9-b8ebb407ce07'
+    power_in_port_id = '7328c370-26d7-40e4-9a36-c88ef76c7d30'
+
+    print(seq_templates)
+
+    assert [
+        power_group_id,
+        power_user_part_id,
+        power_in_port_id] in seq_templates
+
+
+def test_expression_sequence_templates(kerbal_lpg):
     fts_full_mass = "004a1b5f-4bfc-4460-9f38-1e7b4caba6e5"
     ft200_full_mass = "1e5a0ed7-8b41-4ab4-a433-8f7eedd75833"
     ft100_full_mass = "a57b423b-5c0c-4057-be6b-689abcb536b2"
