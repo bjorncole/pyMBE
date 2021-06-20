@@ -78,18 +78,14 @@ def kerbal_random_stage_1_instances(kerbal_lpg) -> dict:
 
     full_multiplicities = random_generator_phase_1_multiplicities(kerbal_lpg, ptg, scg)
 
-    instances_dict = {}
-
-    for type_id, number in full_multiplicities.items():
-        new_instances = create_set_with_new_instances(
+    return {
+        type_id: create_set_with_new_instances(
             sequence_template=[kerbal_lpg.nodes[type_id]],
             quantities=[number],
-            name_hints=[],
+            name_hints={},
         )
-
-        instances_dict.update({type_id: new_instances})
-
-    return instances_dict
+        for type_id, number in full_multiplicities.items()
+    }
 
 
 @pytest.fixture
@@ -99,7 +95,7 @@ def kerbal_random_stage_1_complete(kerbal_lpg, random_stage_1_instances) -> dict
     random_generator_playbook_phase_1_singletons(
         kerbal_lpg,
         scg,
-        random_stage_1_instances
+        random_stage_1_instances,
     )
 
     return random_stage_1_instances
@@ -129,7 +125,6 @@ def kerbal_random_stage_3_complete(kerbal_lpg, random_stage_2_complete) -> dict:
 
 @pytest.fixture
 def kerbal_random_stage_4_complete(kerbal_lpg, random_stage_3_complete) -> dict:
-
     expr_sequences = build_expression_sequence_templates(lpg=kerbal_lpg)
 
     random_generator_playbook_phase_4(expr_sequences, kerbal_lpg, random_stage_3_complete)
