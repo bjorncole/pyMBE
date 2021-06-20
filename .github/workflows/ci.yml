@@ -26,6 +26,8 @@ jobs:
     steps:
       - name: git checkout
         uses: actions/checkout@v2
+        with:
+          submodules: recursive
 
       - name: cache (conda)
         uses: actions/cache@v1
