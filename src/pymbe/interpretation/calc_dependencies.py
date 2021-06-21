@@ -26,7 +26,7 @@ def generate_execution_order(
 
     for root in roots:
         context = all_elements[root]['featuringType'][0]['@id']
-        execution_contexts.update({context: []})
+        execution_contexts[context] = []
 
         calc_order = list(nx.edge_bfs(eig, root))
         calc_order.reverse()

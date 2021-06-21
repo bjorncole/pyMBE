@@ -189,7 +189,7 @@ def extend_sequences_with_new_value_holder(
         )
 
         new_sequence = []
-        new_sequence = new_sequence + seq
+        new_sequence += seq
         new_sequence.append(new_holder)
 
         new_sequences.append(new_sequence)
