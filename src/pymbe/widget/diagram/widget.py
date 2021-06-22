@@ -1,4 +1,5 @@
 import typing as ty
+from ipyelk import tools
 
 import ipywidgets as ipyw
 import networkx as nx
@@ -23,7 +24,7 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
     description = trt.Unicode("Diagram").tag(sync=True)
 
     diagram: PartDiagram = trt.Instance(PartDiagram, args=())
-    diagram_graph: nx.Graph = trt.Instance(nx.Graph, args=())
+    drawn_graph: nx.Graph = trt.Instance(nx.Graph, args=())
 
     id_mapper: Mapper = trt.Instance(Mapper, args=())
     parts: ty.Dict[str, Part] = trt.Dict(
@@ -62,6 +63,11 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
         if not projection_selector.options:
             projection_selector.options = tuple(self.sysml_projections)
         projection_selector.rows = self.max_type_selector_rows
+
+        # Configure buttons in the toolbar that update the diagram
+        toolbar.update_diagram.on_click(self._refresh_button_click)
+        toolbar.filter_to_path.on_click(self._refresh_button_click)
+        toolbar.filter_by_dist.on_click(self._refresh_button_click)
         return toolbar
 
     @trt.validate("layout")
@@ -77,7 +83,7 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
 
     @trt.observe("sysml_projections")
     def _update_projection_selector(self, *_):
-        self.projection_selector.options = tuple(self.sysml_projections)
+        self.toolbar.projection_selector.options = tuple(self.sysml_projections)
 
     @trt.observe("nodes_by_type")
     def _update_node_type_selector_options(self, *_):
@@ -103,11 +109,11 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
     @trt.observe("selected")
     def _update_based_on_selection(self, *_):
         selected = self.selected
-        self.filter_to_path.disabled = (
+        self.toolbar.filter_to_path.disabled = (
             len(selected) != 2 or
             not all(isinstance(n, str) for n in selected)
         )
-        self.filter_by_dist.disabled = not selected
+        self.toolbar.filter_by_dist.disabled = not selected
 
     @property
     def excluded_edge_types(self):
@@ -166,24 +172,26 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
     def _refresh_button_click(self, button: ipyw.Button):
         button.disabled = failed = True
         try:
-            failed = self._update_diagram_graph(button=button)
+            failed = self._update_drawn_graph(button=button)
         except Exception as exc:
             self.log.warning(f"Button click for {button} failed: {exc}")
         finally:
             button.disabled = failed
 
-    def _update_diagram_graph(self, button=None):
+    def _update_drawn_graph(self, button=None):
         failed = False
 
-        enforce_directionality = self.enforce_directionality.value
-        if self.edge_type_reverser.value and not enforce_directionality:
+        enforce_directionality = self.toolbar.enforce_directionality.value
+        reversed_edges = self.toolbar.edge_type_reverser.value
+
+        if reversed_edges and not enforce_directionality:
             raise ValueError(
-                f"Reversing edge types: {self.edge_type_reverser.value} "
-                "makes no sense since edges are not being enforced."
+                f"Reversing edge types: {reversed_edges} makes"
+                "no sense since edges are not being enforced."
             )
 
         instructions: dict = self.get_projection_instructions(
-            projection=self.projection_selector.value,
+            projection=self.toolbar.projection_selector.value,
         )
         new_graph = self.adapt(
             excluded_edge_types={
@@ -196,11 +204,11 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
             },
             reversed_edge_types={
                 *instructions.get("reversed_edge_types", []),
-                *self.edge_type_reverser.value,
+                *reversed_edges,
             },
         )
 
-        if button is self.filter_to_path:
+        if button is self.toolbar.filter_to_path:
             source, target = self.selected
             new_graph = self.get_path_graph(
                 graph=new_graph,
@@ -213,10 +221,10 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
                 self.log.warning(
                     "Could not find path between " 
                     f"""{" and ".join(self.selected)}, with directionality """
-                    f"""{"not" if not self.enforce_directionality else ""} """ 
-                    "enforced."
+                    "not" if not self.toolbar.enforce_directionality else ""
+                    " enforced."
                 )
-        elif button is self.filter_by_dist:
+        elif button is self.toolbar.filter_by_dist:
             new_graph = self.get_spanning_graph(
                 graph=new_graph,
                 seeds=self.selected,
@@ -231,21 +239,21 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
                     f"{self.selected}."
                 )
 
-        self.diagram_graph = new_graph
+        self.drawn_graph = new_graph
         # self.diagram.elk_app.refresh()
         # self.diagram.elk_app.diagram.fit()
         return failed
 
-    @trt.observe("diagram")
-    def _update_diagram(self, *_):
+    @trt.observe("model")
+    def _update_viewer(self, *_):
         model = self.model
         self.source = self.loader.load(model)
         self.style = model.style
         self.view.symbols = model.symbols
 
-    @trt.observe("diagram_graph")
-    def _update_diagram(self, change: trt.Bunch):
-        if change.old not in (None, trt.Undefined):
+    @trt.observe("drawn_graph")
+    def _update_diagram(self, change: trt.Bunch = None):
+        if change and change.old not in (None, trt.Undefined):
             old = change.old
             del old
         graph = change.new
@@ -305,9 +313,9 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
             new_selections = self.id_mapper.get(*selections)
         return tuple(new_selections)
 
-    @trt.observe("elk_layout")
-    def _update_observers_for_layout(self, change: trt.Bunch):
-        if change.old not in (None, trt.Undefined):
-            change.old.unobserve(self._element_type_opt_change)
-            del change.old
-        change.new.observe(self._element_type_opt_change, "value")
+    # @trt.observe("elk_layout")
+    # def _update_observers_for_layout(self, change: trt.Bunch):
+    #     if change.old not in (None, trt.Undefined):
+    #         change.old.unobserve(self._element_type_opt_change)
+    #         del change.old
+    #     change.new.observe(self._element_type_opt_change, "value")
