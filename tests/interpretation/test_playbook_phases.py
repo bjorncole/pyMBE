@@ -98,7 +98,7 @@ def test_phase_2_instance_creation(kerbal_lpg, kerbal_random_stage_1_complete):
     assert len(kerbal_random_stage_1_complete[krp_id]) == 272
 
 
-def test_phase_3_instance_sampling(kerbal_lpg, kerbal_random_stage_3_complete):
+def test_phase_3_instance_sampling(kerbal_random_stage_3_complete):
     coupler_usage_id = "3a609e5a-3e6f-4eb4-97ff-5a32b23122bf"
     sep_force_id = "7f5e38cb-6647-482d-b8fe-5c266d73ab42"
 
