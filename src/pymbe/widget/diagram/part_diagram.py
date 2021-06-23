@@ -31,22 +31,24 @@ class PartDiagram(Partition):
     default_edge: Type[Edge] = Field(default=DirectedAssociation)
 
     symbols: SymbolSpec = SymbolSpec().add(
-        make_arrow_symbol(identifier="generalization", r=5, closed=True),
-        make_arrow_symbol(identifier="directed_association", r=5, closed=False),
-        make_containment_symbol(identifier="containment", r=5),
-        make_feature_typing_symbol(identifier="feature_typing", r=5),
-        make_redefinition_symbol(identifier="redefinition", r=5),
-        make_subsetting_symbol(identifier="subsetting", r=5),
-        make_rhombus_symbol(identifier="composition", r=5),
-        make_rhombus_symbol(identifier="aggregation", r=5),
+        make_arrow_symbol(identifier="generalization", r=8, closed=True),
+        make_arrow_symbol(identifier="directed_association", r=8, closed=False),
+        make_containment_symbol(identifier="containment", r=8),
+        make_feature_typing_symbol(identifier="feature_typing", r=8),
+        make_redefinition_symbol(identifier="redefinition", r=8),
+        make_subsetting_symbol(identifier="subsetting", r=8),
+        make_rhombus_symbol(identifier="composition", r=8),
+        make_rhombus_symbol(identifier="aggregation", r=8),
     )
 
     style: Dict[str, Dict] = {
         # Elk Label styles for Box Titles
-        " .elklabel.compartment_title_1": {
-            # "font-weight": "bold",
+        " .elklabel.heading, .elklabel.compartment_title_1": {
+            "font-style": "normal",
+            "font-weight": "normal",
         },
         " .elklabel.heading, .elklabel.compartment_title_2": {
+            "font-style": "normal",
             "font-weight": "bold",
         },
         # Style Arrowheads (future may try to )

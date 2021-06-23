@@ -56,10 +56,9 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
         ),
     )
 
+    # TODO: Add functionality to link the selections
+    selection_link: trt.link = trt.Instance(trt.link, allow_none=True)
     toolbar: Toolbar = trt.Instance(Toolbar, args=())
-
-    # def __init__(self, *args ,**kwargs):
-    #     super().__init__(*args, **kwargs)
 
     @trt.default("id_mapper")
     def _make_id_mapper(self) -> Mapper:
@@ -106,9 +105,10 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
             width="auto",
         )
 
-    @trt.observe("source")
-    def _update_mapper(self, *_):
-        self.id_mapper = self._make_id_mapper()
+    # TODO: Fix the selection, this may require to be brought back
+    # @trt.observe("source")
+    # def _update_mapper(self, *_):
+    #     self.id_mapper = self._make_id_mapper()
 
     @trt.observe("sysml_projections")
     def _update_projection_selector(self, *_):
@@ -269,15 +269,16 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
                 )
 
         self.drawn_graph = new_graph
-        # self.diagram.elk_app.refresh()
-        # self.diagram.elk_app.diagram.fit()
+
+        # TODO: determine if we should refresh/fit/center the view
+
         return failed
 
     @trt.observe("diagram")
     def _update_viewer(self, *_):
         diagram = self.diagram
         self.source = self.loader.load(diagram)
-        self.style = diagram.style
+        self.style = diagram.style.copy()
         self.view.symbols = diagram.symbols
 
     @trt.observe("drawn_graph")
@@ -342,6 +343,7 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
             new_selections = self.id_mapper.get(*selections)
         return tuple(new_selections)
 
+    # TODO: Bring this back when the layout options are back in the toolbar
     # @trt.observe("elk_layout")
     # def _update_observers_for_layout(self, change: trt.Bunch):
     #     if change.old not in (None, trt.Undefined):

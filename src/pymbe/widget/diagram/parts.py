@@ -22,13 +22,15 @@ class Part(Record):
     @classmethod
     def from_data(cls, data: dict, width=220):
         id_ = data["@id"]
+        metatype = data.get("@type")
         label = (
                 data.get("value")
                 or data.get("label")
                 or data.get("name")
                 or id_
         )
-        metatype = data.get("@type")
+
+        label = label.replace(f"«{metatype}»", "").strip()
 
         if (
                 metatype in ("MultiplicityRange",)

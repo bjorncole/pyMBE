@@ -119,13 +119,6 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):
 
     @trt.validate("children")
     def _validate_children(self, proposal):
-        # children = proposal.value
-        # for child in children:
-        #     icon = BUTTON_MAP.get(child.description)
-        #     if not (isinstance(child, ipyw.Button) and icon):
-        #         continue
-        #     child.description = ""
-        #     child.icon = icon
         return [
             self.buttons,
             self.accordion,
@@ -151,7 +144,8 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):
             button.layout.width = "40px"
             if button.description:
                 button.tooltip = button.description
-            if button.tooltip:
+                button.description = ""
+            if not button.icon and button.tooltip:
                 icon = BUTTON_ICONS.get(button.tooltip)
                 if icon:
                     button.icon = icon
