@@ -1,5 +1,6 @@
 import typing as ty
-from ipyelk import tools
+
+from warnings import warn
 
 import ipywidgets as ipyw
 import networkx as nx
@@ -13,8 +14,21 @@ from ..core import BaseWidget
 from .parts import Part
 from .part_diagram import PartDiagram
 from .relationships import METATYPE_TO_RELATIONSHIP_TYPES, DirectedAssociation
-from .tools import Toolbar
+from .tools import Toolbar, DEFAULT_BUTTON_KWARGS
 from .utils import Mapper
+
+
+BUTTONS = {
+    "Fit View": dict(
+        icon="expand-arrows-alt",
+    ),
+    "Center View": dict(
+        icon="crosshairs",
+    ),
+    "Toggle Collapsed": dict(
+        icon="toggle-on",  # alternative: expand
+    ),
+}
 
 
 @ipyw.register
@@ -44,6 +58,9 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
 
     toolbar: Toolbar = trt.Instance(Toolbar, args=())
 
+    # def __init__(self, *args ,**kwargs):
+    #     super().__init__(*args, **kwargs)
+
     @trt.default("id_mapper")
     def _make_id_mapper(self) -> Mapper:
         return Mapper(
@@ -53,29 +70,41 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
             },
         )
 
-    @trt.validate("toolbar")
-    def _validate_proj_selector(self, proposal: trt.Bunch) -> ipyw.Dropdown:
-        toolbar = proposal.value
+    @trt.default("tools")
+    def _default_tools(self) -> ty.List[ipyelk.Tool]:
+        return [
+            self.view.selection,
+            self.view.fit_tool,
+            self.view.center_tool,
+            ipyelk.tools.PipelineProgressBar(),
+        ]
 
-        # TODO: Do other things to the toolbar
+    @trt.default("toolbar")
+    def _make_toolbar(self) -> Toolbar:
+        toolbar = Toolbar(
+            layout=dict(height="auto", width="auto", visibility="visible"),
+            tools=self.tools,
+        )
 
-        projection_selector = toolbar.projection_selector
-        if not projection_selector.options:
-            projection_selector.options = tuple(self.sysml_projections)
-        projection_selector.rows = self.max_type_selector_rows
-
+        toolbar.projection_selector.options = tuple(self.sysml_projections)
         # Configure buttons in the toolbar that update the diagram
-        toolbar.update_diagram.on_click(self._refresh_button_click)
-        toolbar.filter_to_path.on_click(self._refresh_button_click)
-        toolbar.filter_by_dist.on_click(self._refresh_button_click)
+        toolbar.update_diagram.on_click(self._click_to_update_drawn_graph)
+        toolbar.filter_to_path.on_click(self._click_to_update_drawn_graph)
+        toolbar.filter_by_dist.on_click(self._click_to_update_drawn_graph)
+
+        trt.link((self, "tools"), (toolbar, "tools"))
+
+        # FIXME: Remove the need to run these hacky "fixes"
+        # toolbar._update_diagram_toolbar()
+
         return toolbar
 
-    @trt.validate("layout")
-    def _validate_layout(self, proposal):
-        layout = proposal.value
-        layout.height = "100%"
-        layout.width = "auto"
-        return layout
+    @trt.default("layout")
+    def _default_layout(self):
+        return dict(
+            height="100%",
+            width="auto",
+        )
 
     @trt.observe("source")
     def _update_mapper(self, *_):
@@ -87,7 +116,7 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
 
     @trt.observe("nodes_by_type")
     def _update_node_type_selector_options(self, *_):
-        self.toolbar.update_options(
+        self.toolbar.update_dropdown_options(
             selector="nodes",
             options={
                 f"{node_type} [{len(nodes)}]": nodes
@@ -97,7 +126,7 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
 
     @trt.observe("edges_by_type")
     def _update_edge_type_selector_options(self, *_):
-        self.toolbar.update_options(
+        self.toolbar.update_dropdown_options(
             selector="edges",
             options={
                 f"{edge_type} [{len(edges)}]": edges
@@ -169,7 +198,7 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
             if id_ in self.graph.edges
         )
 
-    def _refresh_button_click(self, button: ipyw.Button):
+    def _click_to_update_drawn_graph(self, button: ipyw.Button):
         button.disabled = failed = True
         try:
             failed = self._update_drawn_graph(button=button)
@@ -244,12 +273,12 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
         # self.diagram.elk_app.diagram.fit()
         return failed
 
-    @trt.observe("model")
+    @trt.observe("diagram")
     def _update_viewer(self, *_):
-        model = self.model
-        self.source = self.loader.load(model)
-        self.style = model.style
-        self.view.symbols = model.symbols
+        diagram = self.diagram
+        self.source = self.loader.load(diagram)
+        self.style = diagram.style
+        self.view.symbols = diagram.symbols
 
     @trt.observe("drawn_graph")
     def _update_diagram(self, change: trt.Bunch = None):
@@ -258,7 +287,7 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
             del old
         graph = change.new
 
-        model = PartDiagram()
+        diagram = PartDiagram()
         parts = self.parts
         new_parts = {
             id_: Part.from_data(node_data)
@@ -281,7 +310,7 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
                     f"'{metatype}' with {source}"
                 )
                 continue
-            new_relationship = model.add_relationship(
+            new_relationship = diagram.add_relationship(
                 source=parts[source],
                 target=parts[target],
                 cls=METATYPE_TO_RELATIONSHIP_TYPES.get(
@@ -290,7 +319,7 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
                 ),
                 data=edge_data,
             )
-        self.model = model
+        self.diagram = diagram
 
     @trt.observe("selected")
     def _update_diagram_selections(self, *_):

@@ -6,10 +6,14 @@ import ipywidgets as ipyw
 import traitlets as trt
 
 
-BUTTON_MAP = {
-    "Fit": "",
+DEFAULT_BUTTON_KWARGS = dict(
+    description="",
+    layout=dict(height="40px", width="40px"),
+)
+
+BUTTON_ICONS = {
     "Center": "crosshairs",
-    "Toggle Collapsed": "expand",
+    "Fit": "expand-arrows-alt",
 }
 
 
@@ -17,14 +21,9 @@ BUTTON_MAP = {
 class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):
     """A customized toolbar for pymbe's diagram."""
 
-    accordion: ty.Dict[str, ipyw.Widget] = trt.Dict(
-        key_trait=trt.Unicode(),
-        value_trait=trt.Instance(ipyw.Widget),
-    )
-
-    buttons: ty.List[ipyw.Widget] = trt.List()
-
-    # tools: ty.List[trt.HasTraits] = trt.List(trt.Instance(trt.HasTraits), args=())
+    accordion: ipyw.Accordion = trt.Instance(ipyw.Accordion)
+    buttons: ipyw.HBox = trt.Instance(ipyw.HBox, args=())
+    loader: ipyw.FloatProgress = trt.Instance(ipyw.FloatProgress, args=())
 
     edge_type_selector: ipyw.SelectMultiple = trt.Instance(
         ipyw.SelectMultiple,
@@ -42,21 +41,19 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):
     update_diagram: ipyw.Button = trt.Instance(
         ipyw.Button,
         kw=dict(
-            description="",
             icon="retweet",
             tooltip="Update diagram",
-            layout=dict(height="40px", width="40px")
+            **DEFAULT_BUTTON_KWARGS,
         ),
     )
 
     filter_to_path: ipyw.Button = trt.Instance(
         ipyw.Button,
         kw=dict(
-            description="",
             disabled=True,
             icon="project-diagram",  # share-alt
-            layout=dict(height="40px", width="40px"),
             tooltip="Filter To Path",
+            **DEFAULT_BUTTON_KWARGS,
         )
     )
     enforce_directionality: ipyw.Checkbox = trt.Instance(
@@ -70,11 +67,10 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):
     filter_by_dist: ipyw.Button = trt.Instance(
         ipyw.Button,
         kw=dict(
-            description="",
             disabled=True,
             icon="sitemap",  # hubspot
-            layout=dict(height="40px", width="40px"),
             tooltip="Filter by Distance",
+            **DEFAULT_BUTTON_KWARGS,
         )
     )
     max_distance: ipyw.IntSlider = trt.Instance(
@@ -89,39 +85,94 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):
 
     max_type_selector_rows: int = trt.Int(default_value=10, min=5)
 
-    @trt.validate("tools")
-    def _validate_tools(self, proposal):
-        tools = proposal.value
-        if not tools:
-            tools = [
+    @trt.default("accordion")
+    def _make_accordion(self):
+        accordion = {
+            "Projection": self.projection_selector,
+            "Type Filter": ipyw.Accordion(
+                _titles={0: "Node Types", 1: "Edge Types"},
+                children=[
+                    self.node_type_selector,
+                    self.edge_type_selector,
+                ],
+                selected_index=None,
+            ),
+            "Reverse Edges": self.edge_type_reverser,
+            "Explore": ipyw.VBox([
+                self.enforce_directionality,
+                ipyw.Label("Shortest Path:"),
+                ipyw.HBox([self.filter_to_path]),
+                ipyw.Label("Distance:"),
+                ipyw.HBox([self.filter_by_dist, self.max_distance]),
+            ]),
+            # "Layout": ...
+        }
+        titles, widgets = zip(*accordion.items())
+        return ipyw.Accordion(
+            _titles={
+                idx: title
+                for idx, title in enumerate(titles)
+            },
+            children=widgets,
+            selected_index=None,
+        )
 
-            ]
-
-    # @trt.validate("children")
-    # def _validate_children(self, proposal):
-    #     children = proposal.value
-    #     for child in children:
-    #         icon = BUTTON_MAP.get(child.description)
-    #         if not (isinstance(child, ipyw.Button) and icon):
-    #             continue
-    #         child.description = ""
-    #         child.icon = icon
-    #     return children
+    @trt.validate("children")
+    def _validate_children(self, proposal):
+        # children = proposal.value
+        # for child in children:
+        #     icon = BUTTON_MAP.get(child.description)
+        #     if not (isinstance(child, ipyw.Button) and icon):
+        #         continue
+        #     child.description = ""
+        #     child.icon = icon
+        return [
+            self.buttons,
+            self.accordion,
+            self.loader,
+        ]
 
     @trt.validate("layout")
     def _validate_layout(self, proposal):
         layout = proposal.value
         layout.width = "auto"
+        layout.visibility = "visible"
         return layout
 
-    def update_options(self, selector: str, options: dict):
-        if selector == "nodes":
-            selectors = [self.node_type_selector]
-        elif selector == "edges":
-            selectors = [self.edge_type_selector, self.edge_type_reverser]
-        for selector in selectors:
-            selector.options = options
-        self._update_rows_in_multiselect(selectors=selectors)
+    @trt.observe("tools")
+    def _update_children(self, *_):
+        """Note: overwrites ipyelk.Toolbar method."""
+        self.buttons.children = buttons = [
+            tool.ui for tool in self.tools
+            if isinstance(tool.ui, ipyw.Button)
+        ] + [self.update_diagram, self.close_btn]
+        for button in buttons:
+            button.layout.height = "40px"
+            button.layout.width = "40px"
+            if button.description:
+                button.tooltip = button.description
+            if button.tooltip:
+                icon = BUTTON_ICONS.get(button.tooltip)
+                if icon:
+                    button.icon = icon
+
+        self.loader = self.get_tool(ipyelk.tools.PipelineProgressBar).ui
+        self.loader.layout.width = "100%"
+        self.loader.layout.visibility = "hidden"
+
+    def get_tool(self, tool_type: ty.Type[ipyelk.Tool]) -> ipyelk.Tool:
+        matches = [tool for tool in self.tools if type(tool) is tool_type]
+        num_matches = len(matches)
+        if num_matches > 1:
+            raise ipyelk.exceptions.NotUniqueError(
+                f"Found too many tools with type {tool_type}"
+            )
+        elif num_matches < 1:
+            raise ipyelk.exceptions.NotFoundError(
+                f"No tool matching type {tool_type}"
+            )
+
+        return matches[0]
 
     @trt.observe("max_type_selector_rows")
     def _update_rows_in_multiselect(
@@ -141,49 +192,11 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):
                 len(selector.options)
             )
 
-    @trt.observe("accordion", "buttons")
-    def _update_palette(self, *_):
-        self.children = self._make_command_palette() + [self.close_btn]
-
-    def _update_diagram_toolbar(self):
-        # Add elements to the elk_app toolbar
-        accordion = {
-            "Projection": self.projection_selector,
-            "Type Filter": ipyw.Accordion(
-                _titles={0: "Node Types", 1: "Edge Types"},
-                children=[
-                    self.node_type_selector,
-                    self.edge_type_selector,
-                ],
-                selected_index=None,
-            ),
-            "Reverse Edges": self.edge_type_reverser,
-            "Explore": ipyw.VBox([
-                self.enforce_directionality,
-                ipyw.Label("Shortest Path:"),
-                ipyw.HBox([self.filter_to_path]),
-                ipyw.Label("Distance:"),
-                ipyw.HBox([self.filter_by_dist, self.max_distance]),
-            ]),
-        }
-        accordion.update({**self.accordion})
-        buttons = [self. self.update_diagram]
-
-        with self.hold_trait_notifications():
-            self.accordion = accordion
-            self.buttons = buttons
-
-    def _make_command_palette(self) -> list:
-        titles, widgets = zip(*self.accordion.items())
-        titles = {
-            idx: title
-            for idx, title in enumerate(titles)
-        }
-        return [
-            ipyw.HBox(self.buttons),
-            ipyw.Accordion(
-                _titles=titles,
-                children=widgets,
-                selected_index=None,
-            ),
-        ]
+    def update_dropdown_options(self, selector: str, options: dict):
+        if selector == "nodes":
+            selectors = [self.node_type_selector]
+        elif selector == "edges":
+            selectors = [self.edge_type_selector, self.edge_type_reverser]
+        for selector in selectors:
+            selector.options = options
+        self._update_rows_in_multiselect(selectors=selectors)
