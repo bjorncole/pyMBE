@@ -29,8 +29,8 @@ class Part(Record):
                 or data.get("name")
                 or id_
         )
-
-        label = label.replace(f"«{metatype}»", "").strip()
+        if isinstance(label, str):
+            label = label.replace(f"«{metatype}»", "").strip()
 
         if (
                 metatype in ("MultiplicityRange",)
