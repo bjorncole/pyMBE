@@ -43,11 +43,11 @@ class PartDiagram(Partition):
 
     style: Dict[str, Dict] = {
         # Elk Label styles for Box Titles
-        " .elklabel.heading, .elklabel.compartment_title_1": {
+        " .elklabel.compartment_title_1": {
             "font-style": "normal",
             "font-weight": "normal",
         },
-        " .elklabel.heading, .elklabel.compartment_title_2": {
+        " .elklabel.compartment_title_2": {
             "font-style": "normal",
             "font-weight": "bold",
         },

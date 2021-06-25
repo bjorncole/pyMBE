@@ -1,3 +1,4 @@
+from functools import update_wrapper
 import typing as ty
 
 from warnings import warn
@@ -18,32 +19,25 @@ from .tools import Toolbar, DEFAULT_BUTTON_KWARGS
 from .utils import Mapper
 
 
-BUTTONS = {
-    "Fit View": dict(
-        icon="expand-arrows-alt",
-    ),
-    "Center View": dict(
-        icon="crosshairs",
-    ),
-    "Toggle Collapsed": dict(
-        icon="toggle-on",  # alternative: expand
-    ),
-}
-
-
 @ipyw.register
-class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
+class SysML2LPGWidget(ipyw.Box, BaseWidget):
     """An ipywidget to interact with a SysML2 model through an LPG."""
 
     description = trt.Unicode("Diagram").tag(sync=True)
 
-    diagram: PartDiagram = trt.Instance(PartDiagram, args=())
+    diagram: ipyelk.Diagram = trt.Instance(ipyelk.Diagram, args=())
+    part_diagram: PartDiagram = trt.Instance(PartDiagram, args=())
     drawn_graph: nx.Graph = trt.Instance(nx.Graph, args=())
 
     id_mapper: Mapper = trt.Instance(Mapper, args=())
     parts: ty.Dict[str, Part] = trt.Dict(
         key_trait=trt.Unicode(),
         value_trait=trt.Instance(Part),
+    )
+
+    lpg: SysML2LabeledPropertyGraph = trt.Instance(
+        SysML2LabeledPropertyGraph,
+        args=(),
     )
 
     loader: ipyelk.ElementLoader = trt.Instance(
@@ -58,45 +52,58 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
 
     # TODO: Add functionality to link the selections
     selection_link: trt.link = trt.Instance(trt.link, allow_none=True)
-    toolbar: Toolbar = trt.Instance(Toolbar, args=())
 
-    @trt.default("id_mapper")
-    def _make_id_mapper(self) -> Mapper:
-        return Mapper(
-            to_map={
-                elk_id: getattr(element, "data", {}).get("@id")
-                for elk_id, element in self.source.index.elements.items()
-            },
-        )
+    log_out = ipyw.Output()
 
-    @trt.default("tools")
-    def _default_tools(self) -> ty.List[ipyelk.Tool]:
-        return [
-            self.view.selection,
-            self.view.fit_tool,
-            self.view.center_tool,
-            ipyelk.tools.PipelineProgressBar(),
-        ]
+    # @trt.default("id_mapper")
+    # def _make_id_mapper(self) -> Mapper:
+    #     return Mapper(
+    #         to_map={
+    #             elk_id: getattr(element, "data", {}).get("@id")
+    #             for elk_id, element in self.source.index.elements.items()
+    #         },
+    #     )
 
-    @trt.default("toolbar")
-    def _make_toolbar(self) -> Toolbar:
-        toolbar = Toolbar(
-            layout=dict(height="auto", width="auto", visibility="visible"),
-            tools=self.tools,
-        )
+    # def _make_tools(self) -> ty.List[ipyelk.Tool]:
+    #     view = self.diagram.view
+    #     return [
+    #         view.selection,
+    #         view.fit_tool,
+    #         view.center_tool,
+    #         ipyelk.tools.PipelineProgressBar(),
+    #     ]
 
-        toolbar.projection_selector.options = tuple(self.sysml_projections)
-        # Configure buttons in the toolbar that update the diagram
-        toolbar.update_diagram.on_click(self._click_to_update_drawn_graph)
-        toolbar.filter_to_path.on_click(self._click_to_update_drawn_graph)
-        toolbar.filter_by_dist.on_click(self._click_to_update_drawn_graph)
+    @trt.validate("children")
+    def _validate_children(self, proposal: trt.Bunch):
+        children = proposal.value
+        if children:
+            return children
+        return [self.diagram]
 
-        trt.link((self, "tools"), (toolbar, "tools"))
+    @trt.validate("diagram")
+    def _validate_diagram(self, proposal: trt.Bunch):
+        with self.log_out:
+            print("started to update the darn diagram")
+            diagram = proposal.value
+            diagram.tools = diagram.tools[1:]
 
-        # FIXME: Remove the need to run these hacky "fixes"
-        # toolbar._update_diagram_toolbar()
+            toolbar = Toolbar(
+                layout=dict(height="auto", width="auto", visibility="visible"),
+                tools=self.diagram.tools,
+            )
+            toolbar.update_diagram = self._on_update_diagram_button_click
 
-        return toolbar
+            toolbar.projection_selector.options = tuple(self.lpg.sysml_projections)
+            # Configure buttons in the toolbar that update the diagram
+
+            self.diagram.toolbar = toolbar
+
+            trt.link((self.diagram, "tools"), (toolbar, "tools"))
+
+            # FIXME: Remove the need to run these hacky "fixes"
+            # toolbar._update_diagram_toolbar()
+            print("finished updating the darn diagram!")
+            return diagram
 
     @trt.default("layout")
     def _default_layout(self):
@@ -112,7 +119,7 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
 
     @trt.observe("sysml_projections")
     def _update_projection_selector(self, *_):
-        self.toolbar.projection_selector.options = tuple(self.sysml_projections)
+        self.toolbar.projection_selector.options = tuple(self.lpg.sysml_projections)
 
     @trt.observe("nodes_by_type")
     def _update_node_type_selector_options(self, *_):
@@ -120,7 +127,7 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
             selector="nodes",
             options={
                 f"{node_type} [{len(nodes)}]": nodes
-                for node_type, nodes in sorted(self.nodes_by_type.items())
+                for node_type, nodes in sorted(self.lpg.nodes_by_type.items())
             },
         )
 
@@ -130,8 +137,8 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
             selector="edges",
             options={
                 f"{edge_type} [{len(edges)}]": edges
-                for edge_type, edges in sorted(self.edges_by_type.items())
-                if edge_type in self.edge_types
+                for edge_type, edges in sorted(self.lpg.edges_by_type.items())
+                if edge_type in self.lpg.edge_types
             },
         )
 
@@ -161,7 +168,8 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
             return []
 
         return set(self.node_types).difference((
-            self.graph.nodes[nodes[0]]["@type"] for nodes in included_nodes
+            self.lpg.graph.nodes[nodes[0]]["@type"]
+            for nodes in included_nodes
         ))
 
     @property
@@ -178,7 +186,7 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
         return tuple(
             self.graph.nodes[id_]
             for id_ in sorted(self.selected_by_type_node_ids)
-            if id_ in self.graph.nodes
+            if id_ in self.lpg.graph.nodes
         )
 
     @property
@@ -193,25 +201,27 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
     @property
     def selected_by_type_edges(self):
         return tuple(
-            self.graph.edges[id_]
+            self.lpg.graph.edges[id_]
             for id_ in sorted(self.selected_by_type_edge_ids)
-            if id_ in self.graph.edges
+            if id_ in self.lpg.graph.edges
         )
 
-    def _click_to_update_drawn_graph(self, button: ipyw.Button):
-        button.disabled = failed = True
-        try:
-            failed = self._update_drawn_graph(button=button)
-        except Exception as exc:
-            self.log.warning(f"Button click for {button} failed: {exc}")
-        finally:
-            button.disabled = failed
+    def _on_update_diagram_button_click(self, button: ipyw.Button):
+        with self.log_out:
+            button.disabled = failed = True
+            try:
+                failed = self._update_drawn_graph(button=button)
+            except Exception as exc:
+                self.log.warning(f"Button click for {button} failed: {exc}")
+            finally:
+                button.disabled = failed
 
     def _update_drawn_graph(self, button=None):
         failed = False
+        toolbar = self.diagram.toolbar
 
-        enforce_directionality = self.toolbar.enforce_directionality.value
-        reversed_edges = self.toolbar.edge_type_reverser.value
+        enforce_directionality = toolbar.enforce_directionality.value
+        reversed_edges = toolbar.edge_type_reverser.value
 
         if reversed_edges and not enforce_directionality:
             raise ValueError(
@@ -220,7 +230,7 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
             )
 
         instructions: dict = self.get_projection_instructions(
-            projection=self.toolbar.projection_selector.value,
+            projection=toolbar.projection_selector.value,
         )
         new_graph = self.adapt(
             excluded_edge_types={
@@ -237,9 +247,9 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
             },
         )
 
-        if button is self.toolbar.filter_to_path:
+        if button is toolbar.filter_to_path:
             source, target = self.selected
-            new_graph = self.get_path_graph(
+            new_graph = self.lpg.get_path_graph(
                 graph=new_graph,
                 source=source,
                 target=target,
@@ -250,21 +260,21 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
                 self.log.warning(
                     "Could not find path between " 
                     f"""{" and ".join(self.selected)}, with directionality """
-                    "not" if not self.toolbar.enforce_directionality else ""
+                    "not" if not toolbar.enforce_directionality else ""
                     " enforced."
                 )
-        elif button is self.toolbar.filter_by_dist:
-            new_graph = self.get_spanning_graph(
+        elif button is toolbar.filter_by_dist:
+            new_graph = self.lpg.get_spanning_graph(
                 graph=new_graph,
                 seeds=self.selected,
-                max_distance=self.max_distance.value,
+                max_distance=toolbar.max_distance.value,
                 enforce_directionality=enforce_directionality,
             )
             if not new_graph:
                 failed = True
                 self.log.warning(
                     "Could not find a spanning graph of distance "
-                    f"{self.max_distance.value} from these seeds: " 
+                    f"{toolbar.max_distance.value} from these seeds: "
                     f"{self.selected}."
                 )
 
@@ -274,21 +284,22 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
 
         return failed
 
-    @trt.observe("diagram")
-    def _update_viewer(self, *_):
+    @trt.observe("part_diagram")
+    def _update_diagram_view(self, *_):
         diagram = self.diagram
-        self.source = self.loader.load(diagram)
-        self.style = diagram.style.copy()
-        self.view.symbols = diagram.symbols
+        part_diagram = self.part_diagram
+        diagram.source = self.loader.load(part_diagram)
+        diagram.style = part_diagram.style.copy()
+        diagram.view.symbols = part_diagram.symbols
 
     @trt.observe("drawn_graph")
-    def _update_diagram(self, change: trt.Bunch = None):
+    def _update_part_diagram(self, change: trt.Bunch = None):
         if change and change.old not in (None, trt.Undefined):
             old = change.old
             del old
         graph = change.new
 
-        diagram = PartDiagram()
+        part_diagram = PartDiagram()
         parts = self.parts
         new_parts = {
             id_: Part.from_data(node_data)
@@ -311,7 +322,7 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
                     f"'{metatype}' with {source}"
                 )
                 continue
-            new_relationship = diagram.add_relationship(
+            new_relationship = part_diagram.add_relationship(
                 source=parts[source],
                 target=parts[target],
                 cls=METATYPE_TO_RELATIONSHIP_TYPES.get(
@@ -320,17 +331,17 @@ class SysML2LPGWidget(SysML2LabeledPropertyGraph, ipyelk.Diagram, BaseWidget):
                 ),
                 data=edge_data,
             )
-        self.diagram = diagram
+        self.part_diagram = part_diagram
 
     @trt.observe("selected")
     def _update_diagram_selections(self, *_):
         new_selections = self._map_selections(*self.selected)
-        view_selector = self.view.selection
+        view_selector = self.diagram.view.selection
         if set(view_selector.ids).symmetric_difference(new_selections):
             view_selector.ids = new_selections
 
     def _update_selected(self, *_):
-        new_selections = self._map_selections(*self.view.selection.ids)
+        new_selections = self._map_selections(*self.diagram.view.selection.ids)
         if set(self.selected).symmetric_difference(new_selections):
             self.selected = new_selections
 

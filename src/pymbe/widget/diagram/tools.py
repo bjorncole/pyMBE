@@ -14,6 +14,7 @@ DEFAULT_BUTTON_KWARGS = dict(
 BUTTON_ICONS = {
     "Center": "crosshairs",
     "Fit": "expand-arrows-alt",
+    "Toggle Collapsed": "window-maximize",
 }
 
 
@@ -24,6 +25,8 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):
     accordion: ipyw.Accordion = trt.Instance(ipyw.Accordion)
     buttons: ipyw.HBox = trt.Instance(ipyw.HBox, args=())
     loader: ipyw.FloatProgress = trt.Instance(ipyw.FloatProgress, args=())
+
+    update_diagram: ty.Callable = trt.Callable(allow_none=True)
 
     edge_type_selector: ipyw.SelectMultiple = trt.Instance(
         ipyw.SelectMultiple,
@@ -38,11 +41,11 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):
         kw=dict(rows=10),
     )
     projection_selector: ipyw.Dropdown = trt.Instance(ipyw.Dropdown, args=())
-    update_diagram: ipyw.Button = trt.Instance(
+    refresh_diagram: ipyw.Button = trt.Instance(
         ipyw.Button,
         kw=dict(
             icon="retweet",
-            tooltip="Update diagram",
+            tooltip="Refresh Diagram",
             **DEFAULT_BUTTON_KWARGS,
         ),
     )
@@ -84,6 +87,15 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):
     # )
 
     max_type_selector_rows: int = trt.Int(default_value=10, min=5)
+
+    @property
+    def refresh_buttons(self):
+        """These are the buttons that refresh the diagram view"""
+        return (
+            self.refresh_diagram,
+            self.filter_to_path,
+            self.filter_by_dist,
+        )
 
     @trt.default("accordion")
     def _make_accordion(self):
@@ -132,13 +144,20 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):
         layout.visibility = "visible"
         return layout
 
+    @trt.observe("update_diagram")
+    def _update_callables(self, change: trt.Bunch):
+        for button in self.refresh_buttons:
+            if change.old:
+                button.on_click(change.old, remove=True)
+            button.on_click(change.new)
+
     @trt.observe("tools")
     def _update_children(self, *_):
         """Note: overwrites ipyelk.Toolbar method."""
         self.buttons.children = buttons = [
             tool.ui for tool in self.tools
             if isinstance(tool.ui, ipyw.Button)
-        ] + [self.update_diagram, self.close_btn]
+        ] + [self.refresh_diagram, self.close_btn]
         for button in buttons:
             button.layout.height = "40px"
             button.layout.width = "40px"
