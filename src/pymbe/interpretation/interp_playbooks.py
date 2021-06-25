@@ -497,6 +497,23 @@ def random_generator_playbook_phase_5(
             extended_source_sequences = []
             extended_target_sequences = []
 
+            min_side = min(len(source_sequences), len(target_sequences))
+            max_side = max(len(source_sequences), len(target_sequences))
+
+            if len(source_sequences) <= len(target_sequences):
+                source_indices = list(range(0, min_side))
+                other_steps = random.sample(range(0, min_side), (max_side - min_side))
+                source_indices.extend(other_steps)
+                target_indices = random.sample(range(0, max_side), max_side)
+            else:
+                source_indices = random.sample(range(0, max_side), max_side)
+                other_steps = random.sample(range(0, min_side), (max_side - min_side))
+                target_indices = list(range(0, min_side))
+                target_indices.extend(other_steps)
+
+            print(source_indices)
+            print(target_indices)
+
             for indx, seq in enumerate(connectors):
                 new_source_seq = []
                 new_target_seq = []
@@ -505,16 +522,18 @@ def random_generator_playbook_phase_5(
                     new_source_seq.append(item)
                     new_target_seq.append(item)
 
-                for jndx, item in enumerate(source_sequences[indx]):
+                for jndx, item in enumerate(source_sequences[source_indices[indx]]):
                     if jndx > 0:
                         new_source_seq.append(item)
 
-                for jndx, item in enumerate(target_sequences[indx]):
+                for jndx, item in enumerate(target_sequences[target_indices[indx]]):
                     if jndx > 0:
                         new_target_seq.append(item)
 
                 extended_source_sequences.append(new_source_seq)
                 extended_target_sequences.append(new_target_seq)
+
+            # FIXME: Need to make random draws based on source length, target length, and connector multiplicity
 
             instances_dict.update({connector_ends[0]['@id']: extended_source_sequences})
             instances_dict.update({connector_ends[1]['@id']: extended_target_sequences})
