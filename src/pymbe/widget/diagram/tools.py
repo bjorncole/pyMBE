@@ -23,8 +23,14 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):
     """A customized toolbar for pymbe's diagram."""
 
     accordion: ipyw.Accordion = trt.Instance(ipyw.Accordion)
-    buttons: ipyw.HBox = trt.Instance(ipyw.HBox, args=())
-    loader: ipyw.FloatProgress = trt.Instance(ipyw.FloatProgress, args=())
+    buttons: ipyw.HBox = trt.Instance(
+        ipyw.HBox,
+        kw=dict(layout=dict(width="100%")),
+    )
+    loader: ipyw.HBox = trt.Instance(
+        ipyw.HBox,
+        kw=dict(layout=dict(height="40px", width="100%")),
+    )
 
     update_diagram: ty.Callable = trt.Callable(allow_none=True)
 
@@ -88,6 +94,8 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):
 
     max_type_selector_rows: int = trt.Int(default_value=10, min=5)
 
+    log_out = ipyw.Output()
+
     @property
     def refresh_buttons(self):
         """These are the buttons that refresh the diagram view"""
@@ -117,6 +125,7 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):
                 ipyw.Label("Distance:"),
                 ipyw.HBox([self.filter_by_dist, self.max_distance]),
             ]),
+            # TODO: add layout widget
             # "Layout": ...
         }
         titles, widgets = zip(*accordion.items())
@@ -169,9 +178,19 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):
                 if icon:
                     button.icon = icon
 
-        self.loader = self.get_tool(ipyelk.tools.PipelineProgressBar).ui
-        self.loader.layout.width = "100%"
-        self.loader.layout.visibility = "hidden"
+        load_bar = self.get_tool(ipyelk.tools.PipelineProgressBar).ui
+        load_bar.layout.width = "100%"
+        load_bar.layout.visibility = "hidden"
+        self.loader.children = [load_bar]
+        load_bar.layout.unobserve(self._update_loader, "visibility")
+        load_bar.layout.observe(self._update_loader, "visibility")
+
+    def _update_loader(self, change: trt.Bunch):
+        with self.log_out:
+            # print(f"Updating loader, bar is now '{change.new}'")
+            # TODO: fix this so it is 0px when 'hidden'
+            self.loader.height = "40px" if change.new == "hidden" else "40px"
+            # print(f"Loader container height is now: {self.loader.height}")
 
     def get_tool(self, tool_type: ty.Type[ipyelk.Tool]) -> ipyelk.Tool:
         matches = [tool for tool in self.tools if type(tool) is tool_type]
