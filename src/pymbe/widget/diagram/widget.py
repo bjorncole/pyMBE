@@ -234,7 +234,7 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
             finally:
                 button.disabled = failed
 
-    def _update_drawn_graph(self, button: ipyw.Button = None):
+    def _update_drawn_graph(self, button: ipyw.Button = None) -> bool:
         failed = False
         toolbar: Toolbar = self.diagram.toolbar
 

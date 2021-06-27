@@ -175,6 +175,8 @@ class SysML2Client(Base):
                 "By default, disabling pagination still retrieves 100 "
                 "records at a time!  True pagination is not supported yet."
             )
+        # TODO: Get the link header and use that to get the next page
+        # NOTE: The Pilot Implementation uses cursor-navigation, a la GitHub and DynamoDB
         return (
             f"{self.host}/"
             f"projects/{self.selected_project}/"
