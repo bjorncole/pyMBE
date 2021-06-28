@@ -72,14 +72,15 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
 
     log_out = ipyw.Output()
 
-    # @trt.default("id_mapper")
-    # def _make_id_mapper(self) -> Mapper:
-    #     return Mapper(
-    #         to_map={
-    #             elk_id: getattr(element, "data", {}).get("@id")
-    #             for elk_id, element in self.source.index.elements.items()
-    #         },
-    #     )
+    @trt.default("id_mapper")
+    def _make_id_mapper(self) -> Mapper:
+        return Mapper(
+            to_map={
+                elk_id: element.metadata.sysml_id
+                for elk_id, element in self.diagram.source.index.elements.items()
+                if hasattr(element.metadata, "sysml_id")
+            },
+        )
 
     @trt.validate("children")
     def _validate_children(self, proposal: trt.Bunch):
@@ -114,6 +115,7 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
         # FIXME: This seems a bit more involved than it should be, check with Dane
 
         view = ipyelk.diagram.SprottyViewer(symbols=self.part_diagram.symbols)
+        view.selection.observe(self._update_selected, "ids")
 
         tools = [
             view.selection,
@@ -307,6 +309,7 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
         diagram.style = part_diagram.style.copy()
         diagram.view.symbols = part_diagram.symbols
         diagram.source = self.loader.load(part_diagram)
+        self.id_mapper = self._make_id_mapper()
 
     @trt.observe("drawn_graph")
     def _update_part_diagram(self, change: trt.Bunch = None):
@@ -358,26 +361,26 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
             )
         self.part_diagram = part_diagram
 
-    # @trt.observe("selected")
-    # def _update_diagram_selections(self, *_):
-    #     new_selections = self._map_selections(*self.selected)
-    #     view_selector = self.diagram.view.selection
-    #     if set(view_selector.ids).symmetric_difference(new_selections):
-    #         view_selector.ids = new_selections
+    @trt.observe("selected")
+    def _update_diagram_selections(self, *_):
+        new_selections = self._map_selections(*self.selected)
+        view_selector = self.diagram.view.selection
+        if set(view_selector.ids).symmetric_difference(new_selections):
+            view_selector.ids = new_selections
 
-    # def _update_selected(self, *_):
-    #     new_selections = self._map_selections(*self.diagram.view.selection.ids)
-    #     if set(self.selected).symmetric_difference(new_selections):
-    #         self.selected = new_selections
+    def _update_selected(self, *_):
+        new_selections = self._map_selections(*self.diagram.view.selection.ids)
+        if set(self.selected).symmetric_difference(new_selections):
+            self.selected = new_selections
 
-    # def _map_selections(self, *selections: str) -> tuple:
-    #     if not selections:
-    #         return ()
-    #     new_selections = self.id_mapper.get(*selections)
-    #     if selections and not new_selections:
-    #         self.id_mapper = self._make_id_mapper()
-    #         new_selections = self.id_mapper.get(*selections)
-    #     return tuple(new_selections)
+    def _map_selections(self, *selections: str) -> tuple:
+        if not selections:
+            return ()
+        new_selections = self.id_mapper.get(*selections)
+        if selections and not new_selections:
+            self.id_mapper = self._make_id_mapper()
+            new_selections = self.id_mapper.get(*selections)
+        return tuple(new_selections)
 
     # TODO: Bring this back when the layout options are back in the toolbar
     # @trt.observe("elk_layout")

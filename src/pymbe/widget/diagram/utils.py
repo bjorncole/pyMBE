@@ -1,3 +1,4 @@
+from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -9,6 +10,7 @@ class Mapper:
     to_map: dict = field(repr=False)
     from_map: dict = field(default=None, repr=False)
     unified_map: dict = field(default=None, repr=False)
+    unique: bool = field(default=True, repr=False)
 
     def __len__(self):
         return len(self.to_map)
@@ -28,17 +30,28 @@ class Mapper:
 
         common_keys = set(self.from_map).intersection(self.to_map)
         if common_keys:
-            raise ValueError(f"Found common keys in the mapper: {common_keys}")
+            # raise ValueError(f"Found common keys in the mapper: {common_keys}")
+            self.unique = False
+            self.from_map = defaultdict(list)
+            for src, tgt in self.to_map.items():
+                self.from_map[tgt] += [src]
+            self.to_map = {
+                k: [v]
+                for k, v in self.to_map.items()
+            }
 
         self.unified_map = self.to_map.copy()
         self.unified_map.update(self.from_map)
 
     def get(self, *items):
-        return [
+        results = [
             self.unified_map[item]
             for item in items
             if item in self.unified_map
         ]
+        if not self.unique:
+            results = sum(results, [])
+        return tuple(set(results))
 
 
 class VisibilityKind(Enum):

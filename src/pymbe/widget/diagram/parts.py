@@ -1,6 +1,10 @@
 from pydantic import Field
 
-from ipyelk.elements import Compartment, Record
+from ipyelk.elements import Compartment, ElementMetadata, Record
+
+
+class PartMetadata(ElementMetadata):
+    sysml_id: str = Field(default="NO_ID")
 
 
 class Part(Record):
@@ -29,6 +33,8 @@ class Part(Record):
                 or data.get("name")
                 or id_
         )
+        kwargs = dict(metadata=PartMetadata(sysml_id=id_))
+
         if isinstance(label, str):
             label = label.replace(f"«{metatype}»", "").strip()
 
@@ -38,8 +44,8 @@ class Part(Record):
         ):
             width = int(width / 2)
 
-        part = Part(data=data, id=id_, width=width)
-        part.title = Compartment().make_labels(
+        part = Part(data=data, id=id_, width=width, **kwargs)
+        part.title = Compartment(**kwargs).make_labels(
             headings=[
                 f"«{metatype}»",
                 f"{label}",
@@ -49,7 +55,7 @@ class Part(Record):
         # TODO: add properties
         properties = []
         if properties:
-            part.attrs = Compartment().make_labels(
+            part.attrs = Compartment(**kwargs).make_labels(
                 headings=["properties"],
                 content=[
                     cls.make_property_label(prop)
