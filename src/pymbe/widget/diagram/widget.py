@@ -362,7 +362,11 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
             view_selector.ids = new_selections
 
     def _update_selected(self, *_):
-        new_selections = self._map_selections(*self.diagram.view.selection.ids)
+        new_selections = [
+            id_
+            for id_ in self._map_selections(*self.diagram.view.selection.ids)
+            if id_ in self.elements_by_id
+        ]
         if set(self.selected).symmetric_difference(new_selections):
             self.selected = new_selections
 
@@ -373,7 +377,7 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
         if selections and not new_selections:
             self.id_mapper = self._make_id_mapper()
             new_selections = self.id_mapper.get(*selections)
-        return tuple(new_selections)
+        return new_selections
 
     # TODO: Bring this back when the layout options are back in the toolbar
     # @trt.observe("elk_layout")
