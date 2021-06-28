@@ -1,8 +1,9 @@
 from enum import Enum
-
 from pydantic import Field
 
 from ipyelk.elements import Edge, EdgeProperties, Label
+
+from .parts import PartMetadata
 
 
 class RelationEndKind(Enum):
@@ -33,6 +34,7 @@ class Relationship(Edge):
             self.add_class("dashed")
         if metatype:
             self.labels.append(Label(text=f"«{metatype}»"))
+        self.metadata = PartMetadata(sysml_id=id_)
 
         # TODO: Add processing of relationship properties
         # if self.display_kind and self.kind:

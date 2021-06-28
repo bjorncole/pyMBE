@@ -15,7 +15,7 @@ from ...graph import SysML2LabeledPropertyGraph
 from ..core import BaseWidget
 from .parts import Part
 from .part_diagram import PartDiagram
-from .relationships import METATYPE_TO_RELATIONSHIP_TYPES, DirectedAssociation
+from .relationships import METATYPE_TO_RELATIONSHIP_TYPES, DirectedAssociation, Relationship
 from .tools import Toolbar, DEFAULT_BUTTON_KWARGS
 from .utils import Mapper
 
@@ -51,6 +51,10 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
         key_trait=trt.Unicode(),
         value_trait=trt.Instance(Part),
     )
+    relationships: ty.Dict[str, Relationship] = trt.Dict(
+        key_trait=trt.Unicode(),
+        value_trait=trt.Instance(Relationship),
+    )
 
     lpg: SysML2LabeledPropertyGraph = trt.Instance(
         SysML2LabeledPropertyGraph,
@@ -74,10 +78,14 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
 
     @trt.default("id_mapper")
     def _make_id_mapper(self) -> Mapper:
+        elements = {
+            **dict(self.diagram.source.index.elements.items()),
+            **self.relationships,
+        }
         return Mapper(
             to_map={
                 elk_id: element.metadata.sysml_id
-                for elk_id, element in self.diagram.source.index.elements.items()
+                for elk_id, element in elements.items()
                 if hasattr(element.metadata, "sysml_id")
             },
         )
@@ -155,11 +163,6 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
             height="100%",
             width="auto",
         )
-
-    # TODO: Fix the selection, this may require to be brought back
-    # @trt.observe("source")
-    # def _update_mapper(self, *_):
-    #     self.id_mapper = self._make_id_mapper()
 
     @trt.observe("selected")
     def _update_based_on_selection(self, *_):
@@ -336,29 +339,19 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
         }
         parts.update(new_parts)
 
-        for (source, target, metatype), edge_data in graph.edges.items():
-            if source not in parts:
-                warn(
-                    f"Could not map source: {source} in "
-                    f"'{metatype}' with {target}"
-                )
-                continue
-            if target not in parts:
-                warn(
-                    f"Could not map target: {target} in "
-                    f"'{metatype}' with {source}"
-                )
-                continue
-            # TODO: figure out if we need to do anything with the new relationship
-            _ = part_diagram.add_relationship(
+        self.relationships = {
+            data["@id"]: part_diagram.add_relationship(
                 source=parts[source],
                 target=parts[target],
                 cls=METATYPE_TO_RELATIONSHIP_TYPES.get(
                     metatype,
                     DirectedAssociation,
                 ),
-                data=edge_data,
+                data=data,
             )
+            for (source, target, metatype), data in graph.edges.items()
+            if source in parts and target in parts
+        }
         self.part_diagram = part_diagram
 
     @trt.observe("selected")
