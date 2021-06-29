@@ -75,9 +75,9 @@ def test_feature_sequence_templates4(simple_parts_client, simple_parts_lpg):
 
     seq_templates = build_sequence_templates(simple_parts_lpg)
 
-    power_group_id = 'eb96afae-0f09-4912-861e-705bb33a4202'
-    power_user_part_id = '648fd9b3-2a6e-40e8-b3e9-b8ebb407ce07'
-    power_in_port_id = '7328c370-26d7-40e4-9a36-c88ef76c7d30'
+    power_group_id = '009a03de-7718-47c4-99c1-5c80234536bf'
+    power_user_part_id = '3f314dcb-4426-48ae-a21e-cac3dbf9deff'
+    power_in_port_id = '6717616c-47ee-4fed-bf7d-e4e98c929fac'
 
     print(seq_templates)
 

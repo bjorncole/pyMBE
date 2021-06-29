@@ -91,12 +91,6 @@ Expression Inferred Graph:
 Part Definition Graph:
   description: |
     Generate library settings for a graph that just looks at superclassing and part definitions
-  included_node_types:
-  - PartDefinition
-  - AttributeDefinition
-  - PortDefinition
-  - InterfaceDefinition
-  - ConnectionDefinition
   included_edge_types:
   - Superclassing
   reversed_edge_types:

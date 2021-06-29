@@ -476,6 +476,14 @@ def random_generator_playbook_phase_5(
     cug: nx.DiGraph,
     instances_dict: dict
 ):
+    """
+    Generate instances for connector usages and their specializations and randomly connect ends to legal
+    sources and targets
+    :param lpg: Active SysML graph
+    :param cug: A connector usage graph projection to see where connector source and target are linked
+    :param instances_dict: Working dictionary of interpreted sequences for the model
+    :return: None - side effect is addition of new instances to the instances dictionary
+    """
 
     # Generate sequences for connection and interface ends
     for node_id in list(cug.nodes):
@@ -532,8 +540,6 @@ def random_generator_playbook_phase_5(
 
                 extended_source_sequences.append(new_source_seq)
                 extended_target_sequences.append(new_target_seq)
-
-            # FIXME: Need to make random draws based on source length, target length, and connector multiplicity
 
             instances_dict.update({connector_ends[0]['@id']: extended_source_sequences})
             instances_dict.update({connector_ends[1]['@id']: extended_target_sequences})
