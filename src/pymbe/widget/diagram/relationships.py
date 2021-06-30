@@ -26,6 +26,13 @@ class Relationship(Edge):
     display_usage: bool = True
     data: dict = Field(default_factory=dict)
 
+    @staticmethod
+    def from_metatype(metatype):
+        return METATYPE_TO_RELATIONSHIP_TYPES.get(
+            metatype,
+            DirectedAssociation,
+        )
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         id_ = self.data["@id"]

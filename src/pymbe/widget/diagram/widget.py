@@ -8,13 +8,11 @@ import networkx as nx
 import traitlets as trt
 
 import ipyelk
-from ipyelk.elements import layout_options as opt
 from ipyelk.pipes.base import PipeDisposition
 
 from ...graph import SysML2LabeledPropertyGraph
 from ..core import BaseWidget
-from .parts import Part
-from .part_diagram import PartDiagram
+from .loader import SysmlLoader
 from .relationships import METATYPE_TO_RELATIONSHIP_TYPES, DirectedAssociation, Relationship
 from .tools import Toolbar
 from .utils import Mapper
@@ -44,49 +42,27 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
     description = trt.Unicode("Diagram").tag(sync=True)
 
     diagram: ipyelk.Diagram = trt.Instance(ipyelk.Diagram)
-    part_diagram: PartDiagram = trt.Instance(PartDiagram, args=())
-    drawn_graph: nx.Graph = trt.Instance(nx.Graph, args=())
+    drawn_graph: nx.Graph = trt.Instance(
+        nx.Graph,
+        args=(),
+        help="The networkx labelled property graph to be drawn.",
+    )
 
     id_mapper: Mapper = trt.Instance(Mapper, args=())
-    parts: ty.Dict[str, Part] = trt.Dict(
-        key_trait=trt.Unicode(),
-        value_trait=trt.Instance(Part),
-    )
-    relationships: ty.Dict[str, Relationship] = trt.Dict(
-        key_trait=trt.Unicode(),
-        value_trait=trt.Instance(Relationship),
-    )
 
     lpg: SysML2LabeledPropertyGraph = trt.Instance(
         SysML2LabeledPropertyGraph,
         args=(),
+        help="The LPG of the project currently loaded.",
     )
 
-    loader: ipyelk.ElementLoader = trt.Instance(
-        ipyelk.ElementLoader,
-        kw=dict(
-            default_node_opts={
-                opt.Direction.identifier: opt.Direction(value="RIGHT").value,
-                opt.HierarchyHandling.identifier: opt.HierarchyHandling().value,
-            },
-        ),
+    loader: SysmlLoader = trt.Instance(
+        SysmlLoader,
+        args=(),
+        help="The customized ipyelk loader for transforming the SysML LPG to ELK JSON",
     )
 
     log_out = ipyw.Output()
-
-    @trt.default("id_mapper")
-    def _make_id_mapper(self) -> Mapper:
-        elements = {
-            **dict(self.diagram.source.index.elements.items()),
-            **self.relationships,
-        }
-        return Mapper(
-            to_map={
-                elk_id: element.metadata.sysml_id
-                for elk_id, element in elements.items()
-                if hasattr(element.metadata, "sysml_id")
-            },
-        )
 
     @trt.validate("children")
     def _validate_children(self, proposal: trt.Bunch):
@@ -116,11 +92,22 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
             },
         )
 
+    @trt.default("id_mapper")
+    def _make_id_mapper(self) -> Mapper:
+        elements = self.diagram.source.index.elements
+        return Mapper(
+            to_map={
+                elk_id: element.metadata.sysml_id
+                for elk_id, element in elements.items()
+                if hasattr(element.metadata, "sysml_id")
+            },
+        )
+
     @trt.default("diagram")
     def _make_diagram(self):
         # FIXME: This seems a bit more involved than it should be, check with Dane
 
-        view = ipyelk.diagram.SprottyViewer(symbols=self.part_diagram.symbols)
+        view = ipyelk.diagram.SprottyViewer(symbols=self.loader.part_diagram.symbols)
         view.selection.observe(self._update_selected, "ids")
 
         tools = [
@@ -146,6 +133,7 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
 
         # TODO: after ipyelk fix revert this back to ipyelk.Diagram
         diagram = Diagram(
+            style=self.loader.part_diagram.style,
             toolbar=toolbar,
             tools=tools,
             view=view,
@@ -308,66 +296,35 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
 
         return failed
 
-    @trt.observe("part_diagram")
-    def _update_diagram_view(self, change: trt.Bunch):
-        diagram = self.diagram
-        part_diagram = self.part_diagram
-        diagram.style = part_diagram.style.copy()
-        diagram.view.symbols = part_diagram.symbols
-        diagram.source = self.loader.load(part_diagram)
-
     @trt.observe("drawn_graph")
-    def _update_part_diagram(self, change: trt.Bunch = None):
-        part_diagram = PartDiagram()
+    def _push_drawn_graph(self, change: trt.Bunch = None):
+        if change is None:
+            old, new = None, self.drawn_graph
+        else:
+            old, new = change.old, change.new
 
-        graph = getattr(change, "new", self.drawn_graph)
-
-        if isinstance(change.old, nx.Graph):
-            old = change.old
-            del old
-        if graph is None or not graph:
-            warn("Using an empty lpg.part_diagram because the new graph is empty")
-            self.part_diagram = part_diagram
+        if new == old:
             return
-
-        parts = self.parts
-        new_parts = {
-            node_id: Part.from_data(node_data)
-            for node_id, node_data in graph.nodes.items()
-            if node_data and node_id not in parts
-        }
-        parts.update(new_parts)
-
-        self.relationships = {
-            data["@id"]: part_diagram.add_relationship(
-                source=parts[source],
-                target=parts[target],
-                cls=METATYPE_TO_RELATIONSHIP_TYPES.get(
-                    metatype,
-                    DirectedAssociation,
-                ),
-                data=data,
-            )
-            for (source, target, metatype), data in graph.edges.items()
-            if source in parts and target in parts
-        }
-        self.part_diagram = part_diagram
+        with self.log_out:
+            self.diagram.source = self.loader.load(new=new, old=old)
 
     @trt.observe("selected")
     def _update_diagram_selections(self, *_):
-        new_selections = self._map_selections(*self.selected)
-        view_selector = self.diagram.view.selection
-        if set(view_selector.ids).symmetric_difference(new_selections):
-            view_selector.ids = new_selections
+        with self.log_out:
+            new_selections = self._map_selections(*self.selected)
+            view_selector = self.diagram.view.selection
+            if set(view_selector.ids).symmetric_difference(new_selections):
+                view_selector.ids = new_selections
 
     def _update_selected(self, *_):
-        new_selections = [
-            id_
-            for id_ in self._map_selections(*self.diagram.view.selection.ids)
-            if id_ in self.elements_by_id
-        ]
-        if set(self.selected).symmetric_difference(new_selections):
-            self.selected = new_selections
+        with self.log_out:
+            new_selections = [
+                id_
+                for id_ in self._map_selections(*self.diagram.view.selection.ids)
+                if id_ in self.elements_by_id
+            ]
+            if set(self.selected).symmetric_difference(new_selections):
+                self.selected = new_selections
 
     def _map_selections(self, *selections: str) -> tuple:
         if not selections:

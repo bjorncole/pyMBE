@@ -1,15 +1,18 @@
 from pydantic import Field
-from typing import Dict, Type, Union
+from typing import Dict, Iterator, Tuple, Type, Union
 
 from ipyelk.elements import (
-    Edge,
-    Node,
     Partition,
     Port,
     SymbolSpec,
     merge_excluded,
 )
+from ipyelk.elements.index import (
+    iter_edges,
+    iter_hierarchy,
+)
 
+from .parts import Part
 from .relationships import DirectedAssociation, Relationship
 from .symbols import (
     make_arrow_symbol,
@@ -28,7 +31,7 @@ class PartDiagram(Partition):
         copy_on_model_validation = False
         excluded = merge_excluded(Partition, "symbols", "style")
 
-    default_edge: Type[Edge] = Field(default=DirectedAssociation)
+    default_edge: Type[Relationship] = Field(default=DirectedAssociation)
 
     symbols: SymbolSpec = SymbolSpec().add(
         make_arrow_symbol(identifier="generalization", r=8, closed=True),
@@ -74,10 +77,32 @@ class PartDiagram(Partition):
         },
     }
 
+    @property
+    def all_parts(self) -> Iterator[Tuple[Part, Relationship]]:
+        """Iterate over BaseElements that follow the `Part` hierarchy
+        and return nodes and their parent
+        """
+        for parent, element in iter_hierarchy(self, types=(Part,)):
+            if isinstance(element, Part):
+                yield parent, element
+
+    @property
+    def all_relationships(self) -> Iterator[Tuple[Union[Part, "PartDiagram"], Relationship]]:
+        """Iterate over BaseElements that follow the `Part` hierarchy
+        and return edges and their parent
+        """
+        for parent, element in iter_hierarchy(self, types=(Relationship,)):
+            if isinstance(element, Relationship):
+                yield parent, element
+
+    def clear_all_relationships(self):
+        for node in self.all_parts:
+            node.edges = []
+
     def add_relationship(
         self,
-        source: Union[Node, Port],
-        target: Union[Node, Port],
+        source: Union[Part, Port],
+        target: Union[Part, Port],
         cls: Type[Relationship] = Relationship,
         data: dict = None,
     ) -> Relationship:

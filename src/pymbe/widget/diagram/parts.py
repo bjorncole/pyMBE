@@ -39,8 +39,8 @@ class Part(Record):
             label = label.replace(f"«{metatype}»", "").strip()
 
         if (
-                metatype in ("MultiplicityRange",)
-                or metatype.startswith("Literal")
+            metatype in ("MultiplicityRange",)
+            or metatype.startswith("Literal")
         ):
             width = int(width / 2)
 
