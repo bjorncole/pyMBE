@@ -45,17 +45,17 @@ class PartDiagram(Partition):
         # Elk Label styles for Box Titles
         " .elklabel.compartment_title_1": {
             "font-style": "normal",
-            "font-weight": "normal",
+            "font-weight": "bold",
         },
         " .elklabel.compartment_title_2": {
             "font-style": "normal",
-            "font-weight": "bold",
+            "font-weight": "normal",
         },
         # Style Arrowheads (future may try to )
-        " .subsetting > .round > ellipse": {
+        "symbol.subsetting ellipse": {
             "fill": "var(--jp-elk-node-stroke)",
         },
-        " .feature_typing > .round > ellipse": {
+        "symbol.feature_typing ellipse": {
             "fill": "var(--jp-elk-node-stroke)",
         },
         " .internal > .elknode": {

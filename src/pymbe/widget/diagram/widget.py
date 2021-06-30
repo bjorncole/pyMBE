@@ -1,8 +1,7 @@
-from functools import update_wrapper
+import traceback
 import typing as ty
 
 from warnings import warn
-from ipyelk.tools.tool import Tool
 
 import ipywidgets as ipyw
 import networkx as nx
@@ -10,23 +9,25 @@ import traitlets as trt
 
 import ipyelk
 from ipyelk.elements import layout_options as opt
+from ipyelk.pipes.base import PipeDisposition
 
 from ...graph import SysML2LabeledPropertyGraph
 from ..core import BaseWidget
 from .parts import Part
 from .part_diagram import PartDiagram
 from .relationships import METATYPE_TO_RELATIONSHIP_TYPES, DirectedAssociation, Relationship
-from .tools import Toolbar, DEFAULT_BUTTON_KWARGS
+from .tools import Toolbar
 from .utils import Mapper
 
 
+# TODO: Remove this when https://github.com/jupyrdf/ipyelk/pull/98 gets merged
 class Diagram(ipyelk.Diagram):
     """A slightly modified ipyelk Diagram to avoid issue with observer"""
 
     @trt.observe("tools")
     def _update_tools(self, change=None):
         # TODO: Submit PR with fix to ipyelk
-        if change and change.old and change.old != trt.Undefined:
+        if change and isinstance(change.old, tuple):
             for tool in change.old:
                 tool.tee = None
                 tool.on_done = None
@@ -155,6 +156,11 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
         trt.link((diagram, "tools"), (toolbar, "tools"))
         trt.link((diagram, "symbols"), (view, "symbols"))
 
+        def update_mapper(change: trt.Bunch):
+            if change.new == PipeDisposition.done:
+                self.id_mapper = self._make_id_mapper()
+        diagram.pipe.observe(update_mapper, "disposition")
+
         return diagram
 
     @trt.default("layout")
@@ -235,7 +241,7 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
                 # print(f"Updating diagram with '{button.tooltip}' button.")
                 failed = self._update_drawn_graph(button=button)
             except Exception as exc:
-                warn(f"Button click for {button} failed: {exc}")
+                warn(f"Button click for {button} failed: {traceback.format_exc()}")
             finally:
                 button.disabled = failed
 
@@ -312,7 +318,6 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
         diagram.style = part_diagram.style.copy()
         diagram.view.symbols = part_diagram.symbols
         diagram.source = self.loader.load(part_diagram)
-        self.id_mapper = self._make_id_mapper()
 
     @trt.observe("drawn_graph")
     def _update_part_diagram(self, change: trt.Bunch = None):

@@ -1,3 +1,5 @@
+import traceback
+
 from copy import deepcopy
 from functools import lru_cache
 from pathlib import Path
@@ -454,7 +456,7 @@ class SysML2LabeledPropertyGraph(Base):
             return graph.__class__(graph.subgraph(nodes))
 
         except (nx.NetworkXError, nx.NetworkXException) as exc:
-            self.log.warning(exc)
+            warn(traceback.format_exc())
             if try_reverse:
                 return self.get_path_graph(
                     graph=graph,

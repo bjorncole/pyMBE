@@ -106,7 +106,7 @@ def make_redefinition_symbol(identifier: str, r=6) -> EndpointSymbol:
                 Node(
                     properties=NodeProperties(
                         shape=Path.from_list(
-                            [(r * 4 / 5, -r / 3), (r * 4 / 5, r / 3)],
+                            [(r / 2, -r / 3), (0, 0), (r / 2, r / 3)],
                             closed=True,
                         ),
                     ),

@@ -1,4 +1,4 @@
-from copy import deepcopy
+from warnings import warn
 
 import ipywidgets as ipyw
 import traitlets as trt
@@ -116,6 +116,6 @@ class Interpreter(ipyw.VBox, BaseWidget):
             self.instances = self.strategy_selector.value(lpg=self.lpg)
             self._on_updated_selected()
         except Exception as exc:
-            self.log.warn(f"Ran into an issue while updating instances: {exc}")
+            warn(f"Ran into an issue while updating instances: {exc}")
         finally:
             self.update_btn.disabled = False
