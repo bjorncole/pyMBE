@@ -72,9 +72,6 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
         ),
     )
 
-    # TODO: Add functionality to link the selections
-    selection_link: trt.link = trt.Instance(trt.link, allow_none=True)
-
     log_out = ipyw.Output()
 
     @trt.default("id_mapper")
@@ -99,8 +96,8 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
         return [self.diagram]
 
     def update(self, elements: dict):
-        """Subclasses must implement this!"""
-        self.lpg.update(elements)
+        self.lpg.elements_by_id = elements
+        self.drawn_graph = nx.Graph()
 
         self.diagram.toolbar.update_dropdown_options(
             selector="nodes",
@@ -323,18 +320,15 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
     def _update_part_diagram(self, change: trt.Bunch = None):
         part_diagram = PartDiagram()
 
-        if change is None:
-            graph = self.drawn_graph
-        else:
-            if change.old not in (None, trt.Undefined):
-                old = change.old
-                del old
-            if change.new:
-                graph = change.new
-            else:
-                warn("Setting lpg.part_diagram to blank one")
-                self.part_diagram = part_diagram
-                return
+        graph = getattr(change, "new", self.drawn_graph)
+
+        if isinstance(change.old, nx.Graph):
+            old = change.old
+            del old
+        if graph is None or not graph:
+            warn("Using an empty lpg.part_diagram because the new graph is empty")
+            self.part_diagram = part_diagram
+            return
 
         parts = self.parts
         new_parts = {
