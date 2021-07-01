@@ -1,40 +1,13 @@
+from collections import defaultdict
 import pytest
 
 from pymbe.client import SysML2Client
-from tests.conftest import kerbal_model_loaded_client
 
-
-@pytest.fixture
-def kerbal_client() -> SysML2Client:
-    return kerbal_model_loaded_client()
-
-
-@pytest.fixture()
-def all_kerbal_names(kerbal_client) -> list:
-    names = []
-    all_elements = kerbal_client.elements_by_id
-
-    for ele_id, ele in all_elements.items():
-        if "name" in ele:
-            names.append(ele["name"])
-
-    return names
-
-
-@pytest.fixture()
-def kerbal_ids_by_type(kerbal_client) -> dict:
-
-    ids_dict = {}
-
-    all_elements = kerbal_client.elements_by_id
-
-    for ele_id, ele in all_elements.items():
-        if ele["@type"] in ids_dict:
-            ids_dict[ele["@type"]].append(ele_id)
-        else:
-            ids_dict.update({ele["@type"]: [ele_id]})
-
-    return ids_dict
+from tests.conftest import (
+    all_kerbal_names,
+    kerbal_client,
+    kerbal_ids_by_type,
+)
 
 
 def test_client_load_kerbal(kerbal_client):

@@ -1,4 +1,4 @@
-from copy import deepcopy
+from warnings import warn
 
 import ipywidgets as ipyw
 import traitlets as trt
@@ -40,12 +40,8 @@ class Interpreter(ipyw.VBox, BaseWidget):
 
     @trt.default("instances")
     def _make_instances(self):
-        with self.hold_trait_notifications():
-            new_lpg = deepcopy(self.lpg)
-            return random_generator_playbook(
-                lpg=new_lpg,
-                name_hints={},
-            )
+        instance_generator = self.STRATEGIES[self.strategy_selector.value]
+        return instance_generator(lpg=self.lpg)
 
     @trt.default("update_btn")
     def _make_update_button(self):
@@ -90,14 +86,18 @@ class Interpreter(ipyw.VBox, BaseWidget):
             ipyw.VBox(
                 [make_element_label(element_id)] +
                 [
-                    ipyw.Box(
+                    ipyw.VBox(
                         children=[
-                            ipyw.ToggleButton(
-                                description=f"{instance}",
-                                layout=ipyw.Layout(min_width="10%"),
+                            ipyw.HBox(
+                                children=[
+                                    ipyw.ToggleButton(
+                                        description=f"{instance}",
+                                        layout=ipyw.Layout(min_width="10%"),
+                                    )
+                                    for instance in instances
+                                ],
                             )
                             for instances in self.instances[element_id]
-                            for instance in instances
                         ],
                         layout=ipyw.Layout(
                             flex_flow="wrap",
@@ -113,12 +113,9 @@ class Interpreter(ipyw.VBox, BaseWidget):
     def _update_instances(self, *_):
         try:
             self.update_btn.disabled = True
-            self.instances = self.strategy_selector.value(
-                lpg=self.lpg,
-                name_hints={},
-            )
+            self.instances = self.strategy_selector.value(lpg=self.lpg)
             self._on_updated_selected()
         except Exception as exc:
-            self.log.warn(f"Ran into an issue while updating instances: {exc}")
+            warn(f"Ran into an issue while updating instances: {exc}")
         finally:
             self.update_btn.disabled = False

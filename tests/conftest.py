@@ -1,3 +1,4 @@
+from collections import defaultdict
 from pathlib import Path
 
 import traitlets as trt
@@ -70,17 +71,30 @@ def kerbal_client() -> SysML2Client:
 
 @pytest.fixture
 def kerbal_ids_by_type(kerbal_client) -> dict:
-    ids_dict = {}
-
+    ids_dict = defaultdict(list)
     all_elements = kerbal_client.elements_by_id
 
     for ele_id, ele in all_elements.items():
-        if ele["@type"] in ids_dict:
-            ids_dict[ele["@type"]].append(ele_id)
-        else:
-            ids_dict.update({ele["@type"]: [ele_id]})
+        ids_dict[ele["@type"]].append(ele_id)
 
     return ids_dict
+
+
+@pytest.fixture
+def kerbal_client() -> SysML2Client:
+    return kerbal_model_loaded_client()
+
+
+@pytest.fixture()
+def all_kerbal_names(kerbal_client) -> list:
+    names = []
+    all_elements = kerbal_client.elements_by_id
+
+    for ele in all_elements.values():
+        if "name" in ele:
+            names.append(ele["name"])
+
+    return names
 
 
 @pytest.fixture
@@ -107,7 +121,6 @@ def kerbal_random_stage_1_instances(kerbal_lpg) -> dict:
         type_id: create_set_with_new_instances(
             sequence_template=[kerbal_lpg.nodes[type_id]],
             quantities=[number],
-            name_hints={},
         )
         for type_id, number in full_multiplicities.items()
     }

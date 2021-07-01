@@ -2,10 +2,11 @@ from dateutil import parser
 from datetime import timezone
 from functools import lru_cache
 from pathlib import Path
-from typing import Union
+from typing import Tuple, Union
 from warnings import warn
 
 import json
+import ipywidgets as ipyw
 import requests
 import sysml_v2_api_client as sysml2
 import traitlets as trt
@@ -72,6 +73,10 @@ class SysML2Client(Base):
     _elements_api: sysml2.ElementApi = trt.Instance(sysml2.ElementApi)
     _projects_api: sysml2.ProjectApi = trt.Instance(sysml2.ProjectApi)
 
+    folder_path: Path = trt.Instance(Path, allow_none=True)
+    json_files: Tuple[Path] = ipyw.trait_types.TypedTuple(trt.Instance(Path))
+    json_file: Path = trt.Instance(Path, allow_none=True)
+
     selected_project: str = trt.Unicode(allow_none=True)
     selected_commit: str = trt.Unicode(allow_none=True)
 
@@ -98,6 +103,7 @@ class SysML2Client(Base):
     @trt.default("_projects_api")
     def _make_projects_api(self):
         with sysml2.ApiClient(self._api_configuration) as client:
+            # TODO: add check for a bad URL not to make this call
             api = sysml2.ProjectApi(client)
         return api
 
@@ -164,6 +170,16 @@ class SysML2Client(Base):
                 )
         self.elements_by_id = elements_by_id
 
+    @trt.observe("folder_path")
+    def _update_json_files(self, *_):
+        if self.folder_path.exists():
+            self.json_files = tuple(self.folder_path.glob("*.json"))
+
+    @trt.observe("json_file")
+    def _update_elements_from_file(self, *_):
+        if self.json_file.exists():
+            self._load_from_file(file_path=self.json_file)
+
     @property
     def host(self):
         return f"{self.host_url}:{self.host_port}"
@@ -175,6 +191,8 @@ class SysML2Client(Base):
                 "By default, disabling pagination still retrieves 100 "
                 "records at a time!  True pagination is not supported yet."
             )
+        # TODO: Get the link header and use that to get the next page
+        # NOTE: The Pilot Implementation uses cursor-navigation, a la GitHub and DynamoDB
         return (
             f"{self.host}/"
             f"projects/{self.selected_project}/"
