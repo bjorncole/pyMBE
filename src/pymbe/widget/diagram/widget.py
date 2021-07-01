@@ -96,7 +96,7 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
     def _make_id_mapper(self) -> Mapper:
         elements = self.diagram.source.index.elements
         return Mapper(
-            to_map={
+            to_sysml={
                 elk_id: element.metadata.sysml_id
                 for elk_id, element in elements.items()
                 if hasattr(element.metadata, "sysml_id")
@@ -106,8 +106,7 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
     @trt.default("diagram")
     def _make_diagram(self):
         # FIXME: This seems a bit more involved than it should be, check with Dane
-
-        view = ipyelk.diagram.SprottyViewer(symbols=self.loader.part_diagram.symbols)
+        view = ipyelk.diagram.SprottyViewer()
         view.selection.observe(self._update_selected, "ids")
 
         tools = [
@@ -133,7 +132,6 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
 
         # TODO: after ipyelk fix revert this back to ipyelk.Diagram
         diagram = Diagram(
-            style=self.loader.part_diagram.style,
             toolbar=toolbar,
             tools=tools,
             view=view,
@@ -154,15 +152,6 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
             height="100%",
             width="auto",
         )
-
-    @trt.observe("selected")
-    def _update_based_on_selection(self, *_):
-        selected = self.selected
-        self.diagram.toolbar.filter_to_path.disabled = (
-            len(selected) != 2 or
-            not all(isinstance(node_id, str) for node_id in selected)
-        )
-        self.diagram.toolbar.filter_by_dist.disabled = not selected
 
     @property
     def excluded_edge_types(self):
@@ -305,18 +294,40 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
 
         if new == old:
             return
+
+        diagram, loader = self.diagram, self.loader
         with self.log_out:
-            self.diagram.source = self.loader.load(new=new, old=old)
+            diagram.style = loader.part_diagram.style
+            diagram.symbols = loader.part_diagram.symbols
+            diagram.source = loader.load(new=new, old=old)
+
+    @trt.observe("selected")
+    def _update_based_on_selection(self, *_):
+        """Update toolbar buttons based on selection status."""
+        selected = self.selected
+        self.diagram.toolbar.filter_to_path.disabled = (
+            len(selected) != 2 or
+            not all(isinstance(node_id, str) for node_id in selected)
+        )
+        self.diagram.toolbar.filter_by_dist.disabled = not selected
 
     @trt.observe("selected")
     def _update_diagram_selections(self, *_):
+        """Update diagram selected nodes based on app selections."""
         with self.log_out:
-            new_selections = self._map_selections(*self.selected)
             view_selector = self.diagram.view.selection
+            diagram_elements = list(view_selector.get_index().elements.elements)
+
+            new_selections = [
+                id_
+                for id_ in self._map_selections(*self.selected)
+                if id_ in diagram_elements
+            ]
             if set(view_selector.ids).symmetric_difference(new_selections):
                 view_selector.ids = new_selections
 
     def _update_selected(self, *_):
+        """Updated app selections based on diagram selections."""
         with self.log_out:
             new_selections = [
                 id_
@@ -330,9 +341,6 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
         if not selections:
             return ()
         new_selections = self.id_mapper.get(*selections)
-        if selections and not new_selections:
-            self.id_mapper = self._make_id_mapper()
-            new_selections = self.id_mapper.get(*selections)
         return new_selections
 
     # TODO: Bring this back when the layout options are back in the toolbar
