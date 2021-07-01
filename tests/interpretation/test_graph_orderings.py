@@ -1,8 +1,6 @@
-from tests.conftest import kerbal_model_loaded_client
-from pymbe.graph.lpg import SysML2LabeledPropertyGraph
-from pymbe.client import SysML2Client
-import pytest
 import networkx as nx
+
+from tests.conftest import kerbal_model_loaded_client
 
 
 def test_part_def_graph_ordering(kerbal_lpg):

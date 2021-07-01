@@ -1,7 +1,16 @@
+import networkx as nx
+
+from pymbe.query.query import (
+    get_features_typed_by_type,
+    get_label_for_id,
+    get_types_for_feature,
+    roll_up_lower_multiplicity,
+    roll_up_multiplicity_for_type,
+    roll_up_upper_multiplicity,
+)
+
+
 from tests.conftest import kerbal_model_loaded_client
-from pymbe.client import SysML2Client
-from pymbe.query.query import *
-import pytest
 
 
 def test_feature_to_type1(kerbal_client, kerbal_lpg):
@@ -109,8 +118,7 @@ def test_banded_graph_paths3(simple_parts_lpg):
     assert len(path_lists) == 1
 
 
-def test_feature_multiplicity_rollup1(kerbal_client, kerbal_lpg):
-
+def test_feature_multiplicity_rollup1(kerbal_lpg):
     engines_feat = '32c847a1-2184-4486-ba48-dbf6125ca638'
     stages_feat = '442722b5-8d08-46e4-ad5f-e6e2dd28d6f6'
 

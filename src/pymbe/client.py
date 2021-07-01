@@ -1,10 +1,13 @@
 from dateutil import parser
 from datetime import timezone
 from functools import lru_cache
+from pathlib import Path
+from typing import Tuple, Union
 from warnings import warn
 
-import requests
 import json
+import ipywidgets as ipyw
+import requests
 import sysml_v2_api_client as sysml2
 import traitlets as trt
 
@@ -70,6 +73,10 @@ class SysML2Client(Base):
     _elements_api: sysml2.ElementApi = trt.Instance(sysml2.ElementApi)
     _projects_api: sysml2.ProjectApi = trt.Instance(sysml2.ProjectApi)
 
+    folder_path: Path = trt.Instance(Path, allow_none=True)
+    json_files: Tuple[Path] = ipyw.trait_types.TypedTuple(trt.Instance(Path))
+    json_file: Path = trt.Instance(Path, allow_none=True)
+
     selected_project: str = trt.Unicode(allow_none=True)
     selected_commit: str = trt.Unicode(allow_none=True)
 
@@ -96,6 +103,7 @@ class SysML2Client(Base):
     @trt.default("_projects_api")
     def _make_projects_api(self):
         with sysml2.ApiClient(self._api_configuration) as client:
+            # TODO: add check for a bad URL not to make this call
             api = sysml2.ProjectApi(client)
         return api
 
@@ -162,6 +170,16 @@ class SysML2Client(Base):
                 )
         self.elements_by_id = elements_by_id
 
+    @trt.observe("folder_path")
+    def _update_json_files(self, *_):
+        if self.folder_path.exists():
+            self.json_files = tuple(self.folder_path.glob("*.json"))
+
+    @trt.observe("json_file")
+    def _update_elements_from_file(self, *_):
+        if self.json_file.exists():
+            self._load_from_file(file_path=self.json_file)
+
     @property
     def host(self):
         return f"{self.host_url}:{self.host_port}"
@@ -173,6 +191,8 @@ class SysML2Client(Base):
                 "By default, disabling pagination still retrieves 100 "
                 "records at a time!  True pagination is not supported yet."
             )
+        # TODO: Get the link header and use that to get the next page
+        # NOTE: The Pilot Implementation uses cursor-navigation, a la GitHub and DynamoDB
         return (
             f"{self.host}/"
             f"projects/{self.selected_project}/"
@@ -190,12 +210,20 @@ class SysML2Client(Base):
             )
         return response.json()
 
+    def _get_project_commits(self):
+        # TODO: add more info about the commit when API provides it
+        return [
+            commit.id
+            for commit in self._commits_api.get_commits_by_project(
+                self.selected_project,
+            )
+        ]
+
     def _get_elements_from_server(self):
         return self._retrieve_data(self.elements_url)
 
     def update(self, elements: dict):
         """All the functionality for the update is already handled"""
-        pass
 
     def _download_elements(self):
         elements = self._get_elements_from_server()
@@ -204,8 +232,13 @@ class SysML2Client(Base):
             warn("There are probably more elements that were not retrieved!")
         self._update_elements(elements=elements)
 
-    def _load_disk_elements(self, location: str):
-        local_element_file = open(location, "r")
-        elements = json.loads(local_element_file.read())
-        self._update_elements(elements=elements)
-        local_element_file.close()
+    def _load_from_file(self, file_path: Union[str, Path]):
+        if isinstance(file_path, str):
+            file_path = Path(file_path)
+        elif not isinstance(file_path, Path):
+            raise TypeError(f"'{file_path}' needs to be a string or a Path, not a {type(file_path)}")
+
+        if not file_path.exists():
+            raise ValueError(f"Cannot find {file_path}!")
+
+        self._update_elements(elements=json.loads(file_path.read_text()))

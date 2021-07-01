@@ -2,7 +2,10 @@ from ..interpretation.interpretation import LiveExpressionNode, ValueHolder, Ins
 from ..graph.lpg import SysML2LabeledPropertyGraph
 from ..label import get_label_for_id
 
+
 def sequence_dot_operator(left_item, right_side_seqs):
+    if not (left_item and right_side_seqs):
+        return []
     left_len = len(left_item)
     right_len = len(right_side_seqs[0])
     # print('Left is ' + str(left_len) + ' right is ' + str(right_len))
@@ -19,6 +22,7 @@ def sequence_dot_operator(left_item, right_side_seqs):
 
     return matched_items
 
+
 def evaluate_and_apply_collect(
     base_scope: Instance,
     m0_expr: LiveExpressionNode,
@@ -27,7 +31,6 @@ def evaluate_and_apply_collect(
     m0_collection_path: ValueHolder,
     result_holder: ValueHolder
 ) -> None:
-
     #print("Applying collect to " + str(m0_collection_input))
     # apply the dot operator
     path_result = []
@@ -39,6 +42,7 @@ def evaluate_and_apply_collect(
     final_answer = [coll[-1] for coll in path_result]
     result_holder.value = final_answer
 
+
 def evaluate_and_apply_fre(
     m0_expr: LiveExpressionNode,
     instance_dict: dict
@@ -49,7 +53,6 @@ def evaluate_and_apply_fre(
     :param instance_dict:
     :return:
     """
-
     referent_id = m0_expr.base_att['referent']['@id']
     if referent_id in instance_dict:
         fre_result = m0_expr.base_att['result']['@id']
@@ -59,6 +62,7 @@ def evaluate_and_apply_fre(
         return instance_dict[referent_id]
     else:
         return
+
 
 def evaluate_and_apply_literal(
     m0_expr: LiveExpressionNode,
@@ -74,20 +78,20 @@ def evaluate_and_apply_literal(
     literal_value = m0_expr.base_att['value']
     m0_result.value = literal_value
 
+
 def evaluate_and_apply_sum(
     m0_expr: ValueHolder,
     m0_result: ValueHolder
 ) -> None:
-
     total = 0
     for item in m0_expr.value:
         total+= item.value
     m0_result.value = total
+
 
 def evaluate_and_apply_plus(
     x_expr: ValueHolder,
     y_expr: ValueHolder,
     m0_result: ValueHolder
 ) -> None:
-
     m0_result.value = x_expr.value + y_expr.value

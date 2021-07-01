@@ -7,7 +7,7 @@ from .client import SysML2ClientWidget
 from .containment import ContainmentTree
 from .inspector import ElementInspector
 from .interpretation import Interpreter
-from .graph import SysML2LPGWidget
+from pymbe.widget.diagram.widget import SysML2LPGWidget
 
 
 @ipyw.register
@@ -33,14 +33,14 @@ class UI(DockBox):
         self.description = "SysML Model"
 
         self.client = SysML2ClientWidget(host_url=host_url)
-        self.interpreter.lpg = self.lpg
+        # self.interpreter.lpg = self.lpg
 
         self.children = [
             self.client,
             self.tree,
             self.inspector,
             self.lpg,
-            self.interpreter
+            #self.interpreter,
         ]
 
         self.dock_layout = dict(
@@ -55,7 +55,7 @@ class UI(DockBox):
                         dict(type="tab-area", widgets=[1], currentIndex=0),
                         dict(
                             type="tab-area",
-                            widgets=[2, 3, 4],
+                            widgets=[2, 3],# 4],
                             currentIndex=0,
                         ),
                     ],
@@ -82,7 +82,7 @@ class UI(DockBox):
                 (self.tree, "selected"),
                 (widget, "selected"),
             )
-            for widget in (self.inspector, self.lpg, self.interpreter)
+            for widget in (self.inspector, self.lpg) #, self.interpreter)
         ]
 
     @trt.observe("lpg_height")

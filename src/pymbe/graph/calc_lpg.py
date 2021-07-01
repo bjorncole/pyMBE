@@ -1,9 +1,11 @@
 import networkx as nx
+
 from ..interpretation.m0_operators import *
 from ..interpretation.interpretation import Instance, ValueHolder, LiveExpressionNode
 from ..interpretation.results import *
 
-class CalculationGroup():
+
+class CalculationGroup:
     """
     A graph to represent the active expression tree in a model.
     """
@@ -189,6 +191,5 @@ class CalculationGroup():
 
         # Look through the calculation list and the relevant sequences, use this to build needed alternative
         # OpenMDAO problems - turn over passing of variables to OpenMDAO - ignore the Assignment / Value Binding steps
-
 
         # Once problems are built, execute and bring results back to input / result parameter sequences as needed

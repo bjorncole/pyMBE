@@ -1,6 +1,5 @@
 # a collection of convenience methods to navigate the metamodel when inspecting user models
-
-from ..graph.lpg import SysML2LabeledPropertyGraph
+from pymbe.graph import SysML2LabeledPropertyGraph
 
 
 def feature_multiplicity(

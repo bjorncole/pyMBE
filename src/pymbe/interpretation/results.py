@@ -1,6 +1,6 @@
 # A set of tools to make interpretations easier to read
-from ..label import get_label
-from ..label import get_label_for_id
+from ..label import get_label, get_label_for_id
+
 
 def pprint_interpretation(interpretation: dict, all_elements: dict) -> list:
     print_lines = []

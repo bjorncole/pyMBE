@@ -1,75 +1,80 @@
 # These adapters describe how to make SysML subgraphs of the LPG
 
 Complete:
-  description: |
-    This is the complete graph, it will be stripped if the size of the graph exceeds 'max_graph_size' traitlet in the LPG.
+  description: >
+    This is the complete graph, it will be stripped if the size of
+    the graph exceeds 'max_graph_size' traitlet in the LPG.
   excluded_edge_types: []
   excluded_node_types: []
 
 Banded Graph:
-  description: |
-    Generate library settings for a "banded graph" of types, generalization, and feature membership to capture both SysML v1 and v2 styled composition structures
+  description: >
+    Generate library settings for a "banded graph" of types,
+    generalization, and feature membership to capture both SysML v1
+    and v2 styled composition structures
   included_edge_types:
-  - FeatureMembership
-  - FeatureTyping
-  - Superclassing
+    - FeatureMembership
+    - FeatureTyping
+    - Superclassing
   reversed_edge_types:
-  - FeatureMembership
-  - FeatureTyping
+    - FeatureMembership
+    - FeatureTyping
 
 Connection Graph:
   description: |
     Generate library settings for a graph focused on connecting model elements
   included_edge_types:
-  - ConnectionUsageEnd
-  - InterfaceUsageEnd
-  - EndFeatureMembership
+    - ConnectionUsageEnd
+    - EndFeatureMembership
+    - InterfaceUsageEnd
 
 Expanded Banded Graph:
-  description: |
-    Generate library settings for a expanded version of banded graph to accommodate expression tree relationships
+  description: >
+    Generate library settings for a expanded version of banded graph
+    to accommodate expression tree relationships
   included_edge_types:
-  - FeatureMembership
-  - FeatureTyping
-  - FeatureValue
-  - ParameterMembership
-  - ReturnParameterMembership
-  - Superclassing
-  reversed_edge_types:
-  - FeatureMembership
-  - FeatureTyping
-  - FeatureValue
-  - ParameterMembership
-  - ReturnParameterMembership
-  excluded_node_types:
-  - ReferenceUsage
-
-Expression Value Graph:
-  description: |
-    Generate library settings for a expanded version of banded graph to accommodate expression tree relationships
-  included_node_types:
-  - OperatorExpression
-  - InvocationExpression
-  - FeatureReferenceExpression
-  - PathStepExpression
-  - Expression
-  - Feature
-  - LiteralReal
-  - LiteralInteger
-  included_edge_types:
-  - FeatureMembership
-  - ParameterMembership
-  - ReturnParameterMembership
-  - ResultExpressionMembership
-
-Expression Evaluation Graph:
-  description: |
-    A graph to hint at the direction of computation flow in a model
-  included_edge_types:
+    - FeatureMembership
+    - FeatureTyping
+    - FeatureValue
     - ParameterMembership
     - ReturnParameterMembership
-    - ResultExpressionMembership
+    - Superclassing
+  reversed_edge_types:
+    - FeatureMembership
+    - FeatureTyping
     - FeatureValue
+    - ParameterMembership
+    - ReturnParameterMembership
+  excluded_node_types:
+    - ReferenceUsage
+
+Expression Value Graph:
+  description: >
+    Generate library settings for a expanded version of banded graph
+    to accommodate expression tree relationships
+  included_node_types:
+    - Expression
+    - Feature
+    - FeatureReferenceExpression
+    - InvocationExpression
+    - LiteralInteger
+    - LiteralReal
+    - OperatorExpression
+    - PathStepExpression
+  included_edge_types:
+    - FeatureMembership
+    - ParameterMembership
+    - ResultExpressionMembership
+    - ReturnParameterMembership
+
+Expression Evaluation Graph:
+  description: >
+    A graph to hint at the direction of computation flow in a model
+  included_edge_types:
+    - FeatureValue
+    - ParameterMembership
+    - ResultExpressionMembership
+    - ReturnParameterMembership
   reversed_edge_types:
     - ParameterMembership
     - ResultExpressionMembership
@@ -78,11 +83,11 @@ Expression Inferred Graph:
   description: |
     A graph to hint at the direction of computation flow in a model
   included_edge_types:
-    - ParameterMembership
-    - ReturnParameterMembership
-    - ResultExpressionMembership
     - ImpliedParameterFeedforward
+    - ParameterMembership
     - Redefinition
+    - ResultExpressionMembership
+    - ReturnParameterMembership
   reversed_edge_types:
     - ImpliedParameterFeedforward
     - ReturnParameterMembership
@@ -92,81 +97,83 @@ Part Definition Graph:
   description: |
     Generate library settings for a graph that just looks at superclassing and part definitions
   included_edge_types:
-  - Superclassing
+    - Superclassing
   reversed_edge_types:
-  - Superclassing
+    - Superclassing
 
 Part Featuring Graph:
-  description: |
-    Generate library settings for a graph that just looks at part definition and usage
+  description: >
+    Generate library settings for a graph that just looks at part
+    definition and usage
   included_node_types:
-  - PartDefinition
-  - PartUsage
-  - DataType
-  - AttributeDefinition
-  - AttributeUsage
-  - ConjugatedPortDefinition
-  - PortDefinition
-  - PortUsage
-  - InterfaceDefinition
-  - InterfaceUsage
-  - ConnectionDefinition
-  - ConnectionUsage
-  - ActionDefinition
-  - ActionUsage
+    - ActionDefinition
+    - ActionUsage
+    - AttributeDefinition
+    - AttributeUsage
+    - ConjugatedPortDefinition
+    - ConnectionDefinition
+    - ConnectionUsage
+    - DataType
+    - InterfaceDefinition
+    - InterfaceUsage
+    - PartDefinition
+    - PartUsage
+    - PortDefinition
+    - PortUsage
   included_edge_types:
-  - FeatureMembership
+    - FeatureMembership
 
 Part Typing Graph:
-  description: |
-    Generate library settings for a graph that just looks at part definition and usage typing
+  description: >
+    Generate library settings for a graph that just looks at part
+    definition and usage typing
   included_node_types:
-  - PartDefinition
-  - PartUsage
-  - DataType
-  - AttributeDefinition
-  - AttributeUsage
-  - ConjugatedPortDefinition
-  - PortDefinition
-  - PortUsage
-  - InterfaceDefinition
-  - InterfaceUsage
-  - ConnectionDefinition
-  - ConnectionUsage
-  - ActionDefinition
-  - ActionUsage
+    - ActionDefinition
+    - ActionUsage
+    - AttributeDefinition
+    - AttributeUsage
+    - ConjugatedPortDefinition
+    - ConnectionDefinition
+    - ConnectionUsage
+    - DataType
+    - InterfaceDefinition
+    - InterfaceUsage
+    - PartDefinition
+    - PartUsage
+    - PortDefinition
+    - PortUsage
   included_edge_types:
-  - FeatureTyping
+    - FeatureTyping
 
 Part Typing and Redefinition Graph:
   description: |
     Generate library settings for a graph that just looks at part definition and usage typing
   included_node_types:
-  - PartDefinition
-  - PartUsage
-  - DataType
-  - AttributeDefinition
-  - AttributeUsage
-  - ConjugatedPortDefinition
-  - PortDefinition
-  - PortUsage
-  - InterfaceDefinition
-  - InterfaceUsage
-  - ConnectionDefinition
-  - ConnectionUsage
+    - AttributeDefinition
+    - AttributeUsage
+    - ConnectionDefinition
+    - ConnectionUsage
+    - ConjugatedPortDefinition
+    - DataType
+    - InterfaceDefinition
+    - InterfaceUsage
+    - PartDefinition
+    - PartUsage
+    - PortDefinition
+    - PortUsage
   included_edge_types:
-  - FeatureTyping
-  - Redefinition
+    - FeatureTyping
+    - Redefinition
 
 Redefinition Graph:
   description: |
     Generate a graph that covers redefinition relationships between features
   included_edge_types:
-  - Redefinition
+    - Redefinition
 
 Redefinition and Subsetting Graph:
   description: |
     Generate a graph that covers redefinition relationships between features
   included_edge_types:
-  - Redefinition
-  - Subsetting
+    - Redefinition
+    - Subsetting

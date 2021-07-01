@@ -18,15 +18,15 @@ def get_label(element: dict, all_elements: dict) -> str:
         for type_name in type_names
         if type_name
     ]
-
+    value = element.get("value")
     if name:
         if type_names:
             # TODO: look into using other types (if there are any)
             name += f": {type_names[0]}"
         return name
-    elif metatype.startswith("Literal"):
-        type_ = type_names[0] if type_names else metatype.replace("Literal", "Occurred Literal")
-        return f"""{element["value"]} «{type_}»"""
+    elif value and metatype.startswith("Literal"):
+        metatype = type_names[0] if type_names else metatype.replace("Literal", "Occurred Literal")
+        return f"{value} «{metatype}»"
     elif metatype == "MultiplicityRange":
         return get_label_for_multiplicity(
             multiplicity=element,
@@ -43,10 +43,12 @@ def get_label(element: dict, all_elements: dict) -> str:
     else:
         return "blank"
 
+
 def get_label_for_id(
     element_id: str, all_elements: dict
 ) -> str:
     return get_label(all_elements[element_id], all_elements)
+
 
 def get_label_for_expression(
     expression: dict,
@@ -111,16 +113,16 @@ def get_label_for_expression(
         prefix = type_names[0] if type_names else ""
     elif metatype == "PathStepExpression":
         path_step_names = []
-        for owned_fm_id in expression['ownedFeatureMembership']:
-            owned_fm = all_elements[owned_fm_id['@id']]
-            if owned_fm['@type'] == 'FeatureMembership':
-                member = all_elements[owned_fm['memberElement']['@id']]
+        for owned_fm_id in expression["ownedFeatureMembership"]:
+            owned_fm = all_elements[owned_fm_id["@id"]]
+            if owned_fm["@type"] == "FeatureMembership":
+                member = all_elements[owned_fm["memberElement"]["@id"]]
                 # expect FRE here
-                if 'referent' in member:
-                    refered = all_elements[member['referent']['@id']]
-                    path_step_names.append(refered['name'])
+                if "referent" in member:
+                    refered = all_elements[member["referent"]["@id"]]
+                    path_step_names.append(refered.get("name") or refered["@id"])
 
-        prefix = '.'.join(path_step_names)
+        prefix = ".".join(path_step_names)
     return f"""{prefix} ({", ".join(input_names)}) => {result_name}"""
 
 
@@ -146,17 +148,17 @@ def get_label_for_multiplicity(
 
 def get_qualified_label(element: dict, all_elements: dict) -> str:
 
-    earlier_name = ''
+    earlier_name = ""
 
     try:
-        if 'owner' in element:
-            if element['owner'] is not None:
-                element_owner = all_elements[element['owner']['@id']]
+        if "owner" in element:
+            if element["owner"] is not None:
+                element_owner = all_elements[element["owner"]["@id"]]
                 earlier_name = get_qualified_label(element_owner, all_elements)
         else:
-            return element['name']
+            return element["name"]
 
-        earlier_name = earlier_name + '::' + get_label(element, all_elements)
+        earlier_name = f"{earlier_name}::{get_label(element, all_elements)}"
     except TypeError:
         print(all_elements)
 

@@ -1,0 +1,148 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request: null
+  workflow_dispatch: null
+
+env:
+  PYTHONIOENCODING: utf-8
+  PYTHONUNBUFFERED: '1'
+  PIP_DISABLE_PIP_VERSION_CHECK: '1'
+  CONDA_EXE: mamba
+  SKIP_CONDA_PREFLIGHT: 1
+  CACHE_EPOCH: 0
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu]
+    steps:
+      - name: git checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: cache (conda)
+        uses: actions/cache@v1
+        with:
+          path: ~/conda_pkgs_dir
+          key:
+            ${{ runner.os }}-conda-${{ hashFiles('.github/environment.yml', 'anaconda-project-lock.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-conda-
+
+      - name: provision with micromamba
+        uses: mamba-org/provision-with-micromamba@main
+        with:
+          environment-file: .github/environment.yml
+          environment-name: pymbe-ci
+
+      - name: build
+        shell: bash -l {0}
+        run: |
+          anaconda-project run package || exit 1
+
+      - name: publish dists
+        uses: actions/upload-artifact@v2
+        with:
+          name: pymbe dist ${{ github.run_number }}
+          path: ./dist
+
+  test:
+    runs-on: ${{ matrix.vm }}
+    needs: [build]
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu
+          - macos
+          - windows
+        include:
+          - os: ubuntu
+            miniforge: Linux-x86_64.sh
+            vm: ubuntu-20.04
+          - os: macos
+            miniforge: MacOSX-x86_64.sh
+            vm: macos-latest
+          - os: windows
+            miniforge: Windows-x86_64.exe
+            vm: windows-latest
+
+    env:
+      INSTALL_ARTIFACT: wheel
+      TESTING_IN_CI: 'true'
+      ATEST_RETRIES: '2'
+
+    steps:
+      - name: configure line endings
+        run: |
+          git config --global core.autocrlf false
+
+      - name: git checkout
+        uses: actions/checkout@v2
+
+      # - name: cache (conda)
+      #   uses: actions/cache@v1
+      #   with:
+      #     path: ~/conda_pkgs_dir
+      #     key: |
+      #       ${{ env.CACHE_EPOCH }}-${{ runner.os }}-conda-${{ hashFiles('.github/environment.yml', 'anaconda-project-lock.yml') }}
+      #     restore-keys: |
+      #       ${{ env.CACHE_EPOCH }}-${{ runner.os }}-conda-
+
+      - name: provision-with-micromamba
+        uses: mamba-org/provision-with-micromamba@main
+        with:
+          environment-file: .github/environment.yml
+
+      # - uses: actions/download-artifact@v2
+      #   with:
+      #     name: pymbe dist ${{ github.run_number }}
+      #     path: ./dist
+
+      - name: test (linux)
+        if: ${{ contains(matrix.os, 'ubuntu') }}
+        shell: bash -l {0}
+        run: |
+          anaconda-project run setup
+          anaconda-project run test
+
+      - name: test (macos)
+        if: ${{ contains(matrix.os, 'macos') }}
+        shell: bash -l {0}
+        run: |
+          anaconda-project run setup
+          anaconda-project run test
+
+      - name: test (windows)
+        if: ${{ contains(matrix.os, 'windows') }}
+        shell: powershell
+        env:
+          ATEST_PROCESSES: 1
+          WIN_CI: 1
+        run: |
+          anaconda-project run setup
+          anaconda-project run test
+
+      - name: Upload Coverage to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./build/cov.xml
+
+      - name: reports
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ job.status }} reports ${{ matrix.os }} ${{ github.run_number }}
+          path: |
+            ./build/htmlcov
+            ./build/pytest.html
+        if: always()

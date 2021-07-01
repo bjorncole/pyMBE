@@ -60,7 +60,6 @@ def roll_up_multiplicity(
         if feature['@id'] == part_tree_root:
             total_mult = 1
         try:
-            #part_path = nx.shortest_path(
             part_paths = nx.all_simple_paths(
                 banded_featuring_graph,
                 source=feature['@id'],
@@ -82,10 +81,11 @@ def roll_up_multiplicity(
 
     return total_mult
 
+
 def roll_up_multiplicity_for_type(
     lpg: SysML2LabeledPropertyGraph,
     typ: dict,
-    bound: str
+    bound: str,
 ) -> int:
 
     rdg = lpg.get_projection("Redefinition and Subsetting Graph")
@@ -125,9 +125,10 @@ def roll_up_multiplicity_for_type(
     else:
         return 0
 
+
 def get_types_for_feature(
     lpg: SysML2LabeledPropertyGraph,
-    feature_id: str
+    feature_id: str,
 ) -> list:
 
     ptg = lpg.get_projection("Part Typing Graph")
@@ -149,9 +150,10 @@ def get_types_for_feature(
 
     return types
 
+
 def get_features_typed_by_type(
     lpg: SysML2LabeledPropertyGraph,
-    type_id: str
+    type_id: str,
 ) -> list:
 
     ptg = lpg.get_projection("Part Typing Graph")
@@ -175,6 +177,7 @@ def get_features_typed_by_type(
 
     return features
 
+
 def build_element_owner_sequence(
         element: dict,
         all_elements: list,
@@ -192,8 +195,8 @@ def build_element_owner_sequence(
         seq
     )
 
-def calculate_signature(element: dict, all_elements: dict) -> str:
 
+def calculate_signature(element: dict, all_elements: dict) -> str:
     owned_sequence = build_element_owner_sequence(
         element,
         all_elements,
