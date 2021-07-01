@@ -23,7 +23,6 @@ commands:
     env_spec: developer
     unix: |
       git submodule update --init
-      pip install ipyelk --no-dependencies
       pip install git+https://github.com/Systems-Modeling/SysML-v2-API-Python-Client.git --no-dependencies
       pip install -e . --no-dependencies
     windows: |
@@ -87,7 +86,7 @@ packages: []
 #
 channels:
 - conda-forge
-- conda-forge/label/ipyelk_alpha
+- conda-forge/label/ipyelk_alpha  # Remove this when full release from ipyelk
 - nodefaults
 
 #
