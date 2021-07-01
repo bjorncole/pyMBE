@@ -29,6 +29,18 @@ def simple_parts_model_loaded_client() -> SysML2Client:
     return helper_client
 
 
+def simple_actions_model_loaded_client() -> SysML2Client:
+    helper_client = SysML2Client()
+
+    base_path = pathlib.Path(__file__).parent.absolute()
+    print(base_path)
+    file_name = str(base_path) + "\\data\\Simple Actions Model\\elements.json"
+
+    helper_client._load_disk_elements(file_name)
+
+    return helper_client
+
+
 @pytest.fixture
 def kerbal_client() -> SysML2Client:
 
@@ -139,6 +151,22 @@ def simple_parts_client() -> SysML2Client:
 def simple_parts_lpg() -> SysML2LabeledPropertyGraph:
     new_lpg = SysML2LabeledPropertyGraph()
     client = simple_parts_model_loaded_client()
+
+    new_lpg.update(client.elements_by_id, False)
+
+    return new_lpg
+
+
+@pytest.fixture
+def simple_actions_client() -> SysML2Client:
+
+    return simple_actions_model_loaded_client()
+
+
+@pytest.fixture
+def simple_actions_lpg() -> SysML2LabeledPropertyGraph:
+    new_lpg = SysML2LabeledPropertyGraph()
+    client = simple_actions_model_loaded_client()
 
     new_lpg.update(client.elements_by_id, False)
 

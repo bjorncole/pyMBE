@@ -174,3 +174,39 @@ def get_features_typed_by_type(
                             features += item
 
     return features
+
+def build_element_owner_sequence(
+        element: dict,
+        all_elements: list,
+        seq: list = []
+) -> list:
+
+    if "owner" not in element or element["owner"] is None:
+        return seq
+
+    seq.append(element)
+
+    return build_element_owner_sequence(
+        all_elements[element["owner"]["@id"]],
+        all_elements,
+        seq
+    )
+
+def calculate_signature(element: dict, all_elements: dict) -> str:
+
+    owned_sequence = build_element_owner_sequence(
+        element,
+        all_elements,
+        []
+    )
+
+    sig_seq = []
+    for item in owned_sequence:
+        if "name" in item and item["name"] != "":
+            sig_seq.append(item["name"])
+        else:
+            sig_seq.append(get_label(item, all_elements))
+
+    sig_seq.reverse()
+
+    return "::".join(sig_seq)

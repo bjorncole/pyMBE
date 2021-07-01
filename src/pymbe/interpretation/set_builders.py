@@ -145,6 +145,7 @@ def extend_sequences_by_sampling(
             print(sample_set)
             print("Previous sequences include:")
             print(previous_sequences)
+            print(draws_per)
             raise ValueError("Tried to pull " + str(total_draw) + " instances from a length of " + str(len(sample_set)))
 
     return set_extended

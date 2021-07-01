@@ -168,7 +168,7 @@ def random_generator_phase_1_multiplicities(
     type_multiplicities = {}
     for pt in ptg.nodes:
         if lpg.nodes[pt]['@type'] in ('PartDefinition', 'DataType', 'AttributeDefinition', 'PortDefinition',
-                                      'InterfaceDefinition', 'ConnectionDefinition'):
+                                      'InterfaceDefinition', 'ConnectionDefinition', 'ActionDefinition'):
             mult = roll_up_multiplicity_for_type(
                 lpg,
                 lpg.nodes[pt],
@@ -319,7 +319,8 @@ def random_generator_playbook_phase_3(
             # sample set will be the last element in the sequence for classifiers
             feature = all_elements[feature_id]
 
-            if feature["@type"] in ("PartUsage", "AttributeUsage", "PortUsage", "InterfaceUsage", "ConnectionUsage"):
+            if feature["@type"] in ("PartUsage", "AttributeUsage", "PortUsage", "InterfaceUsage", "ConnectionUsage",
+                                    "ActionUsage"):
                 types = get_types_for_feature(lpg, feature['@id'])
 
                 if len(types) == 0:
@@ -333,7 +334,8 @@ def random_generator_playbook_phase_3(
                 typ = feature_id
 
             if index == 0:
-                if feature["@type"] in ("PartUsage", "AttributeUsage", "PortUsage", "InterfaceUsage", "ConnectionUsage"):
+                if feature["@type"] in ("PartUsage", "AttributeUsage", "PortUsage", "InterfaceUsage", "ConnectionUsage",
+                                        "ActionUsage"):
                     # hack for usage at top
                     new_sequences = [instances_dict[typ][0]]
                     if typ in already_drawn:
@@ -488,7 +490,7 @@ def random_generator_playbook_phase_5(
     # Generate sequences for connection and interface ends
     for node_id in list(cug.nodes):
         node = lpg.nodes[node_id]
-        if node['@type'] in ('ConnectionUsage', 'InterfaceUsage'):
+        if node['@type'] in ('ConnectionUsage', 'InterfaceUsage', 'SuccessionUsage'):
 
             connector_ends = node["connectorEnd"]
 

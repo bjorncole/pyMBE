@@ -112,6 +112,8 @@ Part Featuring Graph:
   - InterfaceUsage
   - ConnectionDefinition
   - ConnectionUsage
+  - ActionDefinition
+  - ActionUsage
   included_edge_types:
   - FeatureMembership
 
@@ -131,6 +133,8 @@ Part Typing Graph:
   - InterfaceUsage
   - ConnectionDefinition
   - ConnectionUsage
+  - ActionDefinition
+  - ActionUsage
   included_edge_types:
   - FeatureTyping
 
