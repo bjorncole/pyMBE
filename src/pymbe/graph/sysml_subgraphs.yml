@@ -24,9 +24,9 @@ Connection Graph:
   description: |
     Generate library settings for a graph focused on connecting model elements
   included_edge_types:
-  - ConnectionUsageEnd
-  - InterfaceUsageEnd
-  - EndFeatureMembership
+    - ConnectionUsageEnd
+    - EndFeatureMembership
+    - InterfaceUsageEnd
 
 Expanded Banded Graph:
   description: >
@@ -71,10 +71,10 @@ Expression Evaluation Graph:
   description: >
     A graph to hint at the direction of computation flow in a model
   included_edge_types:
-    - ParameterMembership
-    - ReturnParameterMembership
-    - ResultExpressionMembership
     - FeatureValue
+    - ParameterMembership
+    - ResultExpressionMembership
+    - ReturnParameterMembership
   reversed_edge_types:
     - ParameterMembership
     - ResultExpressionMembership
@@ -83,11 +83,11 @@ Expression Inferred Graph:
   description: |
     A graph to hint at the direction of computation flow in a model
   included_edge_types:
-    - ParameterMembership
-    - ReturnParameterMembership
-    - ResultExpressionMembership
     - ImpliedParameterFeedforward
+    - ParameterMembership
     - Redefinition
+    - ResultExpressionMembership
+    - ReturnParameterMembership
   reversed_edge_types:
     - ImpliedParameterFeedforward
     - ReturnParameterMembership
@@ -106,11 +106,13 @@ Part Featuring Graph:
     Generate library settings for a graph that just looks at part
     definition and usage
   included_node_types:
+    - ActionDefinition
+    - ActionUsage
     - AttributeDefinition
     - AttributeUsage
+    - ConjugatedPortDefinition
     - ConnectionDefinition
     - ConnectionUsage
-    - ConjugatedPortDefinition
     - DataType
     - InterfaceDefinition
     - InterfaceUsage
@@ -126,11 +128,13 @@ Part Typing Graph:
     Generate library settings for a graph that just looks at part
     definition and usage typing
   included_node_types:
+    - ActionDefinition
+    - ActionUsage
     - AttributeDefinition
     - AttributeUsage
+    - ConjugatedPortDefinition
     - ConnectionDefinition
     - ConnectionUsage
-    - ConjugatedPortDefinition
     - DataType
     - InterfaceDefinition
     - InterfaceUsage
