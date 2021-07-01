@@ -1,6 +1,5 @@
 # Module for computing useful labels and signatures for SysML v2 elements
 
-
 def get_label(element: dict, all_elements: dict) -> str:
     name = element.get("name")
     metatype = element.get("@type")

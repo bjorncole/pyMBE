@@ -27,6 +27,7 @@ from .set_builders import (
 # of the user model
 
 TYPES_FOR_FEATURING = (
+    "ActionUsage",
     "AttributeUsage",
     "ConnectionUsage",
     "InterfaceUsage",
@@ -35,6 +36,7 @@ TYPES_FOR_FEATURING = (
 )
 
 TYPES_FOR_ROLL_UP_MULTIPLICITY = (
+    "ActionDefinition",
     "AttributeDefinition",
     "ConnectionDefinition",
     "DataType",
@@ -221,7 +223,7 @@ def random_generator_playbook_phase_1_singletons(
     instances_dict: dict,
 ) -> None:
     """
-    Calculates instances for classifiers that aren't directly typed (but may have 
+    Calculates instances for classifiers that aren't directly typed (but may have
     members or be superclasses for model elements that have sequences generated for them).
 
     :param lpg: Active SysML graph
@@ -348,7 +350,8 @@ def random_generator_playbook_phase_3(
                 typ = feature_id
 
             if index == 0:
-                if feature["@type"] in ("PartUsage", "AttributeUsage", "PortUsage", "InterfaceUsage", "ConnectionUsage"):
+                if feature["@type"] in ("PartUsage", "AttributeUsage", "PortUsage", "InterfaceUsage", "ConnectionUsage",
+                                        "ActionUsage"):
                     # hack for usage at top
                     new_sequences = [instances_dict[typ][0]]
                     if typ in already_drawn:
@@ -507,7 +510,7 @@ def random_generator_playbook_phase_5(
     # Generate sequences for connection and interface ends
     for node_id in list(cug.nodes):
         node = lpg.nodes[node_id]
-        if node['@type'] in ('ConnectionUsage', 'InterfaceUsage'):
+        if node['@type'] in ('ConnectionUsage', 'InterfaceUsage', 'SuccessionUsage'):
 
             connector_ends = node["connectorEnd"]
 
