@@ -1,4 +1,4 @@
-from random import randint
+from random import randint, sample
 from uuid import uuid4
 
 import networkx as nx
@@ -46,9 +46,9 @@ TYPES_FOR_ROLL_UP_MULTIPLICITY = (
 
 def random_generator_playbook(
     lpg: SysML2LabeledPropertyGraph,
-    name_hints: dict,
+    name_hints: dict = None,
 ) -> dict:
-
+    name_hints = name_hints or {}
     can_interpret = validate_working_data(lpg)
 
     if not can_interpret:
@@ -71,16 +71,14 @@ def random_generator_playbook(
 
     full_multiplicities = random_generator_phase_1_multiplicities(lpg, ptg, scg)
 
-    instances_dict = {}
-
-    for type_id, number in full_multiplicities.items():
-        new_instances = create_set_with_new_instances(
+    instances_dict = {
+        type_id: create_set_with_new_instances(
             sequence_template=[all_elements[type_id]],
             quantities=[number],
             name_hints=name_hints,
         )
-
-        instances_dict.update({type_id: new_instances})
+        for type_id, number in full_multiplicities.items()
+    }
 
     # pick up the definitions that aren't matched to a usage yet
 
@@ -125,6 +123,7 @@ def random_generator_playbook(
 def random_generator_phase_0_interpreting_edges(lpg: SysML2LabeledPropertyGraph):
     """
     Pre-work for the interpretation to support expression evaluations
+
     :param client: Active SysML Client
     :param lpg: Working Labeled Property Graph
     :return: None - side effect is update to LPG with new edges
@@ -150,8 +149,8 @@ def random_generator_phase_0_interpreting_edges(lpg: SysML2LabeledPropertyGraph)
 
     lpg.elements_by_id = {**lpg.elements_by_id, **new_elements}
     for edge in new_edges:
-        new_edg = {(edge[0:3]): edge[3]}
-        lpg.edges.update(new_edg)
+        new_edge = {(edge[0:3]): edge[3]}
+        lpg.edges.update(new_edge)
 
     lpg.graph.add_edges_from([
             [
@@ -170,18 +169,18 @@ def random_generator_phase_1_multiplicities(
     scg: nx.DiGraph,
 ) -> dict:
     """
-    Calculates the multiplicities for classifiers in the considered model to support initial generation
+    Calculates the multiplicities for classifiers in the considered model
+    to support initial generation.
+
     :param lpg: Active SysML graph
     :param ptg: Part Typing Graph projection from the LPG
     :param scg: Subclassing Graph projection from the LPG
     :return: dictionary of multiplicities for instance generation, indexed by classifier ID
     """
-
-
     abstracts = [
         node
         for node in ptg.nodes
-        if lpg.nodes[node].get("isAbstract")
+        if lpg.nodes.get(node, {}).get("isAbstract")
     ]
 
     # find the maximal amount of types directly based on instances
@@ -222,14 +221,14 @@ def random_generator_playbook_phase_1_singletons(
     instances_dict: dict,
 ) -> None:
     """
-    Calculates instances for classifiers that aren't directly typed (but may have members or be superclasses for
-    model elements that have sequences generated for them)
+    Calculates instances for classifiers that aren't directly typed (but may have 
+    members or be superclasses for model elements that have sequences generated for them).
+
     :param lpg: Active SysML graph
     :param scg: Subclassing Graph projection from the LPG
     :param instances_dict: Working dictionary of interpreted sequences for the model
     :return: None - side effect is addition of new instances to the instances dictionary
     """
-
     all_elements = lpg.nodes
 
     # need to generate single instances at leaves that don't match types
@@ -239,7 +238,6 @@ def random_generator_playbook_phase_1_singletons(
         leaf: create_set_with_new_instances(
             sequence_template=[all_elements[leaf]],
             quantities=[1],
-            name_hints={},
         )
         for leaf in leaves
         if leaf not in instances_dict
@@ -252,14 +250,14 @@ def random_generator_playbook_phase_2_rollup(
     instances_dict: dict,
 ) -> None:
     """
-    Build up set of sequences for classifiers by taking the union of sequences already generated for the classifier
-    subclasses.
+    Build up set of sequences for classifiers by taking the union of sequences
+    already generated for the classifier subclasses.
+
     :param lpg: Active SysML graph
     :param scg: Subclassing Graph projection from the LPG
     :param instances_dict: Working dictionary of interpreted sequences for the model
     :return: None - side effect is addition of new instances to the instances dictionary
     """
-
     roots = [node for node in scg.nodes if scg.in_degree(node) == 0]
 
     for root in roots:
@@ -275,7 +273,7 @@ def random_generator_playbook_phase_2_rollup(
             for subset_node in bfs_dict[gen]:
                 new_superset.extend(instances_dict[subset_node])
 
-            instances_dict.update({gen: new_superset})
+            instances_dict[gen] = new_superset
 
 
 def random_generator_playbook_phase_2_unconnected(
@@ -283,27 +281,26 @@ def random_generator_playbook_phase_2_unconnected(
     instances_dict: dict,
 ) -> None:
     """
-    Final pass to generate sequences for classifiers that haven't been given sequences yet
+    Final pass to generate sequences for classifiers that haven't been given sequences yet.
+
     :param all_elements: Full dictionary of elements in the working memory
     :param instances_dict: Working dictionary of interpreted sequences for the model
     :return: None - side effect is addition of new instances to the instances dictionary
     """
-
     finishing_list = [
         node
         for node in all_elements.values()
         if node["@type"] == "PartDefinition"
-           and node["@id"] not in instances_dict
+        and node["@id"] not in instances_dict
     ]
-
-    for element in finishing_list:
-        new_instances = create_set_with_new_instances(
+    new_instances = {
+        element["@id"]: create_set_with_new_instances(
             sequence_template=[element],
             quantities=[1],
-            name_hints=[],
         )
-
-        instances_dict.update({element["@id"]: new_instances})
+        for element in finishing_list
+    }
+    instances_dict.update(new_instances)
 
 
 def random_generator_playbook_phase_3(
@@ -313,8 +310,10 @@ def random_generator_playbook_phase_3(
     instances_dict: dict,
 ) -> None:
     """
-    Begin generating interpreting sequences for Features in the model by extending classifier sequences with randomly
-    selected instances of classifiers that type nested features
+    Begin generating interpreting sequences for Features in the model by extending
+    classifier sequences with randomly selected instances of classifiers that type
+    nested features.
+
     :param feature_sequences: Sequences that represent the nesting structure of the features
     :param all_elements: Full dictionary of elements in the working memory
     :param lpg: Active SysML graph
@@ -322,11 +321,9 @@ def random_generator_playbook_phase_3(
     :param instances_dict: Working dictionary of interpreted sequences for the model
     :return: None - side effect is addition of new instances to the instances dictionary
     """
-
     already_drawn, last_sequence = {}, []
     for feature_sequence in feature_sequences:
         new_sequences = []
-
         feat = None
         for index, feature_id in enumerate(feature_sequence):
             if feature_id in instances_dict and index > 0:
@@ -358,7 +355,7 @@ def random_generator_playbook_phase_3(
                         pass
                     else:
                         new_list = [item for item in new_sequences[0]]
-                        already_drawn.update({typ: new_list})
+                        already_drawn[typ] = new_list
                 else:
                     new_sequences = instances_dict[typ]
             else:
@@ -416,7 +413,7 @@ def random_generator_playbook_phase_3(
                 else:
                     already_drawn[typ] = freshly_drawn
 
-            instances_dict.update({feature_id: new_sequences})
+            instances_dict[feature_id] = new_sequences
         last_sequence = feature_sequence
 
 
@@ -427,6 +424,7 @@ def random_generator_playbook_phase_4(
 ) -> None:
     """
     Generate interpreting sequences for Expressions in the model
+
     :param expr_sequences: Sequences that represent the membership structure for expressions in the model and the features
         to which expressions provide values
     :param lpg: Active SysML graph
@@ -434,7 +432,6 @@ def random_generator_playbook_phase_4(
     :return: None - side effect is addition of new instances to the instances dictionary
     """
     all_elements = lpg.nodes
-
     for expr_seq in expr_sequences:
         new_sequences = []
         # get the featuring type of the first expression
@@ -490,7 +487,7 @@ def random_generator_playbook_phase_4(
                         feature_data,
                         all_elements,
                     )
-                instances_dict.update({feature_id: new_sequences})
+                instances_dict[feature_id] = new_sequences
 
 
 def random_generator_playbook_phase_5(
@@ -532,12 +529,12 @@ def random_generator_playbook_phase_5(
 
             if len(source_sequences) <= len(target_sequences):
                 source_indices = list(range(0, min_side))
-                other_steps = random.sample(range(0, min_side), (max_side - min_side))
+                other_steps = sample(range(0, min_side), (max_side - min_side))
                 source_indices.extend(other_steps)
-                target_indices = random.sample(range(0, max_side), max_side)
+                target_indices = sample(range(0, max_side), max_side)
             else:
-                source_indices = random.sample(range(0, max_side), max_side)
-                other_steps = random.sample(range(0, min_side), (max_side - min_side))
+                source_indices = sample(range(0, max_side), max_side)
+                other_steps = sample(range(0, min_side), (max_side - min_side))
                 target_indices = list(range(0, min_side))
                 target_indices.extend(other_steps)
 
@@ -563,8 +560,8 @@ def random_generator_playbook_phase_5(
                 extended_source_sequences.append(new_source_seq)
                 extended_target_sequences.append(new_target_seq)
 
-            instances_dict.update({connector_ends[0]['@id']: extended_source_sequences})
-            instances_dict.update({connector_ends[1]['@id']: extended_target_sequences})
+            instances_dict[connector_ends[0]["@id"]] = extended_source_sequences
+            instances_dict[connector_ends[1]["@id"]] = extended_target_sequences
 
 
 def build_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list:
@@ -598,9 +595,9 @@ def generate_superset_instances(
 ) -> dict:
     """
     Take specific classifiers and push the calculated instances to more general classifiers
+
     :return:
     """
-
     new_superset = []
     subset_nodes = part_def_graph.predecessors(superset_node)
     if all(subset_node in visited_nodes for subset_node in subset_nodes):
@@ -644,11 +641,10 @@ def build_expression_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list
 def validate_working_data(lpg: SysML2LabeledPropertyGraph) -> bool:
     """
     Helper method to check that the user model is valid for instance generation
+
     :return: A Boolean indicating that the user model is ready to be interpreted
     """
-
     # check that all the elements of the graph are in fact proper model elements
-
     all_non_relations = lpg.nodes
     for nr_key, nr in all_non_relations.items():
         try:
@@ -661,5 +657,4 @@ def validate_working_data(lpg: SysML2LabeledPropertyGraph) -> bool:
         if "@id" not in nr:
             print(f"No '@id' found in {nr}, id = '{nr_key}'")
             return False
-
     return True

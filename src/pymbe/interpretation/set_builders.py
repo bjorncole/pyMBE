@@ -21,7 +21,7 @@ VALUE_HOLDER_TYPES = ('AttributeDefinition', 'AttributeUsage', 'DataType')
 def create_set_with_new_instances(
     sequence_template: list,
     quantities: list,
-    name_hints: dict,
+    name_hints: dict = None,
 ) -> list:
     """
     Generate a list of lists with pre-set quantities and templates based on M1 model Types.
@@ -32,8 +32,8 @@ def create_set_with_new_instances(
     :param name_hints: Pre-made short names to support instance naming
     :return: A set of instances built into a Cartesian product based on a type sequence
     """
-
     individual_lists = []
+    name_hints = name_hints or {}
 
     for index, m1_type in enumerate(sequence_template):
         new_list = []
@@ -177,7 +177,6 @@ def extend_sequences_with_new_value_holder(
     base_name: str,
     base_ele: dict,
 ) -> list:
-
     new_sequences = []
 
     for indx, seq in enumerate(previous_sequences):
@@ -190,7 +189,7 @@ def extend_sequences_with_new_value_holder(
         )
 
         new_sequence = []
-        new_sequence = new_sequence + seq
+        new_sequence += seq
         new_sequence.append(new_holder)
 
         new_sequences.append(new_sequence)

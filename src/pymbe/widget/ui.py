@@ -7,7 +7,7 @@ from .client import SysML2ClientWidget
 from .containment import ContainmentTree
 from .inspector import ElementInspector
 from .interpretation import Interpreter
-from .graph import SysML2LPGWidget
+from pymbe.widget.diagram.widget import SysML2LPGWidget
 
 
 @ipyw.register

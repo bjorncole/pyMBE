@@ -16,8 +16,11 @@ class SysML2RDFGraph(Base):
     graph: rdf.Graph = trt.Instance(rdf.Graph, args=tuple())
     merge: bool = trt.Bool(default_value=False)
 
+    # TODO: bring in the context through the static @type routes
+
     def import_context(self, jsonld_item: dict) -> dict:
         jsonld_item = deepcopy(jsonld_item)
+        # FIXME: Migrate to the new form of the Pilot Implementation
         context_url = jsonld_item.get("@context", {}).get("@import", None)
         if not context_url:
             return jsonld_item
