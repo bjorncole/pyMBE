@@ -47,18 +47,33 @@ class SysmlLoader(ElementLoader):
             ]
         ).value
 
+    def clear(self, clear_part_diagram=True):
+        self.all_parts = {}
+        self.all_relationships = {}
+
+        # Clear the part diagram
+        if clear_part_diagram:
+            part_diagram = self.part_diagram
+            part_diagram.children = []
+            part_diagram.edges = []
+            part_diagram.labels = []
+            part_diagram.ports = []
+
     def load(self, new: nx.Graph, old: nx.Graph = None) -> MarkElementWidget:
         new = nx.Graph() if new in (None, trt.Undefined) else new
         old = nx.Graph() if old in (None, trt.Undefined) else old
 
         part_diagram = self.part_diagram
 
+        # TODO: figure a way to not have the nuke from orbit
+        self.clear()
+
         # Get SysML IDs for nodes and edges that need to be managed
-        old_nodes, new_nodes = set(old.nodes), set(new.nodes)
+        # old_nodes, new_nodes = set(old.nodes), set(new.nodes)
         # old_edges = {data["@id"] for data in old.edges.values()}
         # new_edges = {data["@id"] for data in new.edges.values()}
 
-        exiting_nodes = old_nodes.difference(new_nodes)
+        # exiting_nodes = old_nodes.difference(new_nodes)
         # exiting_relationships = old_edges.difference(new_edges)
         # entering_relationships = new_edges.difference(old_edges)
 
@@ -71,9 +86,9 @@ class SysmlLoader(ElementLoader):
         all_parts.update(new_parts)
 
         # TODO: Look into managing entering/exiting relationships
-        for parent, relationship in part_diagram.all_relationships:
-            # if relationship.metadata.sysml_id in exiting_relationships:
-            parent.edges.remove(relationship)
+        # for parent, relationship in part_diagram.all_relationships:
+        #     # if relationship.metadata.sysml_id in exiting_relationships:
+        #     parent.edges.remove(relationship)
 
         all_relationships = self.all_relationships
         new_relationships = {
@@ -89,8 +104,8 @@ class SysmlLoader(ElementLoader):
         }
         all_relationships.update(new_relationships)
 
-        for parent, part in part_diagram.all_parts:
-            if part.metadata.sysml_id in exiting_nodes:
-                parent.children.remove(part)
+        # for parent, part in part_diagram.all_parts:
+        #     if part.metadata.sysml_id in exiting_nodes:
+        #         parent.children.remove(part)
 
         return super().load(root=part_diagram)
