@@ -132,6 +132,7 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
 
         # TODO: after ipyelk fix revert this back to ipyelk.Diagram
         diagram = Diagram(
+            layout=dict(width="100%"),
             toolbar=toolbar,
             tools=tools,
             view=view,
