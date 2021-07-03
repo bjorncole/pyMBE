@@ -10,10 +10,10 @@ from .core import BaseWidget
 class Element(ipyt.Node):
     """A project element node compatible with ipytree."""
 
-    _identifier: str = trt.Unicode()
-    _owner: str = trt.Unicode("self", allow_none=True)
-    _type: str = trt.Unicode()
     _data: dict = trt.Dict()
+    _identifier: str = trt.Unicode()
+    _metatype: str = trt.Unicode()
+    _owner: str = trt.Unicode("self", allow_none=True)
 
 
 @ipyw.register
@@ -176,7 +176,7 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
         )
 
     @staticmethod
-    def sort_nodes(nodes: (list, tuple, set)) -> tuple:
+    def sort_nodes(nodes: ty.Union[ty.List, ty.Tuple, ty.Set]) -> tuple:
         # Sort nodes with number of subnodes first and then by name
         return tuple(sorted(
             nodes,

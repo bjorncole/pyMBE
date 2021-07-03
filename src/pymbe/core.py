@@ -1,6 +1,7 @@
-import traitlets as trt
 import typing as ty
 import warnings
+
+import traitlets as trt
 
 
 class Base(trt.HasTraits):
