@@ -15,11 +15,21 @@ class Naming(Enum):
     qualified = "QUALIFIED"
     short = "SHORT"
 
-    def get_name(self, data: dict) -> str:
+    def get_name(self, element: "Element") -> str:
         naming = self._value_
 
-        # TODO: REPR the relationships as (a)-[r:RELTYPE {name: a.name + '<->' + b.name}]->(b)
+        # TODO: Check with Bjorn, he wanted: (a)-[r:RELTYPE {name: a.name + '<->' + b.name}]->(b)
+        if element.is_relationship:
+            end_points = [element.source, element.target]
+            for i, end_point in enumerate(end_points):
+                if len(end_point) == 1:
+                    end_points[i] = end_point[0]
 
+            return (
+                f"{end_points[0]} ← «{element.metatype}» → {end_points[1]}"
+            )
+
+        data = element.data
         if naming == Naming.qualified:
             return f"""<{data["qualifiedName"]}>"""
 
@@ -106,11 +116,11 @@ class Element:
 
     def __dir__(self):
         return sorted(
-            [key for key in self.data if not key.startswith("@")] +
+            [key for key in self.data if key.isidentifier()] +
             list(super().__dir__())
         )
 
-    def __getattr__(self, key):
+    def __getattr__(self, key: str):
         if key.startswith("_") and f"@{key[1:]}" in self.data:
             key = f"@{key[1:]}"
         if key in self.data:
@@ -118,7 +128,7 @@ class Element:
         return self.__getattribute__(key)
 
     @lru_cache
-    def __getitem__(self, key):
+    def __getitem__(self, key: str):
         item = self.data[key]
 
         if isinstance(item, dict) and "@id" in item:
@@ -136,4 +146,4 @@ class Element:
         return hash(id(self))
 
     def __repr__(self):
-        return self.model.naming.get_name(self.data)
+        return self.model.naming.get_name(element=self)
