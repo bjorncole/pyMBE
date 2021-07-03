@@ -1,5 +1,4 @@
 import traceback
-import typing as ty
 
 from warnings import warn
 
@@ -105,7 +104,6 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
 
     @trt.default("diagram")
     def _make_diagram(self):
-        # FIXME: This seems a bit more involved than it should be, check with Dane
         view = ipyelk.diagram.SprottyViewer()
         view.selection.observe(self._update_selected, "ids")
 
