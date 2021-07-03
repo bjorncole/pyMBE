@@ -147,3 +147,6 @@ envs/
 
 # doit
 *.doit*
+
+# Windows BAT files (helpers)
+*.bat
