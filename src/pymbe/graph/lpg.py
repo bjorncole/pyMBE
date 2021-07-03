@@ -390,14 +390,14 @@ class SysML2LabeledPropertyGraph(Base):
 
         mismatched_node_types = set(excluded_node_types).difference(self.node_types)
         if mismatched_node_types:
-            warn(f"These node types are not in the graph: {mismatched_node_types}.")
+            print(f"These node types are not in the graph: {mismatched_node_types}.")
 
         mismatched_edge_types = {
             *excluded_edge_types,
             *reversed_edge_types,
         }.difference(self.edge_types)
         if mismatched_edge_types:
-            warn(f"These edge types are not in the graph: {mismatched_edge_types}.")
+            print(f"These edge types are not in the graph: {mismatched_edge_types}.")
 
         included_nodes = sum(
             [
