@@ -1,3 +1,4 @@
+import traceback
 from warnings import warn
 
 import ipywidgets as ipyw
@@ -115,7 +116,7 @@ class Interpreter(ipyw.VBox, BaseWidget):
             self.update_btn.disabled = True
             self.instances = self.strategy_selector.value(lpg=self.lpg)
             self._on_updated_selected()
-        except Exception as exc:
-            warn(f"Ran into an issue while updating instances: {exc}")
+        except Exception:
+            warn(f"Ran into an issue while updating instances: {traceback.format_exc()}")
         finally:
             self.update_btn.disabled = False

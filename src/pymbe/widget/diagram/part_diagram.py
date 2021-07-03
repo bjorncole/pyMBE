@@ -7,10 +7,7 @@ from ipyelk.elements import (
     SymbolSpec,
     merge_excluded,
 )
-from ipyelk.elements.index import (
-    iter_edges,
-    iter_hierarchy,
-)
+from ipyelk.elements.index import iter_hierarchy
 
 from .parts import Part
 from .relationships import DirectedAssociation, Relationship

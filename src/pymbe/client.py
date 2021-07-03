@@ -16,6 +16,8 @@ from .label import get_label
 
 
 TIMEZONES = {
+    "CEST": "UTC+2",
+
     "EDT": "UTC-4",
     "EST": "UTC-5",
 

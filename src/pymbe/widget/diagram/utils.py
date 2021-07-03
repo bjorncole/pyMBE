@@ -31,16 +31,16 @@ class Mapper:
         common_keys = set(self.to_sysml).intersection(self.to_sysml.values())
         if common_keys:
             self.unique = False
-            self.to_elkjs = defaultdict(list)
+            self.to_elkjs = defaultdict(set)
             for elkjs_id, sysml_id in self.to_sysml.items():
-                self.to_elkjs[sysml_id] += [elkjs_id]
+                self.to_elkjs[sysml_id].add(elkjs_id)
             self.to_sysml = {
-                elkjs_id: [sysml_id]
+                elkjs_id: {sysml_id}
                 for elkjs_id, sysml_id in self.to_sysml.items()
             }
             self.unified_map = self.to_elkjs.copy()
             for elkjs_id, sysml_ids in self.to_sysml.items():
-                self.unified_map[elkjs_id] += sysml_ids
+                self.unified_map[elkjs_id] |= set(sysml_ids)
         elif not self.to_elkjs:
             self.to_elkjs = {
                 sysml_id: elkjs_id
@@ -57,7 +57,7 @@ class Mapper:
             if item in self.unified_map
         ]
         if not self.unique:
-            results = sum(results, [])
+            results = sum(map(list, results), [])
         return tuple(set(results))
 
 

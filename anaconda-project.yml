@@ -1,17 +1,10 @@
 name: pymbe
 
-#
-# Set the 'icon' key to give your project an icon
-#
 icon:
 
 description: |
   A pythonic Model-based Engineering analysis framework based on SysML v2.
 
-#
-# In the commands section, list your runnable scripts, notebooks, and other code.
-# Use `anaconda-project add-command` to add commands.
-#
 commands:
   lab:
     description: launch lab
@@ -48,63 +41,16 @@ commands:
     env_spec: user
     notebook: notebooks/Tutorial.ipynb
 
-#
-# In the variables section, list any environment variables your code depends on.
-# Use `anaconda-project add-variable` to add variables.
-#
-variables: {}
-
-#
-# In the services section, list any services that should be
-# available before your code runs.
-# Use `anaconda-project add-service` to add services.
-#
-services: {}
-
-#
-# In the downloads section, list any URLs to download to local files
-# before your code runs.
-# Use `anaconda-project add-download` to add downloads.
-#
-downloads: {}
-
-#
-# In the packages section, list any packages that must be installed
-# before your code runs.
-# Use `anaconda-project add-packages` to add packages.
-#
-packages: []
-
-#
-# In the channels section, list any Conda channel URLs to be searched
-# for packages.
-#
-# For example,
-#
-# channels:
-#    - mychannel
-#
 channels:
 - conda-forge
-- conda-forge/label/ipyelk_alpha  # Remove this when full release from ipyelk
+- conda-forge/label/ipyelk_alpha  # TODO: Remove this when ipyelk=2 is released
 - nodefaults
 
-#
-# In the platforms section, list platforms the project should work on
-# Examples: "linux-64", "osx-64", "win-64"
-# Use `anaconda-project add-platforms` to add platforms.
-#
 platforms:
 - linux-64
 - osx-64
 - win-64
 
-#
-# You can define multiple, named environment specs.
-# Each inherits any global packages or channels,
-# but can have its own unique ones also.
-# Use `anaconda-project add-env-spec` to add environment specs.
-#
 env_specs:
   user:
     description: The environment for running the notebooks
@@ -122,6 +68,7 @@ env_specs:
     - rdflib-jsonld
     - ruamel.yaml
     - tabulate
+    - wxyz_html
     - wxyz_lab
   developer:
     description: The environment for developing pymbe
@@ -130,7 +77,6 @@ env_specs:
     packages:
     - black
     - coverage
-    - doit
     - git
     - isort
     - pip
@@ -139,4 +85,5 @@ env_specs:
     - pytest-cov
     - pytest-html
     - pytest-xdist
+    - testbook
     - wheel
