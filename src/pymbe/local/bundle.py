@@ -6,7 +6,7 @@ from ..client import SysML2Client
 
 def download_to_local(
     host_url: str = "http://sysml2-sst.intercax.com",
-    project_name: str = "Name",
+    file_name: str = "Name.json",
     project_id: str = "",
     commit_id: str = "",
     download_root: str = ""
@@ -21,8 +21,6 @@ def download_to_local(
 
     print(grabber.elements_url)
 
-    os.mkdir(download_root + "/" + project_name)
-
-    data_file = open(download_root + "/" + project_name + "/elements.json", "w")
+    data_file = open(download_root + "/" + file_name, "w")
     data_file.write(json.dumps(server_elements, indent=4, sort_keys=False))
     data_file.close()
