@@ -141,6 +141,7 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
         def update_mapper(change: trt.Bunch):
             if change.new == PipeDisposition.done:
                 self.id_mapper = self._make_id_mapper()
+                warn("Updating the id_mapper!")
         diagram.pipe.observe(update_mapper, "disposition")
 
         return diagram
@@ -211,7 +212,6 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
         with self.log_out:
             button.disabled = failed = True
             try:
-                # print(f"Updating diagram with '{button.tooltip}' button.")
                 failed = self._update_drawn_graph(button=button)
             except Exception as exc:
                 warn(f"Button click for {button} failed: {traceback.format_exc()}")
@@ -340,9 +340,15 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
         if not selections:
             return ()
         new_selections = self.id_mapper.get(*selections)
+
+        # FIXME: Figure a better way to not have to do this check
+        if selections and not new_selections:
+            self.id_mapper = self._make_id_mapper()
+            new_selections = self.id_mapper.get(*selections)
         return new_selections
 
     # TODO: Bring this back when the layout options are back in the toolbar
+    # NOTE: Dane says the layout widget should be re-thought and support diagram hierarchy
     # @trt.observe("elk_layout")
     # def _update_observers_for_layout(self, change: trt.Bunch):
     #     if change.old not in (None, trt.Undefined):
