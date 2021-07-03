@@ -139,4 +139,5 @@ env_specs:
     - pytest-cov
     - pytest-html
     - pytest-xdist
+    - testbook
     - wheel
