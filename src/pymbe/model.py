@@ -18,6 +18,8 @@ class Naming(Enum):
     def get_name(self, data: dict) -> str:
         naming = self._value_
 
+        # TODO: REPR the relationships as (a)-[r:RELTYPE {name: a.name + '<->' + b.name}]->(b)
+
         if naming == Naming.qualified:
             return f"""<{data["qualifiedName"]}>"""
 
@@ -35,7 +37,7 @@ class Naming(Enum):
 class Model:
     """A SysML v2 Model"""
 
-    elements: dict
+    elements: dict  # TODO: Look into making this immutable (frozen dict?)
     naming: Naming = Naming.long
     source: str = ""
 
@@ -60,21 +62,26 @@ class Model:
             id_: Element(data=data, model=self)
             for id_, data in self.elements.items()
         }
+        self._add_relationships()
+
+    def _add_relationships(self):
         for element in self.elements.values():
             if not element.is_relationship:
                 continue
             metatype = element.metatype
+
             source, target = element.source, element.target
             assert len(source) == 1 and len(target) == 1
             source, target = source[0], target[0]
+
             through = f"through{metatype}"
-            reverse = f"reverse{metatype}"
             if through not in source.data:
                 source.data[through] = []
+            source.data[through] += [{"@id": target._id}]
+
+            reverse = f"reverse{metatype}"
             if reverse not in target.data:
                 target.data[reverse] = []
-
-            source.data[through] += [{"@id": target._id}]
             target.data[reverse] += [{"@id": source._id}]
 
     def __repr__(self) -> str:
@@ -99,7 +106,7 @@ class Element:
 
     def __dir__(self):
         return sorted(
-            list(self.data.keys()) +
+            [key for key in self.data if not key.startswith("@")] +
             list(super().__dir__())
         )
 
@@ -108,7 +115,7 @@ class Element:
             key = f"@{key[1:]}"
         if key in self.data:
             return self[key]
-        return self.__getattribute__(self, key)
+        return self.__getattribute__(key)
 
     @lru_cache
     def __getitem__(self, key):
