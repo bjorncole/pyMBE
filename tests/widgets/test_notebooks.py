@@ -17,3 +17,9 @@ def test_tutorial(tb):
 def test_simple_parts_explorer(tb):
     m0_interpretation = tb.ref("m0_interpretation")
     assert m0_interpretation
+
+
+@testbook("dev_doc/SysML Model.ipynb", execute=True)
+def test_sysml_model(tb):
+    an_element = tb.ref("an_element")
+    assert an_element._id == "20511137-d751-4baf-ac4b-994a8e65ad3d"

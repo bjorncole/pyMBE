@@ -60,6 +60,22 @@ class Model:
             id_: Element(data=data, model=self)
             for id_, data in self.elements.items()
         }
+        for element in self.elements.values():
+            if not element.is_relationship:
+                continue
+            metatype = element.metatype
+            source, target = element.source, element.target
+            assert len(source) == 1 and len(target) == 1
+            source, target = source[0], target[0]
+            through = f"through{metatype}"
+            reverse = f"reverse{metatype}"
+            if through not in source.data:
+                source.data[through] = []
+            if reverse not in target.data:
+                target.data[reverse] = []
+
+            source.data[through] += [{"@id": target._id}]
+            target.data[reverse] += [{"@id": source._id}]
 
     def __repr__(self) -> str:
         data = self.source or f"len(self.elements) elements"
@@ -72,13 +88,24 @@ class Element:
 
     data: dict
     model: Model
+    is_relationship: bool = False
+
+    def __post_init__(self):
+        self.is_relationship = "relatedElement" in self.data
+
+    @property
+    def metatype(self):
+        return self.data["@type"]
 
     def __dir__(self):
-        return sorted(list(self.data.keys()) + list(super().__dir__()))
+        return sorted(
+            list(self.data.keys()) +
+            list(super().__dir__())
+        )
 
     def __getattr__(self, key):
-        if f"@{key}" in self.data:
-            key = f"@{key}"
+        if key.startswith("_") and f"@{key[1:]}" in self.data:
+            key = f"@{key[1:]}"
         if key in self.data:
             return self[key]
         return self.__getattribute__(self, key)
