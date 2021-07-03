@@ -68,6 +68,7 @@ env_specs:
     - rdflib-jsonld
     - ruamel.yaml
     - tabulate
+    - wxyz_html
     - wxyz_lab
   developer:
     description: The environment for developing pymbe
