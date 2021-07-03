@@ -1,10 +1,11 @@
 import json
 
-from dataclasses import dataclass
+from collections import defaultdict
+from dataclasses import dataclass, field
 from enum import Enum
 from functools import lru_cache
 from pathlib import Path
-from typing import Union
+from typing import Dict, List, Set, Tuple, Union
 
 
 class Naming(Enum):
@@ -20,13 +21,8 @@ class Naming(Enum):
 
         # TODO: Check with Bjorn, he wanted: (a)-[r:RELTYPE {name: a.name + '<->' + b.name}]->(b)
         if element.is_relationship:
-            end_points = [element.source, element.target]
-            for i, end_point in enumerate(end_points):
-                if len(end_point) == 1:
-                    end_points[i] = end_point[0]
-
             return (
-                f"{end_points[0]} ← «{element.metatype}» → {end_points[1]}"
+                f"{element.source} ← «{element._metatype}» → {element.target}"
             )
 
         data = element.data
@@ -52,14 +48,30 @@ class Model:
     source: str = ""
 
     @staticmethod
-    def load_from_file(filepath: Union[Path, str]) -> "Model":
-        if isinstance(filepath, str):
-            filepath = Path(filepath)
+    def load(
+        elements: Union[List[Dict], Set[Dict], Tuple[Dict]],
+        source: str = "",
+    ) -> "Model":
+        """Make a Model from an iterable container of elements"""
         return Model(
             elements={
                 element["@id"]: element
-                for element in json.loads(filepath.read_text())
+                for element in elements
             },
+            source=source,
+        )
+
+    @staticmethod
+    def load_from_file(filepath: Union[Path, str]) -> "Model":
+        """Make a model from a file"""
+        if isinstance(filepath, str):
+            filepath = Path(filepath)
+
+        if not filepath.exists():
+            raise ValueError(f"'{filepath}' does not exist!")
+
+        return Model.load(
+            elements=json.loads(filepath.read_text()),
             source=str(filepath.resolve()),
         )
 
@@ -78,21 +90,11 @@ class Model:
         for element in self.elements.values():
             if not element.is_relationship:
                 continue
-            metatype = element.metatype
-
+            metatype = element._metatype
             source, target = element.source, element.target
-            assert len(source) == 1 and len(target) == 1
-            source, target = source[0], target[0]
 
-            through = f"through{metatype}"
-            if through not in source.data:
-                source.data[through] = []
-            source.data[through] += [{"@id": target._id}]
-
-            reverse = f"reverse{metatype}"
-            if reverse not in target.data:
-                target.data[reverse] = []
-            target.data[reverse] += [{"@id": source._id}]
+            source.derived[f"through{metatype}"] += [{"@id": target.data["@id"]}]
+            target.derived[f"reverse{metatype}"] += [{"@id": source.data["@id"]}]
 
     def __repr__(self) -> str:
         data = self.source or f"len(self.elements) elements"
@@ -105,40 +107,68 @@ class Element:
 
     data: dict
     model: Model
+
+    derived: dict[list] = field(default_factory=lambda: defaultdict(list))
     is_relationship: bool = False
 
     def __post_init__(self):
         self.is_relationship = "relatedElement" in self.data
 
     @property
-    def metatype(self):
+    def _id(self):
+        return self.data["@id"]
+
+    @property
+    def _metatype(self):
         return self.data["@type"]
+
+    @property
+    def relationships(self):
+        return {key: self[key] for key in self.derived}
 
     def __dir__(self):
         return sorted(
             [key for key in self.data if key.isidentifier()] +
+            [key for key in self.derived if key.isidentifier()] +
             list(super().__dir__())
         )
 
     def __getattr__(self, key: str):
         if key.startswith("_") and f"@{key[1:]}" in self.data:
             key = f"@{key[1:]}"
-        if key in self.data:
+        if key in self.data or key in self.derived:
             return self[key]
         return self.__getattribute__(key)
 
     @lru_cache
     def __getitem__(self, key: str):
-        item = self.data[key]
+        if key in self.data:
+            item = self.data[key]
+        else:
+            item = self.derived[key]
 
-        if isinstance(item, dict) and "@id" in item:
-            return self.model.elements[item["@id"]]
-
-        if isinstance(item, (list, tuple, set)) and all("@id" in _ for _ in item):
-            return type(item)([
+        if isinstance(item, (list, tuple, set)):
+            if all(
+                (
+                    isinstance(subitem, dict)
+                    and "@id" in subitem
+                    and len(subitem) < 2
+                )
+                for subitem in item
+            ):
+                items = [
                     self.model.elements[subitem["@id"]]
                     for subitem in item
-                ])
+                ]
+                if len(items) == 1:
+                    return items[0]
+                return type(item)(items)
+
+        if isinstance(item, dict) and "@id" in item and len(item) < 2:
+            item = item["@id"]
+
+        if item in self.model.elements:
+            return self.model.elements[item]
 
         return item
 
