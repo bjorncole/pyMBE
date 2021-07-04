@@ -12,7 +12,6 @@ from ipyelk.pipes.base import PipeDisposition
 from ...graph import SysML2LabeledPropertyGraph
 from ..core import BaseWidget
 from .loader import SysmlLoader
-from .relationships import METATYPE_TO_RELATIONSHIP_TYPES, DirectedAssociation, Relationship
 from .tools import Toolbar
 from .utils import Mapper
 
