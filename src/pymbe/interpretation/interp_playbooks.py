@@ -5,7 +5,6 @@ import networkx as nx
 
 from ..graph.lpg import SysML2LabeledPropertyGraph
 from ..label import get_label, get_label_for_id
-from ..query.metamodel_navigator import map_inputs_to_results
 from ..query.query import (
     feature_multiplicity,
     get_types_for_feature,
@@ -57,10 +56,6 @@ def random_generator_playbook(
         return {}
 
     all_elements = lpg.nodes
-
-    # PHASE 0: Add implicit relationships between parameters to assure equation solving
-
-    random_generator_phase_0_interpreting_edges(lpg)
 
     # PHASE 1: Create a set of instances for part definitions based on usage multiplicities
 
@@ -120,49 +115,6 @@ def random_generator_playbook(
     random_generator_playbook_phase_5(lpg, lpg.get_projection("Connection"), instances_dict)
 
     return instances_dict
-
-
-def random_generator_phase_0_interpreting_edges(lpg: SysML2LabeledPropertyGraph):
-    """
-    Pre-work for the interpretation to support expression evaluations
-
-    :param client: Active SysML Client
-    :param lpg: Working Labeled Property Graph
-    :return: None - side effect is update to LPG with new edges
-    """
-    new_edges = [
-        (source, target, metatype, {
-            "@id": f"_{uuid4()}",
-            "@type": metatype,
-            "label": metatype,
-            "relatedElement": [
-                {"@id": source},
-                {"@id": target},
-            ],
-            "source": [{"@id": source}],
-            "target": [{"@id": target}],
-        })
-        for source, target, metatype in map_inputs_to_results(lpg)
-    ]
-    new_elements = {
-        data["@id"]: data
-        for *_, data in new_edges
-    }
-
-    lpg.elements_by_id = {**lpg.elements_by_id, **new_elements}
-    for edge in new_edges:
-        new_edge = {(edge[0:3]): edge[3]}
-        lpg.edges.update(new_edge)
-
-    lpg.graph.add_edges_from([
-            [
-                edge[0],  # source node (str id)
-                edge[1],  # target node (str id)
-                edge[2],  # edge metatypetype (str name)
-                edge[3],  # edge data (dict)
-            ]
-            for edge in new_edges
-        ])
 
 
 def random_generator_phase_1_multiplicities(
@@ -362,10 +314,6 @@ def random_generator_playbook_phase_3(
                 else:
                     new_sequences = instances_dict[typ]
             else:
-                # for step in last_sequence:
-                #     for feat in feature_sequence:
-                #         if step == feat:
-                #             new_sequences = instances_dict[feat]
 
                 if typ in already_drawn:
                     remaining = [
@@ -377,23 +325,6 @@ def random_generator_playbook_phase_3(
                 else:
                     remaining = [item for seq in instances_dict[typ] for item in seq]
 
-                # print("Calling extend sequences by sampling.....")
-                # print("Working feature sequence:")
-                # seq_print = []
-                # for item in feature_sequence:
-                #     seq_print.append(get_label_for_id(item, all_elements))
-                # print(seq_print)
-                # print("Currently working: " + get_label_for_id(feature_id, all_elements) + " with lower mult = " +
-                #       str(feature_multiplicity(feature, all_elements, "lower")) + " and upper mult = " +
-                #       str(feature_multiplicity(feature, all_elements, "upper"))
-                #       )
-                # print("Incoming sequences:")
-                # print(new_sequences)
-
-                #print("Instances dict for " + get_label_for_id('eb96afae-0f09-4912-861e-705bb33a4202',
-                #                                               all_elements) + " updated with " +
-                #      str(instances_dict['eb96afae-0f09-4912-861e-705bb33a4202']) + " and index = " + str(index))
-
                 new_sequences = extend_sequences_by_sampling(
                     new_sequences,
                     feature_multiplicity(feature, all_elements, "lower"),
@@ -403,12 +334,6 @@ def random_generator_playbook_phase_3(
                     {},
                     {},
                 )
-
-                #print("Instances dict for " + get_label_for_id('eb96afae-0f09-4912-861e-705bb33a4202', all_elements) + " updated with " +
-                #      str(instances_dict['eb96afae-0f09-4912-861e-705bb33a4202']) + " and index = " + str(index))
-
-                #print("Extended sequences:")
-                #print(new_sequences)
 
                 freshly_drawn = [seq[-1] for seq in new_sequences]
                 if typ in already_drawn:
