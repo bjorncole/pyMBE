@@ -24,10 +24,9 @@ def feature_multiplicity(
 
 
 def map_inputs_to_results(lpg: SysML2LabeledPropertyGraph) -> list:
-
     # TODO: Need a hack to feed result parameters into collection expressions
 
-    eeg = lpg.get_projection("Expression Evaluation Graph")
+    eeg = lpg.get_projection("Expression Evaluation")
 
     edge_dict = {
         edge["@id"]: edge
@@ -55,7 +54,6 @@ def map_inputs_to_results(lpg: SysML2LabeledPropertyGraph) -> list:
     for feature_val in feature_values:
         target_result_id = lpg.nodes[feature_val[1]]['result']['@id']
         implied_edges += [(target_result_id, feature_val[0], "ImpliedParameterFeedforward")]
-
 
     for membership in return_parameter_memberships:
         for result_feeder_id in eeg.predecessors(membership["memberElement"]["@id"]):
@@ -142,6 +140,7 @@ def safe_get_type_by_id(
         return lpg.nodes[feature['type'][0]['@id']]
     else:
         raise NotImplementedError("No logic for multiple types!")
+
 
 def safe_get_featuring_type_by_id(
     lpg: SysML2LabeledPropertyGraph,

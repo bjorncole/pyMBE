@@ -247,6 +247,7 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
                 *instructions.get("reversed_edge_types", []),
                 *reversed_edges,
             },
+            implied_edge_types={*instructions.get("implied_edge_types", [])},
         )
 
         if button is toolbar.filter_to_path:
