@@ -47,7 +47,7 @@ def test_banded_graph_paths1(kerbal_lpg):
     engines_feat = '32c847a1-2184-4486-ba48-dbf6125ca638'
 
     all_paths = nx.all_simple_paths(
-        kerbal_lpg.get_projection("Expanded Banded Graph"),
+        kerbal_lpg.get_projection("Expanded Banded"),
         engines_feat,
         rocket_id
     )
@@ -70,7 +70,7 @@ def test_banded_graph_paths2(kerbal_lpg):
     ft200_feat_id = 'cc585eec-c66c-48aa-b319-1395a0c8e292'
 
     all_paths = nx.all_simple_paths(
-        kerbal_lpg.get_projection("Expanded Banded Graph"),
+        kerbal_lpg.get_projection("Expanded Banded"),
         ft200_feat_id,
         rocket_id
     )
@@ -92,7 +92,7 @@ def test_banded_graph_paths3(simple_parts_lpg):
     power_group_id = '009a03de-7718-47c4-99c1-5c80234536bf'
     power_in_port_id = '6717616c-47ee-4fed-bf7d-e4e98c929fac'
 
-    ebg = simple_parts_lpg.get_projection("Expanded Banded Graph")
+    ebg = simple_parts_lpg.get_projection("Expanded Banded")
 
     assert power_group_id in list(simple_parts_lpg.nodes)
     assert power_in_port_id in list(simple_parts_lpg.nodes)
@@ -101,7 +101,7 @@ def test_banded_graph_paths3(simple_parts_lpg):
     assert power_in_port_id in list(ebg.nodes)
 
     all_paths = nx.all_simple_paths(
-        simple_parts_lpg.get_projection("Expanded Banded Graph"),
+        simple_parts_lpg.get_projection("Expanded Banded"),
         power_in_port_id,
         power_group_id
     )

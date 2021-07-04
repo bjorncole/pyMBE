@@ -122,8 +122,8 @@ def kerbal_lpg() -> SysML2LabeledPropertyGraph:
 
 @pytest.fixture
 def kerbal_random_stage_1_instances(kerbal_lpg) -> dict:
-    ptg = kerbal_lpg.get_projection("Part Typing Graph")
-    scg = kerbal_lpg.get_projection("Part Definition Graph")
+    ptg = kerbal_lpg.get_projection("Part Typing")
+    scg = kerbal_lpg.get_projection("Part Definition")
 
     random_generator_phase_0_interpreting_edges(kerbal_lpg)
 
@@ -140,7 +140,7 @@ def kerbal_random_stage_1_instances(kerbal_lpg) -> dict:
 
 @pytest.fixture
 def kerbal_random_stage_1_complete(kerbal_lpg, kerbal_random_stage_1_instances) -> dict:
-    scg = kerbal_lpg.get_projection("Part Definition Graph")
+    scg = kerbal_lpg.get_projection("Part Definition")
 
     random_generator_playbook_phase_1_singletons(
         kerbal_lpg,
@@ -153,7 +153,7 @@ def kerbal_random_stage_1_complete(kerbal_lpg, kerbal_random_stage_1_instances) 
 
 @pytest.fixture
 def kerbal_random_stage_2_complete(kerbal_lpg, kerbal_random_stage_1_complete) -> dict:
-    scg = kerbal_lpg.get_projection("Part Definition Graph")
+    scg = kerbal_lpg.get_projection("Part Definition")
 
     random_generator_playbook_phase_2_rollup(scg, kerbal_random_stage_1_complete)
 
@@ -165,7 +165,7 @@ def kerbal_random_stage_2_complete(kerbal_lpg, kerbal_random_stage_1_complete) -
 @pytest.fixture
 def kerbal_random_stage_3_complete(kerbal_lpg, kerbal_random_stage_2_complete) -> dict:
     # TODO: Ask Bjorn if we need to bring this back, the phase 3 function only needed the LPG
-    # ptg = kerbal_lpg.get_projection("Part Typing Graph")
+    # ptg = kerbal_lpg.get_projection("Part Typing")
     all_elements = kerbal_lpg.nodes
     feature_sequences = build_sequence_templates(lpg=kerbal_lpg)
 

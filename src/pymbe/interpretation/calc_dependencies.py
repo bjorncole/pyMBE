@@ -15,7 +15,7 @@ def generate_execution_order(
     """
 
     all_elements = lpg.nodes
-    eig = lpg.get_projection("Expression Inferred Graph")
+    eig = lpg.get_projection("Expression Inferred")
 
     execution_pairs = []
     execution_contexts = {}

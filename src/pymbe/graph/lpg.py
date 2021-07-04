@@ -1,6 +1,5 @@
 import traceback
 
-from copy import deepcopy
 from functools import lru_cache
 from pathlib import Path
 from uuid import uuid4
@@ -30,10 +29,10 @@ class SysML2LabeledPropertyGraph(Base):
         # Adds additional relationships (edges) based on element attributes
         # dict(attribute="owner", metatype="Owned", reversed=True),
     )
-    IMPLIED_GENERATORS: tuple = (
+    IMPLIED_GENERATORS: dict = {
         # Adds additional implied edges based on a tuple of generators
-        "get_implied_feedforward_edges",
-    )
+        "ImpliedFeedforwardEdges": "get_implied_feedforward_edges",
+    }
     sysml_projections: dict = trt.Dict()
 
     graph: nx.MultiDiGraph = trt.Instance(nx.MultiDiGraph, args=tuple())
@@ -266,7 +265,7 @@ class SysML2LabeledPropertyGraph(Base):
         }
 
     def get_implied_feedforward_edges(self) -> list:
-        eeg = self.get_projection("Expression Evaluation Graph")
+        eeg = self.get_projection("Expression Evaluation")
 
         edge_dict = {
             edge["@id"]: edge
@@ -340,10 +339,16 @@ class SysML2LabeledPropertyGraph(Base):
 
         return implied_edges
 
-    def get_implied_edges(self):
+    def get_implied_edges(self, *implied_edge_types):
         new_edges = []
-        for edge_generator_name in self.IMPLIED_GENERATORS:
-            edge_generator = getattr(self, edge_generator_name)
+        for implied_edge_type in implied_edge_types:
+            function_name = self.IMPLIED_GENERATORS.get(implied_edge_type)
+            if function_name is None:
+                warn(f"'{implied_edge_type}' is not a valid edge generator!")
+                continue
+            edge_generator = getattr(self, function_name, None)
+            if edge_generator is None:
+                raise SystemError(f"Could not find '{function_name}' implied edge generator!")
             new_edges += [
                 self._make_nx_multi_edge(source, target, metatype, label=metatype)
                 for source, target, metatype in edge_generator()
@@ -365,6 +370,7 @@ class SysML2LabeledPropertyGraph(Base):
         excluded_node_types: ty.Union[list, set, tuple] = None,
         excluded_edge_types: ty.Union[list, set, tuple] = None,
         reversed_edge_types: ty.Union[list, set, tuple] = None,
+        implied_edge_types: ty.Union[list, set, tuple] = None,
     ) -> ty.Union[nx.Graph, nx.DiGraph]:
         """
             Using the existing graph, filter by node and edge types, and/or
@@ -373,11 +379,14 @@ class SysML2LabeledPropertyGraph(Base):
         excluded_edge_types = excluded_edge_types or []
         excluded_node_types = excluded_node_types or []
         reversed_edge_types = reversed_edge_types or []
+        implied_edge_types = implied_edge_types or []
 
+        # NOTE: Sorting into a tuple to make the LRU Cache work
         return self._adapt(
             excluded_edge_types=tuple(sorted(excluded_edge_types)),
             excluded_node_types=tuple(sorted(excluded_node_types)),
             reversed_edge_types=tuple(sorted(reversed_edge_types)),
+            implied_edge_types=tuple(sorted(implied_edge_types)),
         ).copy()
 
     @lru_cache
@@ -385,8 +394,12 @@ class SysML2LabeledPropertyGraph(Base):
         excluded_node_types: ty.Union[list, set, tuple] = None,
         excluded_edge_types: ty.Union[list, set, tuple] = None,
         reversed_edge_types: ty.Union[list, set, tuple] = None,
+        implied_edge_types: ty.Union[list, set, tuple] = None,
     ) -> nx.Graph:
-        graph = self.graph
+        graph = self.graph.copy()
+        new_edges = self.get_implied_edges(*implied_edge_types)
+        if new_edges:
+            graph.add_edges_from(new_edges)
 
         mismatched_node_types = set(excluded_node_types).difference(self.node_types)
         if mismatched_node_types:
@@ -409,8 +422,8 @@ class SysML2LabeledPropertyGraph(Base):
         )
         subgraph = graph.__class__(graph.subgraph(included_nodes))
 
-        def _process_edge(src, tgt, typ, rev_types):
-            data = deepcopy(self.graph.edges.get((src, tgt, typ), {}))
+        def _process_edge(src, tgt, typ, data, rev_types):
+            data = {**self.graph.edges.get((src, tgt, typ), {}), **data}
             if typ in rev_types:
                 tgt, src = src, tgt
                 typ += "^-1"
@@ -418,8 +431,8 @@ class SysML2LabeledPropertyGraph(Base):
             return src, tgt, typ, data
 
         edges = [
-            _process_edge(src, tgt, typ, reversed_edge_types)
-            for src, tgt, typ in subgraph.edges
+            _process_edge(src, tgt, typ, data, reversed_edge_types)
+            for (src, tgt, typ), data in subgraph.edges.items()
             if typ not in excluded_edge_types
         ]
 

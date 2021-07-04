@@ -12,7 +12,6 @@ from ipyelk.pipes.base import PipeDisposition
 from ...graph import SysML2LabeledPropertyGraph
 from ..core import BaseWidget
 from .loader import SysmlLoader
-from .relationships import METATYPE_TO_RELATIONSHIP_TYPES, DirectedAssociation, Relationship
 from .tools import Toolbar
 from .utils import Mapper
 
@@ -247,6 +246,7 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
                 *instructions.get("reversed_edge_types", []),
                 *reversed_edges,
             },
+            implied_edge_types={*instructions.get("implied_edge_types", [])},
         )
 
         if button is toolbar.filter_to_path:

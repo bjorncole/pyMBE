@@ -21,8 +21,8 @@ def test_type_multiplicity_dict_building(kerbal_lpg):
     f200_tank = "cc585eec-c66c-48aa-b319-1395a0c8e292"
     real_id = "ede2b2e7-9280-4932-9453-134bf460892f"
 
-    ptg = kerbal_lpg.get_projection("Part Typing Graph")
-    scg = kerbal_lpg.get_projection("Part Definition Graph")
+    ptg = kerbal_lpg.get_projection("Part Typing")
+    scg = kerbal_lpg.get_projection("Part Definition")
 
     full_multiplicities = random_generator_phase_1_multiplicities(kerbal_lpg, ptg, scg)
 
@@ -79,7 +79,7 @@ def test_phase_2_instance_creation(kerbal_lpg, kerbal_random_stage_1_complete):
     solid_booster_id = "24a0a10e-77ba-4bfa-9618-f2525a8a7042"
     rocket_id = "62fc7eb7-0637-4201-add7-4d2758980d2f"
 
-    scg = kerbal_lpg.get_projection("Part Definition Graph")
+    scg = kerbal_lpg.get_projection("Part Definition")
 
     random_generator_playbook_phase_2_rollup(scg, kerbal_random_stage_1_complete)
 
@@ -161,7 +161,7 @@ def test_expression_inferred_graph(kerbal_lpg):
     assert any([typ == "ImpliedParameterFeedforward" for typ in all_edge_types])
     assert len(implied_edges) == 30
 
-    eig = kerbal_lpg.get_projection("Expression Inferred Graph")
+    eig = kerbal_lpg.get_projection("Expression Inferred")
 
     top_plus_expr_id = "d05c42b2-3453-4c94-bf18-5bbc38949d19"
     fl_200_full_mass_id = "c3344ffd-6a7f-499b-90cf-e7e311e309f5"

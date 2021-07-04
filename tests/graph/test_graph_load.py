@@ -13,7 +13,7 @@ def test_graph_load(kerbal_lpg):
 
 
 def test_graph_projection_part_def_node_filter(kerbal_lpg, kerbal_ids_by_type):
-    pdg = kerbal_lpg.get_projection("Part Definition Graph")
+    pdg = kerbal_lpg.get_projection("Part Definition")
 
     # we actually lose a node on this one ...
     pdg_set = set(pdg.nodes.keys())
@@ -28,13 +28,13 @@ def test_graph_projection_part_def_node_filter(kerbal_lpg, kerbal_ids_by_type):
 
 
 def test_graph_projection_part_def_components(kerbal_lpg):
-    pdg = kerbal_lpg.get_projection("Part Definition Graph")
+    pdg = kerbal_lpg.get_projection("Part Definition")
 
     assert len(list(nx.connected_components(pdg.to_undirected()))) == 2
 
 
 def test_graph_projection_part_def_components_are_dags(kerbal_lpg):
-    pdg = kerbal_lpg.get_projection("Part Definition Graph")
+    pdg = kerbal_lpg.get_projection("Part Definition")
 
     for comp in nx.connected_components(pdg.to_undirected()):
         connected_sub = nx.subgraph(pdg, list(comp))
@@ -43,6 +43,6 @@ def test_graph_projection_part_def_components_are_dags(kerbal_lpg):
 
 def test_graph_projection_part_def_edges(kerbal_lpg):
     # check that nothing but Superclassing edges are allowed by the filter
-    pdg = kerbal_lpg.get_projection("Part Definition Graph")
+    pdg = kerbal_lpg.get_projection("Part Definition")
 
     assert all([edge[2] == "Superclassing^-1" for edge in pdg.edges])
