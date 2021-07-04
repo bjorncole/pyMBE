@@ -1,6 +1,5 @@
 import traceback
 
-from copy import deepcopy
 from functools import lru_cache
 from pathlib import Path
 from uuid import uuid4
@@ -9,7 +8,6 @@ from warnings import warn
 from ruamel.yaml import YAML
 
 import networkx as nx
-from ruamel.yaml.main import warn_deprecation
 import traitlets as trt
 import typing as ty
 
