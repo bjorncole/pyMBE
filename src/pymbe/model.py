@@ -58,10 +58,14 @@ class Naming(Enum):
 class Model:
     """A SysML v2 Model"""
 
-    elements: dict  # TODO: Look into making this immutable (frozen dict?)
+    # TODO: Look into making elements immutable (e.g., frozen dict)
+    elements: Dict[str, "Element"]
+
     ownedElement: ListGetter = field(default_factory=ListGetter)
     ownedRelationship: List["Element"] = field(default_factory=list)
-    source: Any = field(default_factory=str)
+    ownedMetatypes: Dict[str, List["Element"]] = field(default_factory=dict)
+
+    source: Any = None
 
     _naming: Naming = Naming.long
 
@@ -74,7 +78,7 @@ class Model:
         self._add_owned()
 
     def __repr__(self) -> str:
-        data = self.source or f"len(self.elements) elements"
+        data = self.source or f"{len(self.elements)} elements"
         return f"<SysML v2 Model ({data})>"
 
     @staticmethod
@@ -93,7 +97,7 @@ class Model:
 
     @staticmethod
     def load_from_file(filepath: Union[Path, str]) -> "Model":
-        """Make a model from a file"""
+        """Make a model from a JSON file"""
         if isinstance(filepath, str):
             filepath = Path(filepath)
 
@@ -106,6 +110,7 @@ class Model:
         )
 
     def _add_relationships(self):
+        """Adds relationships to elements"""
         for element in self.elements.values():
             if not element._is_relationship:
                 continue
@@ -116,19 +121,12 @@ class Model:
             target._derived[f"reverse{metatype}"] += [{"@id": source.data["@id"]}]
 
     def _add_owned(self):
-        # Add owned by others
-        for element in self.elements.values():
-            element._owned_elements = {
-                child.name.replace(" ", "_"): child
-                for child in element.ownedElement
-                if child.name
-            }
-            element.ownedElement = ListGetter(element.ownedElement)
+        """Adds owned elements, relationships, and metatypes to the model"""
+        elements = tuple(self.elements.values())
 
-        # Those without owner are owned by the Model
         owned = [
             element
-            for element in self.elements.values()
+            for element in elements
             if element.data.get("owner") is None
         ]
         self.ownedElement = ListGetter(el for el in owned if not el._is_relationship)
@@ -136,6 +134,15 @@ class Model:
         self.ownedRelationship = [
             rel for rel in owned if rel._is_relationship
         ]
+
+        by_metatype = defaultdict(list)
+        for element in elements:
+            # FIXME: figure out why we can't do this in the Element's __post_init__
+            element.ownedElement = ListGetter(element.ownedElement)
+
+            by_metatype[element._metatype] = element
+
+        self.ownedMetatypes = dict(by_metatype)
 
 
 @dataclass(repr=False)
@@ -147,9 +154,8 @@ class Element:
 
     _derived: Dict[str, List] = field(default_factory=lambda: defaultdict(list))
     _is_relationship: bool = False
-    _owned_elements: Dict[str, "Element"] = field(default_factory=dict)
 
-    def __post_init__(self):        
+    def __post_init__(self):
         self._is_relationship = "relatedElement" in self.data
 
     def __dir__(self):
