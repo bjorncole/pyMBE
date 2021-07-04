@@ -59,11 +59,23 @@ class Model:
     """A SysML v2 Model"""
 
     elements: dict  # TODO: Look into making this immutable (frozen dict?)
+    ownedElement: ListGetter = field(default_factory=ListGetter)
+    ownedRelationship: List["Element"] = field(default_factory=list)
     source: Any = field(default_factory=str)
 
     _naming: Naming = Naming.long
-    _owned_elements: Dict[str, "Element"] = field(default_factory=dict)
-    _owned_relationships: List["Element"] = field(default_factory=list)
+
+    def __post_init__(self):
+        self.elements = {
+            id_: Element(data=data, model=self)
+            for id_, data in self.elements.items()
+        }
+        self._add_relationships()
+        self._add_owned()
+
+    def __repr__(self) -> str:
+        data = self.source or f"len(self.elements) elements"
+        return f"<SysML v2 Model ({data})>"
 
     @staticmethod
     def load(
@@ -79,23 +91,6 @@ class Model:
             source=source,
         )
 
-    def __post_init__(self):
-        self.elements = {
-            id_: Element(data=data, model=self)
-            for id_, data in self.elements.items()
-        }
-        self._add_relationships()
-        self._add_owned()
-
-    def __getattr__(self, key):
-        if key in self._owned_elements:
-            return self._owned_elements[key]
-        return self.__getattribute__(key)
-
-    def __repr__(self) -> str:
-        data = self.source or f"len(self.elements) elements"
-        return f"<SysML v2 Model ({data})>"
-
     @staticmethod
     def load_from_file(filepath: Union[Path, str]) -> "Model":
         """Make a model from a file"""
@@ -107,12 +102,8 @@ class Model:
 
         return Model.load(
             elements=json.loads(filepath.read_text()),
-            source=str(filepath.resolve()),
+            source=filepath.resolve(),
         )
-
-    @staticmethod
-    def load_from_api() -> "Model":
-        raise NotImplementedError("""Need to implement this""")
 
     def _add_relationships(self):
         for element in self.elements.values():
@@ -134,24 +125,17 @@ class Model:
             }
             element.ownedElement = ListGetter(element.ownedElement)
 
-        # Add owned by model
+        # Those without owner are owned by the Model
         owned = [
             element
             for element in self.elements.values()
             if element.data.get("owner") is None
         ]
-        owned_elements = [el for el in owned if not el._is_relationship]
-        self._owned_elements = {
-            element.data["name"]: element
-            for element in owned_elements
-        }
-        if len(self._owned_elements) < len(owned_elements):
-            warn("Model has duplicated directly owned elements")
-        self._owned_elements = dict(sorted(self._owned_elements.items()))
+        self.ownedElement = ListGetter(el for el in owned if not el._is_relationship)
 
-        self._owned_relationships = tuple(
+        self.ownedRelationship = [
             rel for rel in owned if rel._is_relationship
-        )
+        ]
 
 
 @dataclass(repr=False)
