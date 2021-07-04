@@ -33,7 +33,7 @@ def roll_up_multiplicity(
     feature: dict,
     bound: str,
 ) -> int:
-    banded_featuring_graph = lpg.get_projection("Expanded Banded Graph")
+    banded_featuring_graph = lpg.get_projection("Expanded Banded")
 
     # FIXME: Need projections to work correctly
 
@@ -88,8 +88,8 @@ def roll_up_multiplicity_for_type(
     bound: str,
 ) -> int:
 
-    rdg = lpg.get_projection("Redefinition and Subsetting Graph")
-    cug = lpg.get_projection("Connection Graph")
+    rdg = lpg.get_projection("Redefinition and Subsetting")
+    cug = lpg.get_projection("Connection")
     # FIXME: Need projections to work correctly
 
     to_remove = []
@@ -102,7 +102,7 @@ def roll_up_multiplicity_for_type(
         rdg.remove_edge(remover[0], remover[1])
 
     running_total = 0
-    ptg = lpg.get_projection("Part Typing Graph")
+    ptg = lpg.get_projection("Part Typing")
 
     if typ['@id'] in ptg.nodes:
         feat_ids = get_features_typed_by_type(lpg, typ['@id'])
@@ -131,8 +131,8 @@ def get_types_for_feature(
     feature_id: str,
 ) -> list:
 
-    ptg = lpg.get_projection("Part Typing Graph")
-    rdg = lpg.get_projection("Redefinition and Subsetting Graph")
+    ptg = lpg.get_projection("Part Typing")
+    rdg = lpg.get_projection("Redefinition and Subsetting")
 
     # approach is to see source and target ends of feature typing and then see if there is a redefinition
     # path back to the requested feature
@@ -156,8 +156,8 @@ def get_features_typed_by_type(
     type_id: str,
 ) -> list:
 
-    ptg = lpg.get_projection("Part Typing Graph")
-    rdg = lpg.get_projection("Redefinition and Subsetting Graph")
+    ptg = lpg.get_projection("Part Typing")
+    rdg = lpg.get_projection("Redefinition and Subsetting")
 
     # approach is to look at clusters of redefinitions and see if the most redefined connects to the type
 

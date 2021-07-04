@@ -66,8 +66,8 @@ def random_generator_playbook(
 
     # work from part definitions to establish how many definitions are needed
 
-    ptg = lpg.get_projection("Part Typing Graph")
-    scg = lpg.get_projection("Part Definition Graph")
+    ptg = lpg.get_projection("Part Typing")
+    scg = lpg.get_projection("Part Definition")
 
     feature_sequences = build_sequence_templates(lpg=lpg)
 
@@ -117,7 +117,7 @@ def random_generator_playbook(
 
     # attached connector ends to sequences(
 
-    random_generator_playbook_phase_5(lpg, lpg.get_projection("Connection Graph"), instances_dict)
+    random_generator_playbook_phase_5(lpg, lpg.get_projection("Connection"), instances_dict)
 
     return instances_dict
 
@@ -568,7 +568,7 @@ def random_generator_playbook_phase_5(
 
 
 def build_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list:
-    part_featuring_graph = lpg.get_projection("Part Featuring Graph")
+    part_featuring_graph = lpg.get_projection("Part Featuring")
     sorted_feature_groups = []
     for comp in nx.connected_components(part_featuring_graph.to_undirected()):
         connected_sub = nx.subgraph(part_featuring_graph, list(comp))
@@ -613,7 +613,7 @@ def generate_superset_instances(
 
 
 def build_expression_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list:
-    evg = lpg.get_projection("Expression Value Graph")
+    evg = lpg.get_projection("Expression Value")
 
     # FIXME: Need projections to work correctly
     # TODO: @Bjorn: should we remove all the implied edges? We could add a key to them

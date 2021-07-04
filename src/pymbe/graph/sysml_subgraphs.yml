@@ -7,7 +7,7 @@ Complete:
   excluded_edge_types: []
   excluded_node_types: []
 
-Banded Graph:
+Banded:
   description: >
     Generate library settings for a "banded graph" of types,
     generalization, and feature membership to capture both SysML v1
@@ -20,7 +20,7 @@ Banded Graph:
     - FeatureMembership
     - FeatureTyping
 
-Connection Graph:
+Connection:
   description: |
     Generate library settings for a graph focused on connecting model elements
   included_edge_types:
@@ -28,7 +28,7 @@ Connection Graph:
     - EndFeatureMembership
     - InterfaceUsageEnd
 
-Expanded Banded Graph:
+Expanded Banded:
   description: >
     Generate library settings for a expanded version of banded graph
     to accommodate expression tree relationships
@@ -48,7 +48,7 @@ Expanded Banded Graph:
   excluded_node_types:
     - ReferenceUsage
 
-Expression Value Graph:
+Expression Value:
   description: >
     Generate library settings for a expanded version of banded graph
     to accommodate expression tree relationships
@@ -67,7 +67,7 @@ Expression Value Graph:
     - ResultExpressionMembership
     - ReturnParameterMembership
 
-Expression Evaluation Graph:
+Expression Evaluation:
   description: >
     A graph to hint at the direction of computation flow in a model
   included_edge_types:
@@ -79,9 +79,11 @@ Expression Evaluation Graph:
     - ParameterMembership
     - ResultExpressionMembership
 
-Expression Inferred Graph:
+Expression Inferred:
   description: |
     A graph to hint at the direction of computation flow in a model
+  implied_edge_types:
+    - ImpliedFeedforwardEdges
   included_edge_types:
     - ImpliedParameterFeedforward
     - ParameterMembership
@@ -93,7 +95,7 @@ Expression Inferred Graph:
     - ReturnParameterMembership
     - Redefinition
 
-Part Definition Graph:
+Part Definition:
   description: |
     Generate library settings for a graph that just looks at superclassing and part definitions
   included_edge_types:
@@ -101,7 +103,7 @@ Part Definition Graph:
   reversed_edge_types:
     - Superclassing
 
-Part Featuring Graph:
+Part Featuring:
   description: >
     Generate library settings for a graph that just looks at part
     definition and usage
@@ -123,7 +125,7 @@ Part Featuring Graph:
   included_edge_types:
     - FeatureMembership
 
-Part Typing Graph:
+Part Typing:
   description: >
     Generate library settings for a graph that just looks at part
     definition and usage typing
@@ -145,7 +147,7 @@ Part Typing Graph:
   included_edge_types:
     - FeatureTyping
 
-Part Typing and Redefinition Graph:
+Part Typing and Redefinition:
   description: |
     Generate library settings for a graph that just looks at part definition and usage typing
   included_node_types:
@@ -165,13 +167,13 @@ Part Typing and Redefinition Graph:
     - FeatureTyping
     - Redefinition
 
-Redefinition Graph:
+Redefinition:
   description: |
     Generate a graph that covers redefinition relationships between features
   included_edge_types:
     - Redefinition
 
-Redefinition and Subsetting Graph:
+Redefinition and Subsetting:
   description: |
     Generate a graph that covers redefinition relationships between features
   included_edge_types:
