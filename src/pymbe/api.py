@@ -5,3 +5,14 @@ from .widget.inspector import ElementInspector
 from .widget.ui import UI
 from .interpretation.interpretation import Instance
 from .model import Model
+
+
+__all__ = (
+    Model,
+    Instance,
+    UI,
+    ElementInspector,
+    SysML2LPGWidget,
+    ContainmentTree,
+    SysML2ClientWidget,
+)

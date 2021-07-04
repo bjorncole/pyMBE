@@ -62,12 +62,12 @@ class Model:
     elements: Dict[str, "Element"]
 
     ownedElement: ListGetter = field(default_factory=ListGetter)
+    ownedMetatype: Dict[str, List["Element"]] = field(default_factory=dict)
     ownedRelationship: List["Element"] = field(default_factory=list)
-    ownedMetatypes: Dict[str, List["Element"]] = field(default_factory=dict)
 
     source: Any = None
 
-    _naming: Naming = Naming.long
+    _naming: Naming = Naming.long  # The scheme to use for repr'ing the elements
 
     def __post_init__(self):
         self.elements = {
@@ -114,11 +114,14 @@ class Model:
         for element in self.elements.values():
             if not element._is_relationship:
                 continue
+            endpts = [
+                # TODO: should this handle multiple sources and/or targets?
+                self.elements[element.data[endpoint][0]["@id"]]
+                for endpoint in ("source", "target")
+            ]
             metatype = element._metatype
-            source, target = element.source, element.target
-
-            source._derived[f"through{metatype}"] += [{"@id": target.data["@id"]}]
-            target._derived[f"reverse{metatype}"] += [{"@id": source.data["@id"]}]
+            endpts[0]._derived[f"through{metatype}"] += [{"@id": endpts[1].data["@id"]}]
+            endpts[1]._derived[f"reverse{metatype}"] += [{"@id": endpts[0].data["@id"]}]
 
     def _add_owned(self):
         """Adds owned elements, relationships, and metatypes to the model"""
@@ -129,20 +132,22 @@ class Model:
             for element in elements
             if element.data.get("owner") is None
         ]
-        self.ownedElement = ListGetter(el for el in owned if not el._is_relationship)
+        self.ownedElement = ListGetter(
+            element
+            for element in owned
+            if not element._is_relationship
+        )
 
         self.ownedRelationship = [
-            rel for rel in owned if rel._is_relationship
+            relationship
+            for relationship in owned
+            if relationship._is_relationship
         ]
 
         by_metatype = defaultdict(list)
         for element in elements:
-            # FIXME: figure out why we can't do this in the Element's __post_init__
-            element.ownedElement = ListGetter(element.ownedElement)
-
-            by_metatype[element._metatype] = element
-
-        self.ownedMetatypes = dict(by_metatype)
+            by_metatype[element._metatype].append(element)
+        self.ownedMetatype = dict(by_metatype)
 
 
 @dataclass(repr=False)
@@ -157,12 +162,15 @@ class Element:
 
     def __post_init__(self):
         self._is_relationship = "relatedElement" in self.data
+        self.data["ownedElement"] = ListGetter(self.data["ownedElement"])
 
     def __dir__(self):
         return sorted(
-            [key for key in self.data if key.isidentifier()] +
-            [key for key in self._derived if key.isidentifier()] +
-            list(super().__dir__())
+            list(super().__dir__()) + [
+                key
+                for key in [*self.data, *self._derived]
+                if key.isidentifier()
+            ]
         )
 
     def __getattr__(self, key: str):
