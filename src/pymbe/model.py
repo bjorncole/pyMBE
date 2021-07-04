@@ -9,6 +9,20 @@ from typing import Any, Dict, List, Set, Tuple, Union
 from warnings import warn
 
 
+class ListGetter(list):
+    """A list that also can return items by their name."""
+
+    def __getitem__(self, key):
+        item_map = {
+            item.name: item
+            for item in self
+            if item.name
+        }
+        if key in item_map:
+            return item_map[key]
+        return super().__getitem__(key)
+
+
 class Naming(Enum):
     """An enumeration for how to repr SysML elements"""
 
@@ -118,6 +132,7 @@ class Model:
                 for child in element.ownedElement
                 if child.name
             }
+            element.ownedElement = ListGetter(element.ownedElement)
 
         # Add owned by model
         owned = [
@@ -155,7 +170,6 @@ class Element:
 
     def __dir__(self):
         return sorted(
-            [name for name in self._owned_elements if name.isidentifier()] +
             [key for key in self.data if key.isidentifier()] +
             [key for key in self._derived if key.isidentifier()] +
             list(super().__dir__())
@@ -164,16 +178,13 @@ class Element:
     def __getattr__(self, key: str):
         if key.startswith("_") and f"@{key[1:]}" in self.data:
             key = f"@{key[1:]}"
-        possibilities = [*self.data, *self._derived, *self._owned_elements]
+        possibilities = [*self.data, *self._derived]
         if key in possibilities:
             return self[key]
         return self.__getattribute__(key)
 
     @lru_cache
     def __getitem__(self, key: str):
-        if key in self._owned_elements:
-            return self._owned_elements[key]
-
         if key in self.data:
             item = self.data[key]
         else:
