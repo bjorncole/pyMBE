@@ -1,6 +1,10 @@
 # Module for computing useful labels and signatures for SysML v2 elements
+from .graph.lpg import SysML2LabeledPropertyGraph
 
-def get_label(element: dict, all_elements: dict) -> str:
+def get_label(
+    element: dict,
+    all_elements: dict
+) -> str:
     name = element.get("name")
     metatype = element.get("@type")
 
@@ -30,13 +34,13 @@ def get_label(element: dict, all_elements: dict) -> str:
     elif metatype == "MultiplicityRange":
         return get_label_for_multiplicity(
             multiplicity=element,
-            all_elements=all_elements,
+            all_elements=all_elements
         )
     elif metatype.endswith("Expression"):
         return get_label_for_expression(
             expression=element,
             all_elements=all_elements,
-            type_names=type_names,
+            type_names=type_names
         )
     elif "@id" in element:
         return f"""{element["@id"]} «{metatype}»"""
@@ -45,7 +49,8 @@ def get_label(element: dict, all_elements: dict) -> str:
 
 
 def get_label_for_id(
-    element_id: str, all_elements: dict
+    element_id: str,
+    all_elements: dict
 ) -> str:
     return get_label(all_elements[element_id], all_elements)
 
@@ -53,7 +58,7 @@ def get_label_for_id(
 def get_label_for_expression(
     expression: dict,
     all_elements: dict,
-    type_names: list,
+    type_names: list
 ) -> str:
     metatype = expression["@type"]
     if metatype not in (
@@ -89,7 +94,7 @@ def get_label_for_expression(
         for expression_input in expression["input"]
     ]
     input_names = [
-        all_elements[input_id]["name"]
+        get_label_for_input_parameter(all_elements[input_id], all_elements)
         for input_id in input_ids
     ]
     result_id = (expression["result"] or {}).get("@id")
@@ -101,7 +106,7 @@ def get_label_for_expression(
         non_parameter_members = [
             get_label(
                 element=all_elements[owned_member["@id"]],
-                all_elements=all_elements,
+                all_elements=all_elements
             )
             for owned_member in expression["ownedMember"]
             if owned_member["@id"] not in parameter_members
@@ -126,9 +131,16 @@ def get_label_for_expression(
     return f"""{prefix} ({", ".join(input_names)}) => {result_name}"""
 
 
+def get_label_for_input_parameter(
+    parameter: dict,
+    all_elements: dict
+) -> str:
+
+    return f"""{parameter["name"]}"""
+
 def get_label_for_multiplicity(
     multiplicity: dict,
-    all_elements: dict,
+    all_elements: dict
 ) -> str:
     limits = {
         "lower": "0",
@@ -146,19 +158,24 @@ def get_label_for_multiplicity(
     return f"""{values["lower"]}..{values["upper"]}"""
 
 
-def get_qualified_label(element: dict, all_elements: dict) -> str:
+def get_qualified_label(element: dict, all_elements: dict, parameter_name_map: dict) -> str:
 
-    earlier_name = ""
+    earlier_name = "Model"
 
     try:
         if "owner" in element:
             if element["owner"] is not None:
                 element_owner = all_elements[element["owner"]["@id"]]
-                earlier_name = get_qualified_label(element_owner, all_elements)
+                earlier_name = get_qualified_label(element_owner, all_elements, parameter_name_map)
         else:
             return element["name"]
 
-        earlier_name = f"{earlier_name}::{get_label(element, all_elements)}"
+        printed_name = ""
+        if element["@id"] in parameter_name_map:
+            printed_name = parameter_name_map[element["@id"]]
+        else:
+            printed_name = get_label(element, all_elements)
+        earlier_name = f"{earlier_name}::{printed_name}"
     except TypeError:
         print(all_elements)
 

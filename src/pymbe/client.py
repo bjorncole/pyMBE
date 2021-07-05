@@ -168,7 +168,7 @@ class SysML2Client(Base):
             if "label" not in element:
                 element["label"] = get_label(
                     element,
-                    all_elements=elements_by_id,
+                    all_elements=elements_by_id
                 )
         self.elements_by_id = elements_by_id
 

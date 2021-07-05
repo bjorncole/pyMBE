@@ -6,11 +6,11 @@ from ..label import get_label_for_id
 
 
 def generate_execution_order(
-    lpg: SysML2LabeledPropertyGraph,
-    instance_dict: dict,
+    lpg: SysML2LabeledPropertyGraph
 ) -> list:
     """
-    Generate a dependency graph between specific sequences in the m0 interpretation
+    Generate an ordered list that relies the structure of computations to be applied to the M0 instance of the
+    model when it is instantiated
     :return:
     """
 
@@ -57,61 +57,49 @@ def generate_execution_order(
 
             execution_contexts[context].append(node_child)
 
-        # bfs_dict = dict(nx.bfs_successors(eig, root))
-        # bfs_list = list(bfs_dict.keys())
-        # bfs_list.reverse()
-        #
-        # bfs_check = []
-        #
-        # for node in bfs_list:
-        #
-        #     for node_child in bfs_dict[node]:
-        #         kind = ''
-        #
-        #         if all_elements[node_child]['@type'] == 'Feature' and all_elements[node]['@type'] == 'Feature':
-        #             kind = 'Assignment'
-        #         elif all_elements[node_child]['@type'] == 'AttributeUsage' and all_elements[node]['@type'] == 'AttributeUsage':
-        #             relevant_edge_types = [edg[2] for edg in eig.edges if edg[0] == node and edg[1] == node_child]
-        #             if "Redefinition^-1" in relevant_edge_types:
-        #                 kind = 'Redefinition'
-        #             else:
-        #                 kind = 'Assignment'
-        #         elif all_elements[node_child]['@type'] == 'Feature' and all_elements[node]['@type'] == 'AttributeUsage':
-        #             kind = 'ValueBinding'
-        #         elif (node_child, node, 'ReturnParameterMembership') in lpg.edges_by_type['ReturnParameterMembership']:
-        #             kind = 'Output'
-        #         elif (node, node_child, 'ParameterMembership') in lpg.edges_by_type['ParameterMembership']:
-        #             kind = 'Input'
-        #
-        #         execution_pairs.append([node_child, node, kind])
-        #         bfs_check.append([node_child, node])
-        #
-        #         execution_contexts[context].append(node_child)
-        #
-        #
-        #     # need to account for fact that BFS only visit nodes once ... need to fill in additional edges
-        #     for pred in eig.successors(node):
-        #         if [pred, node] in bfs_check:
-        #             pass
-        #             #print("Matched edge from BFS")
-        #         else:
-        #             kind = ''
-        #
-        #             if all_elements[node_child]['@type'] == 'Feature' and all_elements[node]['@type'] == 'Feature':
-        #                 kind = 'Assignment'
-        #             elif all_elements[node_child]['@type'] == 'AttributeUsage' and all_elements[node][
-        #                 '@type'] == 'AttributeUsage':
-        #                 kind = 'Assignment'
-        #             elif all_elements[node_child]['@type'] == 'Feature' and all_elements[node][
-        #                 '@type'] == 'AttributeUsage':
-        #                 kind = 'ValueBinding'
-        #             elif (node_child, node, 'ReturnParameterMembership') in lpg.edges_by_type[
-        #                 'ReturnParameterMembership']:
-        #                 kind = 'Output'
-        #             elif (node, node_child, 'ParameterMembership') in lpg.edges_by_type['ParameterMembership']:
-        #                 kind = 'Input'
-        #
-        #             execution_pairs.append([pred, node, kind])
-        #             bfs_check.append([pred, node])
-
     return execution_pairs
+
+def generate_parameter_signature_map(
+    all_elements: list,
+    execution_order: list
+):
+
+    # use the execution order to find better parameter names
+    naming_map = {}
+
+    for pair in execution_order:
+        if pair[2] == 'Assignment':
+            #print("Assignment value:" + naming_map[pair[0]] + " -> " + get_label_for_id(pair[1], all_elements))
+            naming_map.update({pair[1]: naming_map[pair[0]]})
+        elif pair[2] == 'Output':
+            left_side = ""
+            if pair[0] in naming_map:
+                left_side = naming_map[pair[0]]
+            else:
+                left_side = get_label_for_id(pair[0], all_elements)
+            # push the expression signature up to the result side
+            #print("Output:" + left_side + " -> " + get_label_for_id(pair[1], all_elements))
+            if " => " in left_side:
+                naming_map.update({pair[1]: left_side.split(" =>")[0]})
+            else:
+                naming_map.update({pair[1]: left_side})
+        elif pair[2] == 'Input':
+            left_side = ""
+            if pair[0] in naming_map:
+                left_side = naming_map[pair[0]]
+            else:
+                left_side = get_label_for_id(pair[0], all_elements)
+            right_side = ""
+            if pair[1] in naming_map:
+                right_side = naming_map[pair[1]]
+            else:
+                right_side = get_label_for_id(pair[1], all_elements)
+            if pair[0] in naming_map:
+                new_expr = right_side.replace(get_label_for_id(pair[0], all_elements), naming_map[pair[0]])
+                print("Input:" + naming_map[pair[0]] + " -> " + get_label_for_id(pair[1], all_elements))
+                print("New expression is " + new_expr)
+                naming_map.update({pair[1]: new_expr})
+            else:
+                naming_map.update({pair[1]: get_label_for_id(pair[1], all_elements)})
+
+    return naming_map
