@@ -46,6 +46,7 @@ TYPES_FOR_ROLL_UP_MULTIPLICITY = (
 
 
 def random_generator_playbook(
+    all_elements: dict,
     lpg: SysML2LabeledPropertyGraph,
     name_hints: dict = None,
 ) -> dict:
@@ -55,7 +56,7 @@ def random_generator_playbook(
     if not can_interpret:
         return {}
 
-    all_elements = lpg.nodes
+    #all_elements = lpg.nodes
 
     # PHASE 1: Create a set of instances for part definitions based on usage multiplicities
 
@@ -66,7 +67,7 @@ def random_generator_playbook(
 
     feature_sequences = build_sequence_templates(lpg=lpg)
 
-    full_multiplicities = random_generator_phase_1_multiplicities(lpg, ptg, scg)
+    full_multiplicities = random_generator_phase_1_multiplicities(all_elements, lpg, ptg, scg)
 
     instances_dict = {
         type_id: create_set_with_new_instances(
@@ -79,14 +80,14 @@ def random_generator_playbook(
 
     # pick up the definitions that aren't matched to a usage yet
 
-    random_generator_playbook_phase_1_singletons(lpg, scg, instances_dict)
+    random_generator_playbook_phase_1_singletons(all_elements, lpg, scg, instances_dict)
 
     # PHASE 2: Combine sets of instances into sets that are marked as more general in the user model
 
     # "Roll up" the graph through a breadth-first search from the most general classifier down to the most specific
     # and then move in reverse order from the specific (subset) to the general (superset)
 
-    random_generator_playbook_phase_2_rollup(scg, instances_dict)
+    random_generator_playbook_phase_2_rollup(all_elements, scg, instances_dict)
 
     # Fill in any part definitions that still don't have instances yet (because they get filtered out by the
     # Part Definition pre-defined graph (neither typed nor subclassed))
@@ -108,7 +109,7 @@ def random_generator_playbook(
 
     # Move through existing sequences and then start to pave further with new steps
 
-    random_generator_playbook_phase_4(expr_sequences, lpg, instances_dict)
+    random_generator_playbook_phase_4(all_elements, expr_sequences, lpg, instances_dict)
 
     # attached connector ends to sequences(
 
@@ -118,6 +119,7 @@ def random_generator_playbook(
 
 
 def random_generator_phase_1_multiplicities(
+    all_elements: dict,
     lpg: SysML2LabeledPropertyGraph,
     ptg: nx.DiGraph,
     scg: nx.DiGraph,
@@ -170,6 +172,7 @@ def random_generator_phase_1_multiplicities(
 
 
 def random_generator_playbook_phase_1_singletons(
+    all_elements: dict,
     lpg: SysML2LabeledPropertyGraph,
     scg: nx.DiGraph,
     instances_dict: dict,
@@ -183,7 +186,7 @@ def random_generator_playbook_phase_1_singletons(
     :param instances_dict: Working dictionary of interpreted sequences for the model
     :return: None - side effect is addition of new instances to the instances dictionary
     """
-    all_elements = lpg.nodes
+    #all_elements = lpg.nodes
 
     # need to generate single instances at leaves that don't match types
     leaves = [node for node in scg.nodes if scg.out_degree(node) == 0]
@@ -200,6 +203,7 @@ def random_generator_playbook_phase_1_singletons(
 
 
 def random_generator_playbook_phase_2_rollup(
+    all_elements: dict,
     scg: nx.DiGraph,
     instances_dict: dict,
 ) -> None:
@@ -346,6 +350,7 @@ def random_generator_playbook_phase_3(
 
 
 def random_generator_playbook_phase_4(
+    all_elements: dict,
     expr_sequences: list,
     lpg: SysML2LabeledPropertyGraph,
     instances_dict: dict,
@@ -359,7 +364,7 @@ def random_generator_playbook_phase_4(
     :param instances_dict: Working dictionary of interpreted sequences for the model
     :return: None - side effect is addition of new instances to the instances dictionary
     """
-    all_elements = lpg.nodes
+    #all_elements = lpg.nodes
     for expr_seq in expr_sequences:
         new_sequences = []
         # get the featuring type of the first expression

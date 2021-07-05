@@ -8,7 +8,7 @@ def sequence_dot_operator(left_item, right_side_seqs):
         return []
     left_len = len(left_item)
     right_len = len(right_side_seqs[0])
-    # print('Left is ' + str(left_len) + ' right is ' + str(right_len))
+    #print('Left is ' + str(left_len) + ' right is ' + str(right_len))
     matched_items = []
 
     for right_item in right_side_seqs:
@@ -24,6 +24,26 @@ def sequence_dot_operator(left_item, right_side_seqs):
 
 
 def evaluate_and_apply_collect(
+    base_scope: Instance,
+    m0_expr: LiveExpressionNode,
+    instance_dict: dict,
+    m0_collection_input: ValueHolder,
+    m0_collection_path: ValueHolder,
+    result_holder: ValueHolder
+) -> None:
+    #print("Applying collect to " + str(m0_collection_input))
+    # apply the dot operator
+    path_result = []
+    first_step = sequence_dot_operator([base_scope], m0_collection_input.value)
+    for collect_seq in first_step:
+        collect_match = sequence_dot_operator(collect_seq, m0_collection_path.value)[0]
+        path_result.append(collect_match)
+    collect_result = m0_expr.base_att['result']['@id']
+    final_answer = [coll[-1] for coll in path_result]
+    result_holder.value = final_answer
+
+
+def evaluate_and_apply_dot(
     base_scope: Instance,
     m0_expr: LiveExpressionNode,
     instance_dict: dict,
@@ -85,7 +105,7 @@ def evaluate_and_apply_sum(
 ) -> None:
     total = 0
     for item in m0_expr.value:
-        total+= item.value
+        total+= item.value if item.value is not None else 0
     m0_result.value = total
 
 

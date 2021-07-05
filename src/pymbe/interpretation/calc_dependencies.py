@@ -69,7 +69,6 @@ def generate_parameter_signature_map(
 
     for pair in execution_order:
         if pair[2] == 'Assignment':
-            #print("Assignment value:" + naming_map[pair[0]] + " -> " + get_label_for_id(pair[1], all_elements))
             naming_map.update({pair[1]: naming_map[pair[0]]})
         elif pair[2] == 'Output':
             left_side = ""
@@ -78,7 +77,6 @@ def generate_parameter_signature_map(
             else:
                 left_side = get_label_for_id(pair[0], all_elements)
             # push the expression signature up to the result side
-            #print("Output:" + left_side + " -> " + get_label_for_id(pair[1], all_elements))
             if " => " in left_side:
                 naming_map.update({pair[1]: left_side.split(" =>")[0]})
             else:
@@ -96,8 +94,6 @@ def generate_parameter_signature_map(
                 right_side = get_label_for_id(pair[1], all_elements)
             if pair[0] in naming_map:
                 new_expr = right_side.replace(get_label_for_id(pair[0], all_elements), naming_map[pair[0]])
-                print("Input:" + naming_map[pair[0]] + " -> " + get_label_for_id(pair[1], all_elements))
-                print("New expression is " + new_expr)
                 naming_map.update({pair[1]: new_expr})
             else:
                 naming_map.update({pair[1]: get_label_for_id(pair[1], all_elements)})
