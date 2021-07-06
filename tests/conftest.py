@@ -83,13 +83,13 @@ def kerbal_client() -> SysML2Client:
 
 @pytest.fixture
 def kerbal_ids_by_type(kerbal_client) -> dict:
-    ids_dict = defaultdict(list)
-    all_elements = kerbal_client.elements_by_id
-
-    for ele_id, ele in all_elements.items():
-        ids_dict[ele["@type"]].append(ele_id)
-
-    return ids_dict
+    return {
+        metatype: [
+            element._id
+            for element in elements
+        ]
+        for metatype, elements in kerbal_client.model.ownedMetatype.items()
+    }
 
 
 @pytest.fixture
@@ -100,13 +100,13 @@ def kerbal_client() -> SysML2Client:
 @pytest.fixture()
 def all_kerbal_names(kerbal_client) -> list:
     names = []
-    all_elements = kerbal_client.elements_by_id
+    all_elements = kerbal_client.model.elements
 
-    for ele in all_elements.values():
-        if "name" in ele:
-            names.append(ele["name"])
-
-    return names
+    return [
+        element["name"]
+        for element in all_elements.values()
+        if "name" in element._data
+    ]
 
 
 @pytest.fixture
@@ -114,8 +114,8 @@ def kerbal_lpg() -> SysML2LabeledPropertyGraph:
     new_lpg = SysML2LabeledPropertyGraph()
     client = kerbal_model_loaded_client()
     trt.link(
-        (client, "elements_by_id"),
-        (new_lpg, "elements_by_id"),
+        (client, "model"),
+        (new_lpg, "model"),
     )
     return new_lpg
 
@@ -194,7 +194,6 @@ def kerbal_random_stage_4_complete(kerbal_lpg, kerbal_random_stage_3_complete) -
 
 @pytest.fixture
 def simple_parts_client() -> SysML2Client:
-
     return simple_parts_model_loaded_client()
 
 
@@ -203,7 +202,7 @@ def simple_parts_lpg() -> SysML2LabeledPropertyGraph:
     new_lpg = SysML2LabeledPropertyGraph()
     client = simple_parts_model_loaded_client()
 
-    new_lpg.update(client.elements_by_id, False)
+    new_lpg.model = client.model
 
     return new_lpg
 
@@ -219,6 +218,6 @@ def simple_actions_lpg() -> SysML2LabeledPropertyGraph:
     new_lpg = SysML2LabeledPropertyGraph()
     client = simple_actions_model_loaded_client()
 
-    new_lpg.update(client.elements_by_id, False)
+    new_lpg.model = client.model
 
     return new_lpg

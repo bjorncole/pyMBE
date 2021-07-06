@@ -1,8 +1,6 @@
 import networkx as nx
 
 from ..graph.lpg import SysML2LabeledPropertyGraph
-from ..interpretation.results import pprint_double_id_list, pprint_single_id_list
-from ..label import get_label_for_id
 
 
 def generate_execution_order(

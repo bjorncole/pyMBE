@@ -149,7 +149,7 @@ def random_generator_phase_0_interpreting_edges(lpg: SysML2LabeledPropertyGraph)
         for *_, data in new_edges
     }
 
-    lpg.elements_by_id = {**lpg.elements_by_id, **new_elements}
+    lpg.model.elements = {**lpg.model.elements, **new_elements}
     for edge in new_edges:
         new_edge = {(edge[0:3]): edge[3]}
         lpg.edges.update(new_edge)
@@ -434,7 +434,8 @@ def random_generator_playbook_phase_4(
     :param instances_dict: Working dictionary of interpreted sequences for the model
     :return: None - side effect is addition of new instances to the instances dictionary
     """
-    all_elements = lpg.nodes
+    model = lpg.model
+    all_elements = model.elements
     for expr_seq in expr_sequences:
         new_sequences = []
         # get the featuring type of the first expression
@@ -448,18 +449,18 @@ def random_generator_playbook_phase_4(
 
         for feature_id in expr_seq:
             # sample set will be the last element in the sequence for classifiers
-            feature_data = all_elements[feature_id]
-            feature_metatype = feature_data["@type"]
+            feature = all_elements[feature_id]
+            feature_metatype = feature._metatype
             if feature_id in instances_dict:
                 new_sequences = instances_dict[feature_id]
             else:
                 if any(key in feature_metatype for key in ("Expression", "Literal")):
                     # Get the element type(s)
-                    types: list = feature_data.get("type") or []
+                    types: list = feature._data.get("type") or []
                     if isinstance(types, dict):
                         types = [types]
                     type_names = [
-                        all_elements[type_["@id"]].get("name")
+                        all_elements[type_["@id"]]._data.get("name")
                         for type_ in types
                         if type_ and "@id" in type_
                     ]
@@ -471,14 +472,14 @@ def random_generator_playbook_phase_4(
 
                     new_sequences = extend_sequences_with_new_expr(
                         new_sequences,
-                        get_label(feature_data, all_elements),
-                        feature_data,
+                        get_label(feature),
+                        feature._data,
                     )
                 elif feature_metatype == "Feature":
                     new_sequences = extend_sequences_with_new_value_holder(
                         new_sequences,
-                        feature_data["name"],
-                        feature_data,
+                        feature.name,
+                        feature._data,
                     )
                 else:
                     new_sequences = extend_sequences_by_sampling(
@@ -487,7 +488,7 @@ def random_generator_playbook_phase_4(
                         1,
                         [],
                         True,
-                        feature_data,
+                        feature._data,
                         all_elements,
                     )
                 instances_dict[feature_id] = new_sequences

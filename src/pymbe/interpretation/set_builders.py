@@ -106,7 +106,7 @@ def extend_sequences_by_sampling(
         last_draw = 0
         for m in range(0, total_draw):
             new_instance = Instance(
-                get_label(fallback_type, all_elements),
+                get_label(fallback_type),
                 m,
                 [],
             )

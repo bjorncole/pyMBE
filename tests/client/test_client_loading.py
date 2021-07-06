@@ -1,8 +1,3 @@
-from collections import defaultdict
-import pytest
-
-from pymbe.client import SysML2Client
-
 from tests.conftest import (
     all_kerbal_names,
     kerbal_client,
@@ -11,7 +6,7 @@ from tests.conftest import (
 
 
 def test_client_load_kerbal(kerbal_client):
-    assert len(kerbal_client.elements_by_id) == 389
+    assert len(kerbal_client.model.elements) == 389
 
 
 def test_client_load_find_names(all_kerbal_names):

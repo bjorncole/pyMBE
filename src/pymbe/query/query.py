@@ -1,9 +1,10 @@
 # a set of queries to run on Labeled Property Graphs
 import networkx as nx
 import math
+
 from ..graph.lpg import SysML2LabeledPropertyGraph
-from .metamodel_navigator import *
 from ..interpretation.results import *
+from .metamodel_navigator import *
 
 
 def roll_up_lower_multiplicity(
@@ -181,7 +182,7 @@ def get_features_typed_by_type(
 def build_element_owner_sequence(
         element: dict,
         all_elements: list,
-        seq: list = []
+        seq: list = [],
 ) -> list:
 
     if "owner" not in element or element["owner"] is None:
@@ -200,7 +201,7 @@ def calculate_signature(element: dict, all_elements: dict) -> str:
     owned_sequence = build_element_owner_sequence(
         element,
         all_elements,
-        []
+        [],
     )
 
     sig_seq = []
@@ -208,7 +209,7 @@ def calculate_signature(element: dict, all_elements: dict) -> str:
         if "name" in item and item["name"] != "":
             sig_seq.append(item["name"])
         else:
-            sig_seq.append(get_label(item, all_elements))
+            sig_seq.append(get_label(item))
 
     sig_seq.reverse()
 

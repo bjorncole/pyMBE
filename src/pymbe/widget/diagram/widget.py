@@ -10,6 +10,7 @@ import ipyelk
 from ipyelk.pipes.base import PipeDisposition
 
 from ...graph import SysML2LabeledPropertyGraph
+from ...model import Model
 from ..core import BaseWidget
 from .loader import SysmlLoader
 from .tools import Toolbar
@@ -34,17 +35,17 @@ class Diagram(ipyelk.Diagram):
 
 
 @ipyw.register
-class SysML2LPGWidget(ipyw.Box, BaseWidget):
+class DiagramWidget(ipyw.Box, BaseWidget):
     """An ipywidget to interact with a SysML2 model through an LPG."""
 
     description = trt.Unicode("Diagram").tag(sync=True)
 
-    diagram: ipyelk.Diagram = trt.Instance(ipyelk.Diagram)
     drawn_graph: nx.Graph = trt.Instance(
         nx.Graph,
         args=(),
         help="The networkx labelled property graph to be drawn.",
     )
+    elk_diagram: ipyelk.Diagram = trt.Instance(ipyelk.Diagram)
 
     id_mapper: Mapper = trt.Instance(Mapper, args=())
 
@@ -60,20 +61,19 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
         help="The customized ipyelk loader for transforming the SysML LPG to ELK JSON",
     )
 
-    log_out = ipyw.Output()
-
     @trt.validate("children")
     def _validate_children(self, proposal: trt.Bunch):
         children = proposal.value
         if children:
             return children
-        return [self.diagram]
+        return [self.elk_diagram]
 
-    def update(self, elements: dict):
-        self.lpg.elements_by_id = elements
+    def update(self, change = trt.Bunch):
         self.drawn_graph = nx.Graph()
+        self.lpg.model = change.new
+        toolbar: Toolbar = self.elk_diagram.toolbar
 
-        self.diagram.toolbar.update_dropdown_options(
+        toolbar.update_dropdown_options(
             selector="nodes",
             options={
                 f"{node_type} [{len(nodes)}]": nodes
@@ -81,7 +81,7 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
             },
         )
 
-        self.diagram.toolbar.update_dropdown_options(
+        toolbar.update_dropdown_options(
             selector="edges",
             options={
                 f"{edge_type} [{len(edges)}]": edges
@@ -92,7 +92,7 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
 
     @trt.default("id_mapper")
     def _make_id_mapper(self) -> Mapper:
-        elements = self.diagram.source.index.elements
+        elements = self.elk_diagram.source.index.elements
         return Mapper(
             to_sysml={
                 elk_id: element.metadata.sysml_id
@@ -101,7 +101,7 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
             },
         )
 
-    @trt.default("diagram")
+    @trt.default("elk_diagram")
     def _make_diagram(self):
         view = ipyelk.diagram.SprottyViewer()
         view.selection.observe(self._update_selected, "ids")
@@ -154,7 +154,7 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
 
     @property
     def excluded_edge_types(self):
-        included_edges = self.diagram.toolbar.edge_type_selector.value
+        included_edges = self.elk_diagram.toolbar.edge_type_selector.value
         if not included_edges:
             return []
 
@@ -164,7 +164,7 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
 
     @property
     def excluded_node_types(self):
-        included_nodes = self.diagram.toolbar.node_type_selector.value
+        included_nodes = self.elk_diagram.toolbar.node_type_selector.value
         if not included_nodes:
             return []
 
@@ -178,7 +178,7 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
         return tuple(set(sum(
             map(
                 list,
-                self.diagram.toolbar.node_type_selector.value
+                self.elk_diagram.toolbar.node_type_selector.value
             ), []
         )))
 
@@ -195,7 +195,7 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
         return tuple(set(sum(
             map(
                 list,
-                self.diagram.toolbar.edge_type_selector.value
+                self.elk_diagram.toolbar.edge_type_selector.value
             ), []
         )))
 
@@ -219,21 +219,22 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
 
     def _update_drawn_graph(self, button: ipyw.Button = None) -> bool:
         failed = False
-        toolbar: Toolbar = self.diagram.toolbar
+        toolbar: Toolbar = self.elk_diagram.toolbar
+        lpg = self.lpg
 
         enforce_directionality = toolbar.enforce_directionality.value
         reversed_edges = toolbar.edge_type_reverser.value
 
         if reversed_edges and not enforce_directionality:
             raise ValueError(
-                f"Reversing edge types: {reversed_edges} makes"
+                f"Reversing edge types: {sum(reversed_edges, [])} makes "
                 "no sense since edges are not being enforced."
             )
 
-        instructions: dict = self.lpg.get_projection_instructions(
+        instructions = lpg.get_projection_instructions(
             projection=toolbar.projection_selector.value,
         )
-        new_graph = self.lpg.adapt(
+        new_graph = lpg.adapt(
             excluded_edge_types={
                 *instructions.get("excluded_edge_types", []),
                 *self.excluded_edge_types,
@@ -251,7 +252,7 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
 
         if button is toolbar.filter_to_path:
             source, target = self.selected
-            new_graph = self.lpg.get_path_graph(
+            new_graph = lpg.get_path_graph(
                 graph=new_graph,
                 source=source,
                 target=target,
@@ -266,7 +267,7 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
                     " enforced."
                 )
         elif button is toolbar.filter_by_dist:
-            new_graph = self.lpg.get_spanning_graph(
+            new_graph = lpg.get_spanning_graph(
                 graph=new_graph,
                 seeds=self.selected,
                 max_distance=toolbar.max_distance.value,
@@ -294,27 +295,29 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
         if new == old:
             return
 
-        diagram, loader = self.diagram, self.loader
+        elk_diagram, loader = self.elk_diagram, self.loader
         with self.log_out:
-            diagram.style = loader.part_diagram.style
-            diagram.symbols = loader.part_diagram.symbols
-            diagram.source = loader.load(new=new, old=old)
+            elk_diagram.style = loader.part_diagram.style
+            elk_diagram.symbols = loader.part_diagram.symbols
+            elk_diagram.source = loader.load(new=new, old=old)
 
     @trt.observe("selected")
     def _update_based_on_selection(self, *_):
         """Update toolbar buttons based on selection status."""
-        selected = self.selected
-        self.diagram.toolbar.filter_to_path.disabled = (
-            len(selected) != 2 or
-            not all(isinstance(node_id, str) for node_id in selected)
-        )
-        self.diagram.toolbar.filter_by_dist.disabled = not selected
+        with self.log_out:
+            selected = self.selected
+            toolbar = self.elk_diagram.toolbar
+            toolbar.filter_to_path.disabled = (
+                len(selected) != 2 or
+                not all(isinstance(node_id, str) for node_id in selected)
+            )
+            toolbar.filter_by_dist.disabled = not selected
 
     @trt.observe("selected")
     def _update_diagram_selections(self, *_):
         """Update diagram selected nodes based on app selections."""
         with self.log_out:
-            view_selector = self.diagram.view.selection
+            view_selector = self.elk_diagram.view.selection
             diagram_elements = list(view_selector.get_index().elements.elements)
 
             new_selections = [
@@ -330,8 +333,8 @@ class SysML2LPGWidget(ipyw.Box, BaseWidget):
         with self.log_out:
             new_selections = [
                 id_
-                for id_ in self._map_selections(*self.diagram.view.selection.ids)
-                if id_ in self.elements_by_id
+                for id_ in self._map_selections(*self.elk_diagram.view.selection.ids)
+                if id_ in self.model.elements
             ]
             if set(self.selected).symmetric_difference(new_selections):
                 self.selected = new_selections

@@ -57,7 +57,7 @@ def test_banded_graph_paths1(kerbal_lpg):
     for path in path_lists:
         path_naming = []
         for item in path:
-            path_naming.append(get_label_for_id(item, kerbal_lpg.nodes))
+            path_naming.append(get_label_for_id(item, kerbal_lpg.model))
 
         print(path_naming)
 
@@ -80,7 +80,7 @@ def test_banded_graph_paths2(kerbal_lpg):
     for path in path_lists:
         path_naming = []
         for item in path:
-            path_naming.append(get_label_for_id(item, kerbal_lpg.nodes))
+            path_naming.append(get_label_for_id(item, kerbal_lpg.model))
 
         print(path_naming)
 
@@ -111,7 +111,7 @@ def test_banded_graph_paths3(simple_parts_lpg):
     for path in path_lists:
         path_naming = []
         for item in path:
-            path_naming.append(get_label_for_id(item, simple_parts_lpg.nodes))
+            path_naming.append(get_label_for_id(item, simple_parts_lpg.model))
 
         print(path_naming)
 

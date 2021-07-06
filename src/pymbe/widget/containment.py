@@ -2,18 +2,20 @@ import typing as ty
 
 import ipytree as ipyt
 import ipywidgets as ipyw
+from pymbe.widget.diagram import relationships
 import traitlets as trt
 
+from ..model import Element, Model
 from .core import BaseWidget
 
 
-class Element(ipyt.Node):
+class ElementNode(ipyt.Node):
     """A project element node compatible with ipytree."""
 
     _data: dict = trt.Dict()
     _identifier: str = trt.Unicode()
     _metatype: str = trt.Unicode()
-    _owner: str = trt.Unicode("self", allow_none=True)
+    _owner: str = trt.Unicode(allow_none=True)
 
 
 @ipyw.register
@@ -36,20 +38,22 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
             InvocationExpression="comment-alt",
             ItemDefinition="file-invoice",  # info
             LiteralInteger="quote-right",
+            Model="map",
             MultiplicityRange="ellipsis-h",  # "star-of-life" or "share-alt-square"
             OperatorExpression="broom",  # "hashtag"
             Package="archive",  # "cube" or "box" or "box-open"
             PartDefinition="file-powerpoint",
             PartUsage="copy",
             ReferenceUsage="code-branch",
+            Relationship="link",
             StateDefinition="file-contract",
             Succession="long-arrow-alt-right",
         ),
     ).tag(sync=True)
 
-    nodes_by_id: ty.Dict[str, Element] = trt.Dict(
+    nodes_by_id: ty.Dict[str, ElementNode] = trt.Dict(
         key_trait=trt.Unicode(),
-        value_trait=trt.Instance(Element),
+        value_trait=trt.Instance(ElementNode),
         kw={},
     )
 
@@ -62,31 +66,33 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
 
     @trt.observe("selected_nodes")
     def _update_selected(self, *_):
-        element_ids = {node._identifier for node in self.selected_nodes}
-        self.update_selected(*element_ids)
+        with self.log_out:
+            element_ids = {node._identifier for node in self.selected_nodes}
+            self.update_selected(*element_ids)
 
     @trt.observe("selected")
     def _update_selected_nodes(self, *_):
-        nodes_selected = {
-            node._identifier
-            for node in self.selected_nodes
-        }
-        if not nodes_selected.symmetric_difference(self.selected):
-            return
-        with self.hold_trait_notifications():
-            if not self.selected:
-                self.deselect_nodes()
-                return
-
-            nodes_to_deselect = [
-                node
+        with self.log_out:
+            nodes_selected = {
+                node._identifier
                 for node in self.selected_nodes
-                if node._identifier not in self.selected
-            ]
-            if nodes_to_deselect:
-                self.deselect_nodes(*nodes_to_deselect)
+            }
+            if not nodes_selected.symmetric_difference(self.selected):
+                return
+            with self.hold_trait_notifications():
+                if not self.selected:
+                    self.deselect_nodes()
+                    return
 
-            self.select_nodes(*self.selected)
+                nodes_to_deselect = [
+                    node
+                    for node in self.selected_nodes
+                    if node._identifier not in self.selected
+                ]
+                if nodes_to_deselect:
+                    self.deselect_nodes(*nodes_to_deselect)
+
+                self.select_nodes(*self.selected)
 
     @trt.observe("nodes_by_id")
     def _update_tree(self, *_):
@@ -101,33 +107,78 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
         for root in roots:
             self.add_node(root)
 
-    @trt.observe("icons_by_type", "default_icon")
-    def _update_icons(self, *_):
-        for id_, element_data in self.elements_by_id.items():
-            node = self.nodes_by_id[id_]
-            node.icon = self.icons_by_type.get(
-                element_data["@type"],
-                self.default_icon,
+    # @trt.observe("icons_by_type", "default_icon")
+    # def _update_icons(self, *_):
+    #     for id_, node in self.nodes_by_id.items():
+    #         new_icon = node.element
+    #         node.icon = self.icons_by_type.get(
+    #             element_data["@type"],
+    #             self.default_icon,
+    #         )
+
+    def update(self, change: trt.Bunch):
+        model = change.new
+        if not isinstance(model, Model):
+            return
+
+        model_id = str(model.source) or "SYSML_MODEL"
+        model_node = ElementNode(
+            icon=self.icons_by_type["Model"],
+            name=model.name,
+            _data=dict(source=model.source),
+            _identifier=model_id,
+            _owner=None,
+            _type="MODEL",
+        )
+
+        model_relationships_id = "SYSML_MODEL_RELATIONSHIPS"
+        model_relationships_node = ElementNode(
+            icon=self.icons_by_type["Relationship"],
+            name="Relationships",
+            opened=False,
+            _data={},
+            _identifier=model_relationships_id,
+            _owner=model_id,
+            _type="RelationshipContainer",
+        )
+
+        nodes = {
+            model_id: model_node,
+            model_relationships_id: model_relationships_node,
+        }
+
+        default_icon = self.icons_by_type["Relationship"]
+        for relationship in model.ownedRelationship:
+            id_ = relationship._id
+            metatype = relationship._metatype
+            nodes[id_] = ElementNode(
+                icon=self.icons_by_type.get(metatype, default_icon),
+                name=metatype,
+                _data=relationship._data,
+                _identifier=id_,
+                _owner=model_relationships_id,
+                _type=metatype,
             )
 
-    def update(self, elements: dict = None):
-        elements = elements or self.elements_by_id
-        nodes = {
-            element_id: self._make_node(element=element)
+        elements = model.elements
+        nodes.update({
+            element_id: self._make_node(element=element, root=model_id)
             for element_id, element in elements.items()
-        }
+            if element_id not in nodes
+        })
         for node in nodes.values():
             if node._owner in nodes:
                 nodes[node._owner].add_node(node)
 
         # Filter nodes to those that have subnodes or a proper name
-        nodes = {
-            id_: node
-            for id_, node in nodes.items()
-            if node.nodes
-            or node._owner
-            or node._data.get("name", None)
-        }
+        # nodes = {
+        #     id_: node
+        #     for id_, node in nodes.items()
+        #     if node.nodes
+        #     or node._owner
+        #     or node._data.get("name", None)
+        # }
+
         # Sort the child nodes
         for node in nodes.values():
             node.nodes = self.sort_nodes(node.nodes)
@@ -148,7 +199,7 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
         if not nodes:
             nodes = [
                 node
-                for node_id, node in self.nodes_by_id.items()
+                for node in self.nodes_by_id.values()
                 if node.selected
             ]
         for node in nodes:
@@ -159,20 +210,20 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
             self.remove_node(node)
             del node
 
-    def _make_node(self, element):
-        element_id = element["@id"]
+    def _make_node(self, element: Element, root=None):
+        data = element._data
+        metatype = element._metatype
 
-        return Element(
-            icon=self.icons_by_type.get(element["@type"], self.default_icon),
-            name=element["label"],
-            _data=element,
-            _identifier=element_id,
+        return ElementNode(
+            icon=self.icons_by_type.get(metatype, self.default_icon),
+            name=data.get("name") or element._id,
+            _data=data,
+            _identifier=data["@id"],
             _owner=(
-                element.get("owner")
-                or element.get("owningRelatedElement")
-                or {}
-            ).get("@id"),
-            _type=element["@type"],
+                data.get("owner", {}) or
+                data.get("owningRelatedElement", {})
+            ).get("@id", root),
+            _type=metatype,
         )
 
     @staticmethod

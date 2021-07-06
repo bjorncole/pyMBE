@@ -6,15 +6,17 @@ from copy import deepcopy
 import rdflib as rdf
 import traitlets as trt
 
-from ..core import Base
+from ..model import Model
 
 
-class SysML2RDFGraph(Base):
+class SysML2RDFGraph(trt.HasTraits):
     """A Resource Description Framework (RDF) Graph for SysML v2 data."""
 
-    _cached_contexts: dict = trt.Instance(dict, args=tuple())
-    graph: rdf.Graph = trt.Instance(rdf.Graph, args=tuple())
+    model: Model = trt.Instance(Model, allow_none=True)
+    graph: rdf.Graph = trt.Instance(rdf.Graph, args=())
     merge: bool = trt.Bool(default_value=False)
+
+    _cached_contexts: dict = trt.Instance(dict, args=())
 
     # TODO: bring in the context through the static @type routes
 
@@ -46,7 +48,8 @@ class SysML2RDFGraph(Base):
             ">"
         )
 
-    def update(self, elements: dict):
+    @trt.observe("model")
+    def update(self, *_):
         if not self.merge:
             old_graph = self.graph
             self.graph = rdf.Graph()
@@ -54,7 +57,7 @@ class SysML2RDFGraph(Base):
 
         elements = [
             self.import_context(element)
-            for element in elements.values()
+            for element in self.model.elements.values()
         ]
         self.graph.parse(
             data=json.dumps(elements),
