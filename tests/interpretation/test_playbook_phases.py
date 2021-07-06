@@ -18,12 +18,12 @@ PARTS_LIBRARY = "Model::Kerbal::Parts Library::"
 def test_type_multiplicity_dict_building(kerbal_lpg, kerbal_stable_names):
     *_, qualified_name_to_id = kerbal_stable_names
 
-    solid_stage_id = qualified_name_to_id[ROCKET_BUILDING + "Solid Stage «PartDefinition»"]
-    liquid_stage_id = qualified_name_to_id[ROCKET_BUILDING + "Liquid Stage «PartDefinition»"]
-    flea_id = qualified_name_to_id[PARTS_LIBRARY + "RT-5 \"Flea\" Solid Fuel Booster «PartDefinition»"]
-    hammer_id = qualified_name_to_id[PARTS_LIBRARY + "RT-10 \"Hammer\" Solid Fuel Booster «PartDefinition»"]
-    f100_tank = qualified_name_to_id[PARTS_LIBRARY + "FL-T100 Fuel Tank «PartDefinition»"]
-    f200_tank = qualified_name_to_id[PARTS_LIBRARY + "FL-T200 Fuel Tank «PartDefinition»"]
+    solid_stage_id = qualified_name_to_id[f"{ROCKET_BUILDING}Solid Stage «PartDefinition»"]
+    liquid_stage_id = qualified_name_to_id[f"{ROCKET_BUILDING}Liquid Stage «PartDefinition»"]
+    flea_id = qualified_name_to_id[f"""{PARTS_LIBRARY}RT-5 "Flea" Solid Fuel Booster «PartDefinition»"""]
+    hammer_id = qualified_name_to_id[f"""{PARTS_LIBRARY}RT-10 "Hammer" Solid Fuel Booster «PartDefinition»"""]
+    f100_tank = qualified_name_to_id[f"{PARTS_LIBRARY}FL-T100 Fuel Tank «PartDefinition»"]
+    f200_tank = qualified_name_to_id[f"{PARTS_LIBRARY}FL-T200 Fuel Tank «PartDefinition»"]
     real_id = qualified_name_to_id["Model::Real «DataType»"]
 
     ptg = kerbal_lpg.get_projection("Part Typing")
@@ -41,9 +41,9 @@ def test_type_multiplicity_dict_building(kerbal_lpg, kerbal_stable_names):
 def test_phase_1_instance_creation(kerbal_random_stage_1_instances, kerbal_stable_names):
     *_, qualified_name_to_id = kerbal_stable_names
 
-    flea_id = qualified_name_to_id[PARTS_LIBRARY + "RT-5 \"Flea\" Solid Fuel Booster «PartDefinition»"]
-    solid_stage_id = qualified_name_to_id[ROCKET_BUILDING + "Solid Stage «PartDefinition»"]
-    solid_booster_id = qualified_name_to_id[ROCKET_BUILDING + "Solid Booster «PartDefinition»"]
+    flea_id = qualified_name_to_id[f"""{PARTS_LIBRARY}RT-5 "Flea" Solid Fuel Booster «PartDefinition»"""]
+    solid_stage_id = qualified_name_to_id[f"{ROCKET_BUILDING}Solid Stage «PartDefinition»"]
+    solid_booster_id = qualified_name_to_id[f"{ROCKET_BUILDING}Solid Booster «PartDefinition»"]
     real_id = qualified_name_to_id["Model::Real «DataType»"]
 
     assert flea_id in kerbal_random_stage_1_instances
@@ -56,10 +56,10 @@ def test_phase_1_instance_creation(kerbal_random_stage_1_instances, kerbal_stabl
 def test_phase_1_singleton_instances(kerbal_random_stage_1_complete, kerbal_stable_names):
     *_, qualified_name_to_id = kerbal_stable_names
 
-    flea_id = qualified_name_to_id[PARTS_LIBRARY + "::RT-5 \"Flea\" Solid Fuel Booster «PartDefinition»"]
-    solid_stage_id = qualified_name_to_id[ROCKET_BUILDING + "Solid Stage «PartDefinition»"]
-    solid_booster_id = qualified_name_to_id[ROCKET_BUILDING + "Solid Booster «PartDefinition»"]
-    pod_id = qualified_name_to_id[PARTS_LIBRARY + "::Mk1 Command Pod «PartDefinition»"]
+    flea_id = qualified_name_to_id[f"""{PARTS_LIBRARY}::RT-5 "Flea" Solid Fuel Booster «PartDefinition»"""]
+    solid_stage_id = qualified_name_to_id[f"{ROCKET_BUILDING}Solid Stage «PartDefinition»"]
+    solid_booster_id = qualified_name_to_id[f"{ROCKET_BUILDING}Solid Booster «PartDefinition»"]
+    pod_id = qualified_name_to_id[f"{PARTS_LIBRARY}::Mk1 Command Pod «PartDefinition»"]
 
     assert flea_id in kerbal_random_stage_1_complete
     assert solid_stage_id in kerbal_random_stage_1_complete
@@ -71,13 +71,13 @@ def test_phase_1_singleton_instances(kerbal_random_stage_1_complete, kerbal_stab
 def test_phase_2_instance_creation(kerbal_lpg, kerbal_random_stage_1_complete, kerbal_stable_names, kerbal_client):
     *_, qualified_name_to_id = kerbal_stable_names
 
-    solid_stage_id = qualified_name_to_id[ROCKET_BUILDING + "Solid Stage «PartDefinition»"]
-    liquid_stage_id = qualified_name_to_id[ROCKET_BUILDING + "Liquid Stage «PartDefinition»"]
-    flea_id = qualified_name_to_id[PARTS_LIBRARY + "::RT-5 \"Flea\" Solid Fuel Booster «PartDefinition»"]
-    pod_id = qualified_name_to_id[PARTS_LIBRARY + "::Mk1 Command Pod «PartDefinition»"]
-    krp_id = qualified_name_to_id[ROCKET_BUILDING + "Kerbal Rocket Part «PartDefinition»"]
-    solid_booster_id = qualified_name_to_id[ROCKET_BUILDING + "Solid Booster «PartDefinition»"]
-    rocket_id = qualified_name_to_id[ROCKET_BUILDING + "Rocket «PartDefinition»"]
+    solid_stage_id = qualified_name_to_id[f"{ROCKET_BUILDING}Solid Stage «PartDefinition»"]
+    liquid_stage_id = qualified_name_to_id[f"{ROCKET_BUILDING}Liquid Stage «PartDefinition»"]
+    flea_id = qualified_name_to_id[f"""{PARTS_LIBRARY}::RT-5 "Flea" Solid Fuel Booster «PartDefinition»"""]
+    pod_id = qualified_name_to_id[f"{PARTS_LIBRARY}::Mk1 Command Pod «PartDefinition»"]
+    krp_id = qualified_name_to_id[f"{ROCKET_BUILDING}Kerbal Rocket Part «PartDefinition»"]
+    solid_booster_id = qualified_name_to_id[f"{ROCKET_BUILDING}Solid Booster «PartDefinition»"]
+    rocket_id = qualified_name_to_id[f"{ROCKET_BUILDING}Rocket «PartDefinition»"]
 
     scg = kerbal_lpg.get_projection("Part Definition")
 
