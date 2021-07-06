@@ -9,7 +9,7 @@ from .metamodel_navigator import *
 
 def roll_up_lower_multiplicity(
     lpg: SysML2LabeledPropertyGraph,
-    feature: dict,
+    feature: Element,
 ) -> int:
     return roll_up_multiplicity(
         lpg=lpg,
@@ -20,7 +20,7 @@ def roll_up_lower_multiplicity(
 
 def roll_up_upper_multiplicity(
     lpg: SysML2LabeledPropertyGraph,
-    feature: dict,
+    feature: Element,
 ) -> int:
     return roll_up_multiplicity(
         lpg=lpg,
@@ -31,7 +31,7 @@ def roll_up_upper_multiplicity(
 
 def roll_up_multiplicity(
     lpg: SysML2LabeledPropertyGraph,
-    feature: dict,
+    feature: Element,
     bound: str,
 ) -> int:
     banded_featuring_graph = lpg.get_projection("Expanded Banded")
@@ -39,7 +39,6 @@ def roll_up_multiplicity(
     # FIXME: Need projections to work correctly
 
     to_remove = []
-
     for edg in banded_featuring_graph.edges:
         if edg[2] == 'ImpliedParameterFeedforward':
             to_remove.append(edg)
@@ -53,24 +52,24 @@ def roll_up_multiplicity(
         if banded_featuring_graph.out_degree(node) < 1
     ]
 
-    all_elements = lpg.nodes
-
+    model = lpg.model
     total_mult = 0
+    feature_id = feature._id
     for part_tree_root in banded_roots:
         # case where the usage is actually top of a nesting set
-        if feature['@id'] == part_tree_root:
+        if feature_id == part_tree_root:
             total_mult = 1
         try:
             part_paths = nx.all_simple_paths(
                 banded_featuring_graph,
-                source=feature['@id'],
+                source=feature_id,
                 target=part_tree_root,
             )
             for part_path in part_paths:
                 # TODO: check that the path actually exists
                 corrected_mult = math.prod([
-                    feature_multiplicity(all_elements[node], all_elements, bound)
-                    for node in part_path
+                    feature_multiplicity(model.elements[element_id], bound)
+                    for element_id in part_path
                 ])
                 total_mult += corrected_mult
         except nx.NetworkXNoPath:
@@ -78,7 +77,7 @@ def roll_up_multiplicity(
             pass
         except nx.NodeNotFound:
             # nothing to roll up, so just use own multiplicity
-            total_mult = feature_multiplicity(feature, all_elements, bound)
+            total_mult = feature_multiplicity(feature, bound)
 
     return total_mult
 
@@ -105,22 +104,23 @@ def roll_up_multiplicity_for_type(
     running_total = 0
     ptg = lpg.get_projection("Part Typing")
 
+    all_elements = lpg.model.elements
     if typ['@id'] in ptg.nodes:
         feat_ids = get_features_typed_by_type(lpg, typ['@id'])
         #feat_ids = ptg.predecessors(typ['@id'])
         for feat_id in feat_ids:
             running_total += roll_up_multiplicity(
                 lpg,
-                lpg.nodes[feat_id],
-                bound
+                all_elements[feat_id],
+                bound,
             )
             if feat_id in rdg and feat_id not in cug:
                 redef_ids = rdg.predecessors(feat_id)
                 for redef_id in redef_ids:
                     running_total += roll_up_multiplicity(
                         lpg,
-                        lpg.nodes[redef_id],
-                        bound
+                        all_elements[redef_id],
+                        bound,
                 )
         return running_total
     else:
@@ -130,7 +130,7 @@ def roll_up_multiplicity_for_type(
 def get_types_for_feature(
     lpg: SysML2LabeledPropertyGraph,
     feature_id: str,
-) -> list:
+) -> List[str]:
 
     ptg = lpg.get_projection("Part Typing")
     rdg = lpg.get_projection("Redefinition and Subsetting")
@@ -139,7 +139,6 @@ def get_types_for_feature(
     # path back to the requested feature
 
     types = []
-
     if feature_id in list(ptg.nodes):
         types = list(ptg.successors(feature_id))
     elif feature_id in list(rdg.nodes):
@@ -184,7 +183,6 @@ def build_element_owner_sequence(
         all_elements: list,
         seq: list = [],
 ) -> list:
-
     if "owner" not in element or element["owner"] is None:
         return seq
 
@@ -193,7 +191,7 @@ def build_element_owner_sequence(
     return build_element_owner_sequence(
         all_elements[element["owner"]["@id"]],
         all_elements,
-        seq
+        seq,
     )
 
 

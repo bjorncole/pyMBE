@@ -1,11 +1,10 @@
-from dateutil import parser
 from datetime import timezone
+from dateutil import parser
 from functools import lru_cache
 from pathlib import Path
 from typing import Tuple, Union
 from warnings import warn
 
-import json
 import ipywidgets as ipyw
 import requests
 import sysml_v2_api_client as sysml2

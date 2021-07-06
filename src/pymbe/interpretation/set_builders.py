@@ -1,7 +1,9 @@
 import itertools
 import random
+from typing import Dict, List
 
 from ..label import get_label
+from ..model import Element
 from .interpretation import Instance, LiveExpressionNode, ValueHolder
 
 # Adaptations to simplify dictionary production
@@ -19,9 +21,9 @@ VALUE_HOLDER_TYPES = ('AttributeDefinition', 'AttributeUsage', 'DataType')
 
 
 def create_set_with_new_instances(
-    sequence_template: list,
-    quantities: list,
-    name_hints: dict = None,
+    sequence_template: List[Element],
+    quantities: List[int],
+    name_hints: Dict[str, str] = None,
 ) -> list:
     """
     Generate a list of lists with pre-set quantities and templates based on M1 model Types.
@@ -37,8 +39,8 @@ def create_set_with_new_instances(
 
     for index, m1_type in enumerate(sequence_template):
         new_list = []
-        m1_metatype = m1_type["@type"]
-        m1_typename = m1_type["name"]
+        m1_metatype = m1_type._metatype
+        m1_typename = m1_type.name
         for m in range(0, quantities[index]):
             if m1_metatype in VALUE_HOLDER_TYPES:
                 new_list.append(
@@ -77,7 +79,6 @@ def extend_sequences_by_sampling(
     sample_set: list,
     fallback_to_generate: bool,
     fallback_type: dict,
-    all_elements: dict,
 ) -> list:
     """
     Extends a set of sequences by random numbers of instances drawn from a sample set
@@ -88,7 +89,6 @@ def extend_sequences_by_sampling(
     :param sample_set: the set of Instances from which to draw to extend input sequences
     :param fallback_to_generate: Whether or not to make new instances if a sample set is not present
     :param fallback_type: The type to use as the fallback
-    :param all_elements: Reference to all elements (for label generation)
     :return:
     """
 
@@ -149,25 +149,19 @@ def extend_sequences_by_sampling(
 
 
 def extend_sequences_with_new_expr(
-    previous_sequences: list,
+    previous_sequences: List[Element],
     expr_string: str,
     expr: dict,
 ) -> list:
 
     new_sequences = []
-
-    for indx, seq in enumerate(previous_sequences):
+    for seq in previous_sequences:
         new_holder = LiveExpressionNode(
             seq,
             expr_string,
-            expr
+            expr,
         )
-
-        new_sequence = []
-        new_sequence = new_sequence + seq
-        new_sequence.append(new_holder)
-
-        new_sequences.append(new_sequence)
+        new_sequences.append([seq, new_holder])
 
     return new_sequences
 

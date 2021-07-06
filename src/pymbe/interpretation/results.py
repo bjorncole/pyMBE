@@ -2,7 +2,7 @@
 from typing import List
 
 from ..label import get_label, get_label_for_id
-from ..model import Element, Model
+from ..model import Model
 
 
 def pprint_interpretation(interpretation: dict, model: Model) -> list:
@@ -27,12 +27,24 @@ def pprint_single_id_list(element_ids: List[str], model: Model) -> list:
     ]
 
 
-def pprint_double_id_list(list_to_print: list, all_elements: dict) -> list:
+def pprint_double_id_list(list_to_print: list, model: Model) -> list:
     print_lines = []
     for seq in list_to_print:
         seq_line = []
         for item in seq:
-            seq_line.append(get_label_for_id(item, all_elements))
+            seq_line.append(get_label_for_id(item, model))
+        print_lines.append(seq_line)
+
+    return print_lines
+
+def pprint_edges(list_to_print: list, model: Model) -> list:
+    print_lines = []
+    for seq in list_to_print:
+        seq_line = [
+            get_label_for_id(seq[0], model),
+            get_label_for_id(seq[1], model),
+            seq[2]
+        ]
         print_lines.append(seq_line)
 
     return print_lines

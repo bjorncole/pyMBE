@@ -79,9 +79,8 @@ class Model:
         self.elements = {
             id_: Element(_data=data, _model=self)
             for id_, data in self.elements.items()
+            if isinstance(data, dict)
         }
-        self._add_relationships()
-        self._add_owned()
 
         self.all_relationships = {
             id_: element
@@ -93,6 +92,13 @@ class Model:
             for id_, element in self.elements.items()
             if not element._is_relationship
         }
+
+        self._add_owned()
+
+        # Modify and add derived data to the elements
+        self._add_relationships()
+        # TODO: Bring this back when things get resolved
+        # self._add_labels()
 
     def __repr__(self) -> str:
         data = self.source or f"{len(self.elements)} elements"
@@ -137,19 +143,12 @@ class Model:
             ),
         )
 
-    def _add_relationships(self):
-        """Adds relationships to elements"""
+    def _add_labels(self):
+        from .label import get_label
         for element in self.elements.values():
-            if not element._is_relationship:
-                continue
-            endpts = [
-                # TODO: should this handle multiple sources and/or targets?
-                self.elements[element._data[endpoint][0]["@id"]]
-                for endpoint in ("source", "target")
-            ]
-            metatype = element._metatype
-            endpts[0]._derived[f"through{metatype}"] += [{"@id": endpts[1]._data["@id"]}]
-            endpts[1]._derived[f"reverse{metatype}"] += [{"@id": endpts[0]._data["@id"]}]
+            label = get_label(element=element)
+            if label:
+                element._derived["label"] = label
 
     def _add_owned(self):
         """Adds owned elements, relationships, and metatypes to the model"""
@@ -177,6 +176,20 @@ class Model:
             by_metatype[element._metatype].append(element)
         self.ownedMetatype = dict(by_metatype)
 
+    def _add_relationships(self):
+        """Adds relationships to elements"""
+        for element in self.elements.values():
+            if not element._is_relationship:
+                continue
+            endpts = [
+                # TODO: should this handle multiple sources and/or targets?
+                self.elements[element._data[endpoint][0]["@id"]]
+                for endpoint in ("source", "target")
+            ]
+            metatype = element._metatype
+            endpts[0]._derived[f"through{metatype}"] += [{"@id": endpts[1]._data["@id"]}]
+            endpts[1]._derived[f"reverse{metatype}"] += [{"@id": endpts[0]._data["@id"]}]
+
 
 @dataclass(repr=False)
 class Element:
@@ -186,6 +199,7 @@ class Element:
     _model: Model
 
     _derived: Dict[str, List] = field(default_factory=lambda: defaultdict(list))
+    _instances: List["Element"] = field(default_factory=list)
     _is_relationship: bool = False
 
     def __post_init__(self):
@@ -208,11 +222,11 @@ class Element:
         except AttributeError as exc:
             try:
                 return self[key]
-            except KeyError:
+            except (KeyError, RecursionError):
                 if key.startswith("_"):
                     try:
                         return self[f"@{key[1:]}"]
-                    except KeyError:
+                    except (KeyError, RecursionError):
                         pass
             raise exc
 
@@ -283,3 +297,12 @@ class Instance:
     """An M0 instantiation of an element"""
 
     element: Element
+    name: str = ""
+
+    def __post_init__(self, *args, **kwargs):
+        super().__post_init__(*args, **kwargs)
+        element = self.element
+        element._instances += [self]
+        if not self.name:
+            name = element.name or element._id
+            self.name = f"{name}#{len(element._instances)}"

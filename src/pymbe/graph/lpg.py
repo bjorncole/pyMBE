@@ -246,15 +246,54 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
             for source, target, kind in self.edges
             if kind == "ReturnParameterMembership"
         ]
+        feature_values = [
+            self.edges[(source, target, kind)]
+            for source, target, kind in self.edges
+            if kind == "FeatureValue"
+        ]
 
         implied_edges = []
+
+        for feature_value in feature_values:
+            att_usage, expr = feature_value["owningRelatedElement"]["@id"], feature_value["value"]["@id"]
+            expr_result_id = self.nodes[expr]["result"]["@id"]
+
+            implied_edges += [
+                (expr_result_id,
+                 att_usage,
+                "ImpliedParameterFeedforward")
+            ]
+
         for membership in return_parameter_memberships:
             for result_feeder_id in eeg.predecessors(membership["memberElement"]["@id"]):
                 result_feeder = self.nodes[result_feeder_id]
                 rf_metatype = result_feeder["@type"]
+
                 # we only want Expressions that have at least one input parameter
-                if "Expression" not in rf_metatype or rf_metatype in ["FeatureReferenceExpression"]:
+                if "Expression" not in rf_metatype or rf_metatype in ("FeatureReferenceExpression"):
+                    if rf_metatype == "FeatureReferenceExpression":
+                        implied_edges += [
+                            (
+                                result_feeder["referent"]["@id"],
+                                result_feeder_id,
+                                "ImpliedReferentFeed"
+                            )
+                        ]
                     continue
+
+                # Path Step Expressions need results fed into them, so add edges to order this
+                # FIXME: Super jenky because we are avoiding the first element to prevent a cycle .. first arg does feed in properly
+                if rf_metatype == "PathStepExpression":
+                    arg_ids = result_feeder["argument"]
+                    results = [
+                        self.nodes[arg_id["@id"]]["result"]["@id"]
+                        for index, arg_id in enumerate(arg_ids) if index > 0
+                    ]
+
+                    implied_edges += [
+                        (result, result_feeder_id, "ImpliedPathArgumentFeedforward")
+                        for result in results
+                    ]
 
                 expr_results = []
                 expr_members, para_members, result_members = [], [], []

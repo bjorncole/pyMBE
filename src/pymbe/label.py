@@ -1,8 +1,9 @@
+# TODO: Refactor this whole thing and integrate it better with the new Model approach
 # Module for computing useful labels and signatures for SysML v2 elements
 from .model import Element, Model
 
 
-# TODO: Refactor this whole thing and integrate it better with the new Model approach
+DEFAULT_MULTIPLICITY_LIMITS = dict(lower="0", upper="*")
 
 
 def get_label(element: Element) -> str:
@@ -34,10 +35,7 @@ def get_label(element: Element) -> str:
         metatype = type_names[0] if type_names else metatype.replace("Literal", "Occurred Literal")
         return f"{value} «{metatype}»"
     elif metatype == "MultiplicityRange":
-        return get_label_for_multiplicity(
-            multiplicity=element,
-            model=model,
-        )
+        return get_label_for_multiplicity(multiplicity=element)
     elif metatype.endswith("Expression"):
         return get_label_for_expression(
             expression=element,
@@ -72,7 +70,8 @@ def get_label_for_expression(
 
     if metatype == "FeatureReferenceExpression":
         try:
-            referent = expression.referent
+            referent_id = expression._data["referent"]["@id"]
+            referent = expression._model.elements[referent_id]
             referent_name = referent.name
             name_chain = referent.qualifiedName.split("::")
             index = 0
@@ -81,12 +80,18 @@ def get_label_for_expression(
                 referent_name = name_chain[-index]
                 if referent_name.lower() == "null":
                     referent_name = None
-        except AttributeError:
+        except (AttributeError, KeyError):
             referent_name = "UNNAMED"
         return f"FRE.{referent_name}"
 
     prefix = ""
-    inputs = expression.input
+    if "input" in expression._data:
+        inputs = [
+            expression._model.elements[an_input["@id"]]
+            for an_input in expression._data["input"]
+        ]
+    else:
+        inputs = []
     if isinstance(inputs, Element):
         inputs = [inputs]
     input_names = [an_input.name for an_input in inputs]
@@ -123,40 +128,44 @@ def get_label_for_expression(
     return f"""{prefix} ({", ".join(input_names)}) => {result.name}"""
 
 
-def get_label_for_multiplicity(
-    multiplicity: dict,
-    all_elements: dict,
-) -> str:
-    limits = {
-        "lower": "0",
-        "upper": "*",
-    }
+def get_label_for_input_parameter(parameter: dict) -> str:
+    return f"""{parameter["name"]}"""
+
+
+def get_label_for_multiplicity(multiplicity: Element) -> str:
     values = {}
-    for limit, default in limits.items():
-        literal_id = (multiplicity[f"{limit}Bound"] or {}).get("@id")
+    data = multiplicity._data
+    for limit, default in DEFAULT_MULTIPLICITY_LIMITS.items():
+        literal_id = (data.get(f"{limit}Bound") or {}).get("@id")
         if literal_id is None:
             values[limit] = default
             continue
-        values[limit] = (
-            all_elements.get(literal_id) or {}
-        ).get("value", default)
+        value = multiplicity._model.elements.get(literal_id, {})._data.get("value")
+        if value is None:
+            value = default
+        values[limit] = value
     return f"""{values["lower"]}..{values["upper"]}"""
 
 
-def get_qualified_label(element: dict, all_elements: dict) -> str:
-
-    earlier_name = ""
-
+def get_qualified_label(element: Element, parameter_name_map: dict, start: bool) -> str:
+    earlier_name = "Model"
     try:
-        if "owner" in element:
-            if element["owner"] is not None:
-                element_owner = all_elements[element["owner"]["@id"]]
-                earlier_name = get_qualified_label(element_owner, all_elements)
-        else:
-            return element["name"]
+        owner = element.owner
+    except AttributeError:
+        owner = None
+    if owner is None:
+        return element.name
 
-        earlier_name = f"{earlier_name}::{get_label(element, all_elements)}"
-    except TypeError:
-        print(all_elements)
+    earlier_name = get_qualified_label(owner, parameter_name_map, False)
+
+    element_id = element._id
+    if element_id in parameter_name_map:
+        printed_name = parameter_name_map[element_id]
+    else:
+        printed_name = get_label(element)
+
+    earlier_name = f"{earlier_name}::{printed_name}"
+    if start:
+        earlier_name += " «{element._metatype}»"
 
     return earlier_name
