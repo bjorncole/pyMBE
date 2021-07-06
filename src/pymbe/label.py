@@ -158,25 +158,28 @@ def get_label_for_multiplicity(
     return f"""{values["lower"]}..{values["upper"]}"""
 
 
-def get_qualified_label(element: dict, all_elements: dict, parameter_name_map: dict) -> str:
+def get_qualified_label(element: dict, all_elements: dict, parameter_name_map: dict, start: bool) -> str:
 
     earlier_name = "Model"
 
-    try:
-        if "owner" in element:
-            if element["owner"] is not None:
-                element_owner = all_elements[element["owner"]["@id"]]
-                earlier_name = get_qualified_label(element_owner, all_elements, parameter_name_map)
-        else:
-            return element["name"]
+    if "owner" in element:
+        if element["owner"] is not None:
+            element_owner = all_elements[element["owner"]["@id"]]
+            earlier_name = get_qualified_label(element_owner, all_elements, parameter_name_map, False)
+    else:
 
-        printed_name = ""
-        if element["@id"] in parameter_name_map:
-            printed_name = parameter_name_map[element["@id"]]
-        else:
-            printed_name = get_label(element, all_elements)
-        earlier_name = f"{earlier_name}::{printed_name}"
-    except TypeError:
-        print(all_elements)
+        name = element["name"]
+        return f"{name}"
+
+    printed_name = ""
+    if element["@id"] in parameter_name_map:
+        printed_name = parameter_name_map[element["@id"]]
+    else:
+        printed_name = get_label(element, all_elements)
+
+    tail = ""
+    if start:
+        tail = " <<" + element["@type"] + ">>"
+    earlier_name = f"{earlier_name}::{printed_name}{tail}"
 
     return earlier_name
