@@ -40,7 +40,7 @@ def roll_up_multiplicity(
 
     to_remove = []
     for edg in banded_featuring_graph.edges:
-        if edg[2] == 'ImpliedParameterFeedforward':
+        if edg[2] == "ImpliedParameterFeedforward":
             to_remove.append(edg)
 
     for remover in to_remove:
@@ -84,18 +84,17 @@ def roll_up_multiplicity(
 
 def roll_up_multiplicity_for_type(
     lpg: SysML2LabeledPropertyGraph,
-    typ: dict,
+    element: Element,
     bound: str,
 ) -> int:
-
+    # FIXME: Need projections to work correctly
     rdg = lpg.get_projection("Redefinition and Subsetting")
     cug = lpg.get_projection("Connection")
-    # FIXME: Need projections to work correctly
 
     to_remove = []
 
     for edg in rdg.edges:
-        if edg[2] == 'ImpliedParameterFeedforward':
+        if edg[2] == "ImpliedParameterFeedforward":
             to_remove.append(edg)
 
     for remover in to_remove:
@@ -105,8 +104,8 @@ def roll_up_multiplicity_for_type(
     ptg = lpg.get_projection("Part Typing")
 
     all_elements = lpg.model.elements
-    if typ['@id'] in ptg.nodes:
-        feat_ids = get_features_typed_by_type(lpg, typ['@id'])
+    if element._id in ptg.nodes:
+        feat_ids = get_features_typed_by_type(lpg, element._id)
         #feat_ids = ptg.predecessors(typ['@id'])
         for feat_id in feat_ids:
             running_total += roll_up_multiplicity(
@@ -178,34 +177,26 @@ def get_features_typed_by_type(
     return features
 
 
-def build_element_owner_sequence(
-        element: dict,
-        all_elements: list,
-        seq: list = [],
-) -> list:
-    if "owner" not in element or element["owner"] is None:
+def build_element_owner_sequence(element: Element, seq: List[Element] = None) -> list:
+    seq = seq or []
+    if element.owner is None:
         return seq
-
     seq.append(element)
 
     return build_element_owner_sequence(
-        all_elements[element["owner"]["@id"]],
-        all_elements,
+        element.owner,
         seq,
     )
 
 
-def calculate_signature(element: dict, all_elements: dict) -> str:
-    owned_sequence = build_element_owner_sequence(
-        element,
-        all_elements,
-        [],
-    )
+def calculate_signature(element: Element) -> str:
+    owned_sequence = build_element_owner_sequence(element)
 
     sig_seq = []
     for item in owned_sequence:
-        if "name" in item and item["name"] != "":
-            sig_seq.append(item["name"])
+        name = item.get("name")
+        if name:
+            sig_seq.append(name)
         else:
             sig_seq.append(get_label(item))
 

@@ -231,7 +231,7 @@ class Element:
             raise exc
 
     @lru_cache
-    def __getitem__(self, key: str):
+    def __getitem__(self, key: str) -> Any:
         found = False
         for source in ("_data", "_derived"):
             source = self.__getattribute__(source)
@@ -265,16 +265,22 @@ class Element:
     def __repr__(self):
         return self._model._naming.get_name(element=self)
 
+    def get(self, key: str, default: Any = None) -> Any:
+        try:
+            self.__getitem__(key)
+        except KeyError:
+            return default
+
     @property
-    def _id(self):
+    def _id(self) -> str:
         return self._data["@id"]
 
     @property
-    def _metatype(self):
+    def _metatype(self) -> str:
         return self._data["@type"]
 
     @property
-    def relationships(self):
+    def relationships(self) -> Dict[str, Any]:
         return {key: self[key] for key in self._derived}
 
     def create(data: dict, model: Model) -> "Element":

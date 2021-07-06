@@ -153,10 +153,14 @@ def test_phase_4_instance_sampling(kerbal_random_stage_4_complete):
 def test_expression_inferred_graph(kerbal_lpg):
     # inferred graph provides a reliable order of execution for expressions
     all_edge_keys = list(kerbal_lpg.edges.keys())
-    all_edge_types = [edg[2] for edg in all_edge_keys]
-    implied_edges = [edg for edg in all_edge_keys if edg[2] == "ImpliedParameterFeedforward"]
+    all_edge_types = [edge_type for *_, edge_type in all_edge_keys]
+    implied_edges = [
+        edge
+        for edge in all_edge_keys
+        if edge[2] == "ImpliedParameterFeedforward"
+    ]
 
-    assert any([typ == "ImpliedParameterFeedforward" for typ in all_edge_types])
+    assert set(all_edge_types).intersection({"ImpliedParameterFeedforward"})
     assert len(implied_edges) == 30
 
     eig = kerbal_lpg.get_projection("Expression Inferred")
