@@ -155,8 +155,8 @@ def get_qualified_label(element: Element, parameter_name_map: dict, start: bool)
         owner = None
     if owner is None:
         return element.name
-
-    earlier_name = get_qualified_label(owner, parameter_name_map, False)
+    else:
+        earlier_name = get_qualified_label(owner, parameter_name_map, False)
 
     element_id = element._id
     if element_id in parameter_name_map:
@@ -166,6 +166,6 @@ def get_qualified_label(element: Element, parameter_name_map: dict, start: bool)
 
     earlier_name = f"{earlier_name}::{printed_name}"
     if start:
-        earlier_name += " «{element._metatype}»"
+        earlier_name += f" «{element._metatype}»"
 
     return earlier_name

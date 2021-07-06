@@ -37,6 +37,7 @@ def pprint_double_id_list(list_to_print: list, model: Model) -> list:
 
     return print_lines
 
+
 def pprint_edges(list_to_print: list, model: Model) -> list:
     print_lines = []
     for seq in list_to_print:

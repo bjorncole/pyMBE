@@ -36,16 +36,6 @@ def roll_up_multiplicity(
 ) -> int:
     banded_featuring_graph = lpg.get_projection("Expanded Banded")
 
-    # FIXME: Need projections to work correctly
-
-    to_remove = []
-    for edg in banded_featuring_graph.edges:
-        if edg[2] == "ImpliedParameterFeedforward":
-            to_remove.append(edg)
-
-    for remover in to_remove:
-        banded_featuring_graph.remove_edge(remover[0], remover[1])
-
     banded_roots = [
         node
         for node in banded_featuring_graph.nodes
@@ -74,7 +64,6 @@ def roll_up_multiplicity(
                 total_mult += corrected_mult
         except nx.NetworkXNoPath:
             print("Found no path when rolling up multiplicity.")
-            pass
         except nx.NodeNotFound:
             # nothing to roll up, so just use own multiplicity
             total_mult = feature_multiplicity(feature, bound)
@@ -87,18 +76,8 @@ def roll_up_multiplicity_for_type(
     element: Element,
     bound: str,
 ) -> int:
-    # FIXME: Need projections to work correctly
     rdg = lpg.get_projection("Redefinition and Subsetting")
     cug = lpg.get_projection("Connection")
-
-    to_remove = []
-
-    for edg in rdg.edges:
-        if edg[2] == "ImpliedParameterFeedforward":
-            to_remove.append(edg)
-
-    for remover in to_remove:
-        rdg.remove_edge(remover[0], remover[1])
 
     running_total = 0
     ptg = lpg.get_projection("Part Typing")
@@ -106,7 +85,6 @@ def roll_up_multiplicity_for_type(
     all_elements = lpg.model.elements
     if element._id in ptg.nodes:
         feat_ids = get_features_typed_by_type(lpg, element._id)
-        #feat_ids = ptg.predecessors(typ['@id'])
         for feat_id in feat_ids:
             running_total += roll_up_multiplicity(
                 lpg,
@@ -130,7 +108,6 @@ def get_types_for_feature(
     lpg: SysML2LabeledPropertyGraph,
     feature_id: str,
 ) -> List[str]:
-
     ptg = lpg.get_projection("Part Typing")
     rdg = lpg.get_projection("Redefinition and Subsetting")
 

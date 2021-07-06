@@ -1,5 +1,4 @@
 # a collection of convenience methods to navigate the metamodel when inspecting user models
-from ..graph import SysML2LabeledPropertyGraph
 from ..model import Element
 
 
