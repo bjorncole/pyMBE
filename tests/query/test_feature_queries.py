@@ -103,7 +103,7 @@ def test_banded_graph_paths3(simple_parts_lpg):
     all_paths = nx.all_simple_paths(
         simple_parts_lpg.get_projection("Expanded Banded"),
         power_in_port_id,
-        power_group_id
+        power_group_id,
     )
 
     path_lists = list(all_paths)
@@ -163,13 +163,13 @@ def test_type_multiplicity_rollup1(kerbal_lpg):
     liquid_upper = roll_up_multiplicity_for_type(
         kerbal_lpg,
         liquid_engine_ele,
-        "upper"
+        "upper",
     )
 
     rocket_upper = roll_up_multiplicity_for_type(
         kerbal_lpg,
         rocket_ele,
-        "upper"
+        "upper",
     )
 
     assert liquid_upper == 40
