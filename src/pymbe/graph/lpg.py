@@ -258,11 +258,11 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
             att_usage, expr = feature_value["owningRelatedElement"]["@id"], feature_value["value"]["@id"]
             expr_result_id = self.nodes[expr]["result"]["@id"]
 
-            implied_edges += [
-                (expr_result_id,
-                 att_usage,
-                "ImpliedParameterFeedforward")
-            ]
+            implied_edges += [(
+                expr_result_id,
+                att_usage,
+                "ImpliedParameterFeedforward",
+            )]
 
         for membership in return_parameter_memberships:
             for result_feeder_id in eeg.predecessors(membership["memberElement"]["@id"]):

@@ -183,12 +183,15 @@ def kerbal_random_stage_3_complete(kerbal_lpg, kerbal_random_stage_2_complete) -
 
 
 @pytest.fixture
-def kerbal_random_stage_4_complete(kerbal_lpg, kerbal_random_stage_3_complete) -> dict:
+def kerbal_random_stage_4_complete(
+    kerbal_lpg: SysML2LabeledPropertyGraph,
+    kerbal_random_stage_3_complete: dict,
+) -> dict:
     expr_sequences = build_expression_sequence_templates(lpg=kerbal_lpg)
 
     random_generator_playbook_phase_4(
+        kerbal_lpg.model,
         expr_sequences,
-        kerbal_lpg,
         kerbal_random_stage_3_complete,
     )
 

@@ -104,7 +104,7 @@ def random_generator_playbook(lpg: SysML2LabeledPropertyGraph, name_hints: dict 
 
     # Move through existing sequences and then start to pave further with new steps
 
-    random_generator_playbook_phase_4(expr_sequences, lpg, instances_dict)
+    random_generator_playbook_phase_4(lpg.model, expr_sequences, instances_dict)
 
     # attached connector ends to sequences(
 
@@ -340,8 +340,8 @@ def random_generator_playbook_phase_3(
 
 
 def random_generator_playbook_phase_4(
+    model: Model,
     expr_sequences: list,
-    lpg: SysML2LabeledPropertyGraph,
     instances_dict: dict,
 ) -> None:
     """
@@ -353,7 +353,6 @@ def random_generator_playbook_phase_4(
     :param instances_dict: Working dictionary of interpreted sequences for the model
     :return: None - side effect is addition of new instances to the instances dictionary
     """
-    model = lpg.model
     all_elements = model.elements
     for expr_seq in expr_sequences:
         new_sequences = []
