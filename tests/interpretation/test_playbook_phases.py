@@ -104,7 +104,6 @@ def test_phase_3_instance_sampling(kerbal_random_stage_3_complete):
 
     booster_empty_mass_id = "645ee1b3-3cb3-494e-8cb2-ec32e377c9f6"
     booster_isp_id = "2b1351f4-a0fb-470b-bb22-1b924dde38f7"
-    rt_10_isp_id = "eb09ff1c-1791-4571-8016-c0534906faa4"
 
     assert coupler_usage_id in kerbal_random_stage_3_complete
 

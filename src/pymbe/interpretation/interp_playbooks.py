@@ -127,21 +127,22 @@ def random_generator_phase_1_multiplicities(
     :param scg: Subclassing Graph projection from the LPG
     :return: dictionary of multiplicities for instance generation, indexed by classifier ID
     """
+    elements = lpg.model.elements
     abstracts = [
-        node
-        for node in ptg.nodes
-        if lpg.nodes.get(node, {}).get("isAbstract")
+        node_id
+        for node_id in ptg.nodes
+        if elements[node_id]._is_abstract
     ]
 
     # find the maximal amount of types directly based on instances
     type_multiplicities = {
-        pt: roll_up_multiplicity_for_type(
+        node_id: roll_up_multiplicity_for_type(
             lpg,
-            lpg.nodes[pt],
+            elements[node_id],
             "upper",
         )
-        for pt in ptg.nodes
-        if lpg.nodes[pt]["@type"] in TYPES_FOR_ROLL_UP_MULTIPLICITY
+        for node_id in ptg.nodes
+        if elements[node_id]._metatype in TYPES_FOR_ROLL_UP_MULTIPLICITY
     }
 
     full_multiplicities = {}
