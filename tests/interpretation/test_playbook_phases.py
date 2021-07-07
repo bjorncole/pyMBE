@@ -29,7 +29,7 @@ def test_type_multiplicity_dict_building(kerbal_lpg, kerbal_stable_names):
     ptg = kerbal_lpg.get_projection("Part Typing")
     scg = kerbal_lpg.get_projection("Part Definition")
 
-    full_multiplicities = random_generator_phase_1_multiplicities(kerbal_lpg, ptg, scg)
+    full_multiplicities = random_generator_phase_1_multiplicities(kerbal_client.elements_by_id, kerbal_lpg, ptg, scg)
 
     assert len(full_multiplicities) == 9
     assert full_multiplicities[solid_stage_id] + full_multiplicities[liquid_stage_id] == 5

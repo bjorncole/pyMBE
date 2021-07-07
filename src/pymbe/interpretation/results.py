@@ -49,3 +49,15 @@ def pprint_edges(list_to_print: list, model: Model) -> list:
         print_lines.append(seq_line)
 
     return print_lines
+
+def pprint_edges(list_to_print: list, all_elements: dict) -> list:
+    print_lines = []
+    for seq in list_to_print:
+        seq_line = [
+            get_label_for_id(seq[0], all_elements),
+            get_label_for_id(seq[1], all_elements),
+            seq[2]
+        ]
+        print_lines.append(seq_line)
+
+    return print_lines

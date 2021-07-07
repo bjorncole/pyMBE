@@ -10,6 +10,7 @@ import requests
 import sysml_v2_api_client as sysml2
 import traitlets as trt
 
+from .label import get_label
 from .model import Model
 
 
@@ -167,6 +168,9 @@ class SysML2Client(trt.HasTraits):
             } ({self.host})""",
             source=self.elements_url,
         )
+        for element in self.model.elements.values():
+            if "label" not in element._derived:
+                element._derived["label"] = get_label(element)
 
     @trt.observe("folder_path")
     def _update_json_files(self, *_):

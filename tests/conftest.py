@@ -100,6 +100,14 @@ def kerbal_stable_names():
 
 
 @pytest.fixture
+def kerbal_stable_names():
+    client = kerbal_model_loaded_client()
+    lpg = SysML2LabeledPropertyGraph()
+    lpg.update(client.elements_by_id, False)
+    return build_stable_id_lookups(client.elements_by_id, lpg)
+
+
+@pytest.fixture
 def kerbal_client() -> SysML2Client:
     return kerbal_model_loaded_client()
 
@@ -127,7 +135,7 @@ def kerbal_lpg() -> SysML2LabeledPropertyGraph:
 
 
 @pytest.fixture
-def kerbal_random_stage_1_instances(kerbal_lpg) -> dict:
+def kerbal_random_stage_1_instances(kerbal_client, kerbal_lpg) -> dict:
     ptg = kerbal_lpg.get_projection("Part Typing")
     scg = kerbal_lpg.get_projection("Part Definition")
 
@@ -143,7 +151,7 @@ def kerbal_random_stage_1_instances(kerbal_lpg) -> dict:
 
 
 @pytest.fixture
-def kerbal_random_stage_1_complete(kerbal_lpg, kerbal_random_stage_1_instances) -> dict:
+def kerbal_random_stage_1_complete(kerbal_client, kerbal_lpg, kerbal_random_stage_1_instances) -> dict:
     scg = kerbal_lpg.get_projection("Part Definition")
 
     random_generator_playbook_phase_1_singletons(
@@ -156,7 +164,7 @@ def kerbal_random_stage_1_complete(kerbal_lpg, kerbal_random_stage_1_instances) 
 
 
 @pytest.fixture
-def kerbal_random_stage_2_complete(kerbal_lpg, kerbal_random_stage_1_complete) -> dict:
+def kerbal_random_stage_2_complete(kerbal_client, kerbal_lpg, kerbal_random_stage_1_complete) -> dict:
     scg = kerbal_lpg.get_projection("Part Definition")
 
     random_generator_playbook_phase_2_rollup(scg, kerbal_random_stage_1_complete)

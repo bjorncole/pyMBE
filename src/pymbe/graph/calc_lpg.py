@@ -21,6 +21,7 @@ class CalculationGroup:
 
         self.calculation_log = []
 
+
     def solve_graph(self, lpg: SysML2LabeledPropertyGraph):
         # evaluating the expression tree is a reverse-order breadth-first search (cover all children of a given
         # node and then move up to that node)

@@ -85,6 +85,7 @@ def get_label_for_expression(
         return f"FRE.{referent_name}"
 
     prefix = ""
+
     if "input" in expression._data:
         inputs = [
             expression._model.elements[an_input["@id"]]
@@ -128,10 +129,6 @@ def get_label_for_expression(
     return f"""{prefix} ({", ".join(input_names)}) => {result.name}"""
 
 
-def get_label_for_input_parameter(parameter: dict) -> str:
-    return f"""{parameter["name"]}"""
-
-
 def get_label_for_multiplicity(multiplicity: Element) -> str:
     values = {}
     data = multiplicity._data
@@ -170,6 +167,7 @@ def get_qualified_label(element: Element, parameter_name_map: dict, start: bool)
     tail = ""
     if start:
         tail = " <<" + element_data["@type"] + ">>"
+
     earlier_name = f"{earlier_name}::{printed_name}{tail}"
 
     return earlier_name
