@@ -1,4 +1,3 @@
-from collections import defaultdict
 from pathlib import Path
 
 import traitlets as trt
@@ -100,14 +99,6 @@ def kerbal_stable_names():
 
 
 @pytest.fixture
-def kerbal_stable_names():
-    client = kerbal_model_loaded_client()
-    lpg = SysML2LabeledPropertyGraph()
-    lpg.update(client.elements_by_id, False)
-    return build_stable_id_lookups(client.elements_by_id, lpg)
-
-
-@pytest.fixture
 def kerbal_client() -> SysML2Client:
     return kerbal_model_loaded_client()
 
@@ -117,7 +108,7 @@ def all_kerbal_names(kerbal_client) -> list:
     all_elements = kerbal_client.model.elements
 
     return [
-        element["name"]
+        element._data["name"]
         for element in all_elements.values()
         if "name" in element._data
     ]
@@ -135,7 +126,7 @@ def kerbal_lpg() -> SysML2LabeledPropertyGraph:
 
 
 @pytest.fixture
-def kerbal_random_stage_1_instances(kerbal_client, kerbal_lpg) -> dict:
+def kerbal_random_stage_1_instances(kerbal_lpg) -> dict:
     ptg = kerbal_lpg.get_projection("Part Typing")
     scg = kerbal_lpg.get_projection("Part Definition")
 
@@ -151,7 +142,7 @@ def kerbal_random_stage_1_instances(kerbal_client, kerbal_lpg) -> dict:
 
 
 @pytest.fixture
-def kerbal_random_stage_1_complete(kerbal_client, kerbal_lpg, kerbal_random_stage_1_instances) -> dict:
+def kerbal_random_stage_1_complete(kerbal_lpg, kerbal_random_stage_1_instances) -> dict:
     scg = kerbal_lpg.get_projection("Part Definition")
 
     random_generator_playbook_phase_1_singletons(
@@ -164,7 +155,7 @@ def kerbal_random_stage_1_complete(kerbal_client, kerbal_lpg, kerbal_random_stag
 
 
 @pytest.fixture
-def kerbal_random_stage_2_complete(kerbal_client, kerbal_lpg, kerbal_random_stage_1_complete) -> dict:
+def kerbal_random_stage_2_complete(kerbal_lpg, kerbal_random_stage_1_complete) -> dict:
     scg = kerbal_lpg.get_projection("Part Definition")
 
     random_generator_playbook_phase_2_rollup(scg, kerbal_random_stage_1_complete)
@@ -176,9 +167,6 @@ def kerbal_random_stage_2_complete(kerbal_client, kerbal_lpg, kerbal_random_stag
 
 @pytest.fixture
 def kerbal_random_stage_3_complete(kerbal_lpg, kerbal_random_stage_2_complete) -> dict:
-    # TODO: Ask Bjorn if we need to bring this back, the phase 3 function only needed the LPG
-    # ptg = kerbal_lpg.get_projection("Part Typing")
-    all_elements = kerbal_lpg.nodes
     feature_sequences = build_sequence_templates(lpg=kerbal_lpg)
 
     random_generator_playbook_phase_3(

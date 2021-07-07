@@ -62,7 +62,7 @@ def random_generator_playbook(lpg: SysML2LabeledPropertyGraph, name_hints: dict 
 
     feature_sequences = build_sequence_templates(lpg=lpg)
 
-    full_multiplicities = random_generator_phase_1_multiplicities(all_elements, lpg, ptg, scg)
+    full_multiplicities = random_generator_phase_1_multiplicities(lpg, ptg, scg)
 
     instances_dict = {
         type_id: create_set_with_new_instances(
@@ -114,7 +114,6 @@ def random_generator_playbook(lpg: SysML2LabeledPropertyGraph, name_hints: dict 
 
 
 def random_generator_phase_1_multiplicities(
-    all_elements: dict,
     lpg: SysML2LabeledPropertyGraph,
     ptg: nx.DiGraph,
     scg: nx.DiGraph,
@@ -508,10 +507,10 @@ def build_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list:
 
 
 def generate_superset_instances(
-        part_def_graph: nx.MultiDiGraph,
-        superset_node: str,
-        visited_nodes: set,
-        instances_dict: dict,
+    part_def_graph: nx.MultiDiGraph,
+    superset_node: str,
+    visited_nodes: set,
+    instances_dict: dict,
 ) -> dict:
     """
     Take specific classifiers and push the calculated instances to more general classifiers
