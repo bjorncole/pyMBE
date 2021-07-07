@@ -12,6 +12,7 @@ from warnings import warn
 class ListGetter(list):
     """A list that also can return items by their name."""
 
+    # FIXME: figure out why __dir__ of returned objects think they are lists
     def __getitem__(self, key):
         item_map = {
             item._data["name"]: item
@@ -82,17 +83,6 @@ class Model:
             if isinstance(data, dict)
         }
 
-        self.all_relationships = {
-            id_: element
-            for id_, element in self.elements.items()
-            if element._is_relationship
-        }
-        self.all_non_relationships = {
-            id_: element
-            for id_, element in self.elements.items()
-            if not element._is_relationship
-        }
-
         self._add_owned()
 
         # Modify and add derived data to the elements
@@ -133,13 +123,13 @@ class Model:
             source=filepath.resolve(),
         )
 
-    def save_to_file(self, filepath: Union[Path, str]) -> bool:
+    def save_to_file(self, filepath: Union[Path, str], indent: int = 2) -> bool:
         if isinstance(filepath, str):
             filepath = Path(filepath)
         filepath.write_text(
             json.dumps(
                 [element._data for element in self.elements.values()],
-                indent=2,
+                indent=indent,
             ),
         )
 
@@ -152,12 +142,23 @@ class Model:
 
     def _add_owned(self):
         """Adds owned elements, relationships, and metatypes to the model"""
-        elements = tuple(self.elements.values())
+        elements = self.elements
+
+        self.all_relationships = {
+            id_: element
+            for id_, element in elements.items()
+            if element._is_relationship
+        }
+        self.all_non_relationships = {
+            id_: element
+            for id_, element in elements.items()
+            if not element._is_relationship
+        }
 
         owned = [
             element
-            for element in elements
-            if element._data.get("owner") is None
+            for element in elements.values()
+            if element.get_owner() is None
         ]
         self.ownedElement = ListGetter(
             element
@@ -172,23 +173,33 @@ class Model:
         ]
 
         by_metatype = defaultdict(list)
-        for element in elements:
+        for element in elements.values():
             by_metatype[element._metatype].append(element)
         self.ownedMetatype = dict(by_metatype)
 
     def _add_relationships(self):
         """Adds relationships to elements"""
-        for element in self.elements.values():
-            if not element._is_relationship:
-                continue
-            endpts = [
-                # TODO: should this handle multiple sources and/or targets?
-                self.elements[element._data[endpoint][0]["@id"]]
-                for endpoint in ("source", "target")
-            ]
-            metatype = element._metatype
-            endpts[0]._derived[f"through{metatype}"] += [{"@id": endpts[1]._data["@id"]}]
-            endpts[1]._derived[f"reverse{metatype}"] += [{"@id": endpts[0]._data["@id"]}]
+        relationship_mapper = {
+            "through": ("source", "target"),
+            "reverse": ("target", "source"),
+        }
+        # TODO: make this more elegant...  maybe.
+        for relationship in self.all_relationships.values():
+            endpoints = {
+                endpoint_type: [
+                    self.elements[endpoint["@id"]]
+                    for endpoint in relationship._data[endpoint_type]
+                ]
+                for endpoint_type in ("source", "target")
+            }
+            metatype = relationship._metatype
+            for direction, (key1, key2) in relationship_mapper.items():
+                endpts1, endpts2 = endpoints[key1], endpoints[key2]
+                for endpt1 in endpts1:
+                    for endpt2 in endpts2:
+                        endpt1._derived[f"{direction}{metatype}"] += [
+                            {"@id": endpt2._data["@id"]}
+                        ]
 
 
 @dataclass(repr=False)
@@ -282,6 +293,17 @@ class Element:
     @property
     def relationships(self) -> Dict[str, Any]:
         return {key: self[key] for key in self._derived}
+
+    def get_owner(self) -> "Element":
+        data = self._data
+        owner_id = None
+        for key in ("owner", "owningRelatedElement", "owningRelationship"):
+            owner_id = (data.get(key) or {}).get("@id")
+            if owner_id is not None:
+                break
+        if owner_id is None:
+            return None
+        return self._model.elements[owner_id]
 
     def create(data: dict, model: Model) -> "Element":
         return Element(_data=data, _model=model)

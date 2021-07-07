@@ -149,23 +149,27 @@ def get_label_for_multiplicity(multiplicity: Element) -> str:
 
 def get_qualified_label(element: Element, parameter_name_map: dict, start: bool) -> str:
     earlier_name = "Model"
-    try:
-        owner = element.owner
-    except AttributeError:
-        owner = None
-    if owner is None:
-        return element.name
-    else:
-        earlier_name = get_qualified_label(owner, parameter_name_map, False)
 
-    element_id = element._id
-    if element_id in parameter_name_map:
-        printed_name = parameter_name_map[element_id]
+    element_data = element._data
+    all_elements = element._model.elements
+
+    if "owner" in element_data:
+        if element_data["owner"] is not None:
+            element_owner = all_elements[element_data["owner"]["@id"]]
+            earlier_name = get_qualified_label(element_owner, parameter_name_map, False)
+    else:
+        name = element_data["name"]
+        return f"{name}"
+
+    printed_name = ""
+    if element_data["@id"] in parameter_name_map:
+        printed_name = parameter_name_map[element_data["@id"]]
     else:
         printed_name = get_label(element)
 
-    earlier_name = f"{earlier_name}::{printed_name}"
+    tail = ""
     if start:
-        earlier_name += f" «{element._metatype}»"
+        tail = " <<" + element_data["@type"] + ">>"
+    earlier_name = f"{earlier_name}::{printed_name}{tail}"
 
     return earlier_name

@@ -131,34 +131,9 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
             _type="MODEL",
         )
 
-        model_relationships_id = "SYSML_MODEL_RELATIONSHIPS"
-        model_relationships_node = ElementNode(
-            icon=self.icons_by_type["Relationship"],
-            name="Relationships",
-            opened=False,
-            _data={},
-            _identifier=model_relationships_id,
-            _owner=model_id,
-            _type="RelationshipContainer",
-        )
-
         nodes = {
             model_id: model_node,
-            model_relationships_id: model_relationships_node,
         }
-
-        default_icon = self.icons_by_type["Relationship"]
-        for relationship in model.ownedRelationship:
-            id_ = relationship._id
-            metatype = relationship._metatype
-            nodes[id_] = ElementNode(
-                icon=self.icons_by_type.get(metatype, default_icon),
-                name=metatype,
-                _data=relationship._data,
-                _identifier=id_,
-                _owner=model_relationships_id,
-                _type=metatype,
-            )
 
         elements = model.elements
         nodes.update({
@@ -169,15 +144,6 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
         for node in nodes.values():
             if node._owner in nodes:
                 nodes[node._owner].add_node(node)
-
-        # Filter nodes to those that have subnodes or a proper name
-        # nodes = {
-        #     id_: node
-        #     for id_, node in nodes.items()
-        #     if node.nodes
-        #     or node._owner
-        #     or node._data.get("name", None)
-        # }
 
         # Sort the child nodes
         for node in nodes.values():
@@ -213,16 +179,15 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
     def _make_node(self, element: Element, root=None):
         data = element._data
         metatype = element._metatype
+        owner = element.get_owner()
+        owner_id = getattr(owner, "_id", root)
 
         return ElementNode(
             icon=self.icons_by_type.get(metatype, self.default_icon),
             name=data.get("name") or element._id,
             _data=data,
             _identifier=data["@id"],
-            _owner=(
-                data.get("owner", {}) or
-                data.get("owningRelatedElement", {})
-            ).get("@id", root),
+            _owner=owner_id,
             _type=metatype,
         )
 
