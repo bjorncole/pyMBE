@@ -301,6 +301,9 @@ class Element:
     def create(data: dict, model: Model) -> "Element":
         return Element(_data=data, _model=model)
 
+    def reset_cache(self):
+        self.__getitem__.cache_clear()
+
     def __safe_dereference(self, item):
         """If given a reference to another element, try to get that element"""
         try:

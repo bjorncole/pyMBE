@@ -108,7 +108,7 @@ def all_kerbal_names(kerbal_client) -> list:
     all_elements = kerbal_client.model.elements
 
     return [
-        element._data["name"]
+        element.name
         for element in all_elements.values()
         if "name" in element._data
     ]
