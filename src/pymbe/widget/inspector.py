@@ -2,6 +2,7 @@ import ipywidgets as ipyw
 import traitlets as trt
 import typing as ty
 
+from ..model import Element
 from .core import BaseWidget
 
 
@@ -10,6 +11,8 @@ class ElementInspector(ipyw.Output, BaseWidget):
     """A widget to inspect a SysML v2 Element"""
 
     FILTER_KEYS = ("@context",)
+
+    MODEL_ID = "MODEL"
 
     description = trt.Unicode("Inspector").tag(sync=True)
 
@@ -29,17 +32,16 @@ class ElementInspector(ipyw.Output, BaseWidget):
 
     @trt.observe("selected")
     def _update_details(self, *_):
-        self.outputs = self._make_json_output()
+        with self.log_out:
+            self.outputs = self._make_json_output()
 
     @trt.observe("include_empty")
     def _update_data(self):
-        self.update(self.elements_by_id)
+        with self.log_out:
+            self.update()
 
-    def get_clean_data(self, *,
-        element_id: str = None,
-        data: dict = None,
-    ) -> dict:
-        data = data or self.elements_by_id.get(element_id, {})
+    def get_clean_data(self, element: Element) -> dict:
+        data = element._data
         return {
             key: value
             for key, value in data.items()
@@ -52,11 +54,13 @@ class ElementInspector(ipyw.Output, BaseWidget):
             )
         }
 
-    def update(self, elements: dict):
-        self.clean_data = {
-            id_: self.get_clean_data(data=data)
-            for id_, data in elements.items()
-        }
+    @trt.observe("model")
+    def update(self, *_):
+        with self.log_out:
+            self.clean_data = {
+                id_: self.get_clean_data(element)
+                for id_, element in self.model.elements.items()
+            }
 
     @staticmethod
     def _get_name(data: dict) -> str:
@@ -66,10 +70,9 @@ class ElementInspector(ipyw.Output, BaseWidget):
                 return str(name)
         return f"""«{data["@type"]}: {data["@id"]}»"""
 
-
     def _make_json_output(self) -> list:
         data = {
-            id_: self.clean_data.get(id_)
+            id_: self.clean_data[id_]
             for id_ in self.selected
             if id_ in self.clean_data
         }
@@ -82,14 +85,15 @@ class ElementInspector(ipyw.Output, BaseWidget):
                 "output_type": "display_data",
                 "data": {
                     "text/plain": f"JSON Display for {id_}",
-                    "application/json": data[id_],
+                    "application/json": data.get(id_, {}),
                 },
                 "metadata": {
                     "application/json": {
                         "expanded": False,
-                        "root": names[id_],
+                        "root": names.get(id_, {}),
                     },
                 },
             }
             for id_ in self.selected
+            if id_ in data
         ]

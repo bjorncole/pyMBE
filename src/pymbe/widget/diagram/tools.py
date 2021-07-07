@@ -187,10 +187,8 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):
 
     def _update_loader(self, change: trt.Bunch):
         with self.log_out:
-            # print(f"Updating loader, bar is now '{change.new}'")
             # TODO: fix this so it is 0px when 'hidden'
             self.loader.height = "40px" if change.new == "hidden" else "40px"
-            # print(f"Loader container height is now: {self.loader.height}")
 
     def get_tool(self, tool_type: ty.Type[ipyelk.Tool]) -> ipyelk.Tool:
         matches = [tool for tool in self.tools if type(tool) is tool_type]

@@ -10,7 +10,7 @@ class CalculationGroup:
     A graph to represent the active expression tree in a model.
     """
 
-    def __init__(self, eig: nx.MultiDiGraph, instance_dict:dict, calculation_list: list):
+    def __init__(self, eig: nx.MultiDiGraph, instance_dict: dict, calculation_list: list):
         self.graph = eig
         self.instance_dict=instance_dict
 
@@ -19,7 +19,10 @@ class CalculationGroup:
 
         self.calculation_list = calculation_list
 
-    def solve_graph(self, lpg):
+        self.calculation_log = []
+
+
+    def solve_graph(self, lpg: SysML2LabeledPropertyGraph):
         # evaluating the expression tree is a reverse-order breadth-first search (cover all children of a given
         # node and then move up to that node)
 
@@ -31,11 +34,11 @@ class CalculationGroup:
 
                     if len(target_instances) == 0:
                         print(source_instances)
-                        print(get_label_for_id(step[1], lpg.nodes) + ", id = " + step[1] + " has no elements")
+                        print(get_label_for_id(step[1], lpg.model) + ", id = " + step[1] + " has no elements")
                     else:
-
                         for index, source in enumerate(source_instances):
                             target_instances[index][-1].value = source[-1].value
+
             elif step[2] == 'Redefinition':
                 if step[0] in self.instance_dict:
                     source_instances = self.instance_dict[step[0]]
@@ -57,6 +60,8 @@ class CalculationGroup:
                     for index, seq in enumerate(source_instances):
                         evaluate_and_apply_literal(seq[-1], target_instances[index][-1])
 
+                        self.calculation_log.append(f"[Literal] {seq} is being assigned to {target_instances[index]}")
+
                     self.solved_nodes.append(step[0])
                     self.solved_nodes.append(step[1])
 
@@ -67,10 +72,16 @@ class CalculationGroup:
                     target_instances = self.instance_dict[step[1]]
 
                     for m0_obj in source_instances:
+
+                        self.calculation_log.append(f"[FRE] {m0_obj} is expanding FRE...")
+
                         evaluate_and_apply_fre(
                             m0_obj[-1],
                             self.instance_dict
                         )
+
+                        for target_inst in target_instances:
+                            self.calculation_log.append(f"[FRE]... result includes {target_inst}")
 
                     self.solved_nodes.append(step[0])
                     self.solved_nodes.append(step[1])
@@ -109,7 +120,7 @@ class CalculationGroup:
                             #print("Calling collect with base = " + str(m0_operator_seq[0]) + ", collection input " +
                             #      str(input_point) + ", and path input " + str(path_point))
 
-                            if path_point.value is None:
+                            if not path_point or path_point.value is None:
                                 print("Path point value is empty! " + str(path_point))
                             else:
                                 evaluate_and_apply_collect(
@@ -180,6 +191,63 @@ class CalculationGroup:
                                 input_point,
                                 target_instances[index][-1]
                             )
+
+                elif lpg.nodes[step[0]]['@type'] == "PathStepExpression":
+
+                    source_instances = self.instance_dict[step[0]]
+                    target_instances = self.instance_dict[step[1]]
+
+                    collect_sub_expressions = []
+                    collect_sub_expression_results = []
+                    collect_sub_inputs = []
+                    for member in lpg.nodes[step[0]]['member']:
+                        if lpg.nodes[member['@id']]['@type'] in ('Expression', 'FeatureReferenceExpression'):
+                            collect_sub_expressions.append(lpg.nodes[member['@id']])
+                            collect_sub_expression_results.append(lpg.nodes[lpg.nodes[member['@id']]['result']['@id']])
+
+                    for member in lpg.nodes[step[0]]['input']:
+                        collect_sub_inputs.append(lpg.nodes[member['@id']])
+
+                    # Base sequence is there to filter as appropriate to the expression scope
+
+                    # note that the PathStepExpression has two arguments in order, which are the steps in the path
+                    # expressed as FeatureReferenceExpressions
+
+                    # the input parameter is now expected to deliver instances of the start of the path in the
+                    # PathStepExpression
+
+                    for index, m0_operator_seq in enumerate(source_instances):
+                        input_point = None
+                        input_instances = self.instance_dict[collect_sub_inputs[0]['@id']]
+                        for input_inst in input_instances:
+                            if input_inst[0] == m0_operator_seq[0]:
+                                input_point = input_inst[-1]
+                        path_point = None
+                        input_instances = self.instance_dict[collect_sub_expression_results[1]['@id']]
+                        for input_inst in input_instances:
+                            if input_inst[0] == m0_operator_seq[0]:
+                                path_point = input_inst[-1]
+
+                        self.calculation_log.append(f"[PSE] Calling collect with base = {m0_operator_seq[0]}" +
+                            f", collection input {input_point}, and path input {path_point}")
+
+                        if path_point.value is None:
+                            print("Path point value is empty! " + str(path_point))
+                        else:
+                            evaluate_and_apply_dot(
+                                m0_operator_seq[0],
+                                m0_operator_seq[-1],
+                                self.instance_dict,
+                                input_point,
+                                path_point,
+                                target_instances[index][-1]
+                            )
+
+                    self.solved_nodes.append(step[0])
+                    self.solved_nodes.append(step[1])
+
+                    self.unsolved_nodes.remove(step[0])
+                    self.unsolved_nodes.remove(step[1])
 
     def solve_graph_with_openmdao(self, lpg):
         """

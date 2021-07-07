@@ -11,13 +11,13 @@ import networkx as nx
 import traitlets as trt
 import typing as ty
 
-from ..core import Base
+from ..model import Element, Model
 
 
 yaml = YAML(typ="unsafe", pure=True)
 
 
-class SysML2LabeledPropertyGraph(Base):
+class SysML2LabeledPropertyGraph(trt.HasTraits):
     """A Labelled Property Graph for SysML v2.
 
     ..todo::
@@ -35,6 +35,7 @@ class SysML2LabeledPropertyGraph(Base):
     }
     sysml_projections: dict = trt.Dict()
 
+    model: Model = trt.Instance(Model, allow_none=True)
     graph: nx.MultiDiGraph = trt.Instance(nx.MultiDiGraph, args=tuple())
 
     max_graph_size: int = trt.Int(default_value=256)
@@ -115,75 +116,44 @@ class SysML2LabeledPropertyGraph(Base):
             for source, target in zip(sources, targets)
         ]
 
-    def update(self, elements: dict, merge=None):
+    @trt.observe("model")
+    def update(self, change: trt.Bunch):
         self._adapt.cache_clear()
 
-        merge = self.merge if merge is None else merge
+        model = change.new
+        if not isinstance(model, Model):
+            return
 
-        new_edges = [
-            self._make_new_edge(data=element_data, edge_mapper=edge_mapper)
-            for element_id, element_data in elements.items()
-            for edge_mapper in self.ATTRIBUTE_TO_EDGES
-        ]
-        # flatten new edges
-        new_edges = sum(new_edges, [])
+        all_relationships: ty.Set[Element] = set(model.all_relationships.values())
 
-        filtered_keys = list(self.FILTERED_DATA_KEYS) + [
-            edge_mapper["attribute"]
-            for edge_mapper in self.ATTRIBUTE_TO_EDGES
-        ]
-        elements = {
-            element_id: {
-                key: value
-                for key, value in element_data.items()
-                if key not in filtered_keys
-            }
-            # check that elements actually have data
-            for element_id, element_data in elements.items() if len(element_data.items()) > 0
+        # Draw as edges all non-abstract relationships
+        graph_relationships: ty.Set[Element] = {
+            relationship
+            for relationship in all_relationships
+            if "isAbstract" not in relationship._data
         }
+        # And everything else is a node
+        graph_elements: ty.Set[Element] = set(model.elements.values()).difference(graph_relationships)
 
-        # Connectors will appear as related items, which will cause them to show up in
-        # the graph as nodes at this point, corrected this by adding them as nodes also
-        relationship_and_type = {
-            element_id: element
-            for element_id, element in elements.items()
-            if "relatedElement" in element
-            and "isAbstract" in element
-        }
-        relationship_element_ids = {
-            element_id
-            for element_id, element in elements.items()
-            if "relatedElement" in element
-            and element_id not in relationship_and_type
-        }
-        non_relationship_element_ids = set(elements).difference(
-            relationship_element_ids
-        )
-
-        relationships = [
-            elements[element_id]
-            for element_id in relationship_element_ids
-            if element_id not in non_relationship_element_ids
-        ]
-
-        # Add the relationship_type edges we removed from relationships
-        new_edges += [
+        # Add the abstract_relationships edges we removed from relationships
+        expanded_relationships: ty.Set[Element] = all_relationships.difference(graph_relationships)
+        edges_from_abstract_relationships = [
             [
-                id_,
-                releated_element["@id"],
-                f"""{element["@type"]}End""",
+                relationship._id,
+                related_element_entry["@id"],
+                f"""{relationship._metatype}End""",
                 {
-                    "@id": f"{id_}_{index + 1}",
-                    "@type": f"""{element["@type"]}End""",
+                    "@id": f"{relationship._id}_{endpt_index}",
+                    "@type": f"""{relationship._metatype}End""",
                     "RelationshipType": True,
                 },
             ]
-            for id_, element in relationship_and_type.items()
-            for index, releated_element in enumerate(element["relatedElement"])
+            for relationship in expanded_relationships
+            for endpt_index, related_element_entry in enumerate(relationship._data["relatedElement"])
         ]
 
         graph = nx.MultiDiGraph()
-        if merge:
+        if self.merge:
             graph.add_nodes_from(self.graph)
             graph.add_edges_from(self.graph)
 
@@ -192,20 +162,22 @@ class SysML2LabeledPropertyGraph(Base):
 
         graph.add_nodes_from(
             {
-                id_: elements[id_]
-                for id_ in non_relationship_element_ids
+                element._id: element._data
+                for element in graph_elements
             }.items()
         )
 
         graph.add_edges_from([
             [
-                relation["relatedElement"][0]["@id"],  # source node (str id)
-                relation["relatedElement"][1]["@id"],  # target node (str id)
-                relation["@type"],                     # edge metatype (str name)
-                relation,                              # edge data (dict)
+                source._id,              # source node (str id)
+                target._id,              # target node (str id)
+                relationship._metatype,  # edge metatype (str name)
+                relationship._data,      # edge data (dict)
             ]
-            for relation in relationships
-        ] + new_edges)
+            for relationship in graph_relationships
+            for source in relationship.source
+            for target in relationship.target
+        ] + edges_from_abstract_relationships)
 
         with self.hold_trait_notifications():
             self.nodes = dict(graph.nodes)
@@ -276,15 +248,54 @@ class SysML2LabeledPropertyGraph(Base):
             for source, target, kind in self.edges
             if kind == "ReturnParameterMembership"
         ]
+        feature_values = [
+            self.edges[(source, target, kind)]
+            for source, target, kind in self.edges
+            if kind == "FeatureValue"
+        ]
 
         implied_edges = []
+
+        for feature_value in feature_values:
+            att_usage, expr = feature_value["owningRelatedElement"]["@id"], feature_value["value"]["@id"]
+            expr_result_id = self.nodes[expr]["result"]["@id"]
+
+            implied_edges += [(
+                expr_result_id,
+                att_usage,
+                "ImpliedParameterFeedforward",
+            )]
+
         for membership in return_parameter_memberships:
             for result_feeder_id in eeg.predecessors(membership["memberElement"]["@id"]):
                 result_feeder = self.nodes[result_feeder_id]
                 rf_metatype = result_feeder["@type"]
+
                 # we only want Expressions that have at least one input parameter
-                if "Expression" not in rf_metatype or rf_metatype in ["FeatureReferenceExpression"]:
+                if "Expression" not in rf_metatype or rf_metatype in ("FeatureReferenceExpression"):
+                    if rf_metatype == "FeatureReferenceExpression":
+                        implied_edges += [
+                            (
+                                result_feeder["referent"]["@id"],
+                                result_feeder_id,
+                                "ImpliedReferentFeed"
+                            )
+                        ]
                     continue
+
+                # Path Step Expressions need results fed into them, so add edges to order this
+                # FIXME: Super jenky because we are avoiding the first element to prevent a cycle .. first arg does feed in properly
+                if rf_metatype == "PathStepExpression":
+                    arg_ids = result_feeder["argument"]
+                    results = [
+                        self.nodes[arg_id["@id"]]["result"]["@id"]
+                        for index, arg_id in enumerate(arg_ids) if index > 0
+                    ]
+
+                    implied_edges += [
+                        (result, result_feeder_id, "ImpliedPathArgumentFeedforward")
+                        for result in results
+                    ]
 
                 expr_results = []
                 expr_members, para_members, result_members = [], [], []
@@ -354,12 +365,6 @@ class SysML2LabeledPropertyGraph(Base):
                 for source, target, metatype in edge_generator()
             ]
         return new_edges
-
-    def get_implied_elements(self):
-        return {
-            data["@id"]: data
-            for *_, data in self.get_implied_edges()
-        }
 
     def get_projection(self, projection: str) -> nx.Graph:
         return self.adapt(**self.get_projection_instructions(
@@ -495,16 +500,15 @@ class SysML2LabeledPropertyGraph(Base):
             if id_ in graph.nodes
         }
         seed_elements = [
-            self.elements_by_id[id_]
+            self.model.elements[id_]
             for id_ in seeds
             if id_ not in seed_nodes
-            and id_ in self.elements_by_id
+            and id_ in self.model.elements
         ]
         seed_edges = [
-            [element["relatedElement"][0]["@id"],
-             element["relatedElement"][1]["@id"]]
+            (element.source, element.target)
             for element in seed_elements
-            if len(element.get("relatedElement")) == 2
+            if element._is_relationship
         ]
 
         distances = {

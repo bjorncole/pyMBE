@@ -84,14 +84,20 @@ Expression Inferred:
     A graph to hint at the direction of computation flow in a model
   implied_edge_types:
     - ImpliedFeedforwardEdges
+    - ImpliedPathArgumentFeedforward
+    - ImpliedReferentFeed
   included_edge_types:
     - ImpliedParameterFeedforward
+    - ImpliedPathArgumentFeedforward
+    - ImpliedReferentFeed
     - ParameterMembership
     - Redefinition
     - ResultExpressionMembership
     - ReturnParameterMembership
   reversed_edge_types:
     - ImpliedParameterFeedforward
+    - ImpliedPathArgumentFeedforward
+    - ImpliedReferentFeed
     - ReturnParameterMembership
     - Redefinition
 

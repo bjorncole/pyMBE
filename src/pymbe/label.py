@@ -1,24 +1,31 @@
+# TODO: Refactor this whole thing and integrate it better with the new Model approach
 # Module for computing useful labels and signatures for SysML v2 elements
+from .model import Element, Model
 
-def get_label(element: dict, all_elements: dict) -> str:
-    name = element.get("name")
-    metatype = element.get("@type")
+
+DEFAULT_MULTIPLICITY_LIMITS = dict(lower="0", upper="*")
+
+
+def get_label(element: Element) -> str:
+    metatype = element._metatype
+    model = element._model
+    data = element._data
+    name = data.get("name")
 
     # Get the element type(s)
-    types: list = element.get("type") or []
+    types: list = data.get("type") or []
     if isinstance(types, dict):
         types = [types]
     type_names = [
-        all_elements[type_["@id"]].get("name")
+        model.elements[type_["@id"]]._data.get("name")
         for type_ in types
-        if type_ and "@id" in type_
     ]
     type_names = [
         str(type_name)
         for type_name in type_names
         if type_name
     ]
-    value = element.get("value")
+    value = element._data.get("value")
     if name:
         if type_names:
             # TODO: look into using other types (if there are any)
@@ -28,34 +35,28 @@ def get_label(element: dict, all_elements: dict) -> str:
         metatype = type_names[0] if type_names else metatype.replace("Literal", "Occurred Literal")
         return f"{value} «{metatype}»"
     elif metatype == "MultiplicityRange":
-        return get_label_for_multiplicity(
-            multiplicity=element,
-            all_elements=all_elements,
-        )
+        return get_label_for_multiplicity(multiplicity=element)
     elif metatype.endswith("Expression"):
         return get_label_for_expression(
             expression=element,
-            all_elements=all_elements,
             type_names=type_names,
         )
-    elif "@id" in element:
-        return f"""{element["@id"]} «{metatype}»"""
+    elif "@id" in data:
+        return f"""{data["@id"]} «{metatype}»"""
     else:
         return "blank"
 
 
-def get_label_for_id(
-    element_id: str, all_elements: dict
-) -> str:
-    return get_label(all_elements[element_id], all_elements)
+def get_label_for_id(element_id: str, model: Model) -> str:
+    return get_label(model.elements[element_id])
 
 
 def get_label_for_expression(
-    expression: dict,
-    all_elements: dict,
+    expression: Element,
     type_names: list,
 ) -> str:
-    metatype = expression["@type"]
+    metatype = expression._metatype
+    all_elements = expression._model.elements
     if metatype not in (
         "Expression",
         "FeatureReferenceExpression",
@@ -68,43 +69,45 @@ def get_label_for_expression(
         )
 
     if metatype == "FeatureReferenceExpression":
-        referent_id = (expression["referent"] or {}).get("@id")
-        referent = all_elements.get(referent_id)
-        if referent:
-            referent_name = referent["name"]
-            name_chain = referent["qualifiedName"].split("::")
+        try:
+            referent_id = expression._data["referent"]["@id"]
+            referent = expression._model.elements[referent_id]
+            referent_name = referent.name
+            name_chain = referent.qualifiedName.split("::")
             index = 0
             while not referent_name and index < len(name_chain):
                 index += 1
                 referent_name = name_chain[-index]
                 if referent_name.lower() == "null":
                     referent_name = None
-        else:
+        except (AttributeError, KeyError):
             referent_name = "UNNAMED"
         return f"FRE.{referent_name}"
 
     prefix = ""
-    input_ids = [
-        expression_input["@id"]
-        for expression_input in expression["input"]
-    ]
-    input_names = [
-        all_elements[input_id]["name"]
-        for input_id in input_ids
-    ]
-    result_id = (expression["result"] or {}).get("@id")
-    result_name = all_elements.get(result_id, {}).get("name")
 
-    if metatype == "Expression":
-        parameter_members = [result_id] + input_ids
+    if "input" in expression._data:
+        inputs = [
+            expression._model.elements[an_input["@id"]]
+            for an_input in expression._data["input"]
+        ]
+    else:
+        inputs = []
+    if isinstance(inputs, Element):
+        inputs = [inputs]
+    input_names = [an_input.name for an_input in inputs]
+    try:
+        result: Element = expression.result
+    except AttributeError:
+        result = None
+
+    if result and metatype == "Expression":
+        parameter_members = [result] + inputs
         # Scan memberships to find non-parameter members
         non_parameter_members = [
-            get_label(
-                element=all_elements[owned_member["@id"]],
-                all_elements=all_elements,
-            )
-            for owned_member in expression["ownedMember"]
-            if owned_member["@id"] not in parameter_members
+            get_label(element=owned_member)
+            for owned_member in expression.ownedMember
+            if owned_member not in parameter_members
         ]
         prefix = non_parameter_members[0] if non_parameter_members else ""
     elif metatype == "OperatorExpression":
@@ -123,43 +126,48 @@ def get_label_for_expression(
                     path_step_names.append(refered.get("name") or refered["@id"])
 
         prefix = ".".join(path_step_names)
-    return f"""{prefix} ({", ".join(input_names)}) => {result_name}"""
+    return f"""{prefix} ({", ".join(input_names)}) => {result.name}"""
 
 
-def get_label_for_multiplicity(
-    multiplicity: dict,
-    all_elements: dict,
-) -> str:
-    limits = {
-        "lower": "0",
-        "upper": "*",
-    }
+def get_label_for_multiplicity(multiplicity: Element) -> str:
     values = {}
-    for limit, default in limits.items():
-        literal_id = (multiplicity[f"{limit}Bound"] or {}).get("@id")
+    data = multiplicity._data
+    for limit, default in DEFAULT_MULTIPLICITY_LIMITS.items():
+        literal_id = (data.get(f"{limit}Bound") or {}).get("@id")
         if literal_id is None:
             values[limit] = default
             continue
-        values[limit] = (
-            all_elements.get(literal_id) or {}
-        ).get("value", default)
+        value = multiplicity._model.elements.get(literal_id, {})._data.get("value")
+        if value is None:
+            value = default
+        values[limit] = value
     return f"""{values["lower"]}..{values["upper"]}"""
 
 
-def get_qualified_label(element: dict, all_elements: dict) -> str:
+def get_qualified_label(element: Element, parameter_name_map: dict, start: bool) -> str:
+    earlier_name = "Model"
 
-    earlier_name = ""
+    element_data = element._data
+    all_elements = element._model.elements
 
-    try:
-        if "owner" in element:
-            if element["owner"] is not None:
-                element_owner = all_elements[element["owner"]["@id"]]
-                earlier_name = get_qualified_label(element_owner, all_elements)
-        else:
-            return element["name"]
+    if "owner" in element_data:
+        if element_data["owner"] is not None:
+            element_owner = all_elements[element_data["owner"]["@id"]]
+            earlier_name = get_qualified_label(element_owner, parameter_name_map, False)
+    else:
+        name = element_data["name"]
+        return f"{name}"
 
-        earlier_name = f"{earlier_name}::{get_label(element, all_elements)}"
-    except TypeError:
-        print(all_elements)
+    printed_name = ""
+    if element_data["@id"] in parameter_name_map:
+        printed_name = parameter_name_map[element_data["@id"]]
+    else:
+        printed_name = get_label(element)
+
+    tail = ""
+    if start:
+        tail = " <<" + element_data["@type"] + ">>"
+
+    earlier_name = f"{earlier_name}::{printed_name}{tail}"
 
     return earlier_name

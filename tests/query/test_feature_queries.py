@@ -57,7 +57,7 @@ def test_banded_graph_paths1(kerbal_lpg):
     for path in path_lists:
         path_naming = []
         for item in path:
-            path_naming.append(get_label_for_id(item, kerbal_lpg.nodes))
+            path_naming.append(get_label_for_id(item, kerbal_lpg.model))
 
         print(path_naming)
 
@@ -80,7 +80,7 @@ def test_banded_graph_paths2(kerbal_lpg):
     for path in path_lists:
         path_naming = []
         for item in path:
-            path_naming.append(get_label_for_id(item, kerbal_lpg.nodes))
+            path_naming.append(get_label_for_id(item, kerbal_lpg.model))
 
         print(path_naming)
 
@@ -103,7 +103,7 @@ def test_banded_graph_paths3(simple_parts_lpg):
     all_paths = nx.all_simple_paths(
         simple_parts_lpg.get_projection("Expanded Banded"),
         power_in_port_id,
-        power_group_id
+        power_group_id,
     )
 
     path_lists = list(all_paths)
@@ -111,7 +111,7 @@ def test_banded_graph_paths3(simple_parts_lpg):
     for path in path_lists:
         path_naming = []
         for item in path:
-            path_naming.append(get_label_for_id(item, simple_parts_lpg.nodes))
+            path_naming.append(get_label_for_id(item, simple_parts_lpg.model))
 
         print(path_naming)
 
@@ -127,22 +127,22 @@ def test_feature_multiplicity_rollup1(kerbal_lpg):
 
     engines_lower_mult = roll_up_lower_multiplicity(
         lpg=kerbal_lpg,
-        feature=kerbal_lpg.nodes[engines_feat],
+        feature=kerbal_lpg.model.elements[engines_feat],
     )
 
     engines_upper_mult = roll_up_upper_multiplicity(
         lpg=kerbal_lpg,
-        feature=kerbal_lpg.nodes[engines_feat],
+        feature=kerbal_lpg.model.elements[engines_feat],
     )
 
     stages_lower_mult = roll_up_lower_multiplicity(
         lpg=kerbal_lpg,
-        feature=kerbal_lpg.nodes[stages_feat],
+        feature=kerbal_lpg.model.elements[stages_feat],
     )
 
     stages_upper_mult = roll_up_upper_multiplicity(
         lpg=kerbal_lpg,
-        feature=kerbal_lpg.nodes[stages_feat],
+        feature=kerbal_lpg.model.elements[stages_feat],
     )
 
     assert engines_lower_mult == 0
@@ -154,24 +154,22 @@ def test_feature_multiplicity_rollup1(kerbal_lpg):
 
 def test_type_multiplicity_rollup1(kerbal_lpg):
 
-    real_type = 'ede2b2e7-9280-4932-9453-134bf460892f'
     liquid_engine_type = '79cf7d24-37f7-404c-94b4-395cd1d0ee51'
     rocket_type = '62fc7eb7-0637-4201-add7-4d2758980d2f'
 
-    real_ele = kerbal_lpg.nodes[real_type]
-    liquid_engine_ele = kerbal_lpg.nodes[liquid_engine_type]
-    rocket_ele = kerbal_lpg.nodes[rocket_type]
+    liquid_engine_ele = kerbal_lpg.model.elements[liquid_engine_type]
+    rocket_ele = kerbal_lpg.model.elements[rocket_type]
 
     liquid_upper = roll_up_multiplicity_for_type(
         kerbal_lpg,
         liquid_engine_ele,
-        "upper"
+        "upper",
     )
 
     rocket_upper = roll_up_multiplicity_for_type(
         kerbal_lpg,
         rocket_ele,
-        "upper"
+        "upper",
     )
 
     assert liquid_upper == 40
@@ -184,22 +182,22 @@ def test_type_multiplicity_rollup2(simple_parts_lpg):
     power_in_id = '6717616c-47ee-4fed-bf7d-e4e98c929fac'
     power_out_id = '4cd714eb-796a-44b4-8864-daf18bd04f4a'
 
-    port_type = simple_parts_lpg.nodes[port_type_id]
+    port_type = simple_parts_lpg.model.elements[port_type_id]
 
     port_upper = roll_up_multiplicity_for_type(
         simple_parts_lpg,
         port_type,
-        "upper"
+        "upper",
     )
 
     power_in_mult = roll_up_upper_multiplicity(
         lpg=simple_parts_lpg,
-        feature=simple_parts_lpg.nodes[power_in_id],
+        feature=simple_parts_lpg.model.elements[power_in_id],
     )
 
     power_out_mult = roll_up_upper_multiplicity(
         lpg=simple_parts_lpg,
-        feature=simple_parts_lpg.nodes[power_out_id],
+        feature=simple_parts_lpg.model.elements[power_out_id],
     )
 
     assert power_in_mult == 4

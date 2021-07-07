@@ -76,7 +76,7 @@ class Interpreter(ipyw.VBox, BaseWidget):
     @trt.observe("selected")
     def _on_updated_selected(self, *_):
         def make_element_label(element_id):
-            name = self.lpg.elements_by_id.get(element_id, {}).get(
+            name = self.lpg.model.elements.get(element_id, {}).get(
                 "name",
                 f"Unnamed Element: {element_id}",
             )
