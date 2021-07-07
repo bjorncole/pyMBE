@@ -169,12 +169,14 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
 
         graph.add_edges_from([
             [
-                relationship.source._id,  # source node (str id)
-                relationship.target._id,  # target node (str id)
-                relationship._metatype,   # edge metatype (str name)
-                relationship._data,        # edge data (dict)
+                source._id,              # source node (str id)
+                target._id,              # target node (str id)
+                relationship._metatype,  # edge metatype (str name)
+                relationship._data,      # edge data (dict)
             ]
             for relationship in graph_relationships
+            for source in relationship.source
+            for target in relationship.target
         ] + edges_from_abstract_relationships)
 
         with self.hold_trait_notifications():

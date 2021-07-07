@@ -260,13 +260,6 @@ class Element:
                 self.__safe_dereference(subitem)
                 for subitem in item
             ]
-            # TODO: Add attribute to model to control returning item of single-item lists
-            if (
-                len(items) == 1 and
-                not (isinstance(key, str) and key.startswith("owned")) and
-                key not in ("input",)  # TODO: add all keys that should not be flattened
-            ):
-                return items[0]
             return type(item)(items)
         return item
 
