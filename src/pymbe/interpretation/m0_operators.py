@@ -84,10 +84,7 @@ def evaluate_and_apply_fre(
         return
 
 
-def evaluate_and_apply_literal(
-    m0_expr: LiveExpressionNode,
-    m0_result: ValueHolder
-) -> None:
+def evaluate_and_apply_literal(m0_expr: LiveExpressionNode, m0_result: ValueHolder):
     """
     Evaluate a literal expression at m0, pushing the value to all instances of a viable result feature
     :param m0_expr:
@@ -99,13 +96,12 @@ def evaluate_and_apply_literal(
     m0_result.value = literal_value
 
 
-def evaluate_and_apply_sum(
-    m0_expr: ValueHolder,
-    m0_result: ValueHolder
-) -> None:
+def evaluate_and_apply_sum(m0_expr: ValueHolder, m0_result: ValueHolder):
     total = 0
+    if m0_expr.value is None:
+        return total
     for item in m0_expr.value:
-        total+= item.value if item.value is not None else 0
+        total += item.value if item.value is not None else 0
     m0_result.value = total
 
 
@@ -113,5 +109,5 @@ def evaluate_and_apply_plus(
     x_expr: ValueHolder,
     y_expr: ValueHolder,
     m0_result: ValueHolder
-) -> None:
+):
     m0_result.value = x_expr.value + y_expr.value

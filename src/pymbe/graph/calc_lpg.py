@@ -10,7 +10,7 @@ class CalculationGroup:
     A graph to represent the active expression tree in a model.
     """
 
-    def __init__(self, eig: nx.MultiDiGraph, instance_dict:dict, calculation_list: list):
+    def __init__(self, eig: nx.MultiDiGraph, instance_dict: dict, calculation_list: list):
         self.graph = eig
         self.instance_dict=instance_dict
 
@@ -21,7 +21,8 @@ class CalculationGroup:
 
         self.calculation_log = []
 
-    def solve_graph(self, lpg):
+
+    def solve_graph(self, lpg: SysML2LabeledPropertyGraph):
         # evaluating the expression tree is a reverse-order breadth-first search (cover all children of a given
         # node and then move up to that node)
 
@@ -33,9 +34,8 @@ class CalculationGroup:
 
                     if len(target_instances) == 0:
                         print(source_instances)
-                        print(get_label_for_id(step[1], lpg.nodes) + ", id = " + step[1] + " has no elements")
+                        print(get_label_for_id(step[1], lpg.model) + ", id = " + step[1] + " has no elements")
                     else:
-
                         for index, source in enumerate(source_instances):
                             target_instances[index][-1].value = source[-1].value
 
@@ -120,7 +120,7 @@ class CalculationGroup:
                             #print("Calling collect with base = " + str(m0_operator_seq[0]) + ", collection input " +
                             #      str(input_point) + ", and path input " + str(path_point))
 
-                            if path_point.value is None:
+                            if not path_point or path_point.value is None:
                                 print("Path point value is empty! " + str(path_point))
                             else:
                                 evaluate_and_apply_collect(
@@ -248,8 +248,6 @@ class CalculationGroup:
 
                     self.unsolved_nodes.remove(step[0])
                     self.unsolved_nodes.remove(step[1])
-
-
 
     def solve_graph_with_openmdao(self, lpg):
         """

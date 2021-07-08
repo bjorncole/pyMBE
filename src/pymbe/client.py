@@ -1,18 +1,17 @@
-from dateutil import parser
 from datetime import timezone
+from dateutil import parser
 from functools import lru_cache
 from pathlib import Path
 from typing import Tuple, Union
 from warnings import warn
 
-import json
 import ipywidgets as ipyw
 import requests
 import sysml_v2_api_client as sysml2
 import traitlets as trt
 
-from .core import Base
 from .label import get_label
+from .model import Model
 
 
 TIMEZONES = {
@@ -44,7 +43,7 @@ TIMEZONES = {
 }
 
 
-class SysML2Client(Base):
+class SysML2Client(trt.HasTraits):
     """
         A traitleted SysML v2 API Client.
 
@@ -52,6 +51,8 @@ class SysML2Client(Base):
         - Add ability to use element download pagination.
 
     """
+
+    model: Model = trt.Instance(Model, allow_none=True)
 
     host_url = trt.Unicode(
         default_value="http://localhost",
@@ -160,17 +161,16 @@ class SysML2Client(Base):
     @trt.observe("selected_commit")
     def _update_elements(self, *_, elements=None):
         elements = elements or []
-        elements_by_id = {
-            element["@id"]: element
-            for element in elements
-        }
-        for element in elements:
-            if "label" not in element:
-                element["label"] = get_label(
-                    element,
-                    all_elements=elements_by_id
-                )
-        self.elements_by_id = elements_by_id
+        self.model = Model.load(
+            elements=elements,
+            name=f"""{
+                self.projects[self.selected_project]["name"]
+            } ({self.host})""",
+            source=self.elements_url,
+        )
+        for element in self.model.elements.values():
+            if "label" not in element._derived:
+                element._derived["label"] = get_label(element)
 
     @trt.observe("folder_path")
     def _update_json_files(self, *_):
@@ -178,9 +178,11 @@ class SysML2Client(Base):
             self.json_files = tuple(self.folder_path.glob("*.json"))
 
     @trt.observe("json_file")
-    def _update_elements_from_file(self, *_):
-        if self.json_file.exists():
-            self._load_from_file(file_path=self.json_file)
+    def _update_elements_from_file(self, change: trt.Bunch = None):
+        if change is None:
+            return
+        if change.new != change.old and change.new.exists():
+            self.model = Model.load_from_file(self.json_file)
 
     @property
     def host(self):
@@ -224,9 +226,6 @@ class SysML2Client(Base):
     def _get_elements_from_server(self):
         return self._retrieve_data(self.elements_url)
 
-    def update(self, elements: dict):
-        """All the functionality for the update is already handled"""
-
     def _download_elements(self):
         elements = self._get_elements_from_server()
         max_elements = self.page_size if self.paginate else 100
@@ -235,12 +234,4 @@ class SysML2Client(Base):
         self._update_elements(elements=elements)
 
     def _load_from_file(self, file_path: Union[str, Path]):
-        if isinstance(file_path, str):
-            file_path = Path(file_path)
-        elif not isinstance(file_path, Path):
-            raise TypeError(f"'{file_path}' needs to be a string or a Path, not a {type(file_path)}")
-
-        if not file_path.exists():
-            raise ValueError(f"Cannot find {file_path}!")
-
-        self._update_elements(elements=json.loads(file_path.read_text()))
+        self.model = Model.load_from_file(file_path)

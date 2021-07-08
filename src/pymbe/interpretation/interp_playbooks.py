@@ -5,11 +5,11 @@ import networkx as nx
 
 from ..graph.lpg import SysML2LabeledPropertyGraph
 from ..label import get_label, get_label_for_id
+from ..model import Element, Model
 from ..query.query import (
     feature_multiplicity,
-    get_types_for_feature,
     roll_up_multiplicity_for_type,
-    safe_get_featuring_type_by_id,
+    safe_feature_data,
 )
 from .set_builders import (
     create_set_with_new_instances,
@@ -45,18 +45,13 @@ TYPES_FOR_ROLL_UP_MULTIPLICITY = (
 )
 
 
-def random_generator_playbook(
-    all_elements: dict,
-    lpg: SysML2LabeledPropertyGraph,
-    name_hints: dict = None,
-) -> dict:
+def random_generator_playbook(lpg: SysML2LabeledPropertyGraph, name_hints: dict = None) -> dict:
+    all_elements = lpg.model.elements
     name_hints = name_hints or {}
     can_interpret = validate_working_data(lpg)
 
     if not can_interpret:
         return {}
-
-    #all_elements = lpg.nodes
 
     # PHASE 1: Create a set of instances for part definitions based on usage multiplicities
 
@@ -67,7 +62,7 @@ def random_generator_playbook(
 
     feature_sequences = build_sequence_templates(lpg=lpg)
 
-    full_multiplicities = random_generator_phase_1_multiplicities(all_elements, lpg, ptg, scg)
+    full_multiplicities = random_generator_phase_1_multiplicities(lpg, ptg, scg)
 
     instances_dict = {
         type_id: create_set_with_new_instances(
@@ -80,23 +75,23 @@ def random_generator_playbook(
 
     # pick up the definitions that aren't matched to a usage yet
 
-    random_generator_playbook_phase_1_singletons(all_elements, lpg, scg, instances_dict)
+    random_generator_playbook_phase_1_singletons(lpg.model, scg, instances_dict)
 
     # PHASE 2: Combine sets of instances into sets that are marked as more general in the user model
 
     # "Roll up" the graph through a breadth-first search from the most general classifier down to the most specific
     # and then move in reverse order from the specific (subset) to the general (superset)
 
-    random_generator_playbook_phase_2_rollup(all_elements, scg, instances_dict)
+    random_generator_playbook_phase_2_rollup(scg, instances_dict)
 
     # Fill in any part definitions that still don't have instances yet (because they get filtered out by the
     # Part Definition pre-defined graph (neither typed nor subclassed))
 
-    random_generator_playbook_phase_2_unconnected(all_elements, instances_dict)
+    random_generator_playbook_phase_2_unconnected(lpg.model, instances_dict)
 
     # PHASE 3: Expand the dictionaries out into feature sequences by pulling from instances developed here
 
-    random_generator_playbook_phase_3(feature_sequences, all_elements, lpg, instances_dict)
+    random_generator_playbook_phase_3(lpg.model, feature_sequences, instances_dict)
 
     # PHASE 4: Expand sequences to support computations
 
@@ -109,7 +104,7 @@ def random_generator_playbook(
 
     # Move through existing sequences and then start to pave further with new steps
 
-    random_generator_playbook_phase_4(all_elements, expr_sequences, lpg, instances_dict)
+    random_generator_playbook_phase_4(lpg.model, expr_sequences, instances_dict)
 
     # attached connector ends to sequences(
 
@@ -119,7 +114,6 @@ def random_generator_playbook(
 
 
 def random_generator_phase_1_multiplicities(
-    all_elements: dict,
     lpg: SysML2LabeledPropertyGraph,
     ptg: nx.DiGraph,
     scg: nx.DiGraph,
@@ -133,21 +127,22 @@ def random_generator_phase_1_multiplicities(
     :param scg: Subclassing Graph projection from the LPG
     :return: dictionary of multiplicities for instance generation, indexed by classifier ID
     """
+    elements = lpg.model.elements
     abstracts = [
-        node
-        for node in ptg.nodes
-        if lpg.nodes.get(node, {}).get("isAbstract")
+        node_id
+        for node_id in ptg.nodes
+        if elements[node_id]._is_abstract
     ]
 
     # find the maximal amount of types directly based on instances
     type_multiplicities = {
-        pt: roll_up_multiplicity_for_type(
+        node_id: roll_up_multiplicity_for_type(
             lpg,
-            lpg.nodes[pt],
+            elements[node_id],
             "upper",
         )
-        for pt in ptg.nodes
-        if lpg.nodes[pt]["@type"] in TYPES_FOR_ROLL_UP_MULTIPLICITY
+        for node_id in ptg.nodes
+        if elements[node_id]._metatype in TYPES_FOR_ROLL_UP_MULTIPLICITY
     }
 
     full_multiplicities = {}
@@ -172,8 +167,7 @@ def random_generator_phase_1_multiplicities(
 
 
 def random_generator_playbook_phase_1_singletons(
-    all_elements: dict,
-    lpg: SysML2LabeledPropertyGraph,
+    model: Model,
     scg: nx.DiGraph,
     instances_dict: dict,
 ) -> None:
@@ -186,14 +180,12 @@ def random_generator_playbook_phase_1_singletons(
     :param instances_dict: Working dictionary of interpreted sequences for the model
     :return: None - side effect is addition of new instances to the instances dictionary
     """
-    #all_elements = lpg.nodes
-
     # need to generate single instances at leaves that don't match types
     leaves = [node for node in scg.nodes if scg.out_degree(node) == 0]
 
     new_instances = {
         leaf: create_set_with_new_instances(
-            sequence_template=[all_elements[leaf]],
+            sequence_template=[model.elements[leaf]],
             quantities=[1],
         )
         for leaf in leaves
@@ -203,7 +195,6 @@ def random_generator_playbook_phase_1_singletons(
 
 
 def random_generator_playbook_phase_2_rollup(
-    all_elements: dict,
     scg: nx.DiGraph,
     instances_dict: dict,
 ) -> None:
@@ -235,7 +226,7 @@ def random_generator_playbook_phase_2_rollup(
 
 
 def random_generator_playbook_phase_2_unconnected(
-    all_elements: dict,
+    model: Model,
     instances_dict: dict,
 ) -> None:
     """
@@ -246,13 +237,13 @@ def random_generator_playbook_phase_2_unconnected(
     :return: None - side effect is addition of new instances to the instances dictionary
     """
     finishing_list = [
-        node
-        for node in all_elements.values()
-        if node["@type"] == "PartDefinition"
-        and node["@id"] not in instances_dict
+        element
+        for element in model.elements.values()
+        if element._metatype == "PartDefinition"
+        and element._id not in instances_dict
     ]
     new_instances = {
-        element["@id"]: create_set_with_new_instances(
+        element._data["@id"]: create_set_with_new_instances(
             sequence_template=[element],
             quantities=[1],
         )
@@ -262,9 +253,8 @@ def random_generator_playbook_phase_2_unconnected(
 
 
 def random_generator_playbook_phase_3(
+    model: Model,
     feature_sequences: list,
-    all_elements: dict,
-    lpg: SysML2LabeledPropertyGraph,
     instances_dict: dict,
 ) -> None:
     """
@@ -288,26 +278,28 @@ def random_generator_playbook_phase_3(
                 # don't repeat draws if you encounter the same feature again
                 continue
             # sample set will be the last element in the sequence for classifiers
-            feature = all_elements[feature_id]
-            if feature["@type"] in TYPES_FOR_FEATURING:
-                types = get_types_for_feature(lpg, feature["@id"])
-
-                if len(types) == 0:
-                    raise NotImplementedError(
-                        "Cannot handle untyped features! Tried on "
-                        f"{get_label_for_id(feature_id, all_elements)}, "
-                        f"id = {feature_id}"
-                    )
-                elif len(types) > 1:
-                    raise NotImplementedError("Cannot handle features with multiple types yet!")
+            feature = model.elements[feature_id]
+            metatype = feature._metatype
+            if metatype in TYPES_FOR_FEATURING:
+                types = safe_feature_data(feature, "type")
+                if isinstance(types, Element):
+                    typ = types._id
                 else:
-                    typ = types[0]
+                    if len(types) == 0:
+                        raise NotImplementedError(
+                            "Cannot handle untyped features! Tried on "
+                            f"{get_label_for_id(feature_id, model)}, "
+                            f"id = {feature_id}"
+                        )
+                    elif len(types) > 1:
+                        raise NotImplementedError("Cannot handle features with multiple types yet!")
+                    else:
+                        typ = types[0]
             else:
                 typ = feature_id
 
             if index == 0:
-                if feature["@type"] in ("PartUsage", "AttributeUsage", "PortUsage", "InterfaceUsage", "ConnectionUsage",
-                                        "ActionUsage"):
+                if metatype in TYPES_FOR_FEATURING:
                     # hack for usage at top
                     new_sequences = [instances_dict[typ][0]]
                     if typ in already_drawn:
@@ -318,7 +310,6 @@ def random_generator_playbook_phase_3(
                 else:
                     new_sequences = instances_dict[typ]
             else:
-
                 if typ in already_drawn:
                     remaining = [
                         item
@@ -331,11 +322,10 @@ def random_generator_playbook_phase_3(
 
                 new_sequences = extend_sequences_by_sampling(
                     new_sequences,
-                    feature_multiplicity(feature, all_elements, "lower"),
-                    feature_multiplicity(feature, all_elements, "upper"),
+                    feature_multiplicity(feature, "lower"),
+                    feature_multiplicity(feature, "upper"),
                     remaining,
                     False,
-                    {},
                     {},
                 )
 
@@ -350,9 +340,8 @@ def random_generator_playbook_phase_3(
 
 
 def random_generator_playbook_phase_4(
-    all_elements: dict,
+    model: Model,
     expr_sequences: list,
-    lpg: SysML2LabeledPropertyGraph,
     instances_dict: dict,
 ) -> None:
     """
@@ -364,32 +353,30 @@ def random_generator_playbook_phase_4(
     :param instances_dict: Working dictionary of interpreted sequences for the model
     :return: None - side effect is addition of new instances to the instances dictionary
     """
-    #all_elements = lpg.nodes
+    all_elements = model.elements
     for expr_seq in expr_sequences:
         new_sequences = []
         # get the featuring type of the first expression
-        #print(expr_seq[0])
-
-        seq_featuring_type = safe_get_featuring_type_by_id(lpg, expr_seq[0])
+        seq_featuring_type = safe_feature_data(all_elements[expr_seq[0]], "featuringType")
         # FIXME: I don't know what it means for binding connectors to own these expressions, but need to figure out eventually
         if seq_featuring_type["@type"] == "BindingConnector":
             continue
-        new_sequences = instances_dict[seq_featuring_type["@id"]]
+        new_sequences = instances_dict[seq_featuring_type["@id"]._id]
 
         for feature_id in expr_seq:
             # sample set will be the last element in the sequence for classifiers
-            feature_data = all_elements[feature_id]
-            feature_metatype = feature_data["@type"]
+            feature = all_elements[feature_id]
+            feature_metatype = feature._metatype
             if feature_id in instances_dict:
                 new_sequences = instances_dict[feature_id]
             else:
                 if any(key in feature_metatype for key in ("Expression", "Literal")):
                     # Get the element type(s)
-                    types: list = feature_data.get("type") or []
+                    types: list = feature._data.get("type") or []
                     if isinstance(types, dict):
                         types = [types]
                     type_names = [
-                        all_elements[type_["@id"]].get("name")
+                        all_elements[type_["@id"]]._data.get("name")
                         for type_ in types
                         if type_ and "@id" in type_
                     ]
@@ -401,14 +388,14 @@ def random_generator_playbook_phase_4(
 
                     new_sequences = extend_sequences_with_new_expr(
                         new_sequences,
-                        get_label(feature_data, all_elements),
-                        feature_data,
+                        get_label(feature),
+                        feature._data,
                     )
                 elif feature_metatype == "Feature":
                     new_sequences = extend_sequences_with_new_value_holder(
                         new_sequences,
-                        feature_data["name"],
-                        feature_data,
+                        feature.name,
+                        feature._data,
                     )
                 else:
                     new_sequences = extend_sequences_by_sampling(
@@ -417,8 +404,7 @@ def random_generator_playbook_phase_4(
                         1,
                         [],
                         True,
-                        feature_data,
-                        all_elements,
+                        feature._data,
                     )
                 instances_dict[feature_id] = new_sequences
 
@@ -521,10 +507,10 @@ def build_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list:
 
 
 def generate_superset_instances(
-        part_def_graph: nx.MultiDiGraph,
-        superset_node: str,
-        visited_nodes: set,
-        instances_dict: dict,
+    part_def_graph: nx.MultiDiGraph,
+    superset_node: str,
+    visited_nodes: set,
+    instances_dict: dict,
 ) -> dict:
     """
     Take specific classifiers and push the calculated instances to more general classifiers

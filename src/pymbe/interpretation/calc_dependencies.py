@@ -1,8 +1,8 @@
 import networkx as nx
 
-from ..graph.lpg import SysML2LabeledPropertyGraph
-from ..interpretation.results import pprint_double_id_list, pprint_single_id_list
+from ..graph import SysML2LabeledPropertyGraph
 from ..label import get_label_for_id
+from ..model import Model
 
 
 def generate_execution_order(
@@ -59,11 +59,8 @@ def generate_execution_order(
 
     return execution_pairs
 
-def generate_parameter_signature_map(
-    all_elements: list,
-    execution_order: list
-):
 
+def generate_parameter_signature_map(model: Model, execution_order: list):
     # use the execution order to find better parameter names
     naming_map = {}
 
@@ -75,7 +72,7 @@ def generate_parameter_signature_map(
             if pair[0] in naming_map:
                 left_side = naming_map[pair[0]]
             else:
-                left_side = get_label_for_id(pair[0], all_elements)
+                left_side = get_label_for_id(pair[0], model)
             # push the expression signature up to the result side
             if " => " in left_side:
                 naming_map.update({pair[1]: left_side.split(" =>")[0]})
@@ -86,16 +83,16 @@ def generate_parameter_signature_map(
             if pair[0] in naming_map:
                 left_side = naming_map[pair[0]]
             else:
-                left_side = get_label_for_id(pair[0], all_elements)
+                left_side = get_label_for_id(pair[0], model)
             right_side = ""
             if pair[1] in naming_map:
                 right_side = naming_map[pair[1]]
             else:
-                right_side = get_label_for_id(pair[1], all_elements)
+                right_side = get_label_for_id(pair[1], model)
             if pair[0] in naming_map:
-                new_expr = right_side.replace(get_label_for_id(pair[0], all_elements), naming_map[pair[0]])
+                new_expr = right_side.replace(get_label_for_id(pair[0], model), naming_map[pair[0]])
                 naming_map.update({pair[1]: new_expr})
             else:
-                naming_map.update({pair[1]: get_label_for_id(pair[1], all_elements)})
+                naming_map.update({pair[1]: get_label_for_id(pair[1], model)})
 
     return naming_map

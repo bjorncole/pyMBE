@@ -1,1 +1,1 @@
-from .widget import SysML2LPGWidget
+from .widget import DiagramWidget

@@ -12,11 +12,13 @@ from warnings import warn
 class ListGetter(list):
     """A list that also can return items by their name."""
 
+    # FIXME: figure out why __dir__ of returned objects think they are lists
     def __getitem__(self, key):
         item_map = {
-            item.name: item
+            item._data["name"]: item
             for item in self
-            if item.name
+            if isinstance(item, Element)
+            and "name" in item._data
         }
         if key in item_map:
             return item_map[key]
@@ -40,7 +42,7 @@ class Naming(Enum):
                 f"<{element._metatype}({element.source} ←→ {element.target})>"
             )
 
-        data = element.data
+        data = element._data
         if naming == Naming.qualified:
             return f"""<{data["qualifiedName"]}>"""
 
@@ -58,17 +60,44 @@ class Naming(Enum):
 class Model:
     """A SysML v2 Model"""
 
-    elements: dict  # TODO: Look into making this immutable (frozen dict?)
-    source: Any = field(default_factory=str)
+    # TODO: Look into making elements immutable (e.g., frozen dict)
+    elements: Dict[str, "Element"]
 
-    _naming: Naming = Naming.long
-    _owned_elements: Dict[str, "Element"] = field(default_factory=dict)
-    _owned_relationships: List["Element"] = field(default_factory=list)
+    name: str = "SysML v2 Model"
+
+    all_relationships: Dict[str, "Element"] = field(default_factory=dict)
+    all_non_relationships: Dict[str, "Element"] = field(default_factory=dict)
+
+    ownedElement: ListGetter = field(default_factory=ListGetter)
+    ownedMetatype: Dict[str, List["Element"]] = field(default_factory=dict)
+    ownedRelationship: List["Element"] = field(default_factory=list)
+
+    source: Any = None
+
+    _naming: Naming = Naming.long  # The scheme to use for repr'ing the elements
+
+    def __post_init__(self):
+        self.elements = {
+            id_: Element(_data=data, _model=self)
+            for id_, data in self.elements.items()
+            if isinstance(data, dict)
+        }
+
+        self._add_owned()
+
+        # Modify and add derived data to the elements
+        self._add_relationships()
+        # TODO: Bring this back when things get resolved
+        # self._add_labels()
+
+    def __repr__(self) -> str:
+        data = self.source or f"{len(self.elements)} elements"
+        return f"<SysML v2 Model ({data})>"
 
     @staticmethod
     def load(
         elements: Union[List[Dict], Set[Dict], Tuple[Dict]],
-        source: str = "",
+        **kwargs,
     ) -> "Model":
         """Make a Model from an iterable container of elements"""
         return Model(
@@ -76,159 +105,225 @@ class Model:
                 element["@id"]: element
                 for element in elements
             },
-            source=source,
+            **kwargs,
         )
-
-    def __post_init__(self):
-        self.elements = {
-            id_: Element(data=data, model=self)
-            for id_, data in self.elements.items()
-        }
-        self._add_relationships()
-        self._add_owned()
-
-    def __getattr__(self, key):
-        if key in self._owned_elements:
-            return self._owned_elements[key]
-        return self.__getattribute__(key)
-
-    def __repr__(self) -> str:
-        data = self.source or f"len(self.elements) elements"
-        return f"<SysML v2 Model ({data})>"
 
     @staticmethod
     def load_from_file(filepath: Union[Path, str]) -> "Model":
-        """Make a model from a file"""
+        """Make a model from a JSON file"""
         if isinstance(filepath, str):
             filepath = Path(filepath)
 
-        if not filepath.exists():
+        if not filepath.is_file():
             raise ValueError(f"'{filepath}' does not exist!")
 
         return Model.load(
             elements=json.loads(filepath.read_text()),
-            source=str(filepath.resolve()),
+            name=filepath.name,
+            source=filepath.resolve(),
         )
 
-    @staticmethod
-    def load_from_api() -> "Model":
-        raise NotImplementedError("""Need to implement this""")
+    def save_to_file(self, filepath: Union[Path, str], indent: int = 2) -> bool:
+        if isinstance(filepath, str):
+            filepath = Path(filepath)
+        filepath.write_text(
+            json.dumps(
+                [element._data for element in self.elements.values()],
+                indent=indent,
+            ),
+        )
 
-    def _add_relationships(self):
+    def _add_labels(self):
+        from .label import get_label
         for element in self.elements.values():
-            if not element._is_relationship:
-                continue
-            metatype = element._metatype
-            source, target = element.source, element.target
-
-            source._derived[f"through{metatype}"] += [{"@id": target.data["@id"]}]
-            target._derived[f"reverse{metatype}"] += [{"@id": source.data["@id"]}]
+            label = get_label(element=element)
+            if label:
+                element._derived["label"] = label
 
     def _add_owned(self):
-        # Add owned by others
-        for element in self.elements.values():
-            element._owned_elements = {
-                child.name.replace(" ", "_"): child
-                for child in element.ownedElement
-                if child.name
-            }
-            element.ownedElement = ListGetter(element.ownedElement)
+        """Adds owned elements, relationships, and metatypes to the model"""
+        elements = self.elements
 
-        # Add owned by model
+        self.all_relationships = {
+            id_: element
+            for id_, element in elements.items()
+            if element._is_relationship
+        }
+        self.all_non_relationships = {
+            id_: element
+            for id_, element in elements.items()
+            if not element._is_relationship
+        }
+
         owned = [
             element
-            for element in self.elements.values()
-            if element.data.get("owner") is None
+            for element in elements.values()
+            if element.get_owner() is None
         ]
-        owned_elements = [el for el in owned if not el._is_relationship]
-        self._owned_elements = {
-            element.data["name"]: element
-            for element in owned_elements
-        }
-        if len(self._owned_elements) < len(owned_elements):
-            warn("Model has duplicated directly owned elements")
-        self._owned_elements = dict(sorted(self._owned_elements.items()))
-
-        self._owned_relationships = tuple(
-            rel for rel in owned if rel._is_relationship
+        self.ownedElement = ListGetter(
+            element
+            for element in owned
+            if not element._is_relationship
         )
+
+        self.ownedRelationship = [
+            relationship
+            for relationship in owned
+            if relationship._is_relationship
+        ]
+
+        by_metatype = defaultdict(list)
+        for element in elements.values():
+            by_metatype[element._metatype].append(element)
+        self.ownedMetatype = dict(by_metatype)
+
+    def _add_relationships(self):
+        """Adds relationships to elements"""
+        relationship_mapper = {
+            "through": ("source", "target"),
+            "reverse": ("target", "source"),
+        }
+        # TODO: make this more elegant...  maybe.
+        for relationship in self.all_relationships.values():
+            endpoints = {
+                endpoint_type: [
+                    self.elements[endpoint["@id"]]
+                    for endpoint in relationship._data[endpoint_type]
+                ]
+                for endpoint_type in ("source", "target")
+            }
+            metatype = relationship._metatype
+            for direction, (key1, key2) in relationship_mapper.items():
+                endpts1, endpts2 = endpoints[key1], endpoints[key2]
+                for endpt1 in endpts1:
+                    for endpt2 in endpts2:
+                        endpt1._derived[f"{direction}{metatype}"] += [
+                            {"@id": endpt2._data["@id"]}
+                        ]
 
 
 @dataclass(repr=False)
 class Element:
     """A SysML v2 Element"""
 
-    data: dict
-    model: Model
+    _data: dict
+    _model: Model
 
     _derived: Dict[str, List] = field(default_factory=lambda: defaultdict(list))
+    _instances: List["Element"] = field(default_factory=list)
     _is_relationship: bool = False
-    _owned_elements: Dict[str, "Element"] = field(default_factory=dict)
 
-    def __post_init__(self):        
-        self._is_relationship = "relatedElement" in self.data
+    def __post_init__(self):
+        self._is_abstract = bool(self._data.get("isAbstract"))
+        self._is_relationship = "relatedElement" in self._data
+        self._data["ownedElement"] = ListGetter(self._data["ownedElement"])
 
     def __dir__(self):
         return sorted(
-            [key for key in self.data if key.isidentifier()] +
-            [key for key in self._derived if key.isidentifier()] +
-            list(super().__dir__())
+            list(super().__dir__()) + [
+                key
+                for key in [*self._data, *self._derived]
+                if key.isidentifier()
+            ]
         )
 
     def __getattr__(self, key: str):
-        if key.startswith("_") and f"@{key[1:]}" in self.data:
-            key = f"@{key[1:]}"
-        possibilities = [*self.data, *self._derived]
-        if key in possibilities:
-            return self[key]
-        return self.__getattribute__(key)
+        try:
+             return self.__getattribute__(key)
+        except AttributeError as exc:
+            try:
+                return self[key]
+            except (KeyError, RecursionError):
+                if key.startswith("_"):
+                    try:
+                        return self[f"@{key[1:]}"]
+                    except (KeyError, RecursionError):
+                        pass
+            raise exc
 
     @lru_cache
-    def __getitem__(self, key: str):
-        if key in self.data:
-            item = self.data[key]
-        else:
-            item = self._derived[key]
+    def __getitem__(self, key: str) -> Any:
+        found = False
+        for source in ("_data", "_derived"):
+            source = self.__getattribute__(source)
+            if key in source:
+                found = True
+                item = source[key]
+                break
+        if not found:
+            raise KeyError(f"No '{key}' in {self}")
 
-        if isinstance(item, (list, tuple, set)):
-            if all(
-                (
-                    isinstance(subitem, dict)
-                    and "@id" in subitem
-                    and len(subitem) < 2
-                )
+        if isinstance(item, (dict, str)):
+            item = self.__safe_dereference(item)
+        elif isinstance(item, (list, tuple, set)):
+            items = [
+                self.__safe_dereference(subitem)
                 for subitem in item
-            ):
-                items = [
-                    self.model.elements[subitem["@id"]]
-                    for subitem in item
-                ]
-                if not key.startswith("owned") and len(items) == 1:
-                    return items[0]
-                return type(item)(items)
-
-        if isinstance(item, dict) and "@id" in item and len(item) < 2:
-            item = item["@id"]
-
-        if item in self.model.elements:
-            return self.model.elements[item]
-
+            ]
+            return type(item)(items)
         return item
 
     def __hash__(self):
-        return hash(self.data["@id"])
+        return hash(self._data["@id"])
 
     def __repr__(self):
-        return self.model._naming.get_name(element=self)
+        return self._model._naming.get_name(element=self)
+
+    def get(self, key: str, default: Any = None) -> Any:
+        try:
+            self.__getitem__(key)
+        except KeyError:
+            return default
 
     @property
-    def _id(self):
-        return self.data["@id"]
+    def _id(self) -> str:
+        return self._data["@id"]
 
     @property
-    def _metatype(self):
-        return self.data["@type"]
+    def _metatype(self) -> str:
+        return self._data["@type"]
 
     @property
-    def relationships(self):
+    def relationships(self) -> Dict[str, Any]:
         return {key: self[key] for key in self._derived}
+
+    def get_owner(self) -> "Element":
+        data = self._data
+        owner_id = None
+        for key in ("owner", "owningRelatedElement", "owningRelationship"):
+            owner_id = (data.get(key) or {}).get("@id")
+            if owner_id is not None:
+                break
+        if owner_id is None:
+            return None
+        return self._model.elements[owner_id]
+
+    def create(data: dict, model: Model) -> "Element":
+        return Element(_data=data, _model=model)
+
+    def __safe_dereference(self, item):
+        """If given a reference to another element, try to get that element"""
+        try:
+            if isinstance(item, dict) and "@id" in item:
+                if len(item) > 1:
+                    warn("Found a reference with more than one entry: {item}")
+                item = item["@id"]
+            return self._model.elements[item]
+        except KeyError:
+            return item
+
+
+@dataclass
+class Instance:
+    """An M0 instantiation of an element"""
+
+    element: Element
+    name: str = ""
+
+    def __post_init__(self, *args, **kwargs):
+        super().__post_init__(*args, **kwargs)
+        element = self.element
+        element._instances += [self]
+        if not self.name:
+            name = element.name or element._id
+            self.name = f"{name}#{len(element._instances)}"
