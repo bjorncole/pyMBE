@@ -9,7 +9,7 @@ from pymbe.interpretation.set_builders import (
     create_set_with_new_instances,
     extend_sequences_by_sampling,
 )
-
+from pymbe.interpretation.results import *
 
 ROCKET_BUILDING = "Model::Kerbal::Rocket Building::"
 PARTS_LIBRARY = "Model::Kerbal::Parts Library::"
@@ -121,17 +121,30 @@ def test_phase_3_instance_sampling(kerbal_random_stage_3_complete):
     assert len(kerbal_random_stage_3_complete[booster_empty_mass_id]) > 0
 
 
-def test_phase_4_instance_sampling(kerbal_random_stage_4_complete):
-    top_plus_expr_id = "b51bb349-e210-4be8-be64-e749ea4e563b"
-    sum_1_id = "700d97d1-410a-459c-ad09-8792c27e2803"
-    collect_1_id = "d6644a0a-6eef-49c1-a770-60886073554c"
-    collect_1_result = "31f8c4bd-9700-4bc3-9970-3eb5451f0203"
+def test_phase_4_instance_sampling1(kerbal_random_stage_4_complete, kerbal_stable_names, kerbal_lpg):
+    *_, qualified_name_to_id = kerbal_stable_names
 
-    liquid_stage_id = "e6c22f19-e5e0-4a4b-9a3f-af2f01382465"
+    top_plus_expr_id = qualified_name_to_id[f'{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+'
+                                                    f' (sum (collect (FRE.engines)), ' 
+                                                    f'sum (collect (FRE.tanks))) => $result <<OperatorExpression>>']
+    sum_1_id = qualified_name_to_id[f'{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ (sum (collect (FRE.engines)),' 
+                                    f' sum (collect (FRE.tanks))) => $result::sum (collect (FRE.tanks)) => '
+                                    f'$result <<InvocationExpression>>']
+    collect_1_id = qualified_name_to_id[f'{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ (sum (collect'
+                                        f' (FRE.engines)), sum (collect (FRE.tanks))) => $result::sum (collect '
+                                        f'(FRE.tanks)) => $result::collect (FRE.tanks) => '
+                                        f'$result <<OperatorExpression>>']
+    collect_1_result = qualified_name_to_id[f'{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ (sum (collect'
+                                        f' (FRE.engines)), sum (collect (FRE.tanks))) => $result::sum (collect '
+                                        f'(FRE.tanks)) => $result::collect (FRE.tanks) => '
+                                        f'$result::collect (FRE.tanks) <<Feature>>']
 
-    booster_empty_mass_id = "645ee1b3-3cb3-494e-8cb2-ec32e377c9f6"
-    booster_isp_id = "2b1351f4-a0fb-470b-bb22-1b924dde38f7"
-    rt_10_isp_id = "eb09ff1c-1791-4571-8016-c0534906faa4"
+    liquid_stage_id = qualified_name_to_id[f"{ROCKET_BUILDING}Liquid Stage <<PartDefinition>>"]
+
+    booster_empty_mass_id = qualified_name_to_id[f"{ROCKET_BUILDING}Solid Booster::Empty Mass: Real <<AttributeUsage>>"]
+    booster_isp_id = qualified_name_to_id[f"{ROCKET_BUILDING}Solid Booster::Specific Impulse: Real <<AttributeUsage>>"]
+    rt_10_isp_id = qualified_name_to_id[f"{PARTS_LIBRARY}RT-10 \"Hammer\" Solid Fuel Booster::Specific Impulse: "
+                                        f"Real <<AttributeUsage>>"]
 
     assert len(kerbal_random_stage_4_complete[collect_1_id]) > 0 or \
         len(kerbal_random_stage_4_complete[liquid_stage_id]) == 0

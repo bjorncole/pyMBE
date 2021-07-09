@@ -2,50 +2,66 @@ from pymbe.interpretation.interp_playbooks import (
     build_expression_sequence_templates,
     build_sequence_templates,
 )
+from pymbe.interpretation.results import *
 
 
-def test_feature_sequence_templates1(kerbal_client, kerbal_lpg):
+ROCKET_BUILDING = "Model::Kerbal::Rocket Building::"
+PARTS_LIBRARY = "Model::Kerbal::Parts Library::"
+
+SIMPLE_MODEL = "Model::Simple Parts Model::"
+PARTS_LIBRARY = "Model::Simple Parts Model::Fake Library::"
+
+
+def test_feature_sequence_templates1(kerbal_client, kerbal_lpg, kerbal_stable_names):
+    *_, qualified_name_to_id = kerbal_stable_names
+
     seq_templates = build_sequence_templates(kerbal_lpg)
 
     assert len(seq_templates) == 39
 
-    solid_booster_id = "818da4ef-ebf0-409d-873f-77beacbae681"
-    boosters_id = "a75c2967-b3ef-4434-8c0f-5f708b96711c"
-    liquid_stage_id = "6c18b7a9-8bf9-49ff-87c5-a53dd73aeb58"
-    engines_id = "48e94e73-52ad-44df-8005-8fa6225176d8"
-    tanks_id = "ae3db8b5-6d8e-4ac4-af46-9f37ad0fd988"
-    krp_mass_id = "f0403f3c-b5b8-4d2e-814b-bbe7cff60d3f"
+    solid_booster_id = qualified_name_to_id[f"{ROCKET_BUILDING}Solid Booster <<PartDefinition>>"]
+    boosters_id = qualified_name_to_id[f"{ROCKET_BUILDING}Solid Stage::boosters: Solid Booster <<PartUsage>>"]
+    liquid_stage_id = qualified_name_to_id[f"{ROCKET_BUILDING}Liquid Stage <<PartDefinition>>"]
+    engines_id = qualified_name_to_id[f"{ROCKET_BUILDING}Liquid Stage::engines: Liquid Engine <<PartUsage>>"]
+    tanks_id = qualified_name_to_id[f"{ROCKET_BUILDING}Liquid Stage::tanks: Fuel Tank Section <<PartUsage>>"]
+    krp_mass_id = qualified_name_to_id[f"{ROCKET_BUILDING}Kerbal Rocket Part::Mass: Real <<AttributeUsage>>"]
 
-    print(seq_templates)
+    print(pprint_double_id_list(seq_templates, kerbal_lpg.model))
 
     assert [
-        "62fc7eb7-0637-4201-add7-4d2758980d2f",
-        "442722b5-8d08-46e4-ad5f-e6e2dd28d6f6",
-        "3a609e5a-3e6f-4eb4-97ff-5a32b23122bf",
-        "7f5e38cb-6647-482d-b8fe-5c266d73ab42"] in seq_templates
+        liquid_stage_id,
+        engines_id] in seq_templates
 
     assert(any([krp_mass_id in seq for seq in seq_templates]))
 
-    for seq in seq_templates:
-        if solid_booster_id in seq:
-            assert boosters_id in seq
-        if liquid_stage_id in seq:
-            assert (engines_id in seq or tanks_id in seq)
-            if engines_id in seq:
-                assert seq.index(liquid_stage_id) < seq.index(engines_id)
-            elif tanks_id in seq:
-                assert seq.index(liquid_stage_id) < seq.index(tanks_id)
+    assert (any([
+        (engines_id in seq) and
+        (liquid_stage_id in seq)
+        for seq in seq_templates])
+    )
+
+    assert (any([
+        (tanks_id in seq) and
+        (liquid_stage_id in seq)
+        for seq in seq_templates])
+    )
 
 
-def test_feature_sequence_templates2(kerbal_lpg):
+def test_feature_sequence_templates2(kerbal_lpg, kerbal_stable_names):
+    *_, qualified_name_to_id = kerbal_stable_names
+
     seq_templates = build_sequence_templates(kerbal_lpg)
 
-    coupler_usage_id = '3a609e5a-3e6f-4eb4-97ff-5a32b23122bf'
-    rocket_id = '62fc7eb7-0637-4201-add7-4d2758980d2f'
-    stages_feat = '442722b5-8d08-46e4-ad5f-e6e2dd28d6f6'
-    sep_force_id = '7f5e38cb-6647-482d-b8fe-5c266d73ab42'
+    coupler_usage_id = qualified_name_to_id[
+        f"{ROCKET_BUILDING}Rocket::stages: Rocket Stage::Coupler to "
+        f"Carrying Stage: Coupler <<PartUsage>>"]
+    rocket_id = qualified_name_to_id[f"{ROCKET_BUILDING}Rocket <<PartDefinition>>"]
+    stages_feat = qualified_name_to_id[f"{ROCKET_BUILDING}Rocket::stages: Rocket Stage <<PartUsage>>"]
+    sep_force_id = qualified_name_to_id[
+        f"{ROCKET_BUILDING}Rocket::stages: Rocket Stage::Coupler to Carrying Stage: "
+        f"Coupler::Separation Force: Real <<AttributeUsage>>"]
 
-    print(seq_templates)
+    print(pprint_double_id_list(seq_templates, kerbal_lpg.model))
 
     assert [
         rocket_id,
@@ -54,14 +70,20 @@ def test_feature_sequence_templates2(kerbal_lpg):
         sep_force_id] in seq_templates
 
 
-def test_feature_sequence_templates3(kerbal_lpg):
+def test_feature_sequence_templates3(kerbal_lpg, kerbal_stable_names):
+    *_, qualified_name_to_id = kerbal_stable_names
+
     seq_templates = build_sequence_templates(kerbal_lpg)
 
-    coupler_usage_id = '3a609e5a-3e6f-4eb4-97ff-5a32b23122bf'
-    rocket_id = '62fc7eb7-0637-4201-add7-4d2758980d2f'
-    sep_force_id = '7f5e38cb-6647-482d-b8fe-5c266d73ab42'
+    coupler_usage_id = qualified_name_to_id[
+        f"{ROCKET_BUILDING}Rocket::stages: Rocket Stage::Coupler to "
+        f"Carrying Stage: Coupler <<PartUsage>>"]
+    rocket_id = qualified_name_to_id[f"{ROCKET_BUILDING}Rocket <<PartDefinition>>"]
+    sep_force_id = qualified_name_to_id[
+        f"{ROCKET_BUILDING}Rocket::stages: Rocket Stage::Coupler to Carrying Stage: "
+        f"Coupler::Separation Force: Real <<AttributeUsage>>"]
 
-    print(seq_templates)
+    print(pprint_double_id_list(seq_templates, kerbal_lpg.model))
 
     assert [
         rocket_id,
@@ -69,12 +91,15 @@ def test_feature_sequence_templates3(kerbal_lpg):
         sep_force_id] not in seq_templates
 
 
-def test_feature_sequence_templates4(simple_parts_lpg):
+def test_feature_sequence_templates4(simple_parts_lpg, simple_parts_stable_names):
+    *_, qualified_name_to_id = simple_parts_stable_names
+
     seq_templates = build_sequence_templates(simple_parts_lpg)
 
-    power_group_id = '009a03de-7718-47c4-99c1-5c80234536bf'
-    power_user_part_id = '3f314dcb-4426-48ae-a21e-cac3dbf9deff'
-    power_in_port_id = '6717616c-47ee-4fed-bf7d-e4e98c929fac'
+    power_group_id = qualified_name_to_id[f"{SIMPLE_MODEL}Power Group: Part <<PartUsage>>"]
+    power_user_part_id = qualified_name_to_id[f"{SIMPLE_MODEL}Power Group: Part::Power User: Part <<PartUsage>>"]
+    power_in_port_id = qualified_name_to_id[f"{SIMPLE_MODEL}Power Group: Part::Power User: "
+                                            f"Part::Power In: Port <<PortUsage>>"]
 
     print(seq_templates)
 
