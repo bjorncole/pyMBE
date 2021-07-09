@@ -109,18 +109,16 @@ def test_feature_sequence_templates4(simple_parts_lpg, simple_parts_stable_names
         power_in_port_id] in seq_templates
 
 
-def test_expression_sequence_templates(kerbal_lpg):
-    fts_full_mass = "004a1b5f-4bfc-4460-9f38-1e7b4caba6e5"
-    ft200_full_mass = "1e5a0ed7-8b41-4ab4-a433-8f7eedd75833"
-    ft100_full_mass = "a57b423b-5c0c-4057-be6b-689abcb536b2"
-    liquid_stage_full_mass = "7beafac8-c1c1-4b1b-ae21-d3c9a733531c"
-    top_plus = "b51bb349-e210-4be8-be64-e749ea4e563b"
-    tank_mass_sum_1 = "700d97d1-410a-459c-ad09-8792c27e2803"
-    collect_1 = "d6644a0a-6eef-49c1-a770-60886073554c"
-    collect_1_result = "31f8c4bd-9700-4bc3-9970-3eb5451f0203"
-    full_mass_dot = "ad0bff53-eebe-4446-a8df-4db0b7187707"
-    fre_1 = "2665fb1b-1f12-4f13-a977-0f060915773e"
-    fre_1_result = "6cfb516b-6045-454e-a521-83b747acef7e"
+def test_expression_sequence_templates(kerbal_lpg, kerbal_stable_names):
+    *_, qualified_name_to_id = kerbal_stable_names
+
+    top_plus = qualified_name_to_id[f'{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ (sum (collect (FRE.engines)), '
+                                 f'sum (collect (FRE.tanks))) => $result <<OperatorExpression>>']
+
+    fre_1_result = qualified_name_to_id[f'{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ (sum (collect'
+                                        f' (FRE.engines)), sum (collect (FRE.tanks))) => $result::sum (collect '
+                                        f'(FRE.tanks)) => $result::collect (FRE.tanks) => $result::FRE.Full Mass (p) =>'
+                                        f' $result::FRE.Full Mass::FRE.Full Mass <<Feature>>']
 
     expr_sequences = build_expression_sequence_templates(lpg=kerbal_lpg)
     top_plus_paths = 0
