@@ -3,7 +3,6 @@ import json
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
-from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, List, Set, Tuple, Union
 from warnings import warn
@@ -241,7 +240,6 @@ class Element:
                         pass
             raise exc
 
-    @lru_cache
     def __getitem__(self, key: str) -> Any:
         found = False
         for source in ("_data", "_derived"):
