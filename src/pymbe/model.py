@@ -9,6 +9,9 @@ from uuid import uuid4
 from warnings import warn
 
 
+VALUE_METATYPES = ("AttributeDefinition", "AttributeUsage", "DataType")
+
+
 class ListOfNamedItems(list):
     """A list that also can return items by their name."""
 
@@ -225,6 +228,11 @@ class Element:
             if key.startswith("owned") and isinstance(items, list):
                 self._data[key] = ListOfNamedItems(items)
 
+    def __call__(self, *args, **kwargs):
+        if self._metatype in VALUE_METATYPES:
+            return ValueHolder(*args, **kwargs, element=self)
+        return Instance(*args, **kwargs, element=self)
+
     def __dir__(self):
         return sorted(
             list(super().__dir__()) + [
@@ -336,31 +344,51 @@ class Element:
 
 @dataclass
 class Instance:
-    """An M0 instantiation of an element"""
+    """
+    An M0 instantiation of an M1 element.
+
+    Sequences of instances are intended to follow the mathematical base semantics of SysML v2.
+    """
 
     element: Element
     name: str = ""
 
-    def __post_init__(self, *args, **kwargs):
-        super().__post_init__(*args, **kwargs)
+    def __post_init__(self):
         element = self.element
-        element._instances += [self]
+        if self not in element._instances:
+            element._instances += [self]
         if not self.name:
+            id_ = element._instances.index(self) + 1
             name = element.get("name") or element._id
-            self.name = f"{name}#{len(element._instances)}"
+            self.name = f"{name}#{id_}"
 
 
 @dataclass
-class ValueHolder:
+class ValueHolder(Instance):
     """An M0 instantiation of a Value element"""
 
     element: Element
+    name: str = ""
     value: Any = None
 
-    def __post_init__(self, *args, **kwargs):
-        super().__post_init__(*args, **kwargs)
-        element = self.element
-        element._instances += [self]
-        if not self.name:
-            name = element.get("name") or element._id
-            self.name = f"{name}#{len(element._instances)}"
+    def __post_init__(self):
+        super().__post_init__()
+
+    def a__init__(self, path, name, value, base_att, index):
+        # path is list of instance references
+        self.holder_string = ""
+        for indx, step in enumerate(path):
+            if indx == 0:
+                self.holder_string = str(step)
+            else:
+                self.holder_string = f"{self.holder_string}.{step}"
+        self.holder_string = f"{self.holder_string}.{name}#{index}"
+        self.value = value
+        self.base_att = base_att
+
+    def __repr__(self):
+        value = self.value
+        if value is None:
+            value = "unset"
+        return f"{self.name} ({value})"
+        # return f"{self.holder_string} ({value})"
