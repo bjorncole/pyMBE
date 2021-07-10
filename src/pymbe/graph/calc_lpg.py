@@ -62,11 +62,6 @@ class CalculationGroup:
 
                         self.calculation_log.append(f"[Literal] {seq} is being assigned to {target_instances[index]}")
 
-                    self.solved_nodes.append(step[0])
-                    self.solved_nodes.append(step[1])
-
-                    self.unsolved_nodes.remove(step[0])
-                    self.unsolved_nodes.remove(step[1])
                 elif lpg.nodes[step[0]]['@type'] == 'FeatureReferenceExpression':
                     source_instances = self.instance_dict[step[0]]
                     target_instances = self.instance_dict[step[1]]
@@ -82,12 +77,6 @@ class CalculationGroup:
 
                         for target_inst in target_instances:
                             self.calculation_log.append(f"[FRE]... result includes {target_inst}")
-
-                    self.solved_nodes.append(step[0])
-                    self.solved_nodes.append(step[1])
-
-                    self.unsolved_nodes.remove(step[0])
-                    self.unsolved_nodes.remove(step[1])
 
                 elif lpg.nodes[step[0]]['@type'] == 'OperatorExpression':
                     if lpg.nodes[step[0]]['operator'] == 'collect':
@@ -131,12 +120,6 @@ class CalculationGroup:
                                     path_point,
                                     target_instances[index][-1]
                                 )
-
-                        self.solved_nodes.append(step[0])
-                        self.solved_nodes.append(step[1])
-
-                        self.unsolved_nodes.remove(step[0])
-                        self.unsolved_nodes.remove(step[1])
 
                     elif lpg.nodes[step[0]]['operator'] == '+':
                         source_instances = self.instance_dict[step[0]]
@@ -242,12 +225,6 @@ class CalculationGroup:
                                 path_point,
                                 target_instances[index][-1]
                             )
-
-                    self.solved_nodes.append(step[0])
-                    self.solved_nodes.append(step[1])
-
-                    self.unsolved_nodes.remove(step[0])
-                    self.unsolved_nodes.remove(step[1])
 
     def solve_graph_with_openmdao(self, lpg):
         """

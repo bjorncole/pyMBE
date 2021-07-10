@@ -17,6 +17,7 @@ from pymbe.interpretation.interp_playbooks import (
     random_generator_playbook_phase_2_rollup,
     random_generator_playbook_phase_3,
     random_generator_playbook_phase_4,
+    random_generator_playbook_phase_5,
 )
 from pymbe.local.stablization import build_stable_id_lookups
 
@@ -63,15 +64,7 @@ def simple_parts_model_loaded_client() -> SysML2Client:
 
 
 def simple_actions_model_loaded_client() -> SysML2Client:
-    helper_client = SysML2Client()
-
-    base_path = Path(__file__).parent.absolute()
-    print(base_path)
-    file_name = str(base_path) + "\\data\\Simple Actions Model\\elements.json"
-
-    helper_client._load_disk_elements(file_name)
-
-    return helper_client
+    return get_client("Simple Actions Example")
 
 
 @pytest.fixture
@@ -195,6 +188,20 @@ def kerbal_random_stage_4_complete(
 
 
 @pytest.fixture
+def kerbal_random_stage_5_complete(
+    kerbal_lpg: SysML2LabeledPropertyGraph,
+    kerbal_random_stage_4_complete: dict,
+) -> dict:
+
+    random_generator_playbook_phase_5(
+        kerbal_lpg,
+        kerbal_lpg.get_projection("Connection"),
+        kerbal_random_stage_4_complete)
+
+    return kerbal_random_stage_4_complete
+
+
+@pytest.fixture
 def simple_parts_client() -> SysML2Client:
     return simple_parts_model_loaded_client()
 
@@ -207,6 +214,67 @@ def simple_parts_lpg() -> SysML2LabeledPropertyGraph:
     new_lpg.model = client.model
 
     return new_lpg
+
+
+@pytest.fixture
+def simple_parts_stable_names():
+    client = simple_parts_model_loaded_client()
+    lpg = SysML2LabeledPropertyGraph()
+    lpg.model = client.model
+    return build_stable_id_lookups(lpg)
+
+
+@pytest.fixture
+def simple_parts_random_stage_1_instances(simple_parts_lpg) -> dict:
+    ptg = simple_parts_lpg.get_projection("Part Typing")
+    scg = simple_parts_lpg.get_projection("Part Definition")
+
+    full_multiplicities = random_generator_phase_1_multiplicities(simple_parts_lpg, ptg, scg)
+
+    return {
+        type_id: create_set_with_new_instances(
+            sequence_template=[simple_parts_lpg.model.elements[type_id]],
+            quantities=[number],
+        )
+        for type_id, number in full_multiplicities.items()
+    }
+
+
+@pytest.fixture
+def simple_parts_random_stage_1_complete(simple_parts_lpg, simple_parts_random_stage_1_instances) -> dict:
+    scg = simple_parts_lpg.get_projection("Part Definition")
+
+    random_generator_playbook_phase_1_singletons(
+        simple_parts_lpg.model,
+        scg,
+        simple_parts_random_stage_1_instances,
+    )
+
+    return simple_parts_random_stage_1_instances
+
+
+@pytest.fixture
+def simple_parts_random_stage_2_complete(simple_parts_lpg, simple_parts_random_stage_1_complete) -> dict:
+    scg = simple_parts_lpg.get_projection("Part Definition")
+
+    random_generator_playbook_phase_2_rollup(scg, simple_parts_random_stage_1_complete)
+
+    random_generator_playbook_phase_2_unconnected(simple_parts_lpg.model, simple_parts_random_stage_1_complete)
+
+    return simple_parts_random_stage_1_complete
+
+
+@pytest.fixture
+def simple_parts_random_stage_3_complete(simple_parts_lpg, simple_parts_random_stage_2_complete) -> dict:
+    feature_sequences = build_sequence_templates(lpg=simple_parts_lpg)
+
+    random_generator_playbook_phase_3(
+        simple_parts_lpg.model,
+        feature_sequences,
+        simple_parts_random_stage_2_complete,
+    )
+
+    return simple_parts_random_stage_2_complete
 
 
 @pytest.fixture

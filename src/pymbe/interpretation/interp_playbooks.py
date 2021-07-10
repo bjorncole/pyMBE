@@ -4,6 +4,8 @@ from uuid import uuid4
 
 import networkx as nx
 
+import logging
+
 from ..graph.lpg import SysML2LabeledPropertyGraph
 from ..label import get_label, get_label_for_id
 from ..model import Element, Model
@@ -18,6 +20,9 @@ from .set_builders import (
     extend_sequences_with_new_expr,
     extend_sequences_with_new_value_holder,
 )
+from pymbe.interpretation.results import *
+
+logger = logging.getLogger(__name__)
 
 logger = getLogger(__name__)
 
@@ -48,7 +53,17 @@ TYPES_FOR_ROLL_UP_MULTIPLICITY = (
 )
 
 
-def random_generator_playbook(lpg: SysML2LabeledPropertyGraph, name_hints: dict = None) -> dict:
+def random_generator_playbook(
+        lpg: SysML2LabeledPropertyGraph,
+        name_hints: dict = None) -> dict:
+    """
+    Main routine to execute a playbook to randomly generate sequences as an interpretation of a SysML v2 model
+    :param lpg: Labeled propery graph of the M1 model
+    :param name_hints: A dictionary to make labeling instances more clean
+    :return: A dictionary of sequences keyed by the id of a given M1 type
+    """
+
+
     all_elements = lpg.model.elements
     name_hints = name_hints or {}
     can_interpret = validate_working_data(lpg)
@@ -259,7 +274,7 @@ def random_generator_playbook_phase_3(
     model: Model,
     feature_sequences: list,
     instances_dict: dict,
-) -> None:
+) -> list:
     """
     Begin generating interpreting sequences for Features in the model by extending
     classifier sequences with randomly selected instances of classifiers that type
@@ -270,7 +285,7 @@ def random_generator_playbook_phase_3(
     :param lpg: Active SysML graph
     :param ptg: Part Typing Graph projection from the LPG
     :param instances_dict: Working dictionary of interpreted sequences for the model
-    :return: None - side effect is addition of new instances to the instances dictionary
+    :return: (Temporarily return a trace of actions) None - side effect is addition of new instances to the instances dictionary
     """
     logger.debug("Starting things up")
     already_drawn, last_sequence = {}, []
@@ -324,6 +339,10 @@ def random_generator_playbook_phase_3(
                 else:
                     remaining = [item for seq in instances_dict[typ] for item in seq]
 
+                logger.info("About to extend sequences.")
+                logger.info(f"New sequences is currently {new_sequences}")
+                logger.info(f"Already drawn is currently {already_drawn}")
+
                 new_sequences = extend_sequences_by_sampling(
                     new_sequences,
                     feature_multiplicity(feature, "lower"),
@@ -333,11 +352,16 @@ def random_generator_playbook_phase_3(
                     {},
                 )
 
+                logger.info("Sequences extended.")
+                logger.info(f"New sequences is currently {new_sequences}")
+
                 freshly_drawn = [seq[-1] for seq in new_sequences]
                 if typ in already_drawn:
-                    already_drawn[typ] += [freshly_drawn]
+                    already_drawn[typ] += freshly_drawn
                 else:
                     already_drawn[typ] = freshly_drawn
+
+                logger.info(f"Already drawn is currently {pprint_dict_keys(already_drawn, model)}")
 
             instances_dict[feature_id] = new_sequences
         last_sequence = feature_sequence
@@ -460,9 +484,6 @@ def random_generator_playbook_phase_5(
                 other_steps = sample(range(0, min_side), (max_side - min_side))
                 target_indices = list(range(0, min_side))
                 target_indices.extend(other_steps)
-
-            print(source_indices)
-            print(target_indices)
 
             for indx, seq in enumerate(connectors):
                 new_source_seq = []

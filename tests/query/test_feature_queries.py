@@ -11,6 +11,10 @@ from pymbe.query.query import (
 
 
 from tests.conftest import kerbal_model_loaded_client
+ROCKET_BUILDING = "Model::Kerbal::Rocket Building::"
+PARTS_LIBRARY = "Model::Kerbal::Parts Library::"
+SIMPLE_MODEL = "Model::Simple Parts Model::"
+FAKE_LIBRARY = "Model::Simple Parts Model::Fake Library::"
 
 
 def test_feature_to_type1(kerbal_client, kerbal_lpg):
@@ -21,7 +25,7 @@ def test_feature_to_type1(kerbal_client, kerbal_lpg):
     assert get_types_for_feature(kerbal_lpg, engines_feat) == [engine_type_feat]
 
 
-def test_type_to_feature1(kerbal_client, kerbal_lpg):
+def test_type_to_feature1(kerbal_client, kerbal_lpg, kerbal_stable_names):
 
     engines_feat = '32c847a1-2184-4486-ba48-dbf6125ca638'
     engine_type_feat = '79cf7d24-37f7-404c-94b4-395cd1d0ee51'
@@ -29,11 +33,14 @@ def test_type_to_feature1(kerbal_client, kerbal_lpg):
     assert get_features_typed_by_type(kerbal_lpg, engine_type_feat) == [engines_feat]
 
 
-def test_type_to_feature2(simple_parts_client, simple_parts_lpg):
+def test_type_to_feature2(simple_parts_client, simple_parts_lpg, simple_parts_stable_names):
+    *_, qualified_name_to_id = simple_parts_stable_names
 
-    port_type_id = 'ef2b63dc-3666-4df0-beb9-790b8e7fc21c'
-    power_in_id = '6717616c-47ee-4fed-bf7d-e4e98c929fac'
-    power_out_id = '4cd714eb-796a-44b4-8864-daf18bd04f4a'
+    port_type_id = qualified_name_to_id[f"{FAKE_LIBRARY}Port <<PortDefinition>>"]
+    power_in_id = qualified_name_to_id[
+        f"{SIMPLE_MODEL}Power Group: Part::Power User: Part::Power In: Port <<PortUsage>>"]
+    power_out_id = qualified_name_to_id[
+        f"{SIMPLE_MODEL}Power Group: Part::Power Source: Part::Power Out: Port <<PortUsage>>"]
 
     print(get_features_typed_by_type(simple_parts_lpg, port_type_id))
 
@@ -87,10 +94,15 @@ def test_banded_graph_paths2(kerbal_lpg):
     assert len(path_lists) == 1
 
 
-def test_banded_graph_paths3(simple_parts_lpg):
+def test_banded_graph_paths3(simple_parts_lpg, simple_parts_stable_names):
+    *_, qualified_name_to_id = simple_parts_stable_names
 
-    power_group_id = '009a03de-7718-47c4-99c1-5c80234536bf'
-    power_in_port_id = '6717616c-47ee-4fed-bf7d-e4e98c929fac'
+    power_group_id = qualified_name_to_id[f"{SIMPLE_MODEL}Power Group: Part <<PartUsage>>"]
+
+    power_in_port_id = qualified_name_to_id[f"{SIMPLE_MODEL}Power Group: Part::Power User: " 
+                                            f"Part::Power In: Port <<PortUsage>>"]
+    power_out_id = qualified_name_to_id[
+        f"{SIMPLE_MODEL}Power Group: Part::Power Source: Part::Power Out: Port <<PortUsage>>"]
 
     ebg = simple_parts_lpg.get_projection("Expanded Banded")
 
@@ -101,19 +113,13 @@ def test_banded_graph_paths3(simple_parts_lpg):
     assert power_in_port_id in list(ebg.nodes)
 
     all_paths = nx.all_simple_paths(
-        simple_parts_lpg.get_projection("Expanded Banded"),
-        power_in_port_id,
-        power_group_id,
+        ebg,
+        power_out_id,
+        power_group_id
     )
 
     path_lists = list(all_paths)
-
-    for path in path_lists:
-        path_naming = []
-        for item in path:
-            path_naming.append(get_label_for_id(item, simple_parts_lpg.model))
-
-        print(path_naming)
+    print(path_lists)
 
     assert len(path_lists) == 1
 
@@ -176,11 +182,14 @@ def test_type_multiplicity_rollup1(kerbal_lpg):
     assert rocket_upper == 0
 
 
-def test_type_multiplicity_rollup2(simple_parts_lpg):
+def test_type_multiplicity_rollup2(simple_parts_lpg, simple_parts_stable_names):
+    *_, qualified_name_to_id = simple_parts_stable_names
 
-    port_type_id = 'ef2b63dc-3666-4df0-beb9-790b8e7fc21c'
-    power_in_id = '6717616c-47ee-4fed-bf7d-e4e98c929fac'
-    power_out_id = '4cd714eb-796a-44b4-8864-daf18bd04f4a'
+    power_out_id = qualified_name_to_id[f"{SIMPLE_MODEL}Power Group: Part::Power Source: "
+                                            f"Part::Power Out: Port <<PortUsage>>"]
+    power_in_id = qualified_name_to_id[
+        f"{SIMPLE_MODEL}Power Group: Part::Power User: Part::Power In: Port <<PortUsage>>"]
+    port_type_id = qualified_name_to_id[f"{FAKE_LIBRARY}Port <<PortDefinition>>"]
 
     port_type = simple_parts_lpg.model.elements[port_type_id]
 
@@ -202,7 +211,5 @@ def test_type_multiplicity_rollup2(simple_parts_lpg):
 
     assert power_in_mult == 4
     assert power_out_mult == 2
-
-    # currently failing because we are counting connector ends as separate instances
 
     assert port_upper == 6
