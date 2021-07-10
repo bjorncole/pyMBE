@@ -292,7 +292,7 @@ class Element:
 
     @property
     def label(self) -> str:
-        self._derived.get("label")
+        return self._derived.get("label")
 
     @property
     def relationships(self) -> Dict[str, Any]:
@@ -304,12 +304,12 @@ class Element:
 
     def get(self, key: str, default: Any = None) -> Any:
         try:
-            self.__getitem__(key)
+            return self[key]
         except KeyError:
             return default
 
     def get_element(self, element_id) -> "Element":
-        self._model.elements.get(element_id)
+        return self._model.elements.get(element_id)
 
     def get_owner(self) -> "Element":
         data = self._data
@@ -355,7 +355,7 @@ class Instance:
             element._instances += [self]
         if not self.name:
             id_ = element._instances.index(self) + 1
-            name = element.get("name") or element._id
+            name = element.label or element._id
             self.name = f"{name}#{id_}"
 
 
@@ -363,28 +363,10 @@ class Instance:
 class ValueHolder(Instance):
     """An M0 instantiation of a Value element"""
 
-    element: Element
-    name: str = ""
     value: Any = None
-
-    def __post_init__(self):
-        super().__post_init__()
-
-    def a__init__(self, path, name, value, base_att, index):
-        # path is list of instance references
-        self.holder_string = ""
-        for indx, step in enumerate(path):
-            if indx == 0:
-                self.holder_string = str(step)
-            else:
-                self.holder_string = f"{self.holder_string}.{step}"
-        self.holder_string = f"{self.holder_string}.{name}#{index}"
-        self.value = value
-        self.base_att = base_att
 
     def __repr__(self):
         value = self.value
         if value is None:
             value = "unset"
         return f"{self.name} ({value})"
-        # return f"{self.holder_string} ({value})"
