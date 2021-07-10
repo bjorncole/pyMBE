@@ -2,8 +2,6 @@ from copy import deepcopy
 
 from tests.conftest import all_models, kerbal_model
 
-from pymbe.model import Element
-
 
 def test_respect_of_sysml(all_models):
     for model in all_models.values():
