@@ -251,7 +251,7 @@ class Element:
 
     def __getattr__(self, key: str):
         try:
-             return self.__getattribute__(key)
+            return self.__getattribute__(key)
         except AttributeError as exc:
             try:
                 return self[key]
