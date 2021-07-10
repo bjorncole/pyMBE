@@ -3,7 +3,6 @@ import json
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
-from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, List, Set, Tuple, Union
 from warnings import warn
@@ -210,7 +209,7 @@ class Element:
     _model: Model
 
     _derived: Dict[str, List] = field(default_factory=lambda: defaultdict(list))
-    _instances: List["Element"] = field(default_factory=list)
+    _instances: List["Instance"] = field(default_factory=list)
     _is_relationship: bool = False
 
     def __post_init__(self):
@@ -241,7 +240,6 @@ class Element:
                         pass
             raise exc
 
-    @lru_cache
     def __getitem__(self, key: str) -> Any:
         found = False
         for source in ("_data", "_derived"):
@@ -328,5 +326,5 @@ class Instance:
         element = self.element
         element._instances += [self]
         if not self.name:
-            name = element.name or element._id
+            name = element.get("name") or element._id
             self.name = f"{name}#{len(element._instances)}"

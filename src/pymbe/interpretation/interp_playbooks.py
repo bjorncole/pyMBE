@@ -1,3 +1,4 @@
+from logging import getLogger
 from random import randint, sample
 from uuid import uuid4
 
@@ -17,6 +18,8 @@ from .set_builders import (
     extend_sequences_with_new_expr,
     extend_sequences_with_new_value_holder,
 )
+
+logger = getLogger(__name__)
 
 # The playbooks here work to use set building steps to build up sets of instances from a given model
 
@@ -269,6 +272,7 @@ def random_generator_playbook_phase_3(
     :param instances_dict: Working dictionary of interpreted sequences for the model
     :return: None - side effect is addition of new instances to the instances dictionary
     """
+    logger.debug("Starting things up")
     already_drawn, last_sequence = {}, []
     for feature_sequence in feature_sequences:
         new_sequences = []
