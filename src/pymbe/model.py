@@ -291,12 +291,8 @@ class Element:
         return self._model._naming.get_name(element=self)
 
     @property
-    def name(self) -> str:
-        return (
-            self.get("name") or
-            self._derived.get("label") or
-            self._id
-        )
+    def label(self) -> str:
+        self._derived.get("label")
 
     @property
     def relationships(self) -> Dict[str, Any]:
