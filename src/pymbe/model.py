@@ -234,13 +234,13 @@ class Element:
         return Instance(*args, **kwargs, element=self)
 
     def __dir__(self):
-        return sorted(
+        return sorted(set(
             list(super().__dir__()) + [
                 key
                 for key in [*self._data, *self._derived]
                 if key.isidentifier()
             ]
-        )
+        ))
 
     def __eq__(self, other):
         if isinstance(other, str):

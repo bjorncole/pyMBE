@@ -8,10 +8,13 @@ from pymbe.model import Element
 def test_respect_of_sysml(all_models):
     for model in all_models.values():
         for element in model.elements.values():
-            element_attrs = set(super(Element).__dir__())
+            element_attrs = set(super(element.__class__, element).__dir__())
+            derived_attrs = set(element._derived)
             sysml_attrs = set(element._data)
-            common_attrs = element_attrs.intersection(sysml_attrs)
-            assert not common_attrs, f"Found common attributes with SysML: {common_attrs}"
+            common_attrs = tuple(sorted(element_attrs.intersection(sysml_attrs)))
+            assert not common_attrs, f"Found Element attributes conflicting with SysML: {common_attrs}"
+            common_attrs = tuple(sorted(derived_attrs.intersection(sysml_attrs)))
+            assert not common_attrs, f"Found derived attributes conflicting with SysML: {common_attrs}"
 
 
 def test_kerbal_model(kerbal_model):
