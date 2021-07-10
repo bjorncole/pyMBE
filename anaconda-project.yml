@@ -26,7 +26,7 @@ commands:
     unix: |
       isort .
       black src/
-    windows: python isort . & python black .
+    windows: python isort . & python black src/
   package:
     description: make a source distribution
     env_spec: developer
@@ -37,6 +37,25 @@ commands:
     env_spec: developer
     unix: py.test tests/
     windows: py.test tests/
+  download:fixtures:
+    description: update the test fixtures from the Intercax server
+    env_spec: developer
+    unix: python -m tests.fixtures.update
+    windows: python -m tests.fixtures.update
+  push:fixtures:
+    description: push the fixture data to the remote repo
+    env_spec: developer
+    unix: |
+      cd tests/fixtures
+      git add *.json
+      git commit -m "Updated test fixtures"
+      git push origin main
+      cd ..
+      git add fixtures
+      git commit -m "Pointing submodule to latest test fixtures"
+      git push origin main
+      cd ..
+    windows: cd tests\fixtures & git add *.json & git commit -m "Updated test fixtures" & git push origin main & cd .. & git add fixtures & git commit -m "Pointing submodule to latest test fixtures" & git push origin main & cd ..
   notebooks/Tutorial.ipynb:
     env_spec: user
     notebook: notebooks/Tutorial.ipynb
