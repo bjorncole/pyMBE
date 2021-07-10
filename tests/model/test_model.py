@@ -2,7 +2,7 @@ from copy import deepcopy
 
 from tests.conftest import all_models, kerbal_model
 
-from pymbe.model import Element, Model
+from pymbe.model import Element
 
 
 def test_respect_of_sysml(all_models):
@@ -27,9 +27,35 @@ def test_kerbal_model(kerbal_model):
 
     assert kerbal.ownedElement["Parts Library"].ownedElement["FL-T200 Fuel Tank"].ownedElement["Empty Mass"].ownedElement[0].value == 0.125
 
+
+def test_relationships(kerbal_model):
+    model = kerbal_model
+
+    for element in model.elements.values():
+        if element.name == "Kerbal Rocket Part":
+            rocket_part = element
+
+    for subclass in rocket_part.reverseSuperclassing:
+        if subclass.name == "Parachute":
+            break
+
+    assert subclass.throughSuperclassing[0].name == rocket_part.name
+
+
+def test_accessors(kerbal_model):
+    model = kerbal_model
     for element in model.elements.values():
         if element._metatype == "ReturnParameterMembership":
             a_return_parameter_membership = element
     assert isinstance(a_return_parameter_membership.relatedElement[0].value, int)
 
     assert a_return_parameter_membership.target[0].reverseReturnParameterMembership[0] == a_return_parameter_membership.relatedElement[0]
+
+    value = a_return_parameter_membership.get("some_missing_key", "a default for something")
+    assert value == "a default for something"
+
+    assert a_return_parameter_membership.get("some_other_missing_key") is None
+
+    source, target = a_return_parameter_membership.relatedElement
+    assert source.throughReturnParameterMembership[0] == target
+    assert target.reverseReturnParameterMembership[0] == source
