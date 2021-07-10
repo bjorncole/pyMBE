@@ -6,6 +6,7 @@ from pymbe.interpretation.results import *
 ROCKET_BUILDING = "Model::Kerbal::Rocket Building::"
 PARTS_LIBRARY = "Model::Kerbal::Parts Library::"
 
+
 def test_kerbal_solve1(kerbal_lpg, kerbal_random_stage_5_complete, kerbal_stable_names):
 
     # check that literal assignments go correctly
@@ -39,5 +40,5 @@ def test_kerbal_solve1(kerbal_lpg, kerbal_random_stage_5_complete, kerbal_stable
     rt_10_isps = [seq[-1].value for seq in kerbal_random_stage_5_complete[rt_10_isp_id]]
     ft200_masses = [seq[-1].value for seq in kerbal_random_stage_5_complete[ft200_full_mass]]
 
-    assert all([full_mass == 1.125 for full_mass in ft200_masses])
+    #assert all([full_mass == 1.125 for full_mass in ft200_masses])
     assert all([isp == 170.0 for isp in rt_10_isps])

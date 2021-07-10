@@ -61,3 +61,11 @@ def pprint_edges(list_to_print: list, all_elements: dict) -> list:
         print_lines.append(seq_line)
 
     return print_lines
+
+
+def pprint_dict_keys(dict_to_print: dict, model: Model) -> dict:
+    print_dict = {}
+    for key, item in list(dict_to_print.items()):
+        print_dict.update({get_label_for_id(key, model): item})
+
+    return print_dict
