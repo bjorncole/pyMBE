@@ -245,23 +245,16 @@ class Element:
     def __eq__(self, other):
         if isinstance(other, str):
             return self._id == other
-        if isinstance(other, dict):
-            return tuple(sorted(self._data.items())) == tuple(sorted(other.items()))
-        return id(self) == id(other)
+        # TODO: Assess if this is more trouble than it's worth
+        # if isinstance(other, dict):
+        #     return tuple(sorted(self._data.items())) == tuple(sorted(other.items()))
+        return self is other
 
     def __getattr__(self, key: str):
         try:
-            return self.__getattribute__(key)
-        except AttributeError as exc:
-            try:
-                return self[key]
-            except KeyError:
-                if key.startswith("_"):
-                    try:
-                        return self[f"@{key[1:]}"]
-                    except KeyError:
-                        pass
-            raise exc
+            return self[key]
+        except KeyError:
+            raise AttributeError(f"Cannot find {key}")
 
     def __getitem__(self, key: str):
         found = False
