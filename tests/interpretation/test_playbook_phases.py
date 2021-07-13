@@ -9,10 +9,13 @@ from pymbe.interpretation.set_builders import (
     create_set_with_new_instances,
     extend_sequences_by_sampling,
 )
-
+import logging
+from pymbe.interpretation.results import *
 
 ROCKET_BUILDING = "Model::Kerbal::Rocket Building::"
 PARTS_LIBRARY = "Model::Kerbal::Parts Library::"
+SIMPLE_MODEL = "Model::Simple Parts Model::"
+FAKE_LIBRARY = "Model::Simple Parts Model::Fake Library::"
 
 
 def test_type_multiplicity_dict_building(kerbal_lpg, kerbal_stable_names):
@@ -98,12 +101,16 @@ def test_phase_2_instance_creation(kerbal_lpg, kerbal_random_stage_1_complete, k
     assert len(kerbal_random_stage_1_complete[krp_id]) == 272
 
 
-def test_phase_3_instance_sampling(kerbal_random_stage_3_complete):
-    coupler_usage_id = "3a609e5a-3e6f-4eb4-97ff-5a32b23122bf"
+def test_phase_3_instance_sampling(kerbal_random_stage_3_complete, kerbal_stable_names):
+    *_, qualified_name_to_id = kerbal_stable_names
+
+    coupler_usage_id = qualified_name_to_id[
+        f"{ROCKET_BUILDING}Rocket::stages: Rocket Stage::Coupler to "
+        f"Carrying Stage: Coupler <<PartUsage>>"]
     sep_force_id = "7f5e38cb-6647-482d-b8fe-5c266d73ab42"
 
-    booster_empty_mass_id = "645ee1b3-3cb3-494e-8cb2-ec32e377c9f6"
-    booster_isp_id = "2b1351f4-a0fb-470b-bb22-1b924dde38f7"
+    booster_empty_mass_id = qualified_name_to_id[f"{ROCKET_BUILDING}Solid Booster::Empty Mass: Real <<AttributeUsage>>"]
+    booster_isp_id = qualified_name_to_id[f"{ROCKET_BUILDING}Solid Booster::Specific Impulse: Real <<AttributeUsage>>"]
 
     assert coupler_usage_id in kerbal_random_stage_3_complete
 
@@ -121,17 +128,30 @@ def test_phase_3_instance_sampling(kerbal_random_stage_3_complete):
     assert len(kerbal_random_stage_3_complete[booster_empty_mass_id]) > 0
 
 
-def test_phase_4_instance_sampling(kerbal_random_stage_4_complete):
-    top_plus_expr_id = "b51bb349-e210-4be8-be64-e749ea4e563b"
-    sum_1_id = "700d97d1-410a-459c-ad09-8792c27e2803"
-    collect_1_id = "d6644a0a-6eef-49c1-a770-60886073554c"
-    collect_1_result = "31f8c4bd-9700-4bc3-9970-3eb5451f0203"
+def test_phase_4_instance_sampling1(kerbal_random_stage_4_complete, kerbal_stable_names, kerbal_lpg):
+    *_, qualified_name_to_id = kerbal_stable_names
 
-    liquid_stage_id = "e6c22f19-e5e0-4a4b-9a3f-af2f01382465"
+    top_plus_expr_id = qualified_name_to_id[f'{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+'
+                                                    f' (sum (collect (FRE.engines)), ' 
+                                                    f'sum (collect (FRE.tanks))) => $result <<OperatorExpression>>']
+    sum_1_id = qualified_name_to_id[f'{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ (sum (collect (FRE.engines)),' 
+                                    f' sum (collect (FRE.tanks))) => $result::sum (collect (FRE.tanks)) => '
+                                    f'$result <<InvocationExpression>>']
+    collect_1_id = qualified_name_to_id[f'{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ (sum (collect'
+                                        f' (FRE.engines)), sum (collect (FRE.tanks))) => $result::sum (collect '
+                                        f'(FRE.tanks)) => $result::collect (FRE.tanks) => '
+                                        f'$result <<OperatorExpression>>']
+    collect_1_result = qualified_name_to_id[f'{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ (sum (collect'
+                                        f' (FRE.engines)), sum (collect (FRE.tanks))) => $result::sum (collect '
+                                        f'(FRE.tanks)) => $result::collect (FRE.tanks) => '
+                                        f'$result::collect (FRE.tanks) <<Feature>>']
 
-    booster_empty_mass_id = "645ee1b3-3cb3-494e-8cb2-ec32e377c9f6"
-    booster_isp_id = "2b1351f4-a0fb-470b-bb22-1b924dde38f7"
-    rt_10_isp_id = "eb09ff1c-1791-4571-8016-c0534906faa4"
+    liquid_stage_id = qualified_name_to_id[f"{ROCKET_BUILDING}Liquid Stage <<PartDefinition>>"]
+
+    booster_empty_mass_id = qualified_name_to_id[f"{ROCKET_BUILDING}Solid Booster::Empty Mass: Real <<AttributeUsage>>"]
+    booster_isp_id = qualified_name_to_id[f"{ROCKET_BUILDING}Solid Booster::Specific Impulse: Real <<AttributeUsage>>"]
+    rt_10_isp_id = qualified_name_to_id[f"{PARTS_LIBRARY}RT-10 \"Hammer\" Solid Fuel Booster::Specific Impulse: "
+                                        f"Real <<AttributeUsage>>"]
 
     assert len(kerbal_random_stage_4_complete[collect_1_id]) > 0 or \
         len(kerbal_random_stage_4_complete[liquid_stage_id]) == 0
@@ -149,6 +169,92 @@ def test_phase_4_instance_sampling(kerbal_random_stage_4_complete):
     assert len(kerbal_random_stage_4_complete[booster_isp_id]) > 0
     assert len(kerbal_random_stage_4_complete[rt_10_isp_id]) > 0
     assert len(kerbal_random_stage_4_complete[booster_empty_mass_id]) > 0
+
+
+def test_sp_phase_1_instance_creation(simple_parts_random_stage_1_instances, simple_parts_stable_names):
+    *_, qualified_name_to_id = simple_parts_stable_names
+
+    part_id = qualified_name_to_id[f"{FAKE_LIBRARY}Part <<PartDefinition>>"]
+    port_id = qualified_name_to_id[f"{FAKE_LIBRARY}Port <<PortDefinition>>"]
+    connection_id = qualified_name_to_id[f"{FAKE_LIBRARY}Connection <<ConnectionDefinition>>"]
+
+    power_user_id = qualified_name_to_id[f"{SIMPLE_MODEL}Power Group: Part::Power User: Part <<PartUsage>>"]
+
+    assert part_id in simple_parts_random_stage_1_instances
+    assert port_id in simple_parts_random_stage_1_instances
+    assert connection_id in simple_parts_random_stage_1_instances
+    # don"t expect features at this point
+    assert power_user_id not in simple_parts_random_stage_1_instances
+
+
+def test_sp_phase_1_singleton_instances(simple_parts_random_stage_1_complete, simple_parts_stable_names):
+    *_, qualified_name_to_id = simple_parts_stable_names
+
+    part_id = qualified_name_to_id[f"{FAKE_LIBRARY}Part <<PartDefinition>>"]
+    port_id = qualified_name_to_id[f"{FAKE_LIBRARY}Port <<PortDefinition>>"]
+    connection_id = qualified_name_to_id[f"{FAKE_LIBRARY}Connection <<ConnectionDefinition>>"]
+
+    power_user_id = qualified_name_to_id[f"{SIMPLE_MODEL}Power Group: Part::Power User: Part <<PartUsage>>"]
+
+    assert part_id in simple_parts_random_stage_1_complete
+    assert port_id in simple_parts_random_stage_1_complete
+    assert connection_id in simple_parts_random_stage_1_complete
+    # don"t expect features at this point
+    assert power_user_id not in simple_parts_random_stage_1_complete
+
+
+def test_sp_phase_2_instance_creation(simple_parts_lpg, simple_parts_random_stage_1_complete,
+                                      simple_parts_stable_names, simple_parts_client):
+    *_, qualified_name_to_id = simple_parts_stable_names
+
+    connection_id = qualified_name_to_id[f"{FAKE_LIBRARY}Connection <<ConnectionDefinition>>"]
+    power_user_id = qualified_name_to_id[f"{SIMPLE_MODEL}Power Group: Part::Power User: Part <<PartUsage>>"]
+    part_id = qualified_name_to_id[f"{FAKE_LIBRARY}Part <<PartDefinition>>"]
+    port_id = qualified_name_to_id[f"{FAKE_LIBRARY}Port <<PortDefinition>>"]
+
+    scg = simple_parts_lpg.get_projection("Part Definition")
+
+    random_generator_playbook_phase_2_rollup(scg, simple_parts_random_stage_1_complete)
+
+    random_generator_playbook_phase_2_unconnected(simple_parts_lpg.model, simple_parts_random_stage_1_complete)
+
+    assert part_id in simple_parts_random_stage_1_complete
+    assert port_id in simple_parts_random_stage_1_complete
+    assert connection_id in simple_parts_random_stage_1_complete
+    # don"t expect features at this point
+    assert power_user_id not in simple_parts_random_stage_1_complete
+
+    assert len(simple_parts_random_stage_1_complete[part_id]) == 7
+    assert len(simple_parts_random_stage_1_complete[port_id]) == 6
+
+
+def test_sp_phase_3_instance_sampling(simple_parts_random_stage_3_complete, simple_parts_stable_names):
+    *_, qualified_name_to_id = simple_parts_stable_names
+
+    connection_id = qualified_name_to_id[f"{FAKE_LIBRARY}Connection <<ConnectionDefinition>>"]
+    power_source_id = qualified_name_to_id[f"{SIMPLE_MODEL}Power Group: Part::Power Source: Part <<PartUsage>>"]
+    power_user_id = qualified_name_to_id[f"{SIMPLE_MODEL}Power Group: Part::Power User: Part <<PartUsage>>"]
+    part_id = qualified_name_to_id[f"{FAKE_LIBRARY}Part <<PartDefinition>>"]
+    port_id = qualified_name_to_id[f"{FAKE_LIBRARY}Port <<PortDefinition>>"]
+    power_in_id = qualified_name_to_id[f"{SIMPLE_MODEL}Power Group: Part::Power User: Part::Power In: Port <<PortUsage>>"]
+    power_out_id = qualified_name_to_id[
+        f"{SIMPLE_MODEL}Power Group: Part::Power Source: Part::Power Out: Port <<PortUsage>>"]
+    connect_use_id = qualified_name_to_id[f"{SIMPLE_MODEL}Power Group: Part::powerToUser: Connection <<ConnectionUsage>>"]
+    power_group_id = qualified_name_to_id[f"{SIMPLE_MODEL}Power Group: Part::powerToUser: Connection <<ConnectionUsage>>"]
+
+    assert connect_use_id in simple_parts_random_stage_3_complete
+    # check that each part has exactly one port
+    inst_names = [str(inst) for inst in simple_parts_random_stage_3_complete[power_in_id]]
+    unique_names = set(inst_names)
+    assert len(unique_names) == len(simple_parts_random_stage_3_complete[power_in_id])
+
+    inst_names = [str(inst) for inst in simple_parts_random_stage_3_complete[power_user_id]]
+    unique_names = set(inst_names)
+    assert len(unique_names) == len(simple_parts_random_stage_3_complete[power_user_id])
+
+    inst_names = [str(inst) for inst in simple_parts_random_stage_3_complete[power_out_id]]
+    unique_names = set(inst_names)
+    assert len(unique_names) == len(simple_parts_random_stage_3_complete[power_out_id])
 
 
 def test_expression_inferred_graph(kerbal_lpg):
