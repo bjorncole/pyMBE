@@ -394,7 +394,7 @@ env_specs:
       - zstd=1.5.0=h6255e5f_0
   developer:
     locked: true
-    env_spec_hash: dd29a292199a87ae1265ce59f578a7ceb205aeba
+    env_spec_hash: 6f9611fa75b6a4db24c19c316d57f1005cee9720
     platforms:
     - linux-64
     - osx-64
@@ -488,7 +488,6 @@ env_specs:
       - toml=0.10.2=pyhd8ed1ab_0
       - tqdm=4.61.2=pyhd8ed1ab_1
       - traitlets=5.0.5=py_0
-      - twine=3.4.1=pyhd8ed1ab_0
       - typing-extensions=3.10.0.0=hd8ed1ab_0
       - typing_extensions=3.10.0.0=pyha770c72_0
       - tzdata=2021a=he74cb21_1
@@ -543,7 +542,7 @@ env_specs:
       - ipython=7.25.0=py39hef51801_1
       - jbig=2.1=h7f98852_2003
       - jedi=0.18.0=py39hf3d152e_2
-      - jeepney=0.6.0=pyhd8ed1ab_0
+      - jeepney=0.7.0=pyhd8ed1ab_0
       - jpeg=9d=h36c2ea0_0
       - jupyter_core=4.7.1=py39hf3d152e_0
       - keepalive=0.5=py39hf3d152e_5
@@ -634,6 +633,7 @@ env_specs:
       - terminado=0.10.1=py39hf3d152e_0
       - tk=8.6.10=h21135ba_1
       - tornado=6.1=py39h3811e60_1
+      - twine=3.3.0=py39hf3d152e_1
       - typed-ast=1.4.3=py39h3811e60_0
       - websocket-client=0.57.0=py39hf3d152e_4
       - widgetsnbextension=3.5.1=py39hf3d152e_4
@@ -735,6 +735,7 @@ env_specs:
       - terminado=0.10.1=py39h6e9494a_0
       - tk=8.6.10=h0419947_1
       - tornado=6.1=py39h89e85a6_1
+      - twine=3.3.0=py39h6e9494a_1
       - typed-ast=1.4.3=py39h89e85a6_0
       - websocket-client=0.57.0=py39h6e9494a_4
       - widgetsnbextension=3.5.1=py39h6e9494a_4
@@ -837,6 +838,7 @@ env_specs:
       - terminado=0.10.1=py39hcbf5309_0
       - tk=8.6.10=he774522_1
       - tornado=6.1=py39hb82d6ee_1
+      - twine=3.3.0=py39hcbf5309_1
       - typed-ast=1.4.3=py39hb82d6ee_0
       - ucrt=10.0.20348.0=h57928b3_0
       - vc=14.2=hc4473a8_5
@@ -850,5 +852,3 @@ env_specs:
       - zeromq=4.3.4=h0e60522_0
       - zlib=1.2.11=h62dcd97_1010
       - zstd=1.5.0=h6255e5f_0
-      pip:
-      - sysml-v2-api-client==2021.post5
