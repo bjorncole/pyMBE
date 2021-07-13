@@ -21,7 +21,6 @@ def test_kerbal_model(kerbal_model):
 
     assert kerbal.name == "Kerbal", f"Element name should be 'Kerbal', not '{kerbal.name}'"
     assert kerbal == kerbal._id, f"Element should equate to its id"
-    assert kerbal == deepcopy(kerbal._data), f"Element should equate to its _data"
 
     my_rocket = kerbal(name="My Rocket")
     assert my_rocket.name == "My Rocket", f"Instance should be called 'My Rocket', not '{my_rocket.name}'"
