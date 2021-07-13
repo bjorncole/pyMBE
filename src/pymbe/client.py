@@ -1,3 +1,4 @@
+import re
 from datetime import timezone
 from dateutil import parser
 from functools import lru_cache
@@ -82,10 +83,13 @@ class SysML2Client(trt.HasTraits):
 
     selected_project: str = trt.Unicode(allow_none=True)
     selected_commit: str = trt.Unicode(allow_none=True)
+    next_page_id: str = trt.Unicode(allow_none=True)
 
     projects = trt.Dict()
 
     name_hints = trt.Dict()
+
+    _next_page_id_regex = re.compile(r"page\[after\]=(.*)\&")
 
     @trt.default("_api_configuration")
     def _make_api_configuration(self):
@@ -195,14 +199,33 @@ class SysML2Client(trt.HasTraits):
                 "By default, disabling pagination still retrieves 100 "
                 "records at a time!  True pagination is not supported yet."
             )
-        # TODO: Get the link header and use that to get the next page
-        # NOTE: The Pilot Implementation uses cursor-navigation, a la GitHub and DynamoDB
+        arguments = []
+        if self.next_page_id:
+            arguments += [f"page[after]={self.next_page_id}"]
+        if self.page_size:
+            arguments += [f"?page[size]={self.page_size}"]
+        arguments = "&".join(arguments)
+        if arguments:
+            arguments = f"?{arguments}"
         return (
             f"{self.host}/"
             f"projects/{self.selected_project}/"
             f"commits/{self.selected_commit}/"
             f"elements"
-        ) + (f"?page[size]={self.page_size}" if self.paginate else "")
+        ) + arguments
+
+    def _set_next_page_id(self, headers: dict):
+        next_page_id = None
+        link = headers.get("Link")
+        if link:
+            next_page_id = self._next_page_id_regex.findall(link)
+            if len(next_page_id) == 1:
+                next_page_id = next_page_id[0]
+            elif len(next_page_id) > 1:
+                raise SystemError(
+                    f"Found {len(next_page_id)} next page keys: {next_page_id}"
+                )
+        self.next_page_id = next_page_id
 
     @lru_cache
     def _retrieve_data(self, url: str) -> dict:
@@ -212,6 +235,7 @@ class SysML2Client(trt.HasTraits):
                 f"Failed to retrieve elements from '{url}', "
                 f"reason: {response.reason}"
             )
+        self._set_next_page_id(headers=response.headers)
         return response.json()
 
     def _get_project_commits(self):
@@ -224,7 +248,11 @@ class SysML2Client(trt.HasTraits):
         ]
 
     def _get_elements_from_server(self):
-        return self._retrieve_data(self.elements_url)
+        elements = self._retrieve_data(self.elements_url)
+        while self.next_page_id:
+            # TODO: Iterate over the pagination
+            elements += self._retrieve_data(self.elements_url)
+        return elements
 
     def _download_elements(self):
         elements = self._get_elements_from_server()
