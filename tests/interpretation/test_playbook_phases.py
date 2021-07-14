@@ -269,7 +269,7 @@ def test_expression_inferred_graph(kerbal_lpg):
     ]
 
     assert set(all_edge_types).intersection({"ImpliedParameterFeedforward^-1"})
-    assert len(implied_edges) == 26
+    assert len(implied_edges) == 28
 
     top_plus_expr_id = "d05c42b2-3453-4c94-bf18-5bbc38949d19"
     fl_200_full_mass_id = "c3344ffd-6a7f-499b-90cf-e7e311e309f5"

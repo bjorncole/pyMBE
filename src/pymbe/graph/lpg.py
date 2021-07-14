@@ -2,7 +2,6 @@ import traceback
 
 from functools import lru_cache
 from pathlib import Path
-from uuid import uuid4
 from warnings import warn
 
 from ruamel.yaml import YAML
@@ -29,10 +28,7 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
         # Adds additional relationships (edges) based on element attributes
         # dict(attribute="owner", metatype="Owned", reversed=True),
     )
-    IMPLIED_GENERATORS: dict = {
-        # Adds additional implied edges based on a tuple of generators
-        "ImpliedFeedforwardEdges": "get_implied_feedforward_edges",
-    }
+
     sysml_projections: dict = trt.Dict()
 
     model: Model = trt.Instance(Model, allow_none=True)
@@ -71,25 +67,6 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
             projections.pop("Complete", None)
 
         self.sysml_projections = dict(projections)
-
-    @staticmethod
-    def _make_nx_multi_edge(source, target, metatype, **data):
-        return (
-            source,                           # source
-            target,                           # target
-            metatype,                         # edge type
-            {                                 # edge data
-                "@id": f"_{uuid4()}",
-                "@type": metatype,
-                "relatedElement": [
-                    {"@id": source},
-                    {"@id": target},
-                ],
-                "source": [{"@id": source}],
-                "target": [{"@id": target}],
-                **data
-            },
-        )
 
     @trt.observe("model")
     def update(self, change: trt.Bunch):
@@ -211,134 +188,16 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
             if key in function_attributes
         }
 
-    def get_implied_feedforward_edges(self) -> list:
-        eeg = self.get_projection("Expression Evaluation")
-
-        edge_dict = {
-            edge["@id"]: edge
-            for edge in self.edges.values()
-        }
-        return_parameter_memberships = [
-            self.edges[(source, target, kind)]
-            for source, target, kind in self.edges
-            if kind == "ReturnParameterMembership"
-        ]
-        feature_values = [
-            self.edges[(source, target, kind)]
-            for source, target, kind in self.edges
-            if kind == "FeatureValue"
-        ]
-
-        implied_edges = []
-
-        for feature_value in feature_values:
-            att_usage, expr = feature_value["owningRelatedElement"]["@id"], feature_value["value"]["@id"]
-            expr_result_id = self.nodes[expr]["result"]["@id"]
-
-            implied_edges += [(
-                expr_result_id,
-                att_usage,
-                "ImpliedParameterFeedforward",
-            )]
-
-        for membership in return_parameter_memberships:
-            for result_feeder_id in eeg.predecessors(membership["memberElement"]["@id"]):
-                result_feeder = self.nodes[result_feeder_id]
-                rf_metatype = result_feeder["@type"]
-
-                # we only want Expressions that have at least one input parameter
-                if "Expression" not in rf_metatype or rf_metatype in ("FeatureReferenceExpression"):
-                    if rf_metatype == "FeatureReferenceExpression":
-                        implied_edges += [
-                            (
-                                result_feeder["referent"]["@id"],
-                                result_feeder_id,
-                                "ImpliedReferentFeed"
-                            )
-                        ]
-                    continue
-
-                # Path Step Expressions need results fed into them, so add edges to order this
-                # FIXME: Super jenky because we are avoiding the first element to prevent a cycle .. first arg does feed in properly
-                if rf_metatype == "PathStepExpression":
-                    arg_ids = result_feeder["argument"]
-                    results = [
-                        self.nodes[arg_id["@id"]]["result"]["@id"]
-                        for index, arg_id in enumerate(arg_ids) if index > 0
-                    ]
-
-                    implied_edges += [
-                        (result, result_feeder_id, "ImpliedPathArgumentFeedforward")
-                        for result in results
-                    ]
-
-                expr_results = []
-                expr_members, para_members, result_members = [], [], []
-                # assume that the members of an expression that are themselves members are
-                # referenced in the same order as parameters - results of an expression
-                # should feed into the input parameter owned by its owner
-
-                owned_memberships = result_feeder["ownedMembership"]
-
-                # NOTE: There is a special case for when there is a ResultExpressionMembership:
-                # A ResultExpressionMembership is a FeatureMembership that indicates that the
-                # ownedResultExpression provides the result values for the Function or Expression
-                # that owns it. The owning Function or Expression must contain a BindingConnector
-                # between the result parameter of the ownedResultExpression and the result
-                # parameter of the Function or Expression.
-                rem_flag = False
-                for om_id in owned_memberships:
-                    relationship = edge_dict[om_id["@id"]]
-                    relationship_metatype = relationship["@type"]
-                    edge_member_id = relationship["memberElement"]["@id"]
-                    if "Parameter" in relationship_metatype:
-                        if "ReturnParameter" in relationship_metatype:
-                            result_members.append(edge_member_id)
-                        else:
-                            para_members.append(edge_member_id)
-                    elif "Result" in relationship_metatype:
-                        rem_owning_type = self.nodes[relationship["owningType"]["@id"]]
-                        rem_owned_ele = self.nodes[relationship["ownedMemberElement"]["@id"]]
-                        rem_flag = True
-                    elif "Membership" in relationship_metatype:
-                        edge_member = relationship["memberElement"]["@id"]
-                        expr_members.append(edge_member)
-                        if "result" in self.nodes[edge_member]:
-                            expr_result = self.nodes[edge_member]["result"]["@id"]
-                            expr_results.append(expr_result)
-
-                # FIXME: streamline / simplify this
-                if rem_flag:
-                    rem_cheat_expr = rem_owned_ele["@id"]
-                    rem_cheat_result = rem_owned_ele["result"]["@id"]
-                    rem_cheat_para = rem_owning_type["result"]["@id"]
-
-                    expr_members = [rem_cheat_expr]
-                    expr_results = [rem_cheat_result]
-                    para_members = [rem_cheat_para]
-
-                implied_edges += [
-                    (expr_results[index], para_members[index], "ImpliedParameterFeedforward")
-                    for index, expr in enumerate(expr_members)
-                    if index < len(expr_results) and index < len(para_members)
-                ]
-
-        return implied_edges
-
     def get_implied_edges(self, *implied_edge_types):
+        from .edge_generators import IMPLIED_GENERATORS
+
         new_edges = []
         for implied_edge_type in implied_edge_types:
-            function_name = self.IMPLIED_GENERATORS.get(implied_edge_type)
-            if function_name is None:
-                warn(f"'{implied_edge_type}' is not a valid edge generator!")
-                continue
-            edge_generator = getattr(self, function_name, None)
+            edge_generator = IMPLIED_GENERATORS.get(implied_edge_type)
             if edge_generator is None:
-                raise SystemError(f"Could not find '{function_name}' implied edge generator!")
-            new_edges += [
-                self._make_nx_multi_edge(source, target, metatype, label=metatype)
-                for source, target, metatype in edge_generator()
-            ]
+                warn(f"Could not find an implied edge generator for '{implied_edge_type}'")
+                continue
+            new_edges += edge_generator(lpg=self)
         return new_edges
 
     def get_projection(self, projection: str) -> nx.Graph:
