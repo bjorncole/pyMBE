@@ -26,7 +26,7 @@ commands:
     unix: |
       isort .
       black src/
-    windows: python isort . & python black src/
+    windows: isort . & black src/ tests/
   package:
     description: make a source distribution
     env_spec: developer
