@@ -2,8 +2,6 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
 
-from traitlets.traitlets import default
-
 
 @dataclass
 class Mapper:
@@ -20,7 +18,7 @@ class Mapper:
     def __repr__(self):
         return f"Mapper({len(self.to_sysml)} Items)"
 
-    def __post_init__(self, *args, **kwargs):
+    def __post_init__(self):
         # Filter maps with no SysML ID
         self.to_sysml = {
             elkjs_id: sysml_id
