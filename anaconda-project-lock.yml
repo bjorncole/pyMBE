@@ -869,5 +869,3 @@ env_specs:
       - zeromq=4.3.4=h0e60522_0
       - zlib=1.2.11=h62dcd97_1010
       - zstd=1.5.0=h6255e5f_0
-      pip:
-      - sysml-v2-api-client==2021.post5
