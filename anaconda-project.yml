@@ -25,8 +25,11 @@ commands:
     env_spec: developer
     unix: |
       isort .
-      black src/
-    windows: isort . & black src/ tests/
+      black src/ tests/ -l 120
+      flake8 src/
+      pylint src/
+    windows: |
+      isort . & black src/ tests/ -l 120 & flake8 src/ & pylint src/
   package:
     description: make a source distribution
     env_spec: developer
@@ -112,9 +115,11 @@ env_specs:
     packages:
     - black
     - coverage
+    - flake8
     - git
     - isort
     - pip
+    - pylint
     - pytest
     - pytest-asyncio
     - pytest-cov
