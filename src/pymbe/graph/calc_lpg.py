@@ -32,72 +32,57 @@ class CalculationGroup:
     def solve_graph(self, lpg: SysML2LabeledPropertyGraph):
         # evaluating the expression tree is a reverse-order breadth-first search (cover all children of a given
         # node and then move up to that node)
+        elements = lpg.model.elements
         for step in self.calculation_list:
-            if step[2] in ("Assignment", "ValueBinding"):
-                if step[0] in self.instance_dict:
-                    source_instances = self.instance_dict[step[0]]
-                    target_instances = self.instance_dict[step[1]]
-
-                    if len(target_instances) == 0:
-                        print(source_instances)
-                        print(get_label_for_id(step[1], lpg.model) + ", id = " + step[1] + " has no elements")
-                    else:
-                        for index, source in enumerate(source_instances):
-                            target_instances[index][-1].value = source[-1].value
-
-            elif step[2] == "Redefinition":
-                if step[0] in self.instance_dict:
-                    source_instances = self.instance_dict[step[0]]
-                    target_instances = self.instance_dict[step[1]]
-
-                    for sorc in source_instances:
-                        for targ in target_instances:
-                            sorce_base = sorc[0:-1]
-                            targ_base = targ[0:-1]
-                            if sorce_base == targ_base:
-                                targ[-1].value = sorc[-1].value
-
-            elif step[2] == "Output":
-                if "Literal" in lpg.nodes[step[0]]["@type"]:
-
-                    source_instances = self.instance_dict[step[0]]
-                    target_instances = self.instance_dict[step[1]]
-
+            src, tgt, type_ = step
+            src_data = lpg.nodes[src]
+            src_metatype = src_data["@type"]
+            source_instances = self.instance_dict.get(src)
+            target_instances = self.instance_dict.get(tgt)
+            if type_ in ("Assignment", "ValueBinding"):
+                if not source_instances:
+                    continue
+                if target_instances:
+                    for index, source in enumerate(source_instances):
+                        target_instances[index][-1].value = source[-1].value
+                else:
+                    print(source_instances)
+                    print(f"{elements[tgt].label}, id={tgt} has no elements")
+            elif type_ == "Redefinition":
+                if not source_instances:
+                    continue
+                for source_instance in source_instances:
+                    for target_instance in target_instances:
+                        if source_instance[:-1] == target_instance[:-1]:
+                            target_instance[-1].value = source_instance[-1].value
+            elif type_ == "Output":
+                if "Literal" in src_metatype:
                     for index, seq in enumerate(source_instances):
                         evaluate_and_apply_literal(seq[-1], target_instances[index][-1])
 
                         self.calculation_log.append(f"[Literal] {seq} is being assigned to {target_instances[index]}")
 
-                elif lpg.nodes[step[0]]["@type"] == "FeatureReferenceExpression":
-                    source_instances = self.instance_dict[step[0]]
-                    target_instances = self.instance_dict[step[1]]
-
+                elif src_metatype == "FeatureReferenceExpression":
                     for m0_obj in source_instances:
 
                         self.calculation_log.append(f"[FRE] {m0_obj} is expanding FRE...")
 
-                        evaluate_and_apply_fre(
-                            m0_obj[-1],
-                            self.instance_dict
-                        )
+                        evaluate_and_apply_fre(m0_obj[-1], self.instance_dict)
 
                         for target_inst in target_instances:
                             self.calculation_log.append(f"[FRE]... result includes {target_inst}")
 
-                elif lpg.nodes[step[0]]["@type"] == "OperatorExpression":
-                    if lpg.nodes[step[0]]["operator"] == "collect":
-                        source_instances = self.instance_dict[step[0]]
-                        target_instances = self.instance_dict[step[1]]
-
+                elif src_metatype == "OperatorExpression":
+                    if src_data["operator"] == "collect":
                         collect_sub_expressions = []
                         collect_sub_expression_results = []
                         collect_sub_inputs = []
-                        for member in lpg.nodes[step[0]]["member"]:
+                        for member in src_data["member"]:
                             if lpg.nodes[member["@id"]]["@type"] in COLLECTABLE_EXPRESSIONS:
                                 collect_sub_expressions.append(lpg.nodes[member["@id"]])
                                 collect_sub_expression_results.append(lpg.nodes[lpg.nodes[member["@id"]]["result"]["@id"]])
 
-                        for member in lpg.nodes[step[0]]["input"]:
+                        for member in src_data["input"]:
                             collect_sub_inputs.append(lpg.nodes[member["@id"]])
 
                         for index, m0_operator_seq in enumerate(source_instances):
@@ -112,11 +97,13 @@ class CalculationGroup:
                                 if input_inst[0] == m0_operator_seq[0]:
                                     path_point = input_inst[-1]
 
-                            #print("Calling collect with base = " + str(m0_operator_seq[0]) + ", collection input " +
-                            #      str(input_point) + ", and path input " + str(path_point))
+                            print(
+                                f"Calling collect with base = {m0_operator_seq[0]}, collection "
+                                f"input {input_point}, and path input {path_point}"
+                            )
 
                             if not path_point or path_point.value is None:
-                                print("Path point value is empty! " + str(path_point))
+                                print("Path point value is empty! {path_point}")
                             else:
                                 evaluate_and_apply_collect(
                                     m0_operator_seq[0],
@@ -127,16 +114,13 @@ class CalculationGroup:
                                     target_instances[index][-1],
                                 )
 
-                    elif lpg.nodes[step[0]]["operator"] == "+":
-                        source_instances = self.instance_dict[step[0]]
-                        target_instances = self.instance_dict[step[1]]
-
-                        for member in lpg.nodes[step[0]]["input"]:
+                    elif src_data["operator"] == "+":
+                        for member in src_data["input"]:
                             collect_sub_inputs.append(lpg.nodes[member["@id"]])
 
                         plus_inputs = []
 
-                        for member in lpg.nodes[step[0]]["input"]:
+                        for member in src_data["input"]:
                             plus_inputs.append(lpg.nodes[member["@id"]])
 
                         for index, m0_operator_seq in enumerate(source_instances):
@@ -157,16 +141,12 @@ class CalculationGroup:
                                 target_instances[index][-1],
                             )
 
-                elif lpg.nodes[step[0]]["@type"] == "InvocationExpression":
-                    invoke_type = lpg.nodes[lpg.nodes[step[0]]["type"][0]["@id"]]
-
-                    source_instances = self.instance_dict[step[0]]
-                    target_instances = self.instance_dict[step[1]]
-
+                elif src_metatype == "InvocationExpression":
+                    invoke_type = lpg.nodes[src_data["type"][0]["@id"]]
                     if invoke_type["name"] == "sum":
                         sum_inputs = []
 
-                        for member in lpg.nodes[step[0]]["input"]:
+                        for member in src_data["input"]:
                             sum_inputs.append(lpg.nodes[member["@id"]])
 
                         for index, m0_operator_seq in enumerate(source_instances):
@@ -178,22 +158,19 @@ class CalculationGroup:
 
                             evaluate_and_apply_sum(
                                 input_point,
-                                target_instances[index][-1]
+                                target_instances[index][-1],
                             )
 
-                elif lpg.nodes[step[0]]["@type"] == "PathStepExpression":
-                    source_instances = self.instance_dict[step[0]]
-                    target_instances = self.instance_dict[step[1]]
-
+                elif src_metatype == "PathStepExpression":
                     collect_sub_expressions = []
                     collect_sub_expression_results = []
                     collect_sub_inputs = []
-                    for member in lpg.nodes[step[0]]["member"]:
+                    for member in src_data["member"]:
                         if lpg.nodes[member["@id"]]["@type"] in COLLECTABLE_EXPRESSIONS:
                             collect_sub_expressions.append(lpg.nodes[member["@id"]])
                             collect_sub_expression_results.append(lpg.nodes[lpg.nodes[member["@id"]]["result"]["@id"]])
 
-                    for member in lpg.nodes[step[0]]["input"]:
+                    for member in src_data["input"]:
                         collect_sub_inputs.append(lpg.nodes[member["@id"]])
 
                     # Base sequence is there to filter as appropriate to the expression scope

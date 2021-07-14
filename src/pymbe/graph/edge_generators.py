@@ -17,13 +17,14 @@ def make_nx_multi_edge(source, target, metatype, **data) -> MultiEdge:
         {                                 # edge data
             "@id": f"_{uuid4()}",
             "@type": metatype,
+            "implied": True,
+            "label": metatype,
             "relatedElement": [
                 {"@id": source},
                 {"@id": target},
             ],
             "source": [{"@id": source}],
             "target": [{"@id": target}],
-            "label": metatype,
             **data,
         },
     )
