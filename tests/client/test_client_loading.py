@@ -13,12 +13,12 @@ from tests.conftest import (
 SYSML_SERVER_URL = "http://sysml2.intercax.com"
 
 
-def bad_connection(host: str):
+def can_connect(host: str, port: int = 9000):
     try:
-        requests.get(host)
-        return False
-    except:
+        requests.get(f"{host}:{port}")
         return True
+    except:
+        return False
 
 
 def test_client_load_kerbal(kerbal_client):
@@ -46,10 +46,20 @@ def test_bad_connection(kerbal_client):
 
 
 @pytest.mark.skipif(
-    bad_connection(host=SYSML_SERVER_URL),
+    not can_connect(host=SYSML_SERVER_URL),
     reason=f"Can't connect to {SYSML_SERVER_URL}",
 )
 def test_remote_connection(kerbal_client):
-    kerbal_client.host_url = SYSML_SERVER_URL
+    client = kerbal_client
+    client.host_url = SYSML_SERVER_URL
 
-    assert kerbal_client.projects
+    assert client.projects
+
+    client.page_size = 20
+
+    client.selected_project = list(client.projects)[0]
+    client.selected_commit = client._commits_api.get_commits_by_project(client.selected_project)[0].id
+    client._download_elements()
+
+    model = client.model
+    assert model.elements
