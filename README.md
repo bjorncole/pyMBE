@@ -21,6 +21,9 @@ If you have anaconda or miniconda, install `mamba` (it's faster and better than 
 conda install mamba
 ```
 
+You may need to specify the channel:
+```conda install -c condo-forge mamba```
+
 If you don't have `anaconda` or `miniconda`, just get [Mambaforge](https://github.com/conda-forge/miniforge/releases/tag/4.9.2-5).
 
 ## 3. Get `anaconda-project`
