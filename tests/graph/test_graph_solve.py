@@ -25,8 +25,6 @@ def test_kerbal_solve1(kerbal_lpg, kerbal_random_stage_5_complete, kerbal_stable
 
     literal_output_moves = [item for item in dcg if item[2] == "Output" and 'Literal' in kerbal_lpg.nodes[item[0]]['@type']]
 
-    print(pprint_edges(literal_output_moves, kerbal_lpg.model))
-
     cg1 = CalculationGroup(kerbal_lpg.get_projection("Expression Inferred"), kerbal_random_stage_5_complete, dcg)
 
     try:
@@ -42,3 +40,27 @@ def test_kerbal_solve1(kerbal_lpg, kerbal_random_stage_5_complete, kerbal_stable
 
     #assert all([full_mass == 1.125 for full_mass in ft200_masses])
     assert all([isp == 170.0 for isp in rt_10_isps])
+
+
+def test_kerbal_solve2(kerbal_lpg, kerbal_random_stage_5_complete, kerbal_stable_names):
+
+    # check that Path Step Expression has expected inputs
+
+    id_to_qualified_name, qualified_name_to_id = kerbal_stable_names
+
+    pse_engine_mass = qualified_name_to_id[f"{PARTS_LIBRARY}RT-10 \"Hammer\" Solid Fuel Booster::Specific Impulse: "
+                                        f"Real <<AttributeUsage>>"]
+
+    # incrementally step through the calculations and check progress
+
+    dcg = generate_execution_order(kerbal_lpg)
+
+    engine_mass_pse_dcg = None
+
+    for item in dcg:
+        if kerbal_lpg.nodes[item[0]]["@type"] == "PathStepExpression":
+            engine_mass_pse_dcg = kerbal_lpg.nodes[item[0]]
+
+    print(engine_mass_pse_dcg)
+
+    assert engine_mass_pse_dcg is not None
