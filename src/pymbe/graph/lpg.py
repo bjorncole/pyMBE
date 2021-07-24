@@ -307,7 +307,7 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
             ), []))
             return graph.__class__(graph.subgraph(nodes))
 
-        except (nx.NetworkXError, nx.NetworkXException) as exc:
+        except (nx.NetworkXError, nx.NetworkXException):
             warn(traceback.format_exc())
             if try_reverse:
                 return self.get_path_graph(
