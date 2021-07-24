@@ -2,6 +2,7 @@ import json
 import requests
 
 from copy import deepcopy
+from warnings import warn
 
 import rdflib as rdf
 import traitlets as trt
@@ -53,6 +54,7 @@ class SysML2RDFGraph(trt.HasTraits):
         if not self.merge:
             old_graph = self.graph
             self.graph = rdf.Graph()
+            warn(f"Deleting old graph: {old_graph}")
             del old_graph
 
         elements = [
