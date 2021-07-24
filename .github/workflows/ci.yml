@@ -82,11 +82,12 @@ jobs:
           environment-file: .github/environment.yml
 
       - name: lint
-        # if: succeeded() || failed()
         shell: bash -l {0}
         run: |
+          set +e
           anaconda-project run setup
           anaconda-project run lint
+          set -e
 
   test:
     runs-on: ${{ matrix.vm }}
