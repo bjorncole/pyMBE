@@ -17,18 +17,20 @@ SIMPLE_MODEL = "Model::Simple Parts Model::"
 FAKE_LIBRARY = "Model::Simple Parts Model::Fake Library::"
 
 
-def test_feature_to_type1(kerbal_client, kerbal_lpg):
+def test_feature_to_type1(kerbal_client, kerbal_lpg, kerbal_stable_names):
+    *_, qualified_name_to_id = kerbal_stable_names
 
-    engines_feat = '32c847a1-2184-4486-ba48-dbf6125ca638'
-    engine_type_feat = '79cf7d24-37f7-404c-94b4-395cd1d0ee51'
+    engines_feat = qualified_name_to_id[f"{ROCKET_BUILDING}Liquid Stage::engines: Liquid Engine <<PartUsage>>"]
+    engine_type_feat = qualified_name_to_id[f"{ROCKET_BUILDING}Liquid Engine <<PartDefinition>>"]
 
     assert get_types_for_feature(kerbal_lpg, engines_feat) == [engine_type_feat]
 
 
 def test_type_to_feature1(kerbal_client, kerbal_lpg, kerbal_stable_names):
+    *_, qualified_name_to_id = kerbal_stable_names
 
-    engines_feat = '32c847a1-2184-4486-ba48-dbf6125ca638'
-    engine_type_feat = '79cf7d24-37f7-404c-94b4-395cd1d0ee51'
+    engines_feat = qualified_name_to_id[f"{ROCKET_BUILDING}Liquid Stage::engines: Liquid Engine <<PartUsage>>"]
+    engine_type_feat = qualified_name_to_id[f"{ROCKET_BUILDING}Liquid Engine <<PartDefinition>>"]
 
     assert get_features_typed_by_type(kerbal_lpg, engine_type_feat) == [engines_feat]
 
@@ -48,10 +50,11 @@ def test_type_to_feature2(simple_parts_client, simple_parts_lpg, simple_parts_st
             power_out_id in get_features_typed_by_type(simple_parts_lpg, port_type_id)
 
 
-def test_banded_graph_paths1(kerbal_lpg):
+def test_banded_graph_paths1(kerbal_lpg, kerbal_stable_names):
+    *_, qualified_name_to_id = kerbal_stable_names
 
-    rocket_id = '62fc7eb7-0637-4201-add7-4d2758980d2f'
-    engines_feat = '32c847a1-2184-4486-ba48-dbf6125ca638'
+    rocket_id = qualified_name_to_id[f"{ROCKET_BUILDING}Rocket <<PartDefinition>>"]
+    engines_feat = qualified_name_to_id[f"{ROCKET_BUILDING}Liquid Stage::engines: Liquid Engine <<PartUsage>>"]
 
     all_paths = nx.all_simple_paths(
         kerbal_lpg.get_projection("Expanded Banded"),
@@ -71,10 +74,10 @@ def test_banded_graph_paths1(kerbal_lpg):
     assert len(path_lists) == 1
 
 
-def test_banded_graph_paths2(kerbal_lpg):
-
-    rocket_id = '62fc7eb7-0637-4201-add7-4d2758980d2f'
-    ft200_feat_id = 'cc585eec-c66c-48aa-b319-1395a0c8e292'
+def test_banded_graph_paths2(kerbal_lpg, kerbal_stable_names):
+    *_, qualified_name_to_id = kerbal_stable_names
+    rocket_id = qualified_name_to_id[f"{ROCKET_BUILDING}Rocket <<PartDefinition>>"]
+    ft200_feat_id = qualified_name_to_id[f"{ROCKET_BUILDING}Liquid Stage::tanks: Fuel Tank Section <<PartUsage>>"]
 
     all_paths = nx.all_simple_paths(
         kerbal_lpg.get_projection("Expanded Banded"),
@@ -124,9 +127,11 @@ def test_banded_graph_paths3(simple_parts_lpg, simple_parts_stable_names):
     assert len(path_lists) == 1
 
 
-def test_feature_multiplicity_rollup1(kerbal_lpg):
-    engines_feat = '32c847a1-2184-4486-ba48-dbf6125ca638'
-    stages_feat = '442722b5-8d08-46e4-ad5f-e6e2dd28d6f6'
+def test_feature_multiplicity_rollup1(kerbal_lpg, kerbal_stable_names):
+    *_, qualified_name_to_id = kerbal_stable_names
+
+    engines_feat = qualified_name_to_id[f"{ROCKET_BUILDING}Liquid Stage::engines: Liquid Engine <<PartUsage>>"]
+    stages_feat = qualified_name_to_id[f"{ROCKET_BUILDING}Rocket::stages: Rocket Stage <<PartUsage>>"]
 
     assert engines_feat in list(kerbal_lpg.nodes.keys())
     assert stages_feat in list(kerbal_lpg.nodes.keys())
@@ -158,10 +163,11 @@ def test_feature_multiplicity_rollup1(kerbal_lpg):
     assert stages_upper_mult == 5
 
 
-def test_type_multiplicity_rollup1(kerbal_lpg):
+def test_type_multiplicity_rollup1(kerbal_lpg, kerbal_stable_names):
+    *_, qualified_name_to_id = kerbal_stable_names
 
-    liquid_engine_type = '79cf7d24-37f7-404c-94b4-395cd1d0ee51'
-    rocket_type = '62fc7eb7-0637-4201-add7-4d2758980d2f'
+    liquid_engine_type = qualified_name_to_id[f"{ROCKET_BUILDING}Liquid Engine <<PartDefinition>>"]
+    rocket_type = qualified_name_to_id[f"{ROCKET_BUILDING}Rocket <<PartDefinition>>"]
 
     liquid_engine_ele = kerbal_lpg.model.elements[liquid_engine_type]
     rocket_ele = kerbal_lpg.model.elements[rocket_type]

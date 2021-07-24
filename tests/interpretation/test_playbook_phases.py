@@ -107,7 +107,8 @@ def test_phase_3_instance_sampling(kerbal_random_stage_3_complete, kerbal_stable
     coupler_usage_id = qualified_name_to_id[
         f"{ROCKET_BUILDING}Rocket::stages: Rocket Stage::Coupler to "
         f"Carrying Stage: Coupler <<PartUsage>>"]
-    sep_force_id = "7f5e38cb-6647-482d-b8fe-5c266d73ab42"
+    sep_force_id = qualified_name_to_id[f"{ROCKET_BUILDING}Rocket::stages: Rocket Stage::Coupler to Carrying Stage: " 
+                                        f"Coupler::Separation Force: Real <<AttributeUsage>>"]
 
     booster_empty_mass_id = qualified_name_to_id[f"{ROCKET_BUILDING}Solid Booster::Empty Mass: Real <<AttributeUsage>>"]
     booster_isp_id = qualified_name_to_id[f"{ROCKET_BUILDING}Solid Booster::Specific Impulse: Real <<AttributeUsage>>"]
@@ -131,20 +132,16 @@ def test_phase_3_instance_sampling(kerbal_random_stage_3_complete, kerbal_stable
 def test_phase_4_instance_sampling1(kerbal_random_stage_4_complete, kerbal_stable_names, kerbal_lpg):
     *_, qualified_name_to_id = kerbal_stable_names
 
-    top_plus_expr_id = qualified_name_to_id[f'{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+'
-                                                    f' (sum (collect (FRE.engines)), ' 
-                                                    f'sum (collect (FRE.tanks))) => $result <<OperatorExpression>>']
-    sum_1_id = qualified_name_to_id[f'{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ (sum (collect (FRE.engines)),' 
-                                    f' sum (collect (FRE.tanks))) => $result::sum (collect (FRE.tanks)) => '
-                                    f'$result <<InvocationExpression>>']
-    collect_1_id = qualified_name_to_id[f'{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ (sum (collect'
-                                        f' (FRE.engines)), sum (collect (FRE.tanks))) => $result::sum (collect '
-                                        f'(FRE.tanks)) => $result::collect (FRE.tanks) => '
-                                        f'$result <<OperatorExpression>>']
-    collect_1_result = qualified_name_to_id[f'{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ (sum (collect'
-                                        f' (FRE.engines)), sum (collect (FRE.tanks))) => $result::sum (collect '
-                                        f'(FRE.tanks)) => $result::collect (FRE.tanks) => '
-                                        f'$result::collect (FRE.tanks) <<Feature>>']
+    top_plus_expr_id = qualified_name_to_id[f'{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ (sum (engines.Mass '
+                                            f'(FRE.engines)), sum (tanks.Full Mass (FRE.tanks))) => '
+                                            f'$result <<OperatorExpression>>']
+    sum_1_id = qualified_name_to_id[f'{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ ' +
+                            f'(sum (engines.Mass (FRE.engines)), sum (tanks.Full Mass (FRE.tanks))) => $result::sum ' +
+                            f'(tanks.Full Mass (FRE.tanks)) => $result <<InvocationExpression>>']
+    full_mass_pse = qualified_name_to_id[f'{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ (sum (engines.Mass' +
+                                      f' (FRE.engines)), sum (tanks.Full Mass (FRE.tanks))) => $result::sum ' +
+                                      f'(tanks.Full Mass (FRE.tanks)) => $result::tanks.Full Mass (FRE.tanks)' +
+                                      f' => $result <<PathStepExpression>>']
 
     liquid_stage_id = qualified_name_to_id[f"{ROCKET_BUILDING}Liquid Stage <<PartDefinition>>"]
 
@@ -153,11 +150,8 @@ def test_phase_4_instance_sampling1(kerbal_random_stage_4_complete, kerbal_stabl
     rt_10_isp_id = qualified_name_to_id[f"{PARTS_LIBRARY}RT-10 \"Hammer\" Solid Fuel Booster::Specific Impulse: "
                                         f"Real <<AttributeUsage>>"]
 
-    assert len(kerbal_random_stage_4_complete[collect_1_id]) > 0 or \
+    assert len(kerbal_random_stage_4_complete[full_mass_pse]) > 0 or \
         len(kerbal_random_stage_4_complete[liquid_stage_id]) == 0
-
-    assert len(kerbal_random_stage_4_complete[collect_1_result]) > 0 or \
-           len(kerbal_random_stage_4_complete[liquid_stage_id]) == 0
 
     if len(kerbal_random_stage_4_complete[liquid_stage_id]) > 0:
         assert len(kerbal_random_stage_4_complete[top_plus_expr_id][0]) == 2
@@ -302,9 +296,10 @@ def test_new_instances(kerbal_lpg):
     assert len(new_instances) == 17
 
 
-def test_instance_sampling(kerbal_lpg):
+def test_instance_sampling(kerbal_lpg, kerbal_stable_names):
+    *_, qualified_name_to_id = kerbal_stable_names
     # what we really need here is a fixture that generates a healthy instance dictionary from the playbook phases
-    solid_booster_id = "24a0a10e-77ba-4bfa-9618-f2525a8a7042"
+    solid_booster_id = qualified_name_to_id[f"{ROCKET_BUILDING}Solid Booster <<PartDefinition>>"]
 
     # try creating the boosters under solid stage
 
