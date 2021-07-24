@@ -82,7 +82,7 @@ jobs:
           environment-file: .github/environment.yml
 
       - name: lint
-        if: succeeded() || failed()
+        # if: succeeded() || failed()
         shell: bash -l {0}
         run: |
           anaconda-project run setup
