@@ -63,3 +63,28 @@ def test_basic_kerbal_solve(kerbal_lpg, kerbal_random_stage_5_complete, kerbal_s
 
     assert not set(rt_10_isps).difference({170.0, None}), f"RT-10 ISPs: {rt_10_isps}"
     assert not set(ft200_masses).difference({1.125, None}), f"FT-200 massess: {ft200_masses}"
+
+
+def test_kerbal_solve2(kerbal_lpg, kerbal_random_stage_5_complete, kerbal_stable_names):
+
+    # check that Path Step Expression has expected inputs
+
+    id_to_qualified_name, qualified_name_to_id = kerbal_stable_names
+
+    pse_engine_mass = qualified_name_to_id[
+        f"""{PARTS_LIBRARY}RT-10 "Hammer" Solid Fuel Booster::Specific Impulse: Real <<AttributeUsage>>"""
+    ]
+
+    # incrementally step through the calculations and check progress
+
+    dcg = generate_execution_order(kerbal_lpg)
+
+    engine_mass_pse_dcg = None
+
+    for item in dcg:
+        if kerbal_lpg.nodes[item[0]]["@type"] == "PathStepExpression":
+            engine_mass_pse_dcg = kerbal_lpg.nodes[item[0]]
+
+    print(engine_mass_pse_dcg)
+
+    assert engine_mass_pse_dcg is not None
