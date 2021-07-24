@@ -1,13 +1,13 @@
 import ipywidgets as ipyw
 import traitlets as trt
+from wxyz.lab import DockBox, DockPop
 
-from wxyz.lab import DockPop, DockBox
+from pymbe.widget.diagram.widget import DiagramWidget
 
 from .client import SysML2ClientWidget
 from .containment import ContainmentTree
 from .inspector import ElementInspector
 from .interpretation import Interpreter
-from pymbe.widget.diagram.widget import DiagramWidget
 
 
 @ipyw.register
@@ -72,7 +72,7 @@ class UI(DockBox):
         self.tree.layout.overflow_y = "auto"
         self._update_diagram_height()
 
-        all_widgets = self.tree, self.inspector, self.diagram  #, self.interpreter)
+        all_widgets = self.tree, self.inspector, self.diagram  # , self.interpreter)
 
         for widget in all_widgets:
             widget.log_out = self.log_out

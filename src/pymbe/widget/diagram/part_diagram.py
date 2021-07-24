@@ -1,13 +1,8 @@
-from pydantic import Field
 from typing import Dict, Iterator, Tuple, Type, Union
 
-from ipyelk.elements import (
-    Partition,
-    Port,
-    SymbolSpec,
-    merge_excluded,
-)
+from ipyelk.elements import Partition, Port, SymbolSpec, merge_excluded
 from ipyelk.elements.index import iter_hierarchy
+from pydantic import Field
 
 from .parts import Part
 from .relationships import DirectedAssociation, Relationship

@@ -1,7 +1,7 @@
 from enum import Enum
-from pydantic import Field
 
 from ipyelk.elements import Edge, EdgeProperties, Label
+from pydantic import Field
 
 from .parts import PartMetadata
 

@@ -2,8 +2,9 @@ import typing as ty
 
 import ipytree as ipyt
 import ipywidgets as ipyw
-from pymbe.widget.diagram import relationships
 import traitlets as trt
+
+from pymbe.widget.diagram import relationships
 
 from ..model import Element, Model
 from .core import BaseWidget
@@ -73,10 +74,7 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
     @trt.observe("selected")
     def _update_selected_nodes(self, *_):
         with self.log_out:
-            nodes_selected = {
-                node._identifier
-                for node in self.selected_nodes
-            }
+            nodes_selected = {node._identifier for node in self.selected_nodes}
             if not nodes_selected.symmetric_difference(self.selected):
                 return
             with self.hold_trait_notifications():
@@ -84,11 +82,7 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
                     self.deselect_nodes()
                     return
 
-                nodes_to_deselect = [
-                    node
-                    for node in self.selected_nodes
-                    if node._identifier not in self.selected
-                ]
+                nodes_to_deselect = [node for node in self.selected_nodes if node._identifier not in self.selected]
                 if nodes_to_deselect:
                     self.deselect_nodes(*nodes_to_deselect)
 
@@ -97,10 +91,7 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
     @trt.observe("nodes_by_id")
     def _update_tree(self, *_):
         # find the root nodes and sort them
-        roots = self.sort_nodes([
-            node for node in self.nodes_by_id.values()
-            if node._owner is None
-        ])
+        roots = self.sort_nodes([node for node in self.nodes_by_id.values() if node._owner is None])
 
         # update the tree
         self._clear_tree()
@@ -136,11 +127,13 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
         }
 
         elements = model.elements
-        nodes.update({
-            element_id: self._make_node(element=element, root=model_id)
-            for element_id, element in elements.items()
-            if element_id not in nodes
-        })
+        nodes.update(
+            {
+                element_id: self._make_node(element=element, root=model_id)
+                for element_id, element in elements.items()
+                if element_id not in nodes
+            }
+        )
         for node in nodes.values():
             if node._owner in nodes:
                 nodes[node._owner].add_node(node)
@@ -163,11 +156,7 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
     def deselect_nodes(self, *nodes: str):
         """Deselect a node, or deselect all if none is specified."""
         if not nodes:
-            nodes = [
-                node
-                for node in self.nodes_by_id.values()
-                if node.selected
-            ]
+            nodes = [node for node in self.nodes_by_id.values() if node.selected]
         for node in nodes:
             node.selected = False
 
@@ -194,7 +183,9 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
     @staticmethod
     def sort_nodes(nodes: ty.Union[ty.List, ty.Tuple, ty.Set]) -> tuple:
         # Sort nodes with number of subnodes first and then by name
-        return tuple(sorted(
-            nodes,
-            key=lambda n: (-len(n.nodes), n.name),
-        ))
+        return tuple(
+            sorted(
+                nodes,
+                key=lambda n: (-len(n.nodes), n.name),
+            )
+        )

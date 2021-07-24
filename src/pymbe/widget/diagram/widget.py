@@ -1,12 +1,10 @@
 import traceback
-
 from warnings import warn
 
+import ipyelk
 import ipywidgets as ipyw
 import networkx as nx
 import traitlets as trt
-
-import ipyelk
 from ipyelk.pipes.base import PipeDisposition
 
 from ...graph import SysML2LabeledPropertyGraph
@@ -67,7 +65,7 @@ class DiagramWidget(ipyw.Box, BaseWidget):
             return children
         return [self.elk_diagram]
 
-    def update(self, change = trt.Bunch):
+    def update(self, change=trt.Bunch):
         self.drawn_graph = nx.Graph()
         self.lpg.model = change.new
         toolbar: Toolbar = self.elk_diagram.toolbar
@@ -75,8 +73,7 @@ class DiagramWidget(ipyw.Box, BaseWidget):
         toolbar.update_dropdown_options(
             selector="nodes",
             options={
-                f"{node_type} [{len(nodes)}]": nodes
-                for node_type, nodes in sorted(self.lpg.nodes_by_type.items())
+                f"{node_type} [{len(nodes)}]": nodes for node_type, nodes in sorted(self.lpg.nodes_by_type.items())
             },
         )
 
@@ -115,13 +112,9 @@ class DiagramWidget(ipyw.Box, BaseWidget):
         toolbar = Toolbar(
             layout=dict(height="auto", width="auto", visibility="visible"),
             tools=tools,
-            update_diagram = self._on_update_diagram_button_click,
+            update_diagram=self._on_update_diagram_button_click,
         )
-        trt.dlink(
-            (self.lpg, "sysml_projections"),
-            (toolbar.projection_selector, "options"),
-            lambda x: tuple(x)
-        )
+        trt.dlink((self.lpg, "sysml_projections"), (toolbar.projection_selector, "options"), lambda x: tuple(x))
         toolbar.projection_selector.options = tuple(self.lpg.sysml_projections)
         toolbar._update_children()
         toolbar.log_out = self.log_out
@@ -140,6 +133,7 @@ class DiagramWidget(ipyw.Box, BaseWidget):
             if change.new == PipeDisposition.done:
                 self.id_mapper = self._make_id_mapper()
                 warn("Updating the id_mapper!")
+
         diagram.pipe.observe(update_mapper, "disposition")
 
         return diagram
@@ -157,9 +151,7 @@ class DiagramWidget(ipyw.Box, BaseWidget):
         if not included_edges:
             return []
 
-        return set(self.lpg.edge_types).difference((
-                edges[0][2] for edges in included_edges
-            ))
+        return set(self.lpg.edge_types).difference((edges[0][2] for edges in included_edges))
 
     @property
     def excluded_node_types(self):
@@ -167,43 +159,28 @@ class DiagramWidget(ipyw.Box, BaseWidget):
         if not included_nodes:
             return []
 
-        return set(self.lpg.node_types).difference((
-            self.lpg.graph.nodes[nodes[0]]["@type"]
-            for nodes in included_nodes
-        ))
+        return set(self.lpg.node_types).difference(
+            (self.lpg.graph.nodes[nodes[0]]["@type"] for nodes in included_nodes)
+        )
 
     @property
     def selected_by_type_node_ids(self):
-        return tuple(set(sum(
-            map(
-                list,
-                self.elk_diagram.toolbar.node_type_selector.value
-            ), []
-        )))
+        return tuple(set(sum(map(list, self.elk_diagram.toolbar.node_type_selector.value), [])))
 
     @property
     def selected_by_type_nodes(self):
         return tuple(
-            self.lpg.graph.nodes[id_]
-            for id_ in sorted(self.selected_by_type_node_ids)
-            if id_ in self.lpg.graph.nodes
+            self.lpg.graph.nodes[id_] for id_ in sorted(self.selected_by_type_node_ids) if id_ in self.lpg.graph.nodes
         )
 
     @property
     def selected_by_type_edge_ids(self):
-        return tuple(set(sum(
-            map(
-                list,
-                self.elk_diagram.toolbar.edge_type_selector.value
-            ), []
-        )))
+        return tuple(set(sum(map(list, self.elk_diagram.toolbar.edge_type_selector.value), [])))
 
     @property
     def selected_by_type_edges(self):
         return tuple(
-            self.lpg.graph.edges[id_]
-            for id_ in sorted(self.selected_by_type_edge_ids)
-            if id_ in self.lpg.graph.edges
+            self.lpg.graph.edges[id_] for id_ in sorted(self.selected_by_type_edge_ids) if id_ in self.lpg.graph.edges
         )
 
     def _on_update_diagram_button_click(self, button: ipyw.Button):
@@ -226,8 +203,7 @@ class DiagramWidget(ipyw.Box, BaseWidget):
 
         if reversed_edges and not enforce_directionality:
             raise ValueError(
-                f"Reversing edge types: {sum(reversed_edges, [])} makes "
-                "no sense since edges are not being enforced."
+                f"Reversing edge types: {sum(reversed_edges, [])} makes " "no sense since edges are not being enforced."
             )
 
         instructions = lpg.get_projection_instructions(
@@ -260,10 +236,9 @@ class DiagramWidget(ipyw.Box, BaseWidget):
             if not new_graph:
                 failed = True
                 warn(
-                    "Could not find path between " 
-                    f"""{" and ".join(self.selected)}, with directionality """
-                    "not" if not toolbar.enforce_directionality else ""
-                    " enforced."
+                    "Could not find path between " f"""{" and ".join(self.selected)}, with directionality """ "not"
+                    if not toolbar.enforce_directionality
+                    else "" " enforced."
                 )
         elif button is toolbar.filter_by_dist:
             new_graph = lpg.get_spanning_graph(
@@ -306,9 +281,8 @@ class DiagramWidget(ipyw.Box, BaseWidget):
         with self.log_out:
             selected = self.selected
             toolbar = self.elk_diagram.toolbar
-            toolbar.filter_to_path.disabled = (
-                len(selected) != 2 or
-                not all(isinstance(node_id, str) for node_id in selected)
+            toolbar.filter_to_path.disabled = len(selected) != 2 or not all(
+                isinstance(node_id, str) for node_id in selected
             )
             toolbar.filter_by_dist.disabled = not selected
 
@@ -319,11 +293,7 @@ class DiagramWidget(ipyw.Box, BaseWidget):
             view_selector = self.elk_diagram.view.selection
             diagram_elements = list(view_selector.get_index().elements.elements)
 
-            new_selections = [
-                id_
-                for id_ in self._map_selections(*self.selected)
-                if id_ in diagram_elements
-            ]
+            new_selections = [id_ for id_ in self._map_selections(*self.selected) if id_ in diagram_elements]
             if set(view_selector.ids).symmetric_difference(new_selections):
                 view_selector.ids = new_selections
 
@@ -331,9 +301,7 @@ class DiagramWidget(ipyw.Box, BaseWidget):
         """Updated app selections based on diagram selections."""
         with self.log_out:
             new_selections = [
-                id_
-                for id_ in self._map_selections(*self.elk_diagram.view.selection.ids)
-                if id_ in self.model.elements
+                id_ for id_ in self._map_selections(*self.elk_diagram.view.selection.ids) if id_ in self.model.elements
             ]
             if set(self.selected).symmetric_difference(new_selections):
                 self.selected = new_selections

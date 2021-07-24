@@ -1,6 +1,5 @@
-from pydantic import Field
-
 from ipyelk.elements import Compartment, ElementMetadata, Record
+from pydantic import Field
 
 
 class PartMetadata(ElementMetadata):
@@ -27,21 +26,13 @@ class Part(Record):
     def from_data(cls, data: dict, width=220):
         id_ = data["@id"]
         metatype = data.get("@type")
-        label = (
-                data.get("value")
-                or data.get("label")
-                or data.get("name")
-                or id_
-        )
+        label = data.get("value") or data.get("label") or data.get("name") or id_
         kwargs = dict(metadata=PartMetadata(sysml_id=id_))
 
         if isinstance(label, str):
             label = label.replace(f"«{metatype}»", "").strip()
 
-        if (
-            metatype in ("MultiplicityRange",)
-            or metatype.startswith("Literal")
-        ):
+        if metatype in ("MultiplicityRange",) or metatype.startswith("Literal"):
             width = int(width / 2)
 
         part = Part(data=data, id=id_, width=width, **kwargs)
@@ -57,9 +48,6 @@ class Part(Record):
         if properties:
             part.attrs = Compartment(**kwargs).make_labels(
                 headings=["properties"],
-                content=[
-                    cls.make_property_label(prop)
-                    for prop in properties
-                ],
+                content=[cls.make_property_label(prop) for prop in properties],
             )
         return part

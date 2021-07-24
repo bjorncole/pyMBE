@@ -1,6 +1,7 @@
+import typing as ty
+
 import ipywidgets as ipyw
 import traitlets as trt
-import typing as ty
 
 from ..model import Model
 
@@ -11,11 +12,7 @@ class BaseWidget(ipyw.DOMWidget):
 
     description = trt.Unicode("Unnamed Widget").tag(sync=True)
 
-    model: Model = trt.Instance(
-        Model,
-        allow_none=True,
-        help="The instance of the SysML model."
-    )
+    model: Model = trt.Instance(Model, allow_none=True, help="The instance of the SysML model.")
 
     selected: ty.Tuple[str] = ipyw.widgets.trait_types.TypedTuple(
         trait=trt.Unicode(),
@@ -35,7 +32,7 @@ class BaseWidget(ipyw.DOMWidget):
         with self.log_out:
             self.update(change)
 
-    def update(self, change = trt.Bunch):
+    def update(self, change=trt.Bunch):
         raise NotImplementedError("Each widget needs to specify their own update method!")
 
     def update_selected(self, *new_selections: str):

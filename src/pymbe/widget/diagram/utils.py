@@ -20,11 +20,7 @@ class Mapper:
 
     def __post_init__(self):
         # Filter maps with no SysML ID
-        self.to_sysml = {
-            elkjs_id: sysml_id
-            for elkjs_id, sysml_id in self.to_sysml.items()
-            if sysml_id is not None
-        }
+        self.to_sysml = {elkjs_id: sysml_id for elkjs_id, sysml_id in self.to_sysml.items() if sysml_id is not None}
 
         common_keys = set(self.to_sysml).intersection(self.to_sysml.values())
         if common_keys:
@@ -32,28 +28,18 @@ class Mapper:
             self.to_elkjs = defaultdict(set)
             for elkjs_id, sysml_id in self.to_sysml.items():
                 self.to_elkjs[sysml_id].add(elkjs_id)
-            self.to_sysml = {
-                elkjs_id: {sysml_id}
-                for elkjs_id, sysml_id in self.to_sysml.items()
-            }
+            self.to_sysml = {elkjs_id: {sysml_id} for elkjs_id, sysml_id in self.to_sysml.items()}
             self.unified_map = self.to_elkjs.copy()
             for elkjs_id, sysml_ids in self.to_sysml.items():
                 self.unified_map[elkjs_id] |= set(sysml_ids)
         elif not self.to_elkjs:
-            self.to_elkjs = {
-                sysml_id: elkjs_id
-                for elkjs_id, sysml_id in self.to_sysml.items()
-            }
+            self.to_elkjs = {sysml_id: elkjs_id for elkjs_id, sysml_id in self.to_sysml.items()}
 
         if not common_keys:
             self.unified_map = {**self.to_sysml, **self.to_elkjs}
 
     def get(self, *items):
-        results = [
-            self.unified_map[item]
-            for item in items
-            if item in self.unified_map
-        ]
+        results = [self.unified_map[item] for item in items if item in self.unified_map]
         if not self.unique:
             results = sum(map(list, results), [])
         return tuple(set(results))

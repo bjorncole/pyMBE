@@ -2,17 +2,12 @@ import typing as ty
 
 import networkx as nx
 import traitlets as trt
-
 from ipyelk import ElementLoader, MarkElementWidget
 from ipyelk.elements import layout_options as opt
 
 from .part_diagram import PartDiagram
 from .parts import Part
-from .relationships import (
-    METATYPE_TO_RELATIONSHIP_TYPES,
-    DirectedAssociation,
-    Relationship,
-)
+from .relationships import METATYPE_TO_RELATIONSHIP_TYPES, DirectedAssociation, Relationship
 
 
 class SysmlLoader(ElementLoader):
