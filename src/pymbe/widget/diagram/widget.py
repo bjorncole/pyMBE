@@ -10,7 +10,6 @@ import ipyelk
 from ipyelk.pipes.base import PipeDisposition
 
 from ...graph import SysML2LabeledPropertyGraph
-from ...model import Model
 from ..core import BaseWidget
 from .loader import SysmlLoader
 from .tools import Toolbar

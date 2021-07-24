@@ -1,8 +1,9 @@
+import re
 from datetime import timezone
 from dateutil import parser
 from functools import lru_cache
 from pathlib import Path
-from typing import Tuple, Union
+from typing import Dict, List, Tuple, Union
 from warnings import warn
 
 import ipywidgets as ipyw
@@ -86,6 +87,8 @@ class SysML2Client(trt.HasTraits):
     projects = trt.Dict()
 
     name_hints = trt.Dict()
+
+    _next_url_regex = re.compile(r'<(http://.*)>; rel="next"')
 
     @trt.default("_api_configuration")
     def _make_api_configuration(self):
@@ -195,24 +198,39 @@ class SysML2Client(trt.HasTraits):
                 "By default, disabling pagination still retrieves 100 "
                 "records at a time!  True pagination is not supported yet."
             )
-        # TODO: Get the link header and use that to get the next page
-        # NOTE: The Pilot Implementation uses cursor-navigation, a la GitHub and DynamoDB
         return (
             f"{self.host}/"
             f"projects/{self.selected_project}/"
             f"commits/{self.selected_commit}/"
             f"elements"
-        ) + (f"?page[size]={self.page_size}" if self.paginate else "")
+        ) + f"?page[size]={self.page_size}" if self.page_size else ""
 
     @lru_cache
-    def _retrieve_data(self, url: str) -> dict:
-        response = requests.get(url)
-        if not response.ok:
-            raise requests.HTTPError(
-                f"Failed to retrieve elements from '{url}', "
-                f"reason: {response.reason}"
-            )
-        return response.json()
+    def _retrieve_data(self, url: str) -> List[Dict]:
+        """Retrieve model data from a URL using pagination"""
+        result = []
+        while url:
+            response = requests.get(url)
+
+            if not response.ok:
+                raise requests.HTTPError(
+                    f"Failed to retrieve elements from '{url}', "
+                    f"reason: {response.reason}"
+                )
+
+            result += response.json()
+
+            link = response.headers.get("Link")
+            if not link:
+                break
+
+            urls = self._next_url_regex.findall(link)
+            url = None
+            if len(urls) == 1:
+                url = urls[0]
+            elif len(urls) > 1:
+                raise SystemError(f"Found multiple 'next' pagination urls: {urls}")
+        return result
 
     def _get_project_commits(self):
         # TODO: add more info about the commit when API provides it
@@ -223,11 +241,8 @@ class SysML2Client(trt.HasTraits):
             )
         ]
 
-    def _get_elements_from_server(self):
-        return self._retrieve_data(self.elements_url)
-
     def _download_elements(self):
-        elements = self._get_elements_from_server()
+        elements = self._retrieve_data(self.elements_url)
         max_elements = self.page_size if self.paginate else 100
         if len(elements) == max_elements:
             warn("There are probably more elements that were not retrieved!")

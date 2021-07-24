@@ -1,6 +1,4 @@
-from ..interpretation.interpretation import LiveExpressionNode, ValueHolder, Instance
-from ..graph.lpg import SysML2LabeledPropertyGraph
-from ..label import get_label_for_id
+from ..interpretation.interpretation import Instance, LiveExpressionNode, ValueHolder
 
 
 def sequence_dot_operator(left_item, right_side_seqs):
@@ -29,7 +27,7 @@ def evaluate_and_apply_collect(
     instance_dict: dict,
     m0_collection_input: ValueHolder,
     m0_collection_path: ValueHolder,
-    result_holder: ValueHolder
+    result_holder: ValueHolder,
 ) -> None:
     #print("Applying collect to " + str(m0_collection_input))
     # apply the dot operator
@@ -49,7 +47,7 @@ def evaluate_and_apply_dot(
     instance_dict: dict,
     m0_collection_input: ValueHolder,
     m0_collection_path: ValueHolder,
-    result_holder: ValueHolder
+    result_holder: ValueHolder,
 ) -> None:
     #print("Applying collect to " + str(m0_collection_input))
     # apply the dot operator
@@ -65,7 +63,7 @@ def evaluate_and_apply_dot(
 
 def evaluate_and_apply_fre(
     m0_expr: LiveExpressionNode,
-    instance_dict: dict
+    instance_dict: dict,
 ) -> list:
     """
     Evaluate a feature reference expression at m0, e.g., return the list of sequences
@@ -91,7 +89,6 @@ def evaluate_and_apply_literal(m0_expr: LiveExpressionNode, m0_result: ValueHold
     :param instance_dict:
     :return:
     """
-
     literal_value = m0_expr.base_att['value']
     m0_result.value = literal_value
 
@@ -108,6 +105,6 @@ def evaluate_and_apply_sum(m0_expr: ValueHolder, m0_result: ValueHolder):
 def evaluate_and_apply_plus(
     x_expr: ValueHolder,
     y_expr: ValueHolder,
-    m0_result: ValueHolder
+    m0_result: ValueHolder,
 ):
     m0_result.value = x_expr.value + y_expr.value

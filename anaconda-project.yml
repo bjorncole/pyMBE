@@ -5,6 +5,9 @@ icon:
 description: |
   A pythonic Model-based Engineering analysis framework based on SysML v2.
 
+variables:
+  SYSML_V2_API_REPO: https://github.com/Systems-Modeling/SysML-v2-API-Python-Client.git@2021-05
+
 commands:
   lab:
     description: launch lab
@@ -16,17 +19,20 @@ commands:
     env_spec: developer
     unix: |
       git submodule update --init
-      pip install git+https://github.com/Systems-Modeling/SysML-v2-API-Python-Client.git --no-dependencies
+      pip install git+{{SYSML_V2_API_REPO}} --no-dependencies
       pip install -e . --no-dependencies
     windows: |
-      git submodule update --init & pip install git+https://github.com/Systems-Modeling/SysML-v2-API-Python-Client.git --no-dependencies & pip install -e . --no-dependencies
+      git submodule update --init & pip install git+{{SYSML_V2_API_REPO}} --no-dependencies & pip install -e . --no-dependencies
   lint:
     description: lint the code
     env_spec: developer
     unix: |
       isort .
-      black src/
-    windows: python isort . & python black src/
+      black src/ tests/ -l 120
+      flake8 src/
+      pylint src/
+    windows: |
+      isort . & black src/ tests/ -l 120 & flake8 src/ & pylint src/
   package:
     description: make a source distribution
     env_spec: developer
@@ -112,9 +118,11 @@ env_specs:
     packages:
     - black
     - coverage
+    - flake8
     - git
     - isort
     - pip
+    - pylint
     - pytest
     - pytest-asyncio
     - pytest-cov

@@ -281,7 +281,6 @@ def simple_parts_random_stage_3_complete(simple_parts_lpg, simple_parts_random_s
 
 @pytest.fixture
 def simple_actions_client() -> SysML2Client:
-
     return simple_actions_model_loaded_client()
 
 
@@ -306,3 +305,64 @@ def all_models() -> Dict[Path, pm.Model]:
         path.name.replace(".json", ""): pm.Model.load_from_file(path.resolve())
         for path in FIXTURES.glob("*.json")
     }
+
+
+@pytest.fixture
+def simple_actions_stable_names():
+    client = simple_actions_model_loaded_client()
+    lpg = SysML2LabeledPropertyGraph()
+    lpg.model = client.model
+    return build_stable_id_lookups(lpg)
+
+
+@pytest.fixture
+def simple_actions_random_stage_1_instances(simple_actions_lpg) -> dict:
+    ptg = simple_actions_lpg.get_projection("Part Typing")
+    scg = simple_actions_lpg.get_projection("Part Definition")
+
+    full_multiplicities = random_generator_phase_1_multiplicities(simple_actions_lpg, ptg, scg)
+
+    return {
+        type_id: create_set_with_new_instances(
+            sequence_template=[simple_actions_lpg.model.elements[type_id]],
+            quantities=[number],
+        )
+        for type_id, number in full_multiplicities.items()
+    }
+
+
+@pytest.fixture
+def simple_actions_random_stage_1_complete(simple_actions_lpg, simple_actions_random_stage_1_instances) -> dict:
+    scg = simple_actions_lpg.get_projection("Part Definition")
+
+    random_generator_playbook_phase_1_singletons(
+        simple_actions_lpg.model,
+        scg,
+        simple_actions_random_stage_1_instances,
+    )
+
+    return simple_actions_random_stage_1_instances
+
+
+@pytest.fixture
+def simple_actions_random_stage_2_complete(simple_actions_lpg, simple_actions_random_stage_1_instances) -> dict:
+    scg = simple_actions_lpg.get_projection("Part Definition")
+
+    random_generator_playbook_phase_2_rollup(scg, simple_actions_random_stage_1_instances)
+
+    random_generator_playbook_phase_2_unconnected(simple_actions_lpg.model, simple_actions_random_stage_1_instances)
+
+    return simple_actions_random_stage_1_instances
+
+
+@pytest.fixture
+def simple_actions_random_stage_3_complete(simple_actions_lpg, simple_actions_random_stage_2_complete) -> dict:
+    feature_sequences = build_sequence_templates(lpg=simple_actions_lpg)
+
+    random_generator_playbook_phase_3(
+        simple_actions_lpg.model,
+        feature_sequences,
+        simple_actions_random_stage_2_complete,
+    )
+
+    return simple_actions_random_stage_2_complete

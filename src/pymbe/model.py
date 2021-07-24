@@ -9,6 +9,7 @@ from uuid import uuid4
 from warnings import warn
 
 
+OWNER_KEYS = ("owner", "owningRelatedElement", "owningRelationship")
 VALUE_METATYPES = ("AttributeDefinition", "AttributeUsage", "DataType")
 
 
@@ -307,7 +308,7 @@ class Element:
     def get_owner(self) -> "Element":
         data = self._data
         owner_id = None
-        for key in ("owner", "owningRelatedElement", "owningRelationship"):
+        for key in OWNER_KEYS:
             owner_id = (data.get(key) or {}).get("@id")
             if owner_id is not None:
                 break
