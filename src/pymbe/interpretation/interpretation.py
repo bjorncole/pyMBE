@@ -1,3 +1,50 @@
+from dataclasses import dataclass
+from ..model import Element
+
+class InterpretationDictionaryEntry:
+    """
+    A data class to represent a key value pair for a master interpretation dictionary, which points from
+    M1 user model elements to a set of sequences of atoms that are the interpretation
+    """
+
+    DEF_BOX_KINDS = ("PartDefinition", "PortDefinition")
+    USE_BOX_KINDS = ("PartUsage")
+    LINE_KINDS = ("ConnectionUsage")
+    PORT_BOX_KINDS = ("PortUsage")
+
+    def __init__(self, m1_base: Element, inteprets: set(InterpretationSequence)):
+        self.key = m1_base._id
+        self.value = set()
+        for item in interprets:
+            self.value.add(item)
+            # link the sequence owning entry back here to leave a breadcrumb for plotting, checking, etc.
+            item.owning_entry = self
+        # build hinting for diagram
+        if m1_base.get("@type") in DEF_BOX_KINDS:
+            self.draw_kind = "Box"
+        elif m1_base.get("@type") in USE_BOX_KINDS:
+            self.draw_kind = "Nested Box"
+        elif m1_base.get("@type") in LINE_KINDS:
+            self.draw_kind = "Line"
+        elif m1_base.get("@type") in PORT_BOX_KINDS:
+            self.draw_kind = "Port"
+
+class InterpretationSequence(tuple):
+    """
+    A data class to represent a single sequence within a model interpretation. Objects of this class should support
+    the drawing of interpretation diagrams and be the eventual target of validity checkers.
+    """
+
+    def __init__(self, elements: list):
+        self.sequence = tuple(elements)
+        self.owning_entry = None
+    def get_line_ends(self):
+        # placeholder for using M1 reference to figure out what the right ends for the connector line are
+        pass
+    def get_nesting_list(self):
+        # placeholder for using M1 reference to figure out what the path of parent shapes are
+        pass
+
 class Instance:
     """
     A class to represent instances of real things in the M0 universe interpreted from the model.
