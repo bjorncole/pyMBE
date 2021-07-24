@@ -30,9 +30,9 @@ commands:
       isort .
       black src/ tests/ -l 120
       flake8 src/
-      pylint src/
+      pylint src/ --rcfile=.pylintrc
     windows: |
-      isort . & black src/ tests/ -l 120 & flake8 src/ & pylint src/
+      isort . & black src/ tests/ -l 120 & flake8 src/ & pylint src/ --rcfile=.pylintrc
   package:
     description: make a source distribution
     env_spec: developer
