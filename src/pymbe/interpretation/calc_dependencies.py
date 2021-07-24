@@ -14,7 +14,7 @@ def generate_execution_order(
     :return:
     """
 
-    all_elements = lpg.nodes
+    all_elements = lpg.model.elements
     eig = lpg.get_projection("Expression Inferred")
 
     execution_pairs = []
@@ -25,7 +25,7 @@ def generate_execution_order(
     roots = [node for node in eig.nodes if eig.in_degree(node) == 0]
 
     for root in roots:
-        context = all_elements[root]['featuringType'][0]['@id']
+        context = all_elements[root].featuringType[0].get('@id')
         execution_contexts[context] = []
 
         calc_order = list(nx.edge_bfs(eig, root))
@@ -37,15 +37,17 @@ def generate_execution_order(
             node = edg[0]
             kind = ''
 
-            if all_elements[node_child]['@type'] == 'Feature' and all_elements[node]['@type'] == 'Feature':
+            if all_elements[node_child].get("@type") == 'Feature' and all_elements[node].get("@type") == 'Feature':
                 kind = 'Assignment'
-            elif all_elements[node_child]['@type'] == 'AttributeUsage' and all_elements[node]['@type'] == 'AttributeUsage':
+            elif all_elements[node_child].get("@type") == 'AttributeUsage' and all_elements[node].get("@type") == 'AttributeUsage':
                 relevant_edge_types = [edg[2] for edg in eig.edges if edg[0] == node and edg[1] == node_child]
                 if "Redefinition^-1" in relevant_edge_types:
                     kind = 'Redefinition'
                 else:
                     kind = 'Assignment'
-            elif all_elements[node_child]['@type'] == 'Feature' and all_elements[node]['@type'] == 'AttributeUsage':
+            elif all_elements[node].get("@type") == 'FeatureReferenceExpression':
+                kind = 'SelectionQuery'
+            elif all_elements[node_child].get("@type") == 'Feature' and all_elements[node].get("@type") == 'AttributeUsage':
                 kind = 'ValueBinding'
             elif (node_child, node, 'ReturnParameterMembership') in lpg.edges_by_type['ReturnParameterMembership']:
                 kind = 'Output'
