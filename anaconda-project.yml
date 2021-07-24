@@ -16,10 +16,10 @@ commands:
     env_spec: developer
     unix: |
       git submodule update --init
-      pip install git+https://github.com/Systems-Modeling/SysML-v2-API-Python-Client.git --no-dependencies
+      pip install git+https://github.com/Systems-Modeling/SysML-v2-API-Python-Client.git@2021-05 --no-dependencies
       pip install -e . --no-dependencies
     windows: |
-      git submodule update --init & pip install git+https://github.com/Systems-Modeling/SysML-v2-API-Python-Client.git --no-dependencies & pip install -e . --no-dependencies
+      git submodule update --init & pip install git+https://github.com/Systems-Modeling/SysML-v2-API-Python-Client.git@2021-05 --no-dependencies & pip install -e . --no-dependencies
   lint:
     description: lint the code
     env_spec: developer
