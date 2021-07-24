@@ -1,8 +1,24 @@
+import pytest
+
+import requests
+import urllib3
+
 from tests.conftest import (
     all_kerbal_names,
     kerbal_client,
     kerbal_ids_by_type,
 )
+
+
+SYSML_SERVER_URL = "http://sysml2.intercax.com"
+
+
+def can_connect(host: str, port: int = 9000):
+    try:
+        requests.get(f"{host}:{port}")
+        return True
+    except:
+        return False
 
 
 def test_client_load_kerbal(kerbal_client):
@@ -21,3 +37,29 @@ def test_client_load_find_types(kerbal_ids_by_type):
     assert "FeatureReferenceExpression" in kerbal_ids_by_type
 
     assert len(kerbal_ids_by_type["PartDefinition"]) == 17
+
+
+def test_bad_connection(kerbal_client):
+    with pytest.raises(urllib3.exceptions.MaxRetryError) as exc:
+        kerbal_client.host_url = "http://some.bad.url"
+    assert "Max retries exceeded" in exc.value.args[0]
+
+
+@pytest.mark.skipif(
+    not can_connect(host=SYSML_SERVER_URL),
+    reason=f"Can't connect to {SYSML_SERVER_URL}",
+)
+def test_remote_connection(kerbal_client):
+    client = kerbal_client
+    client.host_url = SYSML_SERVER_URL
+
+    assert client.projects
+
+    client.page_size = 20
+
+    client.selected_project = list(client.projects)[0]
+    client.selected_commit = client._commits_api.get_commits_by_project(client.selected_project)[0].id
+    client._download_elements()
+
+    model = client.model
+    assert model.elements
