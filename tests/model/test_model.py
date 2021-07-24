@@ -25,7 +25,14 @@ def test_kerbal_model(kerbal_model):
     my_rocket = kerbal(name="My Rocket")
     assert my_rocket.name == "My Rocket", f"Instance should be called 'My Rocket', not '{my_rocket.name}'"
 
-    assert kerbal.ownedElement["Parts Library"].ownedElement["FL-T200 Fuel Tank"].ownedElement["Empty Mass"].ownedElement[0].value == 0.125
+    assert (
+        kerbal.ownedElement["Parts Library"]
+        .ownedElement["FL-T200 Fuel Tank"]
+        .ownedElement["Empty Mass"]
+        .ownedElement[0]
+        .value
+        == 0.125
+    )
 
 
 def test_relationships(kerbal_model):
@@ -49,7 +56,10 @@ def test_accessors(kerbal_model):
             a_return_parameter_membership = element
     assert isinstance(a_return_parameter_membership.relatedElement[0].value, int)
 
-    assert a_return_parameter_membership.target[0].reverseReturnParameterMembership[0] == a_return_parameter_membership.relatedElement[0]
+    assert (
+        a_return_parameter_membership.target[0].reverseReturnParameterMembership[0]
+        == a_return_parameter_membership.relatedElement[0]
+    )
 
     value = a_return_parameter_membership.get("some_missing_key", "a default for something")
     assert value == "a default for something"

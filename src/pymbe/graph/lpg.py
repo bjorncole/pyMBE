@@ -1,17 +1,14 @@
 import traceback
-
+import typing as ty
 from functools import lru_cache
 from pathlib import Path
 from warnings import warn
 
-from ruamel.yaml import YAML
-
 import networkx as nx
 import traitlets as trt
-import typing as ty
+from ruamel.yaml import YAML
 
 from ..model import Element, Model
-
 
 yaml = YAML(typ="unsafe", pure=True)
 
@@ -47,12 +44,7 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
     edges_by_type: dict = trt.Dict()
 
     def __repr__(self):
-        return (
-            "<SysML v2 LPG: "
-            f"{len(self.graph.nodes):,d} nodes, "
-            f"{len(self.graph.edges):,d} edges"
-            ">"
-        )
+        return "<SysML v2 LPG: " f"{len(self.graph.nodes):,d} nodes, " f"{len(self.graph.edges):,d} edges" ">"
 
     def __getitem__(self, *args):
         return self.graph.__getitem__(*args)
@@ -80,9 +72,7 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
 
         # Draw as edges all non-abstract relationships
         graph_relationships: ty.Set[Element] = {
-            relationship
-            for relationship in all_relationships
-            if "isAbstract" not in relationship._data
+            relationship for relationship in all_relationships if "isAbstract" not in relationship._data
         }
         # And everything else is a node
         graph_elements: ty.Set[Element] = set(model.elements.values()).difference(graph_relationships)
@@ -112,55 +102,36 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
         old_graph = self.graph
         del old_graph
 
-        graph.add_nodes_from(
-            {
-                element._id: element._data
-                for element in graph_elements
-            }.items()
-        )
+        graph.add_nodes_from({element._id: element._data for element in graph_elements}.items())
 
-        graph.add_edges_from([
+        graph.add_edges_from(
             [
-                source._id,              # source node (str id)
-                target._id,              # target node (str id)
-                relationship._metatype,  # edge metatype (str name)
-                relationship._data,      # edge data (dict)
+                [
+                    source._id,  # source node (str id)
+                    target._id,  # target node (str id)
+                    relationship._metatype,  # edge metatype (str name)
+                    relationship._data,  # edge data (dict)
+                ]
+                for relationship in graph_relationships
+                for source in relationship.source
+                for target in relationship.target
             ]
-            for relationship in graph_relationships
-            for source in relationship.source
-            for target in relationship.target
-        ] + edges_from_abstract_relationships)
+            + edges_from_abstract_relationships
+        )
 
         with self.hold_trait_notifications():
             self.nodes = dict(graph.nodes)
             self.edges = dict(graph.edges)
 
-            self.node_types = tuple(sorted({
-                node["@type"]
-                for node in self.nodes.values()
-                if "@type" in node
-            }))
-            self.edge_types = tuple(sorted({
-                edge["@type"]
-                for edge in self.edges.values()
-                if "@type" in edge
-            }))
+            self.node_types = tuple(sorted({node["@type"] for node in self.nodes.values() if "@type" in node}))
+            self.edge_types = tuple(sorted({edge["@type"] for edge in self.edges.values() if "@type" in edge}))
 
             self.nodes_by_type = {
-                node_type: [
-                    node
-                    for node in graph.nodes
-                    if graph.nodes[node].get("@type") == node_type
-                ]
+                node_type: [node for node in graph.nodes if graph.nodes[node].get("@type") == node_type]
                 for node_type in self.node_types
             }
             self.edges_by_type = {
-                edge_type: [
-                    edge
-                    for edge in graph.edges
-                    if edge[2] == edge_type
-                ]
-                for edge_type in self.edge_types
+                edge_type: [edge for edge in graph.edges if edge[2] == edge_type] for edge_type in self.edge_types
             }
 
             self.graph = graph
@@ -182,11 +153,7 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
                 instructions[f"excluded_{types_key}"] = tuple(sorted(types))
 
         function_attributes = self.adapt.__annotations__
-        return {
-            key: value
-            for key, value in instructions.items()
-            if key in function_attributes
-        }
+        return {key: value for key, value in instructions.items() if key in function_attributes}
 
     def get_implied_edges(self, *implied_edge_types):
         from .edge_generators import IMPLIED_GENERATORS
@@ -201,19 +168,22 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
         return new_edges
 
     def get_projection(self, projection: str) -> nx.Graph:
-        return self.adapt(**self.get_projection_instructions(
-            projection=projection,
-        ))
+        return self.adapt(
+            **self.get_projection_instructions(
+                projection=projection,
+            )
+        )
 
-    def adapt(self,
+    def adapt(
+        self,
         excluded_node_types: ty.Union[list, set, tuple] = None,
         excluded_edge_types: ty.Union[list, set, tuple] = None,
         reversed_edge_types: ty.Union[list, set, tuple] = None,
         implied_edge_types: ty.Union[list, set, tuple] = None,
     ) -> ty.Union[nx.Graph, nx.DiGraph]:
         """
-            Using the existing graph, filter by node and edge types, and/or
-            reverse certain edge types.
+        Using the existing graph, filter by node and edge types, and/or
+        reverse certain edge types.
         """
         excluded_edge_types = excluded_edge_types or []
         excluded_node_types = excluded_node_types or []
@@ -229,7 +199,8 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
         ).copy()
 
     @lru_cache
-    def _adapt(self,
+    def _adapt(
+        self,
         excluded_node_types: ty.Union[list, set, tuple] = None,
         excluded_edge_types: ty.Union[list, set, tuple] = None,
         reversed_edge_types: ty.Union[list, set, tuple] = None,
@@ -252,11 +223,7 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
             print(f"These edge types are not in the graph: {mismatched_edge_types}.")
 
         included_nodes = sum(
-            [
-                nodes
-                for node_type, nodes in self.nodes_by_type.items()
-                if node_type not in excluded_node_types
-            ],
+            [nodes for node_type, nodes in self.nodes_by_type.items() if node_type not in excluded_node_types],
             [],
         )
         subgraph = graph.__class__(graph.subgraph(included_nodes))
@@ -277,10 +244,7 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
 
         new_graph = graph.__class__()
         new_graph.add_edges_from(edges)
-        new_graph.update(nodes={
-            node: self.graph.nodes.get(node)
-            for node in new_graph.nodes
-        }.items())
+        new_graph.update(nodes={node: self.graph.nodes.get(node) for node in new_graph.nodes}.items())
         return new_graph
 
     @staticmethod
@@ -301,10 +265,7 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
         """Make a new graph with the shortest paths between two nodes"""
         new_graph = graph if enforce_directionality else self._make_undirected(graph)
         try:
-            nodes = set(sum(map(
-                list,
-                nx.all_shortest_paths(new_graph, source, target)
-            ), []))
+            nodes = set(sum(map(list, nx.all_shortest_paths(new_graph, source, target)), []))
             return graph.__class__(graph.subgraph(nodes))
 
         except (nx.NetworkXError, nx.NetworkXException):
@@ -328,28 +289,13 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
     ):
         if not enforce_directionality:
             graph = self._make_undirected(graph)
-        seed_nodes = {
-            id_: max_distance
-            for id_ in seeds
-            if id_ in graph.nodes
-        }
+        seed_nodes = {id_: max_distance for id_ in seeds if id_ in graph.nodes}
         seed_elements = [
-            self.model.elements[id_]
-            for id_ in seeds
-            if id_ not in seed_nodes
-            and id_ in self.model.elements
+            self.model.elements[id_] for id_ in seeds if id_ not in seed_nodes and id_ in self.model.elements
         ]
-        seed_edges = [
-            (element.source, element.target)
-            for element in seed_elements
-            if element._is_relationship
-        ]
+        seed_edges = [(element.source, element.target) for element in seed_elements if element._is_relationship]
 
-        distances = {
-            node: max_distance - 1
-            for node in set(sum(seed_edges, []))
-            if node in graph
-        }
+        distances = {node: max_distance - 1 for node in set(sum(seed_edges, [])) if node in graph}
         distances.update(seed_nodes)
 
         max_iter = 100
