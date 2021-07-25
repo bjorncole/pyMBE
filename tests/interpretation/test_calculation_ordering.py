@@ -20,11 +20,12 @@ def test_kerbal_calc_order1(kerbal_lpg, kerbal_random_stage_5_complete, kerbal_s
 
     # the execution order will be ordered for examination
 
-    sum_1_result = qualified_name_to_id[f'{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ (sum (collect (FRE.engines)),'
-                                     f' sum (collect (FRE.tanks))) => $result::sum (collect (FRE.tanks)) => $result::'
-                                     f'sum (collect (FRE.tanks)) <<Feature>>']  # Result of the sum Expression on Full Mass
-    top_plus = qualified_name_to_id[f'{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ (sum (collect (FRE.engines)), ' +
-                                 'sum (collect (FRE.tanks))) => $result <<OperatorExpression>>']
+    sum_1_result = qualified_name_to_id[f'{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ (sum (engines.Mass' +
+                                 f' (FRE.engines)), sum (tanks.Full Mass (FRE.tanks))) => $result::sum' +
+                                 f' (tanks.Full Mass (FRE.tanks)) => $result::tanks.Full Mass (FRE.tanks) <<Feature>>']
+    top_plus = qualified_name_to_id[f'{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ (sum (engines.Mass '
+                                            f'(FRE.engines)), sum (tanks.Full Mass (FRE.tanks))) => '
+                                            f'$result <<OperatorExpression>>']
 
     sum_1_in_dcg = None
     plus_in_dcg = None
