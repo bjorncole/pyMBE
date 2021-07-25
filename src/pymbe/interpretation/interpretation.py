@@ -4,7 +4,7 @@ from ..label import get_label
 
 class InterpretationSequence(tuple):
     """
-    A data class to represent a single sequence within a model interpretation. Objects of this class should support
+    A class to represent a single sequence within a model interpretation. Objects of this class should support
     the drawing of interpretation diagrams and be the eventual target of validity checkers.
     """
 
@@ -13,7 +13,25 @@ class InterpretationSequence(tuple):
         self.owning_entry = None
     def get_line_ends(self):
         # placeholder for using M1 reference to figure out what the right ends for the connector line are
-        pass
+        if self.owning_entry.draw_kind == "Line":
+            line_ends = self.owning_entry.base.connectorEnd
+            line_source = None
+            line_target = None
+            for index, line_end in enumerate(line_ends):
+                for entry in self.owning_entry.master_list:
+                    if entry.key == line_end._id:
+                        end_interpretation = entry.value
+                        for seq in end_interpretation:
+                            for item in seq:
+                                if item == self[-1]:
+                                    if index == 0:
+                                        line_source = seq
+                                    if index == 1:
+                                        line_target = seq
+
+            return [line_source, line_target]
+        else:
+            return []
     def get_nesting_list(self):
         # placeholder for using M1 reference to figure out what the path of parent shapes are
         pass
@@ -24,16 +42,30 @@ LINE_KINDS = ("ConnectionUsage")
 PORT_BOX_KINDS = ("PortUsage")
 
 
+class InterpretationSet(set):
+    """
+    A class to represent the set of sequences of an interpretation of a single M1 element
+    """
+    def __repr__(self):
+        if len(self) > 10:
+            excerpt = list(self)[0:10]
+            excerpt.append('...')
+            return str(excerpt)
+        else:
+            return super(InterpretationSet, self).__repr__()
+
+
 class InterpretationDictionaryEntry:
     """
-    A data class to represent a key value pair for a master interpretation dictionary, which points from
+    A class to represent a key value pair for a master interpretation dictionary, which points from
     M1 user model elements to a set of sequences of atoms that are the interpretation
     """
 
-    def __init__(self, m1_base: Element, interprets: set):
+    def __init__(self, m1_base: Element, interprets: set, owner: list = []):
         self.key = m1_base._id
-        self.value = set()
+        self.value = InterpretationSet()
         self.base = m1_base
+        self.master_list = owner
         for item in interprets:
             self.value.add(item)
             # link the sequence owning entry back here to leave a breadcrumb for plotting, checking, etc.
@@ -47,6 +79,7 @@ class InterpretationDictionaryEntry:
             self.draw_kind = "Line"
         elif m1_base.get("@type") in PORT_BOX_KINDS:
             self.draw_kind = "Port"
+
 
     def __repr__(self):
         return f'Entry: <{get_label(self.base)}, {self.value}>'
@@ -142,7 +175,7 @@ def repack_instance_dictionaries(instance_dict: dict, mdl: Model):
         for seq in sequence_set:
             new_seq = InterpretationSequence(seq)
             new_set.add(new_seq)
-        entry = InterpretationDictionaryEntry(mdl.elements[key], new_set)
+        entry = InterpretationDictionaryEntry(mdl.elements[key], new_set, instance_list)
         instance_list.append(entry)
 
     return instance_list
