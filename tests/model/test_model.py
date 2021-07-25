@@ -52,8 +52,12 @@ def test_relationships(kerbal_model):
 def test_accessors(kerbal_model):
     model = kerbal_model
     for element in model.elements.values():
-        if element._metatype == "ReturnParameterMembership":
+        if (
+            element._metatype == "ReturnParameterMembership"
+            and "Literal" in element.relatedElement[0]._metatype
+        ):
             a_return_parameter_membership = element
+            break
     assert isinstance(a_return_parameter_membership.relatedElement[0].value, int)
 
     assert (

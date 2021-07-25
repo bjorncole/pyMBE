@@ -7,9 +7,9 @@ from ..model import Element, Model
 # What visual representation to use for instances based on their M1 Metatype
 REPRESENTATION_BY_METATYPE = dict(
     ConnectionUsage="Line",
-    PartDefinition="Box",
-    PartUsage="Nested Box",
-    PortDefinition="Box",
+    PartDefinition="Rectangle",
+    PartUsage="Rounded Rectangle",
+    PortDefinition="Rectangle",
     PortUsage="Port",
 )
 
