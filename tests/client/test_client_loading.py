@@ -10,7 +10,7 @@ from tests.conftest import (
 )
 
 
-SYSML_SERVER_URL = "http://sysml2.intercax.com"
+SYSML_SERVER_URL = "http://sysml2-sst.intercax.com"  # Alternative: sysml2.intercax.com
 
 
 def can_connect(host: str, port: int = 9000):
@@ -22,7 +22,7 @@ def can_connect(host: str, port: int = 9000):
 
 
 def test_client_load_kerbal(kerbal_client):
-    assert len(kerbal_client.model.elements) == 389
+    assert len(kerbal_client.model.elements) == 380
 
 
 def test_client_load_find_names(all_kerbal_names):

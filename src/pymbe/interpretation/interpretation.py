@@ -1,88 +1,104 @@
-from dataclasses import dataclass
-from ..model import Element, Model
+from dataclasses import dataclass, field
+
 from ..label import get_label
+from ..model import Element, Model
 
-class InterpretationSequence(tuple):
+
+# What visual representation to use for instances based on their M1 Metatype
+REPRESENTATION_BY_METATYPE = dict(
+    ConnectionUsage="Line",
+    PartDefinition="Box",
+    PartUsage="Nested Box",
+    PortDefinition="Box",
+    PortUsage="Port",
+)
+
+
+@dataclass
+class InterpretationSequence:
     """
-    A class to represent a single sequence within a model interpretation. Objects of this class should support
-    the drawing of interpretation diagrams and be the eventual target of validity checkers.
+    A class to represent a single sequence within a model interpretation.
+
+    Objects of this class should support the drawing of interpretation
+    diagrams and be the eventual target of validity checkers.
     """
 
-    def __init__(self, elements: list):
-        self.sequence = tuple(elements)
-        self.owning_entry = None
+    instances: tuple
+    owning_entry: "InterpretationDictionaryEntry" = None
+
     def get_line_ends(self):
         # placeholder for using M1 reference to figure out what the right ends for the connector line are
-        if self.owning_entry.draw_kind == "Line":
-            line_ends = self.owning_entry.base.connectorEnd
-            line_source = None
-            line_target = None
-            for index, line_end in enumerate(line_ends):
-                for entry in self.owning_entry.master_list:
-                    if entry.key == line_end._id:
-                        end_interpretation = entry.value
-                        for seq in end_interpretation:
-                            for item in seq:
-                                if item == self[-1]:
-                                    if index == 0:
-                                        line_source = seq
-                                    if index == 1:
-                                        line_target = seq
-
-            return [line_source, line_target]
-        else:
+        if not self.owning_entry or self.owning_entry.draw_kind != "Line":
             return []
+
+        line_ends = self.owning_entry.base.connectorEnd
+        line_source, line_target = None, None
+        for index, line_end in enumerate(line_ends):
+            for entry in self.owning_entry.master_list:
+                if entry.key == line_end._id:
+                    end_interpretation = entry.value
+                    for seq in end_interpretation:
+                        for instance in seq.instances:
+                            if instance == self.instances[-1]:
+                                if index == 0:
+                                    line_source = seq
+                                if index == 1:
+                                    line_target = seq
+
+        return [line_source, line_target]
+
     def get_nesting_list(self):
         # placeholder for using M1 reference to figure out what the path of parent shapes are
         pass
 
-DEF_BOX_KINDS = ("PartDefinition", "PortDefinition")
-USE_BOX_KINDS = ("PartUsage")
-LINE_KINDS = ("ConnectionUsage")
-PORT_BOX_KINDS = ("PortUsage")
+    def __hash__(self):
+        return hash(id(self))
+
+    def __repr__(self):
+        return f"({', '.join(map(str, self.instances))})"
 
 
 class InterpretationSet(set):
     """
     A class to represent the set of sequences of an interpretation of a single M1 element
     """
+
+    MAX_REPR_LENGTH = 10
+
     def __repr__(self):
-        if len(self) > 10:
-            excerpt = list(self)[0:10]
-            excerpt.append('...')
-            return str(excerpt)
+        max_len = self.MAX_REPR_LENGTH
+        if len(self) > max_len:
+            return str(f"{list(self)[:max_len]}...")
         else:
-            return super(InterpretationSet, self).__repr__()
+            return super().__repr__()
 
 
+@dataclass
 class InterpretationDictionaryEntry:
     """
     A class to represent a key value pair for a master interpretation dictionary, which points from
     M1 user model elements to a set of sequences of atoms that are the interpretation
     """
+    base: Element
+    interprets: set
+    master_list: dict = field(default_factory=dict)
+    value: InterpretationSet = field(default_factory=InterpretationSet)
 
-    def __init__(self, m1_base: Element, interprets: set, owner: list = []):
-        self.key = m1_base._id
-        self.value = InterpretationSet()
-        self.base = m1_base
-        self.master_list = owner
-        for item in interprets:
+    @property
+    def key(self):
+        return self.base._id
+
+    def __post_init__(self):
+        for item in self.interprets:
             self.value.add(item)
             # link the sequence owning entry back here to leave a breadcrumb for plotting, checking, etc.
             item.owning_entry = self
         # build hinting for diagram
-        if m1_base.get("@type") in DEF_BOX_KINDS:
-            self.draw_kind = "Box"
-        elif m1_base.get("@type") in USE_BOX_KINDS:
-            self.draw_kind = "Nested Box"
-        elif m1_base.get("@type") in LINE_KINDS:
-            self.draw_kind = "Line"
-        elif m1_base.get("@type") in PORT_BOX_KINDS:
-            self.draw_kind = "Port"
-
+        self.draw_kind = REPRESENTATION_BY_METATYPE.get(self.base._metatype)
 
     def __repr__(self):
         return f'Entry: <{get_label(self.base)}, {self.value}>'
+
 
 class Instance:
     """
@@ -161,6 +177,7 @@ def shorten_name(name: str, shorten_pre_bake: dict = None) -> str:
             return short_name
     return name
 
+
 def repack_instance_dictionaries(instance_dict: dict, mdl: Model):
     """
     Temporary method to repack the instance dictionaries into objects to be sure this is how we want things to work
@@ -171,11 +188,7 @@ def repack_instance_dictionaries(instance_dict: dict, mdl: Model):
     instance_list = []
 
     for key, sequence_set in instance_dict.items():
-        new_set = set()
-        for seq in sequence_set:
-            new_seq = InterpretationSequence(seq)
-            new_set.add(new_seq)
-        entry = InterpretationDictionaryEntry(mdl.elements[key], new_set, instance_list)
-        instance_list.append(entry)
+        new_set = {InterpretationSequence(seq) for seq in sequence_set}
+        instance_list.append(InterpretationDictionaryEntry(mdl.elements[key], new_set, instance_list))
 
     return instance_list

@@ -8,7 +8,6 @@ from ..interpretation.m0_operators import (
     evaluate_and_apply_plus,
     evaluate_and_apply_sum,
 )
-from ..label import get_label_for_id
 from .lpg import SysML2LabeledPropertyGraph
 
 
