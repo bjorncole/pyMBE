@@ -1,5 +1,5 @@
 [FORMAT]
-max-line-length = 120
+max-line-length = 99
 
 [MESSAGES CONTROL]
 disable=abstract-method,

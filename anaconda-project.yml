@@ -6,6 +6,7 @@ description: |
   A pythonic Model-based Engineering analysis framework based on SysML v2.
 
 variables:
+  MAX_LINE_LENGTH: 99
   SYSML_V2_API_REPO: https://github.com/Systems-Modeling/SysML-v2-API-Python-Client.git@2021-05
 
 commands:
@@ -28,11 +29,11 @@ commands:
     env_spec: developer
     unix: |
       isort .
-      black src/ tests/ -l 120
+      black src/ tests/ -l {{MAX_LINE_LENGTH}}
       flake8 src/
       pylint src/ --rcfile=.pylintrc
     windows: |
-      isort . & black src/ tests/ -l 120 & flake8 src/ & pylint src/ --rcfile=.pylintrc
+      isort . & black src/ tests/ -l {{MAX_LINE_LENGTH}} & flake8 src/ & pylint src/ --rcfile=.pylintrc
   package:
     description: make a source distribution
     env_spec: developer

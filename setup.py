@@ -4,13 +4,17 @@ import re
 from pathlib import Path
 
 HERE = Path(__file__).parent
-VERSION = HERE / "src" / "pymbe" / "_version.py"
+VERSION_FILE = HERE / "src/pymbe/_version.py"
 
 
 __version__ = re.search(
     pattern=r"""^__version__\s*=\s*['"]([^'"]*)['"]""",
-    string=VERSION.read_text(),
+    string=VERSION_FILE.read_text(),
     flags=re.M,
 ).group(1)
 
-__import__("setuptools").setup(version=__version__)
+__import__("setuptools").setup(
+    setup_cfg=True,
+    setup_requires=['setup.cfg'],
+    version=__version__,
+)
