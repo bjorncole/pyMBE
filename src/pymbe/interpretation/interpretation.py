@@ -100,18 +100,6 @@ class InterpretationDictionaryEntry:
         return f'Entry: <{get_label(self.base)}, {self.value}>'
 
 
-class Instance:
-    """
-    A class to represent instances of real things in the M0 universe interpreted from the model.
-    Sequences of instances are intended to follow the mathematical base semantics of SysML v2.
-    """
-    def __init__(self, name, index, pre_bake):
-        self.name = f"{shorten_name(name, shorten_pre_bake=pre_bake)}#{index}"
-
-    def __repr__(self):
-        return self.name
-
-
 class ValueHolder:
     """
     A class to represent instances of the attribution of real things in the M0 universe interpreted from the model.

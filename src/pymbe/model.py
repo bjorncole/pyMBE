@@ -230,6 +230,9 @@ class Element:
                 self._data[key] = ListOfNamedItems(items)
 
     def __call__(self, *args, **kwargs):
+        element = kwargs.pop("element", None)
+        if element:
+            warn("When instantiating an element, you cannot pass it element.")
         if self._metatype in VALUE_METATYPES:
             return ValueHolder(*args, **kwargs, element=self)
         return Instance(*args, **kwargs, element=self)
@@ -335,7 +338,7 @@ class Element:
 @dataclass
 class Instance:
     """
-    An M0 instantiation of an M1 element.
+    An M0 instantiation in the M0 universe (i.e., real things) interpreted from an M1 element.
 
     Sequences of instances are intended to follow the mathematical base semantics of SysML v2.
     """
@@ -348,9 +351,16 @@ class Instance:
         if self not in element._instances:
             element._instances += [self]
         if not self.name:
+            # TODO: Should we revert to 0-index?
             id_ = element._instances.index(self) + 1
             name = element.label or element._id
             self.name = f"{name}#{id_}"
+
+    def __repr__(self):
+        return self.name
+
+    def __hash__(self):
+        return hash(id(self))
 
 
 @dataclass

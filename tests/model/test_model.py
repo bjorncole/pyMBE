@@ -54,7 +54,7 @@ def test_accessors(kerbal_model):
     for element in model.elements.values():
         if (
             element._metatype == "ReturnParameterMembership"
-            and "Literal" in element.relatedElement[0]._metatype
+            and "LiteralInteger" in element.relatedElement[0]._metatype
         ):
             a_return_parameter_membership = element
             break

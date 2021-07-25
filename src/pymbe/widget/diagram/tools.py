@@ -160,7 +160,9 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):
     @trt.observe("tools")
     def _update_children(self, *_):
         """Note: overwrites ipyelk.Toolbar method."""
-        self.buttons.children = buttons = [tool.ui for tool in self.tools if isinstance(tool.ui, ipyw.Button)] + [
+        self.buttons.children = buttons = [
+            tool.ui for tool in self.tools if isinstance(tool.ui, ipyw.Button)
+        ] + [
             self.refresh_diagram,
             self.close_btn,
         ]
@@ -205,7 +207,9 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):
     ):
         if not selectors:
             selectors = [
-                getattr(self, item) for item in dir(self) if isinstance(getattr(self, item), ipyw.SelectMultiple)
+                getattr(self, item)
+                for item in dir(self)
+                if isinstance(getattr(self, item), ipyw.SelectMultiple)
             ]
         for selector in selectors:
             selector.rows = min(self.max_type_selector_rows, len(selector.options))

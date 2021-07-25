@@ -46,13 +46,16 @@ class ElementInspector(ipyw.Output, BaseWidget):
         return {
             key: value
             for key, value in data.items()
-            if key not in self.FILTER_KEYS and (self.include_empty or value or value is False or value == 0.0)
+            if key not in self.FILTER_KEYS
+            and (self.include_empty or value or value is False or value == 0.0)
         }
 
     @trt.observe("model")
     def update(self, *_):
         with self.log_out:
-            self.clean_data = {id_: self.get_clean_data(element) for id_, element in self.model.elements.items()}
+            self.clean_data = {
+                id_: self.get_clean_data(element) for id_, element in self.model.elements.items()
+            }
 
     @staticmethod
     def _get_name(data: dict) -> str:

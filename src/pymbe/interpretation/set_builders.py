@@ -2,9 +2,8 @@ import itertools
 import random
 from typing import Dict, List
 
-from ..label import get_label
-from ..model import Element
-from .interpretation import Instance, LiveExpressionNode, ValueHolder
+from ..model import Element, Instance
+from .interpretation import LiveExpressionNode, ValueHolder
 
 # Adaptations to simplify dictionary production
 
@@ -53,9 +52,7 @@ def create_set_with_new_instances(
                     )
                 )
             else:
-                new_list.append(
-                    Instance(m1_typename, m, name_hints)
-                )
+                new_list.append(m1_type())
         individual_lists.append(new_list)
 
     # walk the sequence and generate an appropriately named instance
@@ -102,17 +99,12 @@ def extend_sequences_by_sampling(
 
     set_extended = []
     if len(sample_set) == 0 and fallback_to_generate:
-        new_list = []
+        new_list = [
+            fallback_type()
+            for _ in range(total_draw)
+        ]
+
         last_draw = 0
-        for m in range(0, total_draw):
-            new_instance = Instance(
-                get_label(fallback_type),
-                m,
-                [],
-            )
-
-            new_list.append(new_instance)
-
         for index, seq in enumerate(previous_sequences):
             for pull in new_list[last_draw:last_draw + draws_per[index]]:
                 new_seq = []

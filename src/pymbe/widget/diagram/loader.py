@@ -7,7 +7,7 @@ from ipyelk.elements import layout_options as opt
 
 from .part_diagram import PartDiagram
 from .parts import Part
-from .relationships import METATYPE_TO_RELATIONSHIP_TYPES, DirectedAssociation, Relationship
+from .relationships import Relationship
 
 
 class SysmlLoader(ElementLoader):

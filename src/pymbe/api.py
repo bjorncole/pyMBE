@@ -9,8 +9,7 @@ __all__ = (
 )
 
 
-from .interpretation.interpretation import Instance
-from .model import Model
+from .model import Model, Instance
 from .widget.client import SysML2ClientWidget
 from .widget.containment import ContainmentTree
 from .widget.diagram import DiagramWidget

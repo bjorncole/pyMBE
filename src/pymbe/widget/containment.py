@@ -82,7 +82,9 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
                     self.deselect_nodes()
                     return
 
-                nodes_to_deselect = [node for node in self.selected_nodes if node._identifier not in self.selected]
+                nodes_to_deselect = [
+                    node for node in self.selected_nodes if node._identifier not in self.selected
+                ]
                 if nodes_to_deselect:
                     self.deselect_nodes(*nodes_to_deselect)
 
@@ -91,7 +93,9 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
     @trt.observe("nodes_by_id")
     def _update_tree(self, *_):
         # find the root nodes and sort them
-        roots = self.sort_nodes([node for node in self.nodes_by_id.values() if node._owner is None])
+        roots = self.sort_nodes(
+            [node for node in self.nodes_by_id.values() if node._owner is None]
+        )
 
         # update the tree
         self._clear_tree()

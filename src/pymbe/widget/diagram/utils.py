@@ -20,7 +20,11 @@ class Mapper:
 
     def __post_init__(self):
         # Filter maps with no SysML ID
-        self.to_sysml = {elkjs_id: sysml_id for elkjs_id, sysml_id in self.to_sysml.items() if sysml_id is not None}
+        self.to_sysml = {
+            elkjs_id: sysml_id
+            for elkjs_id, sysml_id in self.to_sysml.items()
+            if sysml_id is not None
+        }
 
         common_keys = set(self.to_sysml).intersection(self.to_sysml.values())
         if common_keys:
