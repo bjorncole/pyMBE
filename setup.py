@@ -13,8 +13,4 @@ __version__ = re.search(
     flags=re.M,
 ).group(1)
 
-__import__("setuptools").setup(
-    setup_cfg=True,
-    setup_requires=['setup.cfg'],
-    version=__version__,
-)
+__import__("setuptools").setup(version=__version__)
