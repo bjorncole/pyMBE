@@ -1,33 +1,6 @@
 from dataclasses import dataclass
-from ..model import Element
-
-class InterpretationDictionaryEntry:
-    """
-    A data class to represent a key value pair for a master interpretation dictionary, which points from
-    M1 user model elements to a set of sequences of atoms that are the interpretation
-    """
-
-    DEF_BOX_KINDS = ("PartDefinition", "PortDefinition")
-    USE_BOX_KINDS = ("PartUsage")
-    LINE_KINDS = ("ConnectionUsage")
-    PORT_BOX_KINDS = ("PortUsage")
-
-    def __init__(self, m1_base: Element, inteprets: set(InterpretationSequence)):
-        self.key = m1_base._id
-        self.value = set()
-        for item in interprets:
-            self.value.add(item)
-            # link the sequence owning entry back here to leave a breadcrumb for plotting, checking, etc.
-            item.owning_entry = self
-        # build hinting for diagram
-        if m1_base.get("@type") in DEF_BOX_KINDS:
-            self.draw_kind = "Box"
-        elif m1_base.get("@type") in USE_BOX_KINDS:
-            self.draw_kind = "Nested Box"
-        elif m1_base.get("@type") in LINE_KINDS:
-            self.draw_kind = "Line"
-        elif m1_base.get("@type") in PORT_BOX_KINDS:
-            self.draw_kind = "Port"
+from ..model import Element, Model
+from ..label import get_label
 
 class InterpretationSequence(tuple):
     """
@@ -44,6 +17,39 @@ class InterpretationSequence(tuple):
     def get_nesting_list(self):
         # placeholder for using M1 reference to figure out what the path of parent shapes are
         pass
+
+DEF_BOX_KINDS = ("PartDefinition", "PortDefinition")
+USE_BOX_KINDS = ("PartUsage")
+LINE_KINDS = ("ConnectionUsage")
+PORT_BOX_KINDS = ("PortUsage")
+
+
+class InterpretationDictionaryEntry:
+    """
+    A data class to represent a key value pair for a master interpretation dictionary, which points from
+    M1 user model elements to a set of sequences of atoms that are the interpretation
+    """
+
+    def __init__(self, m1_base: Element, interprets: set):
+        self.key = m1_base._id
+        self.value = set()
+        self.base = m1_base
+        for item in interprets:
+            self.value.add(item)
+            # link the sequence owning entry back here to leave a breadcrumb for plotting, checking, etc.
+            item.owning_entry = self
+        # build hinting for diagram
+        if m1_base.get("@type") in DEF_BOX_KINDS:
+            self.draw_kind = "Box"
+        elif m1_base.get("@type") in USE_BOX_KINDS:
+            self.draw_kind = "Nested Box"
+        elif m1_base.get("@type") in LINE_KINDS:
+            self.draw_kind = "Line"
+        elif m1_base.get("@type") in PORT_BOX_KINDS:
+            self.draw_kind = "Port"
+
+    def __repr__(self):
+        return f'Entry: <{get_label(self.base)}, {self.value}>'
 
 class Instance:
     """
@@ -121,3 +127,22 @@ def shorten_name(name: str, shorten_pre_bake: dict = None) -> str:
                 next_space = name.find(" ", next_space + 1)
             return short_name
     return name
+
+def repack_instance_dictionaries(instance_dict: dict, mdl: Model):
+    """
+    Temporary method to repack the instance dictionaries into objects to be sure this is how we want things to work
+    :param instance_dict: Completed instance dictionary
+    :return: An object version of the instance dictionary
+    """
+
+    instance_list = []
+
+    for key, sequence_set in instance_dict.items():
+        new_set = set()
+        for seq in sequence_set:
+            new_seq = InterpretationSequence(seq)
+            new_set.add(new_seq)
+        entry = InterpretationDictionaryEntry(mdl.elements[key], new_set)
+        instance_list.append(entry)
+
+    return instance_list
