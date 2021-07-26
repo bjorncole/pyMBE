@@ -2,7 +2,6 @@
 # Module for computing useful labels and signatures for SysML v2 elements
 from .model import Element, Model
 
-
 DEFAULT_MULTIPLICITY_LIMITS = dict(lower="0", upper="*")
 
 
@@ -16,15 +15,8 @@ def get_label(element: Element) -> str:
     types: list = data.get("type") or []
     if isinstance(types, dict):
         types = [types]
-    type_names = [
-        model.elements[type_["@id"]]._data.get("name")
-        for type_ in types
-    ]
-    type_names = [
-        str(type_name)
-        for type_name in type_names
-        if type_name
-    ]
+    type_names = [model.elements[type_["@id"]]._data.get("name") for type_ in types]
+    type_names = [str(type_name) for type_name in type_names if type_name]
     value = element._data.get("value")
     if name:
         if type_names:
@@ -61,11 +53,9 @@ def get_label_for_expression(
         "FeatureReferenceExpression",
         "InvocationExpression",
         "OperatorExpression",
-        "PathStepExpression"
+        "PathStepExpression",
     ):
-        raise NotImplementedError(
-            f"Cannot create M1 signature for: {metatype}"
-        )
+        raise NotImplementedError(f"Cannot create M1 signature for: {metatype}")
 
     if metatype == "FeatureReferenceExpression":
         try:
@@ -86,8 +76,7 @@ def get_label_for_expression(
 
     if "input" in expression._data:
         inputs = [
-            expression._model.elements[an_input["@id"]]
-            for an_input in expression._data["input"]
+            expression._model.elements[an_input["@id"]] for an_input in expression._data["input"]
         ]
     else:
         inputs = []

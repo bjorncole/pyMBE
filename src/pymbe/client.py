@@ -127,7 +127,11 @@ class SysML2Client(trt.HasTraits):
 
         results = {project.id: process_project_safely(project) for project in projects}
 
-        return {project_id: project_data for project_id, project_data in results.items() if project_data}
+        return {
+            project_id: project_data
+            for project_id, project_data in results.items()
+            if project_data
+        }
 
     @trt.observe("host_url", "host_port")
     def _update_api_configuration(self, *_):
@@ -198,7 +202,9 @@ class SysML2Client(trt.HasTraits):
             response = requests.get(url)
 
             if not response.ok:
-                raise requests.HTTPError(f"Failed to retrieve elements from '{url}', " f"reason: {response.reason}")
+                raise requests.HTTPError(
+                    f"Failed to retrieve elements from '{url}', " f"reason: {response.reason}"
+                )
 
             result += response.json()
 

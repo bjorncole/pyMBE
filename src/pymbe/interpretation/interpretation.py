@@ -4,7 +4,6 @@ from typing import Any
 from ..label import get_label
 from ..model import Element, Model
 
-
 # What visual representation to use for instances based on their M1 Metatype
 REPRESENTATION_BY_METATYPE = dict(
     ConnectionUsage="Line",
@@ -28,7 +27,8 @@ class InterpretationSequence:
     owning_entry: "InterpretationDictionaryEntry" = None
 
     def get_line_ends(self):
-        # placeholder for using M1 reference to figure out what the right ends for the connector line are
+        # placeholder for using M1 reference to figure out what the right ends for the
+        # connector line are
         if not self.owning_entry or self.owning_entry.draw_kind != "Line":
             return []
 
@@ -77,8 +77,8 @@ class InterpretationSet(set):
 @dataclass
 class InterpretationDictionaryEntry:
     """
-    A class to represent a key value pair for a master interpretation dictionary, which points from
-    M1 user model elements to a set of sequences of atoms that are the interpretation
+    A class to represent a key value pair for a master interpretation dictionary, which points
+    from M1 user model elements to a set of sequences of atoms that are the interpretation
     """
 
     base: Element
@@ -93,20 +93,23 @@ class InterpretationDictionaryEntry:
     def __post_init__(self):
         for item in self.interprets:
             self.value.add(item)
-            # link the sequence owning entry back here to leave a breadcrumb for plotting, checking, etc.
+            # link the sequence owning entry back here to leave a breadcrumb for
+            # plotting, checking, etc.
             item.owning_entry = self
         # build hinting for diagram
         self.draw_kind = REPRESENTATION_BY_METATYPE.get(self.base._metatype)
 
     def __repr__(self):
-        return f'Entry: <{get_label(self.base)}, {self.value}>'
+        return f"Entry: <{get_label(self.base)}, {self.value}>"
 
 
 @dataclass
 class ValueHolder:
     """
-    A class to represent instances of the attribution of real things in the M0 universe interpreted from the model.
-    Sequences of instances and value holders are intended to follow the mathematical base semantics of SysML v2.
+    A class to represent instances of the attribution of real things in the M0 universe
+    interpreted from the model. Sequences of instances and value holders are intended to
+    follow the mathematical base semantics of SysML v2.
+
     Additionally, the value holders are meant to be variables in numerical analyses.
     """
 
@@ -129,10 +132,11 @@ class ValueHolder:
 
 class LiveExpressionNode:
     """
-    A class to be instances of expressions that can support computations in the M0 space. Also, this is where
-    implementation code for a specific expression type can be placed are segments of a tree can be subsumed by a
-    specific procedure.
+    A class to be instances of expressions that can support computations in the M0 space.
+    Also, this is where implementation code for a specific expression type can be placed
+    are segments of a tree can be subsumed by a specific procedure.
     """
+
     def __init__(self, path, expr, base_att):
         # path is list of instance references
         self.holder_string = expr
@@ -172,7 +176,9 @@ def shorten_name(name: str, shorten_pre_bake: dict = None) -> str:
 
 def repack_instance_dictionaries(instance_dict: dict, mdl: Model):
     """
-    Temporary method to repack the instance dictionaries into objects to be sure this is how we want things to work
+    Temporary method to repack the instance dictionaries into objects to be sure
+    this is how we want things to work
+
     :param instance_dict: Completed instance dictionary
     :return: An object version of the instance dictionary
     """
@@ -181,6 +187,8 @@ def repack_instance_dictionaries(instance_dict: dict, mdl: Model):
 
     for key, sequence_set in instance_dict.items():
         new_set = {InterpretationSequence(seq) for seq in sequence_set}
-        instance_list.append(InterpretationDictionaryEntry(mdl.elements[key], new_set, instance_list))
+        instance_list.append(
+            InterpretationDictionaryEntry(mdl.elements[key], new_set, instance_list)
+        )
 
     return instance_list

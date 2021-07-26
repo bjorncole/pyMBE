@@ -8,9 +8,8 @@ from pymbe.query.query import (
     roll_up_multiplicity_for_type,
     roll_up_upper_multiplicity,
 )
-
-
 from tests.conftest import kerbal_model_loaded_client
+
 ROCKET_BUILDING = "Model::Kerbal::Rocket Building::"
 PARTS_LIBRARY = "Model::Kerbal::Parts Library::"
 SIMPLE_MODEL = "Model::Simple Parts Model::"
@@ -20,7 +19,9 @@ FAKE_LIBRARY = "Model::Simple Parts Model::Fake Library::"
 def test_feature_to_type1(kerbal_client, kerbal_lpg, kerbal_stable_names):
     *_, qualified_name_to_id = kerbal_stable_names
 
-    engines_feat = qualified_name_to_id[f"{ROCKET_BUILDING}Liquid Stage::engines: Liquid Engine <<PartUsage>>"]
+    engines_feat = qualified_name_to_id[
+        f"{ROCKET_BUILDING}Liquid Stage::engines: Liquid Engine <<PartUsage>>"
+    ]
     engine_type_feat = qualified_name_to_id[f"{ROCKET_BUILDING}Liquid Engine <<PartDefinition>>"]
 
     assert get_types_for_feature(kerbal_lpg, engines_feat) == [engine_type_feat]
@@ -29,7 +30,9 @@ def test_feature_to_type1(kerbal_client, kerbal_lpg, kerbal_stable_names):
 def test_type_to_feature1(kerbal_client, kerbal_lpg, kerbal_stable_names):
     *_, qualified_name_to_id = kerbal_stable_names
 
-    engines_feat = qualified_name_to_id[f"{ROCKET_BUILDING}Liquid Stage::engines: Liquid Engine <<PartUsage>>"]
+    engines_feat = qualified_name_to_id[
+        f"{ROCKET_BUILDING}Liquid Stage::engines: Liquid Engine <<PartUsage>>"
+    ]
     engine_type_feat = qualified_name_to_id[f"{ROCKET_BUILDING}Liquid Engine <<PartDefinition>>"]
 
     assert get_features_typed_by_type(kerbal_lpg, engine_type_feat) == [engines_feat]
@@ -40,26 +43,29 @@ def test_type_to_feature2(simple_parts_client, simple_parts_lpg, simple_parts_st
 
     port_type_id = qualified_name_to_id[f"{FAKE_LIBRARY}Port <<PortDefinition>>"]
     power_in_id = qualified_name_to_id[
-        f"{SIMPLE_MODEL}Power Group: Part::Power User: Part::Power In: Port <<PortUsage>>"]
+        f"{SIMPLE_MODEL}Power Group: Part::Power User: Part::Power In: Port <<PortUsage>>"
+    ]
     power_out_id = qualified_name_to_id[
-        f"{SIMPLE_MODEL}Power Group: Part::Power Source: Part::Power Out: Port <<PortUsage>>"]
+        f"{SIMPLE_MODEL}Power Group: Part::Power Source: Part::Power Out: Port <<PortUsage>>"
+    ]
 
     print(get_features_typed_by_type(simple_parts_lpg, port_type_id))
 
-    assert power_in_id in get_features_typed_by_type(simple_parts_lpg, port_type_id) and \
-            power_out_id in get_features_typed_by_type(simple_parts_lpg, port_type_id)
+    assert power_in_id in get_features_typed_by_type(
+        simple_parts_lpg, port_type_id
+    ) and power_out_id in get_features_typed_by_type(simple_parts_lpg, port_type_id)
 
 
 def test_banded_graph_paths1(kerbal_lpg, kerbal_stable_names):
     *_, qualified_name_to_id = kerbal_stable_names
 
     rocket_id = qualified_name_to_id[f"{ROCKET_BUILDING}Rocket <<PartDefinition>>"]
-    engines_feat = qualified_name_to_id[f"{ROCKET_BUILDING}Liquid Stage::engines: Liquid Engine <<PartUsage>>"]
+    engines_feat = qualified_name_to_id[
+        f"{ROCKET_BUILDING}Liquid Stage::engines: Liquid Engine <<PartUsage>>"
+    ]
 
     all_paths = nx.all_simple_paths(
-        kerbal_lpg.get_projection("Expanded Banded"),
-        engines_feat,
-        rocket_id
+        kerbal_lpg.get_projection("Expanded Banded"), engines_feat, rocket_id
     )
 
     path_lists = list(all_paths)
@@ -77,12 +83,12 @@ def test_banded_graph_paths1(kerbal_lpg, kerbal_stable_names):
 def test_banded_graph_paths2(kerbal_lpg, kerbal_stable_names):
     *_, qualified_name_to_id = kerbal_stable_names
     rocket_id = qualified_name_to_id[f"{ROCKET_BUILDING}Rocket <<PartDefinition>>"]
-    ft200_feat_id = qualified_name_to_id[f"{ROCKET_BUILDING}Liquid Stage::tanks: Fuel Tank Section <<PartUsage>>"]
+    ft200_feat_id = qualified_name_to_id[
+        f"{ROCKET_BUILDING}Liquid Stage::tanks: Fuel Tank Section <<PartUsage>>"
+    ]
 
     all_paths = nx.all_simple_paths(
-        kerbal_lpg.get_projection("Expanded Banded"),
-        ft200_feat_id,
-        rocket_id
+        kerbal_lpg.get_projection("Expanded Banded"), ft200_feat_id, rocket_id
     )
 
     path_lists = list(all_paths)
@@ -102,10 +108,12 @@ def test_banded_graph_paths3(simple_parts_lpg, simple_parts_stable_names):
 
     power_group_id = qualified_name_to_id[f"{SIMPLE_MODEL}Power Group: Part <<PartUsage>>"]
 
-    power_in_port_id = qualified_name_to_id[f"{SIMPLE_MODEL}Power Group: Part::Power User: " 
-                                            f"Part::Power In: Port <<PortUsage>>"]
+    power_in_port_id = qualified_name_to_id[
+        f"{SIMPLE_MODEL}Power Group: Part::Power User: " f"Part::Power In: Port <<PortUsage>>"
+    ]
     power_out_id = qualified_name_to_id[
-        f"{SIMPLE_MODEL}Power Group: Part::Power Source: Part::Power Out: Port <<PortUsage>>"]
+        f"{SIMPLE_MODEL}Power Group: Part::Power Source: Part::Power Out: Port <<PortUsage>>"
+    ]
 
     ebg = simple_parts_lpg.get_projection("Expanded Banded")
 
@@ -115,11 +123,7 @@ def test_banded_graph_paths3(simple_parts_lpg, simple_parts_stable_names):
     assert power_group_id in list(ebg.nodes)
     assert power_in_port_id in list(ebg.nodes)
 
-    all_paths = nx.all_simple_paths(
-        ebg,
-        power_out_id,
-        power_group_id
-    )
+    all_paths = nx.all_simple_paths(ebg, power_out_id, power_group_id)
 
     path_lists = list(all_paths)
     print(path_lists)
@@ -130,8 +134,12 @@ def test_banded_graph_paths3(simple_parts_lpg, simple_parts_stable_names):
 def test_feature_multiplicity_rollup1(kerbal_lpg, kerbal_stable_names):
     *_, qualified_name_to_id = kerbal_stable_names
 
-    engines_feat = qualified_name_to_id[f"{ROCKET_BUILDING}Liquid Stage::engines: Liquid Engine <<PartUsage>>"]
-    stages_feat = qualified_name_to_id[f"{ROCKET_BUILDING}Rocket::stages: Rocket Stage <<PartUsage>>"]
+    engines_feat = qualified_name_to_id[
+        f"{ROCKET_BUILDING}Liquid Stage::engines: Liquid Engine <<PartUsage>>"
+    ]
+    stages_feat = qualified_name_to_id[
+        f"{ROCKET_BUILDING}Rocket::stages: Rocket Stage <<PartUsage>>"
+    ]
 
     assert engines_feat in list(kerbal_lpg.nodes.keys())
     assert stages_feat in list(kerbal_lpg.nodes.keys())
@@ -191,10 +199,12 @@ def test_type_multiplicity_rollup1(kerbal_lpg, kerbal_stable_names):
 def test_type_multiplicity_rollup2(simple_parts_lpg, simple_parts_stable_names):
     *_, qualified_name_to_id = simple_parts_stable_names
 
-    power_out_id = qualified_name_to_id[f"{SIMPLE_MODEL}Power Group: Part::Power Source: "
-                                            f"Part::Power Out: Port <<PortUsage>>"]
+    power_out_id = qualified_name_to_id[
+        f"{SIMPLE_MODEL}Power Group: Part::Power Source: " f"Part::Power Out: Port <<PortUsage>>"
+    ]
     power_in_id = qualified_name_to_id[
-        f"{SIMPLE_MODEL}Power Group: Part::Power User: Part::Power In: Port <<PortUsage>>"]
+        f"{SIMPLE_MODEL}Power Group: Part::Power User: Part::Power In: Port <<PortUsage>>"
+    ]
     port_type_id = qualified_name_to_id[f"{FAKE_LIBRARY}Port <<PortDefinition>>"]
 
     port_type = simple_parts_lpg.model.elements[port_type_id]

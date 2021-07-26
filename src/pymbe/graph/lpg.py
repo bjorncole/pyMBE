@@ -44,7 +44,12 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
     edges_by_type: dict = trt.Dict()
 
     def __repr__(self):
-        return "<SysML v2 LPG: " f"{len(self.graph.nodes):,d} nodes, " f"{len(self.graph.edges):,d} edges" ">"
+        return (
+            "<SysML v2 LPG: "
+            f"{len(self.graph.nodes):,d} nodes, "
+            f"{len(self.graph.edges):,d} edges"
+            ">"
+        )
 
     def __getitem__(self, *args):
         return self.graph.__getitem__(*args)
@@ -72,10 +77,14 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
 
         # Draw as edges all non-abstract relationships
         graph_relationships: ty.Set[Element] = {
-            relationship for relationship in all_relationships if "isAbstract" not in relationship._data
+            relationship
+            for relationship in all_relationships
+            if "isAbstract" not in relationship._data
         }
         # And everything else is a node
-        graph_elements: ty.Set[Element] = set(model.elements.values()).difference(graph_relationships)
+        graph_elements: ty.Set[Element] = set(model.elements.values()).difference(
+            graph_relationships
+        )
 
         # Add the abstract_relationships edges we removed from relationships
         expanded_relationships: ty.Set[Element] = all_relationships.difference(graph_relationships)
@@ -91,7 +100,9 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
                 },
             ]
             for relationship in expanded_relationships
-            for endpt_index, related_element_entry in enumerate(relationship._data["relatedElement"])
+            for endpt_index, related_element_entry in enumerate(
+                relationship._data["relatedElement"]
+            )
         ]
 
         graph = nx.MultiDiGraph()
@@ -123,15 +134,22 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
             self.nodes = dict(graph.nodes)
             self.edges = dict(graph.edges)
 
-            self.node_types = tuple(sorted({node["@type"] for node in self.nodes.values() if "@type" in node}))
-            self.edge_types = tuple(sorted({edge["@type"] for edge in self.edges.values() if "@type" in edge}))
+            self.node_types = tuple(
+                sorted({node["@type"] for node in self.nodes.values() if "@type" in node})
+            )
+            self.edge_types = tuple(
+                sorted({edge["@type"] for edge in self.edges.values() if "@type" in edge})
+            )
 
             self.nodes_by_type = {
-                node_type: [node for node in graph.nodes if graph.nodes[node].get("@type") == node_type]
+                node_type: [
+                    node for node in graph.nodes if graph.nodes[node].get("@type") == node_type
+                ]
                 for node_type in self.node_types
             }
             self.edges_by_type = {
-                edge_type: [edge for edge in graph.edges if edge[2] == edge_type] for edge_type in self.edge_types
+                edge_type: [edge for edge in graph.edges if edge[2] == edge_type]
+                for edge_type in self.edge_types
             }
 
             self.graph = graph
@@ -223,7 +241,11 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
             print(f"These edge types are not in the graph: {mismatched_edge_types}.")
 
         included_nodes = sum(
-            [nodes for node_type, nodes in self.nodes_by_type.items() if node_type not in excluded_node_types],
+            [
+                nodes
+                for node_type, nodes in self.nodes_by_type.items()
+                if node_type not in excluded_node_types
+            ],
             [],
         )
         subgraph = graph.__class__(graph.subgraph(included_nodes))
@@ -244,7 +266,9 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
 
         new_graph = graph.__class__()
         new_graph.add_edges_from(edges)
-        new_graph.update(nodes={node: self.graph.nodes.get(node) for node in new_graph.nodes}.items())
+        new_graph.update(
+            nodes={node: self.graph.nodes.get(node) for node in new_graph.nodes}.items()
+        )
         return new_graph
 
     @staticmethod
@@ -291,9 +315,15 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
             graph = self._make_undirected(graph)
         seed_nodes = {id_: max_distance for id_ in seeds if id_ in graph.nodes}
         seed_elements = [
-            self.model.elements[id_] for id_ in seeds if id_ not in seed_nodes and id_ in self.model.elements
+            self.model.elements[id_]
+            for id_ in seeds
+            if id_ not in seed_nodes and id_ in self.model.elements
         ]
-        seed_edges = [(element.source, element.target) for element in seed_elements if element._is_relationship]
+        seed_edges = [
+            (element.source, element.target)
+            for element in seed_elements
+            if element._is_relationship
+        ]
 
         distances = {node: max_distance - 1 for node in set(sum(seed_edges, [])) if node in graph}
         distances.update(seed_nodes)

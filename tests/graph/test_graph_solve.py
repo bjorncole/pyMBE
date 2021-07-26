@@ -1,16 +1,15 @@
 import logging
-
 from warnings import warn
 
 from pymbe.graph.calc_lpg import CalculationGroup
 from pymbe.interpretation.calc_dependencies import generate_execution_order
 from pymbe.interpretation.results import pprint_edges
 
-
 ROCKET_BUILDING = "Model::Kerbal::Rocket Building::"
 PARTS_LIBRARY = "Model::Kerbal::Parts Library::"
 
 logger = logging.getLogger(__name__)
+
 
 def test_basic_kerbal_solve(kerbal_lpg, kerbal_random_stage_5_complete, kerbal_stable_names):
     # check that literal assignments go correctly
@@ -33,8 +32,7 @@ def test_basic_kerbal_solve(kerbal_lpg, kerbal_random_stage_5_complete, kerbal_s
     literal_output_moves = [
         item
         for item in dcg
-        if item[2] == "Output"
-        and 'Literal' in kerbal_lpg.nodes[item[0]]['@type']
+        if item[2] == "Output" and "Literal" in kerbal_lpg.nodes[item[0]]["@type"]
     ]
 
     logger.debug(pprint_edges(literal_output_moves, kerbal_lpg.model))

@@ -5,16 +5,15 @@ from warnings import warn
 from ..model import Element
 from .lpg import SysML2LabeledPropertyGraph
 
-
 MultiEdge = Tuple[str, str, str, dict]
 
 
 def make_nx_multi_edge(source, target, metatype, **data) -> MultiEdge:
     return (
-        source,                           # source
-        target,                           # target
-        metatype,                         # edge type
-        {                                 # edge data
+        source,  # source
+        target,  # target
+        metatype,  # edge type
+        {  # edge data
             "@id": f"_{uuid4()}",
             "@type": metatype,
             "implied": True,
@@ -44,10 +43,7 @@ def get_elements_from_lpg_edges(lpg: SysML2LabeledPropertyGraph) -> List[Element
 
 def make_lpg_edges(*edges) -> List[MultiEdge]:
     """Make networkx multiedges compatible with the LPG"""
-    return [
-        make_nx_multi_edge(source, target, metatype)
-        for source, target, metatype in edges
-    ]
+    return [make_nx_multi_edge(source, target, metatype) for source, target, metatype in edges]
 
 
 def get_implied_parameter_feedforward(lpg: SysML2LabeledPropertyGraph) -> List[MultiEdge]:
@@ -135,8 +131,7 @@ def get_implied_feedforward_edges(lpg: SysML2LabeledPropertyGraph) -> List[Multi
             ]
 
     implied_edges = [
-        (source._id, target._id, metatype)
-        for source, target, metatype in implied_edges
+        (source._id, target._id, metatype) for source, target, metatype in implied_edges
     ]
     return make_lpg_edges(*implied_edges)
 

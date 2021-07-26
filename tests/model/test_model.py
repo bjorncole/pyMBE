@@ -10,9 +10,13 @@ def test_respect_of_sysml(all_models):
             derived_attrs = set(element._derived)
             sysml_attrs = set(element._data)
             common_attrs = tuple(sorted(element_attrs.intersection(sysml_attrs)))
-            assert not common_attrs, f"Found Element attributes conflicting with SysML: {common_attrs}"
+            assert (
+                not common_attrs
+            ), f"Found Element attributes conflicting with SysML: {common_attrs}"
             common_attrs = tuple(sorted(derived_attrs.intersection(sysml_attrs)))
-            assert not common_attrs, f"Found derived attributes conflicting with SysML: {common_attrs}"
+            assert (
+                not common_attrs
+            ), f"Found derived attributes conflicting with SysML: {common_attrs}"
 
 
 def test_kerbal_model(kerbal_model):
@@ -23,7 +27,9 @@ def test_kerbal_model(kerbal_model):
     assert kerbal == kerbal._id, f"Element should equate to its id"
 
     my_rocket = kerbal(name="My Rocket")
-    assert my_rocket.name == "My Rocket", f"Instance should be called 'My Rocket', not '{my_rocket.name}'"
+    assert (
+        my_rocket.name == "My Rocket"
+    ), f"Instance should be called 'My Rocket', not '{my_rocket.name}'"
 
     assert (
         kerbal.ownedElement["Parts Library"]

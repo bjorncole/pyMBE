@@ -5,12 +5,10 @@ from ..label import get_label_for_id
 from ..model import Model
 
 
-def generate_execution_order(
-    lpg: SysML2LabeledPropertyGraph
-) -> list:
+def generate_execution_order(lpg: SysML2LabeledPropertyGraph) -> list:
     """
-    Generate an ordered list that relies the structure of computations to be applied to the M0 instance of the
-    model when it is instantiated
+    Generate an ordered list that relies the structure of computations to be
+    applied to the M0 instance of the model when it is instantiated
     :return:
     """
 
@@ -25,37 +23,52 @@ def generate_execution_order(
     roots = [node for node in eig.nodes if eig.in_degree(node) == 0]
 
     for root in roots:
-        context = all_elements[root].featuringType[0].get('@id')
+        context = all_elements[root].featuringType[0].get("@id")
         execution_contexts[context] = []
 
         calc_order = list(nx.edge_bfs(eig, root))
         calc_order.reverse()
-        #print(calc_order)
+        # print(calc_order)
 
         for edg in calc_order:
             node_child = edg[1]
             node = edg[0]
-            kind = ''
+            kind = ""
 
-            if all_elements[node_child].get("@type") == 'Feature' and all_elements[node].get("@type") == 'Feature':
-                kind = 'Assignment'
-            elif all_elements[node_child].get("@type") == 'AttributeUsage' and all_elements[node].get("@type") == 'AttributeUsage':
-                relevant_edge_types = [edg[2] for edg in eig.edges if edg[0] == node and edg[1] == node_child]
+            if (
+                all_elements[node_child].get("@type") == "Feature"
+                and all_elements[node].get("@type") == "Feature"
+            ):
+                kind = "Assignment"
+            elif (
+                all_elements[node_child].get("@type") == "AttributeUsage"
+                and all_elements[node].get("@type") == "AttributeUsage"
+            ):
+                relevant_edge_types = [
+                    edg[2] for edg in eig.edges if edg[0] == node and edg[1] == node_child
+                ]
                 if "Redefinition^-1" in relevant_edge_types:
-                    kind = 'Redefinition'
+                    kind = "Redefinition"
                 else:
-                    kind = 'Assignment'
-            elif all_elements[node].get("@type") == 'FeatureReferenceExpression':
-                kind = 'SelectionQuery'
-            elif all_elements[node_child].get("@type") == 'Feature' and all_elements[node].get("@type") == 'AttributeUsage':
-                kind = 'ValueBinding'
-            elif (node_child, node, 'ReturnParameterMembership') in lpg.edges_by_type['ReturnParameterMembership']:
-                kind = 'Output'
-            elif (node, node_child, 'ParameterMembership') in lpg.edges_by_type.get('ParameterMembership', []):
-                kind = 'Input'
+                    kind = "Assignment"
+            elif all_elements[node].get("@type") == "FeatureReferenceExpression":
+                kind = "SelectionQuery"
+            elif (
+                all_elements[node_child].get("@type") == "Feature"
+                and all_elements[node].get("@type") == "AttributeUsage"
+            ):
+                kind = "ValueBinding"
+            elif (node_child, node, "ReturnParameterMembership") in lpg.edges_by_type[
+                "ReturnParameterMembership"
+            ]:
+                kind = "Output"
+            elif (node, node_child, "ParameterMembership") in lpg.edges_by_type.get(
+                "ParameterMembership", []
+            ):
+                kind = "Input"
 
             execution_pairs.append([node_child, node, kind])
-            #bfs_check.append([node_child, node])
+            # bfs_check.append([node_child, node])
 
             execution_contexts[context].append(node_child)
 
@@ -67,9 +80,9 @@ def generate_parameter_signature_map(model: Model, execution_order: list):
     naming_map = {}
 
     for pair in execution_order:
-        if pair[2] == 'Assignment':
+        if pair[2] == "Assignment":
             naming_map.update({pair[1]: naming_map[pair[0]]})
-        elif pair[2] == 'Output':
+        elif pair[2] == "Output":
             left_side = ""
             if pair[0] in naming_map:
                 left_side = naming_map[pair[0]]
@@ -80,7 +93,7 @@ def generate_parameter_signature_map(model: Model, execution_order: list):
                 naming_map.update({pair[1]: left_side.split(" =>")[0]})
             else:
                 naming_map.update({pair[1]: left_side})
-        elif pair[2] == 'Input':
+        elif pair[2] == "Input":
             left_side = ""
             if pair[0] in naming_map:
                 left_side = naming_map[pair[0]]
@@ -92,7 +105,9 @@ def generate_parameter_signature_map(model: Model, execution_order: list):
             else:
                 right_side = get_label_for_id(pair[1], model)
             if pair[0] in naming_map:
-                new_expr = right_side.replace(get_label_for_id(pair[0], model), naming_map[pair[0]])
+                new_expr = right_side.replace(
+                    get_label_for_id(pair[0], model), naming_map[pair[0]]
+                )
                 naming_map.update({pair[1]: new_expr})
             else:
                 naming_map.update({pair[1]: get_label_for_id(pair[1], model)})
