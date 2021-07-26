@@ -4,7 +4,7 @@ from wxyz.lab import DockBox, DockPop
 
 from .client import SysML2ClientWidget
 from .containment import ContainmentTree
-from .diagram import M1Viewer, M0Viewer
+from .diagram import M0Viewer, M1Viewer
 from .inspector import ElementInspector
 
 
@@ -89,10 +89,12 @@ class UI(DockBox):
             )
             for widget in all_widgets[1:]
         ]
-        self.lpg_links = [trt.link(
-            (self.m1_viewer, "lpg"),
-            (self.m0_viewer, "lpg"),
-        )]
+        self.lpg_links = [
+            trt.link(
+                (self.m1_viewer, "lpg"),
+                (self.m0_viewer, "lpg"),
+            )
+        ]
 
     @trt.observe("diagram_height")
     def _update_diagram_height(self, *_):

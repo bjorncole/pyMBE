@@ -3,7 +3,8 @@ import typing as ty
 import ipywidgets as ipyw
 import traitlets as trt
 from ipyelk import Diagram, ElementLoader
-from ipyelk.elements import Label, Node, Port, layout_options as opt
+from ipyelk.elements import Label, Node, Port
+from ipyelk.elements import layout_options as opt
 
 from ...graph import SysML2LabeledPropertyGraph
 from ...interpretation.interp_playbooks import random_generator_playbook
@@ -29,7 +30,7 @@ class M0Viewer(ipyw.Box, BaseWidget):
     loader: ElementLoader = trt.Instance(
         ElementLoader,
         kw=dict(
-            default_node_opts= opt.OptionsWidget(
+            default_node_opts=opt.OptionsWidget(
                 options=[
                     opt.Direction(value="RIGHT"),
                     opt.HierarchyHandling(),
@@ -73,7 +74,7 @@ class M0Viewer(ipyw.Box, BaseWidget):
             tooltip="Generate new random M0 interpretation",
             **btn_kwargs,
         )
-        regen.on_click(self._make_new)
+        regen.on_click(self._generate_random_interpretation)
 
         refresh = ipyw.Button(
             icon="retweet",
@@ -95,15 +96,13 @@ class M0Viewer(ipyw.Box, BaseWidget):
     def update(self, *_):
         pass
 
-    @trt.observe("lpg")
-    def _make_new(self, *_):
+    def _generate_random_interpretation(self, *_):
         with self.log_out:
             self.interpretation = random_generator_playbook(self.lpg)
 
     @trt.observe("interpretation")
     def _update_for_new_interpretation(self, *_):
         part_diagram = PartDiagram()
-
         repacked = repack_instance_dictionaries(self.interpretation, self.model)
 
         def is_draw_kind(entry, kind):
