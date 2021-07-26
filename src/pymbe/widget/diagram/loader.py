@@ -54,7 +54,7 @@ class SysmlLoader(ElementLoader):  # pylint: disable=abstract-method
             part_diagram.labels = []
             part_diagram.ports = []
 
-    def load(self, new: nx.Graph, old: nx.Graph = None) -> MarkElementWidget:
+    def load_from_graphs(self, new: nx.Graph, old: nx.Graph = None) -> MarkElementWidget:
         new = nx.Graph() if new in (None, trt.Undefined) else new
         old = nx.Graph() if old in (None, trt.Undefined) else old
 
@@ -103,4 +103,4 @@ class SysmlLoader(ElementLoader):  # pylint: disable=abstract-method
         #     if part.metadata.sysml_id in exiting_nodes:
         #         parent.children.remove(part)
 
-        return super().load(root=part_diagram)
+        return self.load(root=part_diagram)

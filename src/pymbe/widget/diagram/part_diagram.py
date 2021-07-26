@@ -19,7 +19,7 @@ from .symbols import (
 class PartDiagram(Partition):
     """A SysML 2 Part Diagram, based on the IPyELK BlockDiagram."""
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         copy_on_model_validation = False
         excluded = merge_excluded(Partition, "symbols", "style")
 

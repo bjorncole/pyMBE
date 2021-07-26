@@ -13,7 +13,7 @@ from ..model import Element, Model
 yaml = YAML(typ="unsafe", pure=True)
 
 
-class SysML2LabeledPropertyGraph(trt.HasTraits):
+class SysML2LabeledPropertyGraph(trt.HasTraits):  # pylint: disable=too-many-instance-attributes
     """A Labelled Property Graph for SysML v2.
 
     ..todo::

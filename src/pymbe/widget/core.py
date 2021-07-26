@@ -32,7 +32,7 @@ class BaseWidget(ipyw.DOMWidget):
         with self.log_out:
             self.update(change)
 
-    def update(self, change=trt.Bunch):
+    def update(self, change: trt.Bunch):
         raise NotImplementedError("Each widget needs to specify their own update method!")
 
     def update_selected(self, *new_selections: str):

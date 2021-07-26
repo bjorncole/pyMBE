@@ -96,7 +96,7 @@ def evaluate_and_apply_literal(m0_expr: LiveExpressionNode, m0_result: ValueHold
 def evaluate_and_apply_sum(m0_expr: ValueHolder, m0_result: ValueHolder):
     total = 0
     if m0_expr.value is None:
-        return total
+        return
     for item in m0_expr.value:
         total += item.value if item.value is not None else 0
     m0_result.value = total
