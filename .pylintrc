@@ -3,7 +3,7 @@ max-line-length = 99
 
 [MESSAGES CONTROL]
 disable=attribute-defined-outside-init,
-        #cyclic-import,
+        cyclic-import,
         fixme,
         invalid-name,
         missing-class-docstring,
