@@ -65,7 +65,7 @@ class M1Viewer(ipyw.Box, BaseWidget):
             return children
         return [self.elk_diagram]
 
-    def update(self, change=trt.Bunch):
+    def update(self, change: trt.Bunch):
         self.drawn_graph = nx.Graph()
         self.lpg.model = change.new
         toolbar: Toolbar = self.elk_diagram.toolbar
