@@ -197,7 +197,7 @@ class M1Viewer(ipyw.Box, BaseWidget):  # pylint: disable=too-many-ancestors
             button.disabled = failed = True
             try:
                 failed = self._update_drawn_graph(button=button)
-            except Exception:
+            except Exception:  # pylint: disable=broad-except
                 warn(f"Button click for {button} failed: {traceback.format_exc()}")
             finally:
                 button.disabled = failed

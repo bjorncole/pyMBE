@@ -70,8 +70,7 @@ class InterpretationSet(set):
         max_len = self.MAX_REPR_LENGTH
         if len(self) > max_len:
             return str(f"{list(self)[:max_len]}...")
-        else:
-            return super().__repr__()
+        return super().__repr__()
 
 
 @dataclass

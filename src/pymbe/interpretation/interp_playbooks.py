@@ -299,12 +299,11 @@ def random_generator_playbook_phase_3(
                             f"{get_label_for_id(feature_id, model)}, "
                             f"id = {feature_id}"
                         )
-                    elif len(types) > 1:
+                    if len(types) > 1:
                         raise NotImplementedError(
                             "Cannot handle features with multiple types yet!"
                         )
-                    else:
-                        typ = types[0]
+                    typ = types[0]
             else:
                 typ = feature_id
 
@@ -505,8 +504,8 @@ def build_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list:
                 try:
                     leaf_path = nx.shortest_path(connected_sub, leaf, root)
                     sorted_feature_groups.append(leaf_path)
-                except Exception:
-                    logger.warning(traceback.format_exc())
+                except (nx.NetworkXNoPath, nx.NodeNotFound):
+                    logger.debug(f"Could not find path: {traceback.format_exc()}")
 
         # TODO: Look into adding the topologically sorted connected subcomponents
         # sorted_feature_groups.append(
@@ -558,8 +557,8 @@ def build_expression_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list
                 try:
                     leaf_path = nx.shortest_path(connected_sub, root, leaf)
                     sorted_feature_groups.append(leaf_path)
-                except Exception:
-                    logger.warning(traceback.format_exc())
+                except (nx.NetworkXNoPath, nx.NodeNotFound):
+                    logger.debug(f"Could not find path: {traceback.format_exc()}")
 
     return sorted_feature_groups
 

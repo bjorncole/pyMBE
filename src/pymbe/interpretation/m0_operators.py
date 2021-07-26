@@ -77,8 +77,7 @@ def evaluate_and_apply_fre(
         for target in target_list:
             target[-1].value = instance_dict[referent_id]
         return instance_dict[referent_id]
-    else:
-        return
+    return []
 
 
 def evaluate_and_apply_literal(m0_expr: LiveExpressionNode, m0_result: ValueHolder):
