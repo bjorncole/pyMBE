@@ -570,15 +570,15 @@ def validate_working_data(lpg: SysML2LabeledPropertyGraph) -> bool:
     """
     # check that all the elements of the graph are in fact proper model elements
     all_non_relations = lpg.nodes
-    for nr_key, nr in all_non_relations.items():
+    for id_, non_relation in all_non_relations.items():
         try:
-            nr["@type"]
+            non_relation["@type"]
         except KeyError:
-            print(f"No type found in {nr}, id = '{nr_key}'")
+            print(f"No type found in {non_relation}, id = '{id_}'")
             return False
         except TypeError:
-            print(f"Expecting dict of model element data, got = {nr}")
-        if "@id" not in nr:
-            print(f"No '@id' found in {nr}, id = '{nr_key}'")
+            print(f"Expecting dict of model element data, got = {non_relation}")
+        if "@id" not in non_relation:
+            print(f"No '@id' found in {non_relation}, id = '{id_}'")
             return False
     return True
