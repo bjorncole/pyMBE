@@ -216,7 +216,8 @@ class Element:
     _id: str = field(default_factory=lambda: str(uuid4()))
     _metatype: str = "Element"
     _derived: Dict[str, List] = field(default_factory=lambda: defaultdict(list))
-    _instances: List["Instance"] = field(default_factory=list)
+    # TODO: replace this with instances sequences
+    # _instances: List["Instance"] = field(default_factory=list)
     _is_abstract: bool = False
     _is_relationship: bool = False
 
@@ -230,6 +231,9 @@ class Element:
                 self._data[key] = ListOfNamedItems(items)
 
     def __call__(self, *args, **kwargs):
+        element = kwargs.pop("element", None)
+        if element:
+            warn("When instantiating an element, you cannot pass it element.")
         if self._metatype in VALUE_METATYPES:
             return ValueHolder(*args, **kwargs, element=self)
         return Instance(*args, **kwargs, element=self)
@@ -335,22 +339,32 @@ class Element:
 @dataclass
 class Instance:
     """
-    An M0 instantiation of an M1 element.
+    An M0 instantiation in the M0 universe (i.e., real things) interpreted from an M1 element.
 
     Sequences of instances are intended to follow the mathematical base semantics of SysML v2.
     """
 
     element: Element
+    number: int = None
     name: str = ""
 
+    __instances = defaultdict(list)
+
     def __post_init__(self):
-        element = self.element
-        if self not in element._instances:
-            element._instances += [self]
+        siblings = self.__instances[self.element]
+        if self.number is None:
+            self.number = len(siblings) + 1
+        siblings += [self]
         if not self.name:
-            id_ = element._instances.index(self) + 1
+            element = self.element
             name = element.label or element._id
-            self.name = f"{name}#{id_}"
+            self.name = f"{name}#{self.number}"
+
+    def __repr__(self):
+        return self.name
+
+    def __hash__(self):
+        return hash(id(self))
 
 
 @dataclass

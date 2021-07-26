@@ -8,8 +8,8 @@ from tests.conftest import (
 
 
 def test_graph_load(kerbal_lpg):
-    assert len(kerbal_lpg.nodes) == 156
-    assert len(kerbal_lpg.edges) == 389 - 156 # nodes + edges should be all elements from the client
+    assert len(kerbal_lpg.nodes) == 152
+    assert len(kerbal_lpg.edges) == 380 - 152 # nodes + edges should be all elements from the client
 
 
 def test_graph_projection_part_def_node_filter(kerbal_lpg, kerbal_ids_by_type):

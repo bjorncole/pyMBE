@@ -1,10 +1,8 @@
 import typing as ty
 
 import ipyelk
-
 import ipywidgets as ipyw
 import traitlets as trt
-
 
 DEFAULT_BUTTON_KWARGS = dict(
     description="",
@@ -63,7 +61,7 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):
             icon="project-diagram",  # share-alt
             tooltip="Filter To Path",
             **DEFAULT_BUTTON_KWARGS,
-        )
+        ),
     )
     enforce_directionality: ipyw.Checkbox = trt.Instance(
         ipyw.Checkbox,
@@ -80,7 +78,7 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):
             icon="sitemap",  # hubspot
             tooltip="Filter by Distance",
             **DEFAULT_BUTTON_KWARGS,
-        )
+        ),
     )
     max_distance: ipyw.IntSlider = trt.Instance(
         ipyw.IntSlider,
@@ -118,22 +116,21 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):
                 selected_index=None,
             ),
             "Reverse Edges": self.edge_type_reverser,
-            "Explore": ipyw.VBox([
-                self.enforce_directionality,
-                ipyw.Label("Shortest Path:"),
-                ipyw.HBox([self.filter_to_path]),
-                ipyw.Label("Distance:"),
-                ipyw.HBox([self.filter_by_dist, self.max_distance]),
-            ]),
+            "Explore": ipyw.VBox(
+                [
+                    self.enforce_directionality,
+                    ipyw.Label("Shortest Path:"),
+                    ipyw.HBox([self.filter_to_path]),
+                    ipyw.Label("Distance:"),
+                    ipyw.HBox([self.filter_by_dist, self.max_distance]),
+                ]
+            ),
             # TODO: add layout widget
             # "Layout": ...
         }
         titles, widgets = zip(*accordion.items())
         return ipyw.Accordion(
-            _titles={
-                idx: title
-                for idx, title in enumerate(titles)
-            },
+            _titles={idx: title for idx, title in enumerate(titles)},
             children=widgets,
             selected_index=None,
         )
@@ -164,9 +161,11 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):
     def _update_children(self, *_):
         """Note: overwrites ipyelk.Toolbar method."""
         self.buttons.children = buttons = [
-            tool.ui for tool in self.tools
-            if isinstance(tool.ui, ipyw.Button)
-        ] + [self.refresh_diagram, self.close_btn]
+            tool.ui for tool in self.tools if isinstance(tool.ui, ipyw.Button)
+        ] + [
+            self.refresh_diagram,
+            self.close_btn,
+        ]
         for button in buttons:
             button.layout.height = "40px"
             button.layout.width = "40px"
@@ -194,13 +193,9 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):
         matches = [tool for tool in self.tools if type(tool) is tool_type]
         num_matches = len(matches)
         if num_matches > 1:
-            raise ipyelk.exceptions.NotUniqueError(
-                f"Found too many tools with type {tool_type}"
-            )
+            raise ipyelk.exceptions.NotUniqueError(f"Found too many tools with type {tool_type}")
         elif num_matches < 1:
-            raise ipyelk.exceptions.NotFoundError(
-                f"No tool matching type {tool_type}"
-            )
+            raise ipyelk.exceptions.NotFoundError(f"No tool matching type {tool_type}")
 
         return matches[0]
 
@@ -217,10 +212,7 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):
                 if isinstance(getattr(self, item), ipyw.SelectMultiple)
             ]
         for selector in selectors:
-            selector.rows = min(
-                self.max_type_selector_rows,
-                len(selector.options)
-            )
+            selector.rows = min(self.max_type_selector_rows, len(selector.options))
 
     def update_dropdown_options(self, selector: str, options: dict):
         if selector == "nodes":

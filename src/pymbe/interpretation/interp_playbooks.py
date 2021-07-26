@@ -58,7 +58,6 @@ def random_generator_playbook(
     :return: A dictionary of sequences keyed by the id of a given M1 type
     """
 
-
     all_elements = lpg.model.elements
     name_hints = name_hints or {}
     can_interpret = validate_working_data(lpg)

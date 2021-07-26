@@ -1,4 +1,5 @@
-from ..interpretation.interpretation import Instance, LiveExpressionNode, ValueHolder
+from ..interpretation.interpretation import LiveExpressionNode, ValueHolder
+from ..model import Instance
 
 
 def sequence_dot_operator(left_item, right_side_seqs):

@@ -112,13 +112,14 @@ def test_feature_sequence_templates4(simple_parts_lpg, simple_parts_stable_names
 def test_expression_sequence_templates(kerbal_lpg, kerbal_stable_names):
     *_, qualified_name_to_id = kerbal_stable_names
 
-    top_plus = qualified_name_to_id[f'{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ (sum (collect (FRE.engines)), '
-                                 f'sum (collect (FRE.tanks))) => $result <<OperatorExpression>>']
+    top_plus = qualified_name_to_id[f'{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ (sum (engines.Mass'
+                                    f' (FRE.engines)), sum (tanks.Full Mass (FRE.tanks))) => '
+                                    f'$result <<OperatorExpression>>']
 
-    fre_1_result = qualified_name_to_id[f'{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ (sum (collect'
-                                        f' (FRE.engines)), sum (collect (FRE.tanks))) => $result::sum (collect '
-                                        f'(FRE.tanks)) => $result::collect (FRE.tanks) => $result::FRE.Full Mass (p) =>'
-                                        f' $result::FRE.Full Mass::FRE.Full Mass <<Feature>>']
+    fre_1_result = qualified_name_to_id[f'{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ (sum (engines.Mass ' +
+                                 f'(FRE.engines)), sum (tanks.Full Mass (FRE.tanks))) => $result::sum ' +
+                                 f'(tanks.Full Mass (FRE.tanks)) => $result::tanks.Full Mass (FRE.tanks) => ' +
+                                 f'$result::FRE.Full Mass::FRE.Full Mass <<Feature>>']
 
     expr_sequences = build_expression_sequence_templates(lpg=kerbal_lpg)
     top_plus_paths = 0
@@ -141,8 +142,8 @@ def test_expression_sequence_templates(kerbal_lpg, kerbal_stable_names):
         # each sequence should end with the result
         assert kerbal_lpg.nodes[seq[len(seq) - 1]]["@type"] == "Feature"
 
-    assert top_plus_paths == 17
+    assert top_plus_paths == 15
     assert direct_literals == 26
-    assert len(expr_sequences) == 43
+    assert len(expr_sequences) == 41
 
     assert fre_result_found

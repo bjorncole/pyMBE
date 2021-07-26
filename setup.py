@@ -4,12 +4,12 @@ import re
 from pathlib import Path
 
 HERE = Path(__file__).parent
-VERSION = HERE / "src" / "pymbe" / "_version.py"
+VERSION_FILE = HERE / "src/pymbe/_version.py"
 
 
 __version__ = re.search(
     pattern=r"""^__version__\s*=\s*['"]([^'"]*)['"]""",
-    string=VERSION.read_text(),
+    string=VERSION_FILE.read_text(),
     flags=re.M,
 ).group(1)
 

@@ -4,9 +4,9 @@ from warnings import warn
 import ipywidgets as ipyw
 import traitlets as trt
 
-from .core import BaseWidget
-from ..interpretation.interp_playbooks import random_generator_playbook
 from ..graph.lpg import SysML2LabeledPropertyGraph
+from ..interpretation.interp_playbooks import random_generator_playbook
+from .core import BaseWidget
 
 
 @ipyw.register
@@ -80,13 +80,12 @@ class Interpreter(ipyw.VBox, BaseWidget):
                 "name",
                 f"Unnamed Element: {element_id}",
             )
-            return ipyw.HTML(
-                value=f"""<h2>{name}</h2>"""
-            )
+            return ipyw.HTML(value=f"""<h2>{name}</h2>""")
+
         self.instances_box.children = [
             ipyw.VBox(
-                [make_element_label(element_id)] +
-                [
+                [make_element_label(element_id)]
+                + [
                     ipyw.VBox(
                         children=[
                             ipyw.HBox(

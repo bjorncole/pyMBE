@@ -1,6 +1,7 @@
+import typing as ty
+
 import ipywidgets as ipyw
 import traitlets as trt
-import typing as ty
 
 from ..model import Element
 from .core import BaseWidget
@@ -46,20 +47,14 @@ class ElementInspector(ipyw.Output, BaseWidget):
             key: value
             for key, value in data.items()
             if key not in self.FILTER_KEYS
-            and (
-                self.include_empty
-                or value
-                or value is False
-                or value == 0.0
-            )
+            and (self.include_empty or value or value is False or value == 0.0)
         }
 
     @trt.observe("model")
     def update(self, *_):
         with self.log_out:
             self.clean_data = {
-                id_: self.get_clean_data(element)
-                for id_, element in self.model.elements.items()
+                id_: self.get_clean_data(element) for id_, element in self.model.elements.items()
             }
 
     @staticmethod
@@ -71,15 +66,8 @@ class ElementInspector(ipyw.Output, BaseWidget):
         return f"""«{data["@type"]}: {data["@id"]}»"""
 
     def _make_json_output(self) -> list:
-        data = {
-            id_: self.clean_data[id_]
-            for id_ in self.selected
-            if id_ in self.clean_data
-        }
-        names = {
-            id_: self._get_name(data_)
-            for id_, data_ in data.items()
-        }
+        data = {id_: self.clean_data[id_] for id_ in self.selected if id_ in self.clean_data}
+        names = {id_: self._get_name(data_) for id_, data_ in data.items()}
         return [
             {
                 "output_type": "display_data",

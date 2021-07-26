@@ -8,7 +8,6 @@ from ..interpretation.m0_operators import (
     evaluate_and_apply_plus,
     evaluate_and_apply_sum,
 )
-from ..label import get_label_for_id
 from .lpg import SysML2LabeledPropertyGraph
 
 
@@ -35,8 +34,8 @@ class CalculationGroup:
         elements = lpg.model.elements
         for step in self.calculation_list:
             src, tgt, type_ = step
-            src_data = lpg.nodes[src]
-            src_metatype = src_data["@type"]
+            src_data = lpg.model.elements[src]
+            src_metatype = src_data.get("@type")
             source_instances = self.instance_dict.get(src)
             target_instances = self.instance_dict.get(tgt)
             if type_ in ("Assignment", "ValueBinding"):
@@ -73,7 +72,7 @@ class CalculationGroup:
                             self.calculation_log.append(f"[FRE]... result includes {target_inst}")
 
                 elif src_metatype == "OperatorExpression":
-                    if src_data["operator"] == "collect":
+                    if src_data.operator == "collect":
                         collect_sub_expressions = []
                         collect_sub_expression_results = []
                         collect_sub_inputs = []
@@ -102,7 +101,7 @@ class CalculationGroup:
                                 f"input {input_point}, and path input {path_point}"
                             )
 
-                            if not path_point or path_point.value is None:
+                            if path_point is None or path_point.value is None:
                                 print("Path point value is empty! {path_point}")
                             else:
                                 evaluate_and_apply_collect(
@@ -142,16 +141,16 @@ class CalculationGroup:
                             )
 
                 elif src_metatype == "InvocationExpression":
-                    invoke_type = lpg.nodes[src_data["type"][0]["@id"]]
-                    if invoke_type["name"] == "sum":
+                    invoke_type = src_data.type[0]
+                    if invoke_type.name == "sum":
                         sum_inputs = []
 
-                        for member in src_data["input"]:
-                            sum_inputs.append(lpg.nodes[member["@id"]])
+                        for member in src_data.input:
+                            sum_inputs.append(member)
 
                         for index, m0_operator_seq in enumerate(source_instances):
                             input_point = None
-                            input_instances = self.instance_dict[sum_inputs[0]["@id"]]
+                            input_instances = self.instance_dict[sum_inputs[0].get("@id")]
                             for input_inst in input_instances:
                                 if input_inst[0] == m0_operator_seq[0]:
                                     input_point = input_inst[-1]
@@ -165,13 +164,13 @@ class CalculationGroup:
                     collect_sub_expressions = []
                     collect_sub_expression_results = []
                     collect_sub_inputs = []
-                    for member in src_data["member"]:
-                        if lpg.nodes[member["@id"]]["@type"] in COLLECTABLE_EXPRESSIONS:
-                            collect_sub_expressions.append(lpg.nodes[member["@id"]])
-                            collect_sub_expression_results.append(lpg.nodes[lpg.nodes[member["@id"]]["result"]["@id"]])
+                    for member in src_data.member:
+                        if member.get("@type") in COLLECTABLE_EXPRESSIONS:
+                            collect_sub_expressions.append(member)
+                            collect_sub_expression_results.append(member.result)
 
-                    for member in src_data["input"]:
-                        collect_sub_inputs.append(lpg.nodes[member["@id"]])
+                    for input in src_data.input:
+                        collect_sub_inputs.append(input)
 
                     # Base sequence is there to filter as appropriate to the expression scope
 
@@ -183,20 +182,20 @@ class CalculationGroup:
 
                     for index, m0_operator_seq in enumerate(source_instances):
                         input_point = None
-                        input_instances = self.instance_dict[collect_sub_inputs[0]["@id"]]
+                        input_instances = self.instance_dict[collect_sub_inputs[0]._id]
                         for input_inst in input_instances:
                             if input_inst[0] == m0_operator_seq[0]:
                                 input_point = input_inst[-1]
                         path_point = None
-                        input_instances = self.instance_dict[collect_sub_expression_results[1]["@id"]]
+                        input_instances = self.instance_dict[collect_sub_expression_results[1]._id]
                         for input_inst in input_instances:
                             if input_inst[0] == m0_operator_seq[0]:
                                 path_point = input_inst[-1]
 
-                        self.calculation_log.append(f"[PSE] Calling collect with base = {m0_operator_seq[0]}" +
-                            f", collection input {input_point}, and path input {path_point}")
+                        self.calculation_log.append(f"[PSE] Calling collect with base = {m0_operator_seq[0]}\n" +
+                            f", collection input {input_point}\n, and path input {path_point}")
 
-                        if path_point.value is None:
+                        if path_point is None or path_point.value is None:
                             print("Path point value is empty! " + str(path_point))
                         else:
                             evaluate_and_apply_dot(
