@@ -10,9 +10,13 @@ def test_respect_of_sysml(all_models):
             derived_attrs = set(element._derived)
             sysml_attrs = set(element._data)
             common_attrs = tuple(sorted(element_attrs.intersection(sysml_attrs)))
-            assert not common_attrs, f"Found Element attributes conflicting with SysML: {common_attrs}"
+            assert (
+                not common_attrs
+            ), f"Found Element attributes conflicting with SysML: {common_attrs}"
             common_attrs = tuple(sorted(derived_attrs.intersection(sysml_attrs)))
-            assert not common_attrs, f"Found derived attributes conflicting with SysML: {common_attrs}"
+            assert (
+                not common_attrs
+            ), f"Found derived attributes conflicting with SysML: {common_attrs}"
 
 
 def test_kerbal_model(kerbal_model):
@@ -23,9 +27,18 @@ def test_kerbal_model(kerbal_model):
     assert kerbal == kerbal._id, f"Element should equate to its id"
 
     my_rocket = kerbal(name="My Rocket")
-    assert my_rocket.name == "My Rocket", f"Instance should be called 'My Rocket', not '{my_rocket.name}'"
+    assert (
+        my_rocket.name == "My Rocket"
+    ), f"Instance should be called 'My Rocket', not '{my_rocket.name}'"
 
-    assert kerbal.ownedElement["Parts Library"].ownedElement["FL-T200 Fuel Tank"].ownedElement["Empty Mass"].ownedElement[0].value == 0.125
+    assert (
+        kerbal.ownedElement["Parts Library"]
+        .ownedElement["FL-T200 Fuel Tank"]
+        .ownedElement["Empty Mass"]
+        .ownedElement[0]
+        .value
+        == 0.125
+    )
 
 
 def test_relationships(kerbal_model):
@@ -45,11 +58,18 @@ def test_relationships(kerbal_model):
 def test_accessors(kerbal_model):
     model = kerbal_model
     for element in model.elements.values():
-        if element._metatype == "ReturnParameterMembership":
+        if (
+            element._metatype == "ReturnParameterMembership"
+            and "LiteralInteger" in element.relatedElement[0]._metatype
+        ):
             a_return_parameter_membership = element
+            break
     assert isinstance(a_return_parameter_membership.relatedElement[0].value, int)
 
-    assert a_return_parameter_membership.target[0].reverseReturnParameterMembership[0] == a_return_parameter_membership.relatedElement[0]
+    assert (
+        a_return_parameter_membership.target[0].reverseReturnParameterMembership[0]
+        == a_return_parameter_membership.relatedElement[0]
+    )
 
     value = a_return_parameter_membership.get("some_missing_key", "a default for something")
     assert value == "a default for something"

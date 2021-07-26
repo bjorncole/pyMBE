@@ -1,6 +1,6 @@
-from pymbe.interpretation.calc_dependencies import generate_execution_order
-
 import logging
+
+from pymbe.interpretation.calc_dependencies import generate_execution_order
 from pymbe.interpretation.results import *
 
 ROCKET_BUILDING = "Model::Kerbal::Rocket Building::"
@@ -12,7 +12,7 @@ def test_kerbal_calc_order1(kerbal_lpg, kerbal_random_stage_5_complete, kerbal_s
 
     *_, qualified_name_to_id = kerbal_stable_names
 
-    liquid_stage_type = qualified_name_to_id[f'{ROCKET_BUILDING}Liquid Stage <<PartDefinition>>']
+    liquid_stage_type = qualified_name_to_id[f"{ROCKET_BUILDING}Liquid Stage <<PartDefinition>>"]
 
     number_liquid_stages = len(kerbal_random_stage_5_complete[liquid_stage_type])
 
@@ -20,12 +20,16 @@ def test_kerbal_calc_order1(kerbal_lpg, kerbal_random_stage_5_complete, kerbal_s
 
     # the execution order will be ordered for examination
 
-    sum_1_result = qualified_name_to_id[f'{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ (sum (engines.Mass' +
-                                 f' (FRE.engines)), sum (tanks.Full Mass (FRE.tanks))) => $result::sum' +
-                                 f' (tanks.Full Mass (FRE.tanks)) => $result::tanks.Full Mass (FRE.tanks) <<Feature>>']
-    top_plus = qualified_name_to_id[f'{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ (sum (engines.Mass '
-                                            f'(FRE.engines)), sum (tanks.Full Mass (FRE.tanks))) => '
-                                            f'$result <<OperatorExpression>>']
+    sum_1_result = qualified_name_to_id[
+        f"{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ (sum (engines.Mass"
+        + f" (FRE.engines)), sum (tanks.Full Mass (FRE.tanks))) => $result::sum"
+        + f" (tanks.Full Mass (FRE.tanks)) => $result::tanks.Full Mass (FRE.tanks) <<Feature>>"
+    ]
+    top_plus = qualified_name_to_id[
+        f"{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ (sum (engines.Mass "
+        f"(FRE.engines)), sum (tanks.Full Mass (FRE.tanks))) => "
+        f"$result <<OperatorExpression>>"
+    ]
 
     sum_1_in_dcg = None
     plus_in_dcg = None
@@ -38,5 +42,9 @@ def test_kerbal_calc_order1(kerbal_lpg, kerbal_random_stage_5_complete, kerbal_s
 
     assert sum_1_in_dcg is not None
     assert plus_in_dcg is not None
-    assert len(kerbal_random_stage_5_complete[sum_1_result]) == len(kerbal_random_stage_5_complete[liquid_stage_type])
-    assert len(kerbal_random_stage_5_complete[top_plus]) == len(kerbal_random_stage_5_complete[liquid_stage_type])
+    assert len(kerbal_random_stage_5_complete[sum_1_result]) == len(
+        kerbal_random_stage_5_complete[liquid_stage_type]
+    )
+    assert len(kerbal_random_stage_5_complete[top_plus]) == len(
+        kerbal_random_stage_5_complete[liquid_stage_type]
+    )

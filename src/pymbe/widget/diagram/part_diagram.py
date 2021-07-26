@@ -1,13 +1,8 @@
-from pydantic import Field
 from typing import Dict, Iterator, Tuple, Type, Union
 
-from ipyelk.elements import (
-    Partition,
-    Port,
-    SymbolSpec,
-    merge_excluded,
-)
+from ipyelk.elements import Partition, Port, SymbolSpec, merge_excluded
 from ipyelk.elements.index import iter_hierarchy
+from pydantic import Field
 
 from .parts import Part
 from .relationships import DirectedAssociation, Relationship
@@ -24,21 +19,21 @@ from .symbols import (
 class PartDiagram(Partition):
     """A SysML 2 Part Diagram, based on the IPyELK BlockDiagram."""
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         copy_on_model_validation = False
         excluded = merge_excluded(Partition, "symbols", "style")
 
     default_edge: Type[Relationship] = Field(default=DirectedAssociation)
 
     symbols: SymbolSpec = SymbolSpec().add(
-        make_arrow_symbol(identifier="generalization", r=8, closed=True),
-        make_arrow_symbol(identifier="directed_association", r=8, closed=False),
-        make_containment_symbol(identifier="containment", r=8),
-        make_feature_typing_symbol(identifier="feature_typing", r=8),
-        make_redefinition_symbol(identifier="redefinition", r=8),
-        make_subsetting_symbol(identifier="subsetting", r=8),
-        make_rhombus_symbol(identifier="composition", r=8),
-        make_rhombus_symbol(identifier="aggregation", r=8),
+        make_arrow_symbol(identifier="generalization", size=8, closed=True),
+        make_arrow_symbol(identifier="directed_association", size=8, closed=False),
+        make_containment_symbol(identifier="containment", size=8),
+        make_feature_typing_symbol(identifier="feature_typing", size=8),
+        make_redefinition_symbol(identifier="redefinition", size=8),
+        make_subsetting_symbol(identifier="subsetting", size=8),
+        make_rhombus_symbol(identifier="composition", size=8),
+        make_rhombus_symbol(identifier="aggregation", size=8),
     )
 
     style: Dict[str, Dict] = {
@@ -105,5 +100,5 @@ class PartDiagram(Partition):
     ) -> Relationship:
         data = data or {}
         relationship = cls(source=source, target=target, data=data)
-        self.edges.append(relationship)
+        self.edges += [relationship]
         return relationship

@@ -1,5 +1,8 @@
 from ..graph import SysML2LabeledPropertyGraph
-from ..interpretation.calc_dependencies import generate_execution_order, generate_parameter_signature_map
+from ..interpretation.calc_dependencies import (
+    generate_execution_order,
+    generate_parameter_signature_map,
+)
 from ..label import get_qualified_label
 
 

@@ -1,6 +1,6 @@
 import pytest
-from pymbe.model import ValueHolder, VALUE_METATYPES
 
+from pymbe.model import VALUE_METATYPES, ValueHolder
 from tests.conftest import kerbal_model
 
 

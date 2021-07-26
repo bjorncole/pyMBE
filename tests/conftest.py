@@ -1,9 +1,8 @@
 from pathlib import Path
 from typing import Dict
 
-import traitlets as trt
-
 import pytest
+import traitlets as trt
 
 import pymbe
 import pymbe.api as pm
@@ -15,8 +14,8 @@ from pymbe.interpretation.interp_playbooks import (
     create_set_with_new_instances,
     random_generator_phase_1_multiplicities,
     random_generator_playbook_phase_1_singletons,
-    random_generator_playbook_phase_2_unconnected,
     random_generator_playbook_phase_2_rollup,
+    random_generator_playbook_phase_2_unconnected,
     random_generator_playbook_phase_3,
     random_generator_playbook_phase_4,
     random_generator_playbook_phase_5,
@@ -37,18 +36,14 @@ def get_client(filename: str) -> SysML2Client:
         fixtures_exists = FIXTURES.exists()
         contents = ""
         if fixtures_exists:
-            contents = (
-                "\nContents:\n" +
-                "\n".join(map(str, FIXTURES.glob("*")))
-            )
+            contents = "\nContents:\n" + "\n".join(map(str, FIXTURES.glob("*")))
         raise ValueError(
             f"Could not load: '{json_file.absolute()}'!\n"
             "Did you forget to run git submodules? If so, run:\n"
             "  git submodule update --init\n"
             f"pyMBE is here: {PYMBE_ROOT.absolute()}\n"
             f"{TESTS_ROOT} exists: {TESTS_ROOT.exists()}\n"
-            f"{FIXTURES} exists: {fixtures_exists}"
-            + contents
+            f"{FIXTURES} exists: {fixtures_exists}" + contents
         )
 
     helper_client = SysML2Client()
@@ -77,10 +72,7 @@ def kerbal_client() -> SysML2Client:
 @pytest.fixture
 def kerbal_ids_by_type(kerbal_client) -> dict:
     return {
-        metatype: [
-            element._id
-            for element in elements
-        ]
+        metatype: [element._id for element in elements]
         for metatype, elements in kerbal_client.model.ownedMetatype.items()
     }
 
@@ -102,11 +94,7 @@ def kerbal_client() -> SysML2Client:
 def all_kerbal_names(kerbal_client) -> list:
     all_elements = kerbal_client.model.elements
 
-    return [
-        element._data["name"]
-        for element in all_elements.values()
-        if "name" in element._data
-    ]
+    return [element._data["name"] for element in all_elements.values() if "name" in element._data]
 
 
 @pytest.fixture
@@ -196,9 +184,8 @@ def kerbal_random_stage_5_complete(
 ) -> dict:
 
     random_generator_playbook_phase_5(
-        kerbal_lpg,
-        kerbal_lpg.get_projection("Connection"),
-        kerbal_random_stage_4_complete)
+        kerbal_lpg, kerbal_lpg.get_projection("Connection"), kerbal_random_stage_4_complete
+    )
 
     return kerbal_random_stage_4_complete
 
@@ -243,7 +230,9 @@ def simple_parts_random_stage_1_instances(simple_parts_lpg) -> dict:
 
 
 @pytest.fixture
-def simple_parts_random_stage_1_complete(simple_parts_lpg, simple_parts_random_stage_1_instances) -> dict:
+def simple_parts_random_stage_1_complete(
+    simple_parts_lpg, simple_parts_random_stage_1_instances
+) -> dict:
     scg = simple_parts_lpg.get_projection("Part Definition")
 
     random_generator_playbook_phase_1_singletons(
@@ -256,18 +245,24 @@ def simple_parts_random_stage_1_complete(simple_parts_lpg, simple_parts_random_s
 
 
 @pytest.fixture
-def simple_parts_random_stage_2_complete(simple_parts_lpg, simple_parts_random_stage_1_complete) -> dict:
+def simple_parts_random_stage_2_complete(
+    simple_parts_lpg, simple_parts_random_stage_1_complete
+) -> dict:
     scg = simple_parts_lpg.get_projection("Part Definition")
 
     random_generator_playbook_phase_2_rollup(scg, simple_parts_random_stage_1_complete)
 
-    random_generator_playbook_phase_2_unconnected(simple_parts_lpg.model, simple_parts_random_stage_1_complete)
+    random_generator_playbook_phase_2_unconnected(
+        simple_parts_lpg.model, simple_parts_random_stage_1_complete
+    )
 
     return simple_parts_random_stage_1_complete
 
 
 @pytest.fixture
-def simple_parts_random_stage_3_complete(simple_parts_lpg, simple_parts_random_stage_2_complete) -> dict:
+def simple_parts_random_stage_3_complete(
+    simple_parts_lpg, simple_parts_random_stage_2_complete
+) -> dict:
     feature_sequences = build_sequence_templates(lpg=simple_parts_lpg)
 
     random_generator_playbook_phase_3(
@@ -332,7 +327,9 @@ def simple_actions_random_stage_1_instances(simple_actions_lpg) -> dict:
 
 
 @pytest.fixture
-def simple_actions_random_stage_1_complete(simple_actions_lpg, simple_actions_random_stage_1_instances) -> dict:
+def simple_actions_random_stage_1_complete(
+    simple_actions_lpg, simple_actions_random_stage_1_instances
+) -> dict:
     scg = simple_actions_lpg.get_projection("Part Definition")
 
     random_generator_playbook_phase_1_singletons(
@@ -345,18 +342,24 @@ def simple_actions_random_stage_1_complete(simple_actions_lpg, simple_actions_ra
 
 
 @pytest.fixture
-def simple_actions_random_stage_2_complete(simple_actions_lpg, simple_actions_random_stage_1_instances) -> dict:
+def simple_actions_random_stage_2_complete(
+    simple_actions_lpg, simple_actions_random_stage_1_instances
+) -> dict:
     scg = simple_actions_lpg.get_projection("Part Definition")
 
     random_generator_playbook_phase_2_rollup(scg, simple_actions_random_stage_1_instances)
 
-    random_generator_playbook_phase_2_unconnected(simple_actions_lpg.model, simple_actions_random_stage_1_instances)
+    random_generator_playbook_phase_2_unconnected(
+        simple_actions_lpg.model, simple_actions_random_stage_1_instances
+    )
 
     return simple_actions_random_stage_1_instances
 
 
 @pytest.fixture
-def simple_actions_random_stage_3_complete(simple_actions_lpg, simple_actions_random_stage_2_complete) -> dict:
+def simple_actions_random_stage_3_complete(
+    simple_actions_lpg, simple_actions_random_stage_2_complete
+) -> dict:
     feature_sequences = build_sequence_templates(lpg=simple_actions_lpg)
 
     random_generator_playbook_phase_3(
