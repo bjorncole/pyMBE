@@ -130,8 +130,8 @@ class CalculationGroup:
                         for index, m0_operator_seq in enumerate(source_instances):
                             x_point = None
                             y_point = None
-                            for input_index, input in enumerate(plus_inputs):
-                                input_instances = self.instance_dict[input["@id"]]
+                            for input_index, input_ in enumerate(plus_inputs):
+                                input_instances = self.instance_dict[input_["@id"]]
                                 for input_inst in input_instances:
                                     if input_inst[0] == m0_operator_seq[0]:
                                         if input_index == 0:
@@ -174,8 +174,8 @@ class CalculationGroup:
                             collect_sub_expressions.append(member)
                             collect_sub_expression_results.append(member.result)
 
-                    for input in src_data.input:
-                        collect_sub_inputs.append(input)
+                    for input_ in src_data.input:
+                        collect_sub_inputs.append(input_)
 
                     # Base sequence is there to filter as appropriate to the expression scope
 

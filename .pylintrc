@@ -4,20 +4,15 @@ max-line-length = 99
 [MESSAGES CONTROL]
 disable=arguments-differ,
         attribute-defined-outside-init,
-        bad-option-value,
         cyclic-import,
         fixme,
-        import-outside-toplevel,
         inconsistent-return-statements,
         invalid-name,
         missing-class-docstring,
         missing-function-docstring,
         missing-module-docstring,
-        no-member,
         no-self-use,
         protected-access,
-        raise-missing-from,
-        redefined-builtin,
         signature-differs,
         too-few-public-methods,
         too-many-ancestors,
@@ -28,8 +23,7 @@ disable=arguments-differ,
         too-many-locals,
         too-many-nested-blocks,
         too-many-statements,
-        unnecessary-lambda,
-        unused-argument
+        unused-argument,
 
 [REPORTS]
 output-format=text

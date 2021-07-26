@@ -128,12 +128,12 @@ def extend_sequences_by_sampling(
                     set_extended.append(new_seq)
 
                 last_draw = last_draw + draws_per[index]
-        except ValueError:
+        except ValueError as exc:
             print(f"Sample Set is:\n\t{sample_set}")
             print(f"Previous sequences include:\n\t{previous_sequences}\n\t{draws_per}")
             raise ValueError(
                 f"Tried to pull {total_draw} instances from a length of {len(sample_set)}"
-            )
+            ) from exc
 
     return set_extended
 

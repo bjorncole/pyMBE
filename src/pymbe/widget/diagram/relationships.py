@@ -36,11 +36,12 @@ class Relationship(Edge):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         id_ = self.data["@id"]
-        metatype = self.data.get("@type")
-        if id_.startswith("_") or self.data.get("implied"):
+        data: dict = self.data
+        metatype = data.get("@type")  # pylint: disable=no-member
+        if id_.startswith("_") or data.get("implied"):  # pylint: disable=no-member
             self.add_class("dashed")
         if metatype:
-            self.labels.append(Label(text=f"«{metatype}»"))
+            self.labels += [Label(text=f"«{metatype}»")]
         self.metadata = PartMetadata(sysml_id=id_)
 
         # TODO: Add processing of relationship properties
