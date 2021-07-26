@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from typing import Any
 
 from ..label import get_label
 from ..model import Element, Model
@@ -7,9 +8,9 @@ from ..model import Element, Model
 # What visual representation to use for instances based on their M1 Metatype
 REPRESENTATION_BY_METATYPE = dict(
     ConnectionUsage="Line",
-    PartDefinition="Rectangle",
+    # PartDefinition="Rectangle",
     PartUsage="Rounded Rectangle",
-    PortDefinition="Rectangle",
+    # PortDefinition="Rectangle",
     PortUsage="Port",
 )
 
@@ -79,6 +80,7 @@ class InterpretationDictionaryEntry:
     A class to represent a key value pair for a master interpretation dictionary, which points from
     M1 user model elements to a set of sequences of atoms that are the interpretation
     """
+
     base: Element
     interprets: set
     master_list: dict = field(default_factory=dict)
@@ -100,23 +102,25 @@ class InterpretationDictionaryEntry:
         return f'Entry: <{get_label(self.base)}, {self.value}>'
 
 
+@dataclass
 class ValueHolder:
     """
     A class to represent instances of the attribution of real things in the M0 universe interpreted from the model.
     Sequences of instances and value holders are intended to follow the mathematical base semantics of SysML v2.
     Additionally, the value holders are meant to be variables in numerical analyses.
     """
-    def __init__(self, path, name, value, base_att, index):
-        # path is list of instance references
-        self.holder_string = ""
-        for indx, step in enumerate(path):
-            if indx == 0:
-                self.holder_string = str(step)
-            else:
-                self.holder_string = f"{self.holder_string}.{step}"
-        self.holder_string = f"{self.holder_string}.{name}#{index}"
-        self.value = value
-        self.base_att = base_att
+
+    path: list
+    name: str
+    value: Any
+    base_att: Element
+    index: int
+
+    holder_string: str = ""
+
+    def __post_init__(self):
+        if not self.holder_string:
+            self.holder_string = ".".join(map(str, self.path + [f"{self.name}#{self.index}"]))
 
     def __repr__(self):
         value = self.value if self.value is not None else "unset"

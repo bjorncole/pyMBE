@@ -32,10 +32,10 @@ class Diagram(ipyelk.Diagram):
 
 
 @ipyw.register
-class DiagramWidget(ipyw.Box, BaseWidget):
+class M1Viewer(ipyw.Box, BaseWidget):
     """An ipywidget to interact with a SysML2 model through an LPG."""
 
-    description = trt.Unicode("Diagram").tag(sync=True)
+    description = trt.Unicode("M1 Diagram").tag(sync=True)
 
     drawn_graph: nx.Graph = trt.Instance(
         nx.Graph,

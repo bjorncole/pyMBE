@@ -2,12 +2,10 @@ import ipywidgets as ipyw
 import traitlets as trt
 from wxyz.lab import DockBox, DockPop
 
-from pymbe.widget.diagram.widget import DiagramWidget
-
 from .client import SysML2ClientWidget
 from .containment import ContainmentTree
+from .diagram import M1Viewer, M0Viewer
 from .inspector import ElementInspector
-from .interpretation import Interpreter
 
 
 @ipyw.register
@@ -18,10 +16,11 @@ class UI(DockBox):
     client: SysML2ClientWidget = trt.Instance(SysML2ClientWidget)
     tree: ContainmentTree = trt.Instance(ContainmentTree, args=())
     inspector: ElementInspector = trt.Instance(ElementInspector, args=())
-    # interpreter: Interpreter = trt.Instance(Interpreter, args=())
-    diagram: DiagramWidget = trt.Instance(DiagramWidget, args=())
+    m0_viewer: M0Viewer = trt.Instance(M0Viewer, args=())
+    m1_viewer: M1Viewer = trt.Instance(M1Viewer, args=())
 
     # links
+    lpg_links: list = trt.List()
     model_links: list = trt.List()
     selector_links: list = trt.List()
 
@@ -35,14 +34,13 @@ class UI(DockBox):
         self.description = "SysML Model"
 
         self.client = SysML2ClientWidget(host_url=host_url)
-        # self.interpreter.lpg = self.diagram.lpg
 
         self.children = [
             self.client,
             self.tree,
             self.inspector,
-            self.diagram,
-            # self.interpreter,
+            self.m1_viewer,
+            self.m0_viewer,
         ]
 
         self.dock_layout = dict(
@@ -57,7 +55,7 @@ class UI(DockBox):
                         dict(type="tab-area", widgets=[1], currentIndex=0),
                         dict(
                             type="tab-area",
-                            widgets=[2, 3],  # 4],  TODO: bring this back
+                            widgets=[2, 3, 4],
                             currentIndex=0,
                         ),
                     ],
@@ -72,7 +70,7 @@ class UI(DockBox):
         self.tree.layout.overflow_y = "auto"
         self._update_diagram_height()
 
-        all_widgets = self.tree, self.inspector, self.diagram  # , self.interpreter)
+        all_widgets = self.tree, self.inspector, self.m1_viewer, self.m0_viewer
 
         for widget in all_widgets:
             widget.log_out = self.log_out
@@ -91,10 +89,15 @@ class UI(DockBox):
             )
             for widget in all_widgets[1:]
         ]
+        self.lpg_links = [trt.link(
+            (self.m1_viewer, "lpg"),
+            (self.m0_viewer, "lpg"),
+        )]
 
     @trt.observe("diagram_height")
     def _update_diagram_height(self, *_):
-        self.diagram.layout.height = f"{self.diagram_height}vh"
+        self.m0_viewer.layout.height = f"{self.diagram_height}vh"
+        self.m1_viewer.layout.height = f"{self.diagram_height}vh"
 
     @classmethod
     def new(cls, host_url: str) -> DockPop:

@@ -1,3 +1,4 @@
-__all__ = ("DiagramWidget",)
+__all__ = ("M0Viewer", "M1Viewer")
 
-from .widget import DiagramWidget
+from .interpretation import M0Viewer
+from .widget import M1Viewer

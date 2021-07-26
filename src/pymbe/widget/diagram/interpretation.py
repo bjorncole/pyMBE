@@ -5,9 +5,12 @@ import traitlets as trt
 from ipyelk import Diagram, ElementLoader
 from ipyelk.elements import Label, Node, Port
 
+from ...graph import SysML2LabeledPropertyGraph
+from ...interpretation.interp_playbooks import random_generator_playbook
 from ...interpretation.interpretation import repack_instance_dictionaries
-from ...model import Model
+from ..core import BaseWidget
 from .part_diagram import PartDiagram
+from .tools import BUTTON_ICONS
 
 NODE_LAYOUT_OPTIONS = {
     "org.eclipse.elk.portLabels.placement": "INSIDE",
@@ -15,12 +18,21 @@ NODE_LAYOUT_OPTIONS = {
     "org.eclipse.elk.nodeLabels.placement": "H_CENTER V_CENTER",
 }
 
+__all__ = ("M0Viewer",)
 
-class InterpretationDiagram(ipyw.VBox):
 
-    diagram: Diagram = trt.Instance(Diagram, kw=dict(layout=dict(height="100%")))
-    m0_interpretation: ty.Dict = trt.Dict()
-    model: Model = trt.Instance(Model)
+class M0Viewer(ipyw.Box, BaseWidget):
+    """A viewer for M0 interpretations"""
+
+    description: str = trt.Unicode("M0 Diagram").tag(sync=True)
+    diagram: Diagram = trt.Instance(Diagram)
+    loader: ElementLoader = trt.Instance(ElementLoader, args=())
+    lpg: SysML2LabeledPropertyGraph = trt.Instance(
+        SysML2LabeledPropertyGraph,
+        args=(),
+        help="The LPG of the project currently loaded.",
+    )
+    interpretation: ty.Dict = trt.Dict()
     port_size: int = trt.Integer(15)
 
     @trt.validate("children")
@@ -30,48 +42,110 @@ class InterpretationDiagram(ipyw.VBox):
             return children
         return [self.diagram]
 
-    @trt.validate("layout")
-    def _validate_layout(self, proposal: trt.Bunch):
-        layout = proposal.value or {}
-        layout["height"] = "100%"
-        return layout
+    @trt.default("diagram")
+    def _make_diagram(self):
+        diagram = Diagram(layout=dict(height="100%"))
+        toolbar = diagram.toolbar
+        style, *buttons, progress_bar, close_btn = toolbar.children
+        for button in buttons:
+            description = button.description
+            icon = BUTTON_ICONS.get(description)
+            if icon:
+                button.description = ""
+                button.tooltip = description
+                button.icon = icon
+                button.layout.width = "40px"
 
-    @trt.observe("m0_interpretation")
-    def _update_for_new_interpretation(self, change: trt.Bunch):
+        btn_kwargs = dict(layout=dict(width="40px"))
+
+        regen = ipyw.Button(
+            icon="redo",
+            tooltip="Generate new random M0 interpretation",
+            **btn_kwargs,
+        )
+        regen.on_click(self._make_new)
+
+        refresh = ipyw.Button(
+            icon="retweet",
+            tooltip="Refresh Diagram",
+            **btn_kwargs,
+        )
+        refresh.on_click(self._update_for_new_interpretation)
+
+        buttons += [regen, refresh]
+
+        toolbar.children = [style, *buttons, progress_bar, close_btn]
+
+        return diagram
+
+    @trt.default("layout")
+    def _make_layout(self):
+        return dict(height="100%")
+
+    def update(self, *_):
+        pass
+
+    @trt.observe("lpg")
+    def _make_new(self, *_):
+        with self.log_out:
+            self.interpretation = random_generator_playbook(self.lpg)
+
+    @trt.observe("interpretation")
+    def _update_for_new_interpretation(self, *_):
         part_diagram = PartDiagram()
 
-        repacked = repack_instance_dictionaries(self.m0_interpretation, self.model)
+        repacked = repack_instance_dictionaries(self.interpretation, self.model)
 
         def is_draw_kind(entry, kind):
+            if not entry.value:
+                return False
             draw_kind = next(iter(entry.value)).owning_entry.draw_kind
             return draw_kind and kind in draw_kind
 
-        def get_parent_node(instance):
-            metatype = instance.element._metatype
-            elk_node = elk_nodes.get(metatype)
-            if not elk_node:
-                elk_nodes[metatype] = elk_node = Node(
-                    labels=[Label(text=f"{metatype}s")],
-                    layoutOptions=NODE_LAYOUT_OPTIONS,
-                )
-                part_diagram.add_child(elk_node)
-            return elk_node
-
-        nodes = [entry.value for entry in repacked if is_draw_kind(entry, "Rectangle")]
+        part_definitions = [
+            entry for entry in repacked if entry.base._metatype == "PartDefinition"
+        ]
         elk_nodes = {}
-        for interpreted_nodes in nodes:
-            for sequence in interpreted_nodes:
-                parent_node = None
+        parts = part_diagram.add_child(Node(
+            labels=[
+                Label(text="Parts"),
+            ],
+            layoutOptions=NODE_LAYOUT_OPTIONS,
+        ))
+        for entry in part_definitions:
+            for sequence in entry.value:
+                parent_node = parts
                 for instance in sequence.instances:
-                    if instance not in elk_nodes:
-                        if parent_node is None:
-                            parent_node = get_parent_node(instance)
+                    elk_node = elk_nodes.get(instance)
+                    if elk_node is None:
                         elk_nodes[instance] = elk_node = parent_node.add_child(
                             Node(
-                                labels=[Label(text=instance.name)],
+                                labels=[
+                                    # TODO: Find out how to represent type
+                                    Label(text=f"`{entry.base.label}`"),
+                                    Label(text=instance.name),
+                                ],
                                 layoutOptions=NODE_LAYOUT_OPTIONS,
                             ),
                         )
+                    parent_node = elk_node
+
+        nodes = [entry for entry in repacked if is_draw_kind(entry, "Rectangle")]
+        for interpreted_node in nodes:
+            for sequence in interpreted_node.value:
+                parent_instance, *remaining_instances = sequence.instances
+                parent_node = elk_nodes[parent_instance]
+                for instance in remaining_instances:
+                    elk_node = parent_node.add_child(
+                        Node(
+                            labels=[
+                                # TODO: Find out how to represent type
+                                Label(text=f"`{interpreted_node.base.label}`"),
+                                Label(text=instance.name),
+                            ],
+                            layoutOptions=NODE_LAYOUT_OPTIONS,
+                        ),
+                    )
                     parent_node = elk_node
 
         ports = [entry.value for entry in repacked if is_draw_kind(entry, "Port")]
@@ -98,8 +172,8 @@ class InterpretationDiagram(ipyw.VBox):
                     source=elk_ports[src.instances[-1]],
                     target=elk_ports[tgt.instances[-1]],
                 )
-        loader = ElementLoader()
+
         diagram = self.diagram
-        diagram.source = loader.load(part_diagram)
+        diagram.source = self.loader.load(part_diagram)
         diagram.style = part_diagram.style
         diagram.view.symbols = part_diagram.symbols

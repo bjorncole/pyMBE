@@ -8,6 +8,8 @@ from typing import Any, Dict, List, Set, Tuple, Union
 from uuid import uuid4
 from warnings import warn
 
+from traitlets.traitlets import default
+
 
 OWNER_KEYS = ("owner", "owningRelatedElement", "owningRelationship")
 VALUE_METATYPES = ("AttributeDefinition", "AttributeUsage", "DataType")
@@ -216,7 +218,8 @@ class Element:
     _id: str = field(default_factory=lambda: str(uuid4()))
     _metatype: str = "Element"
     _derived: Dict[str, List] = field(default_factory=lambda: defaultdict(list))
-    _instances: List["Instance"] = field(default_factory=list)
+    # TODO: replace this with instances sequences
+    # _instances: List["Instance"] = field(default_factory=list)
     _is_abstract: bool = False
     _is_relationship: bool = False
 
@@ -344,17 +347,20 @@ class Instance:
     """
 
     element: Element
+    number: int = None
     name: str = ""
 
+    __instances = defaultdict(list)
+
     def __post_init__(self):
-        element = self.element
-        if self not in element._instances:
-            element._instances += [self]
+        siblings = self.__instances[self.element]
+        if self.number is None:
+            self.number = len(siblings) + 1
+        siblings += [self]
         if not self.name:
-            # TODO: Should we revert to 0-index?
-            id_ = element._instances.index(self) + 1
+            element = self.element
             name = element.label or element._id
-            self.name = f"{name}#{id_}"
+            self.name = f"{name}#{self.number}"
 
     def __repr__(self):
         return self.name
