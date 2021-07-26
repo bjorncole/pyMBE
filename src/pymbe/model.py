@@ -66,9 +66,15 @@ class Model:  # pylint: disable=too-many-instance-attributes
     all_relationships: Dict[str, "Element"] = field(default_factory=dict)
     all_non_relationships: Dict[str, "Element"] = field(default_factory=dict)
 
-    ownedElement: ListOfNamedItems = field(default_factory=ListOfNamedItems)  # pylint: disable=invalid-name
-    ownedMetatype: Dict[str, List["Element"]] = field(default_factory=dict)  # pylint: disable=invalid-name
-    ownedRelationship: List["Element"] = field(default_factory=list)  # pylint: disable=invalid-name
+    ownedElement: ListOfNamedItems = field(  # pylint: disable=invalid-name
+        default_factory=ListOfNamedItems
+    )
+    ownedMetatype: Dict[str, List["Element"]] = field(  # pylint: disable=invalid-name
+        default_factory=dict
+    )
+    ownedRelationship: List["Element"] = field(  # pylint: disable=invalid-name
+        default_factory=list
+    )
 
     source: Any = None
 
