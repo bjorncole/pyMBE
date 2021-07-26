@@ -35,7 +35,7 @@ class Naming(Enum):
     short = "SHORT"
 
     def get_name(self, element: "Element") -> str:
-        naming = self._value_
+        naming = self._value_  # pylint: disable=no-member
 
         # TODO: Check with Bjorn, he wanted: (a)-[r:RELTYPE {name: a.name + '<->' + b.name}]->(b)
         if element._is_relationship:
@@ -129,7 +129,7 @@ class Model:
 
     def _add_labels(self):
         """Attempts to add a label to the elements"""
-        from .label import get_label
+        from .label import get_label  # pylint: disable=import-outside-toplevel
 
         for element in self.elements.values():
             label = get_label(element=element)
@@ -235,8 +235,8 @@ class Element:
     def __getattr__(self, key: str):
         try:
             return self[key]
-        except KeyError:
-            raise AttributeError(f"Cannot find {key}")
+        except KeyError as exc:
+            raise AttributeError(f"Cannot find {key}") from exc
 
     def __getitem__(self, key: str):
         found = False

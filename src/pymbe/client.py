@@ -5,11 +5,11 @@ from pathlib import Path
 from typing import Dict, List, Tuple, Union
 from warnings import warn
 
-import ipywidgets as ipyw
 import requests
 import sysml_v2_api_client as sysml2
 import traitlets as trt
 from dateutil import parser
+from ipywidgets.widgets.trait_types import TypedTuple
 
 from .label import get_label
 from .model import Model
@@ -70,7 +70,7 @@ class SysML2Client(trt.HasTraits):
     _projects_api: sysml2.ProjectApi = trt.Instance(sysml2.ProjectApi)
 
     folder_path: Path = trt.Instance(Path, allow_none=True)
-    json_files: Tuple[Path] = ipyw.trait_types.TypedTuple(trt.Instance(Path))
+    json_files: Tuple[Path] = TypedTuple(trt.Instance(Path))
     json_file: Path = trt.Instance(Path, allow_none=True)
 
     selected_project: str = trt.Unicode(allow_none=True)

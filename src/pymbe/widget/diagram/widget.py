@@ -118,7 +118,7 @@ class M1Viewer(ipyw.Box, BaseWidget):  # pylint: disable=too-many-ancestors
         trt.dlink(
             (self.lpg, "sysml_projections"),
             (toolbar.projection_selector, "options"),
-            lambda x: tuple(x),  # pylint: disable=unncessary-lambda
+            lambda x: tuple(x),  # pylint: disable=unnecessary-lambda
         )
         toolbar.projection_selector.options = tuple(self.lpg.sysml_projections)
         toolbar._update_children()

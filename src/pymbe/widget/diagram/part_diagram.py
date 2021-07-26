@@ -100,5 +100,5 @@ class PartDiagram(Partition):
     ) -> Relationship:
         data = data or {}
         relationship = cls(source=source, target=target, data=data)
-        self.edges.append(relationship)
+        self.edges += [relationship]
         return relationship
