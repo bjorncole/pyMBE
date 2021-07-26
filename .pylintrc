@@ -2,29 +2,23 @@
 max-line-length = 99
 
 [MESSAGES CONTROL]
-disable=arguments-differ,
-        attribute-defined-outside-init,
+disable=attribute-defined-outside-init,
         cyclic-import,
         fixme,
-        inconsistent-return-statements,
         invalid-name,
         missing-class-docstring,
         missing-function-docstring,
         missing-module-docstring,
         no-self-use,
         protected-access,
-        signature-differs,
-        too-few-public-methods,
         too-many-ancestors,
         too-many-arguments,
         too-many-branches,
         too-many-function-args,
-        too-many-instance-attributes,
         too-many-locals,
         too-many-nested-blocks,
-        too-many-statements,
         unused-argument,
 
 [REPORTS]
-output-format=text
+output-format=colorized
 max-nested-blocks=5

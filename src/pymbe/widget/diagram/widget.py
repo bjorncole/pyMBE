@@ -285,7 +285,7 @@ class M1Viewer(ipyw.Box, BaseWidget):  # pylint: disable=too-many-ancestors
         with self.log_out:
             elk_diagram.style = loader.part_diagram.style
             elk_diagram.symbols = loader.part_diagram.symbols
-            elk_diagram.source = loader.load(new=new, old=old)
+            elk_diagram.source = loader.load_from_graphs(new=new, old=old)
 
     @trt.observe("selected")
     def _update_based_on_selection(self, *_):

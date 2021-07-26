@@ -129,7 +129,7 @@ class ValueHolder:
         return f"{self.holder_string} ({value})"
 
 
-class LiveExpressionNode:
+class LiveExpressionNode:  # pylint: disable=too-few-public-methods
     """
     A class to be instances of expressions that can support computations in the M0 space.
     Also, this is where implementation code for a specific expression type can be placed

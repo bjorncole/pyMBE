@@ -55,7 +55,7 @@ class Naming(Enum):
 
 
 @dataclass(repr=False)
-class Model:
+class Model:  # pylint: disable=too-many-instance-attributes
     """A SysML v2 Model"""
 
     # TODO: Look into making elements immutable (e.g., frozen dict)
