@@ -97,7 +97,7 @@ def test_feature_sequence_templates4(simple_parts_lpg, simple_parts_stable_names
         f"{SIMPLE_MODEL}Power Group: Part::Power User: Part <<PartUsage>>"
     ]
     power_in_port_id = qualified_name_to_id[
-        f"{SIMPLE_MODEL}Power Group: Part::Power User: " f"Part::Power In: Port <<PortUsage>>"
+        f"{SIMPLE_MODEL}Power Group: Part::Power User: Part::Power In: Port <<PortUsage>>"
     ]
 
     print(seq_templates)

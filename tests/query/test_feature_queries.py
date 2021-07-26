@@ -109,7 +109,7 @@ def test_banded_graph_paths3(simple_parts_lpg, simple_parts_stable_names):
     power_group_id = qualified_name_to_id[f"{SIMPLE_MODEL}Power Group: Part <<PartUsage>>"]
 
     power_in_port_id = qualified_name_to_id[
-        f"{SIMPLE_MODEL}Power Group: Part::Power User: " f"Part::Power In: Port <<PortUsage>>"
+        f"{SIMPLE_MODEL}Power Group: Part::Power User: Part::Power In: Port <<PortUsage>>"
     ]
     power_out_id = qualified_name_to_id[
         f"{SIMPLE_MODEL}Power Group: Part::Power Source: Part::Power Out: Port <<PortUsage>>"
@@ -200,7 +200,7 @@ def test_type_multiplicity_rollup2(simple_parts_lpg, simple_parts_stable_names):
     *_, qualified_name_to_id = simple_parts_stable_names
 
     power_out_id = qualified_name_to_id[
-        f"{SIMPLE_MODEL}Power Group: Part::Power Source: " f"Part::Power Out: Port <<PortUsage>>"
+        f"{SIMPLE_MODEL}Power Group: Part::Power Source: Part::Power Out: Port <<PortUsage>>"
     ]
     power_in_id = qualified_name_to_id[
         f"{SIMPLE_MODEL}Power Group: Part::Power User: Part::Power In: Port <<PortUsage>>"

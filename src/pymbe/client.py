@@ -203,7 +203,7 @@ class SysML2Client(trt.HasTraits):
 
             if not response.ok:
                 raise requests.HTTPError(
-                    f"Failed to retrieve elements from '{url}', " f"reason: {response.reason}"
+                    f"Failed to retrieve elements from '{url}', reason: {response.reason}"
                 )
 
             result += response.json()
