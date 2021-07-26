@@ -3,7 +3,7 @@ import typing as ty
 import ipywidgets as ipyw
 import traitlets as trt
 from ipyelk import Diagram, ElementLoader
-from ipyelk.elements import Label, Node, Port
+from ipyelk.elements import Label, Node, Port, layout_options as opt
 
 from ...graph import SysML2LabeledPropertyGraph
 from ...interpretation.interp_playbooks import random_generator_playbook
@@ -26,7 +26,17 @@ class M0Viewer(ipyw.Box, BaseWidget):
 
     description: str = trt.Unicode("M0 Diagram").tag(sync=True)
     diagram: Diagram = trt.Instance(Diagram)
-    loader: ElementLoader = trt.Instance(ElementLoader, args=())
+    loader: ElementLoader = trt.Instance(
+        ElementLoader,
+        kw=dict(
+            default_node_opts= opt.OptionsWidget(
+                options=[
+                    opt.Direction(value="RIGHT"),
+                    opt.HierarchyHandling(),
+                ]
+            ).value,
+        ),
+    )
     lpg: SysML2LabeledPropertyGraph = trt.Instance(
         SysML2LabeledPropertyGraph,
         args=(),
@@ -102,19 +112,43 @@ class M0Viewer(ipyw.Box, BaseWidget):
             draw_kind = next(iter(entry.value)).owning_entry.draw_kind
             return draw_kind and kind in draw_kind
 
-        part_definitions = [
-            entry for entry in repacked if entry.base._metatype == "PartDefinition"
-        ]
         elk_nodes = {}
-        parts = part_diagram.add_child(Node(
-            labels=[
-                Label(text="Parts"),
-            ],
-            layoutOptions=NODE_LAYOUT_OPTIONS,
-        ))
-        for entry in part_definitions:
-            for sequence in entry.value:
-                parent_node = parts
+
+        # part_definitions = [
+        #     entry for entry in repacked if entry.base._metatype == "PartDefinition"
+        # ]
+        # TODO: Figure out if we need to do the part definitions
+        # parts = part_diagram.add_child(Node(
+        #     labels=[
+        #         Label(text="Parts"),
+        #     ],
+        #     layoutOptions=NODE_LAYOUT_OPTIONS,
+        # ))
+        # for entry in part_definitions:
+        #     for sequence in entry.value:
+        #         parent_node = parts
+        #         for instance in sequence.instances:
+        #             elk_node = elk_nodes.get(instance)
+        #             if elk_node is None:
+        #                 elk_nodes[instance] = elk_node = parent_node.add_child(
+        #                     Node(
+        #                         labels=[
+        #                             # TODO: Find out how to represent type
+        #                             Label(text=f"`{entry.base.label}`"),
+        #                             Label(text=instance.name),
+        #                         ],
+        #                         layoutOptions=NODE_LAYOUT_OPTIONS,
+        #                     ),
+        #                 )
+        #             parent_node = elk_node
+
+        nodes = [entry for entry in repacked if is_draw_kind(entry, "Rectangle")]
+        for interpreted_node in nodes:
+            for sequence in interpreted_node.value:
+                # parent_instance, *remaining_instances = sequence.instances
+                # parent_node = elk_nodes[parent_instance]
+                # for instance in remaining_instances:
+                parent_node = part_diagram
                 for instance in sequence.instances:
                     elk_node = elk_nodes.get(instance)
                     if elk_node is None:
@@ -122,30 +156,12 @@ class M0Viewer(ipyw.Box, BaseWidget):
                             Node(
                                 labels=[
                                     # TODO: Find out how to represent type
-                                    Label(text=f"`{entry.base.label}`"),
+                                    # Label(text=f"`{interpreted_node.base.label}`"),
                                     Label(text=instance.name),
                                 ],
                                 layoutOptions=NODE_LAYOUT_OPTIONS,
                             ),
                         )
-                    parent_node = elk_node
-
-        nodes = [entry for entry in repacked if is_draw_kind(entry, "Rectangle")]
-        for interpreted_node in nodes:
-            for sequence in interpreted_node.value:
-                parent_instance, *remaining_instances = sequence.instances
-                parent_node = elk_nodes[parent_instance]
-                for instance in remaining_instances:
-                    elk_node = parent_node.add_child(
-                        Node(
-                            labels=[
-                                # TODO: Find out how to represent type
-                                Label(text=f"`{interpreted_node.base.label}`"),
-                                Label(text=instance.name),
-                            ],
-                            layoutOptions=NODE_LAYOUT_OPTIONS,
-                        ),
-                    )
                     parent_node = elk_node
 
         ports = [entry.value for entry in repacked if is_draw_kind(entry, "Port")]
