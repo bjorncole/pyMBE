@@ -1,5 +1,4 @@
 import json
-
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
@@ -7,7 +6,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Set, Tuple, Union
 from uuid import uuid4
 from warnings import warn
-
 
 OWNER_KEYS = ("owner", "owningRelatedElement", "owningRelationship")
 VALUE_METATYPES = ("AttributeDefinition", "AttributeUsage", "DataType")
@@ -21,8 +19,7 @@ class ListOfNamedItems(list):
         item_map = {
             item._data["name"]: item
             for item in self
-            if isinstance(item, Element)
-            and "name" in item._data
+            if isinstance(item, Element) and "name" in item._data
         }
         if key in item_map:
             return item_map[key]
@@ -42,9 +39,7 @@ class Naming(Enum):
 
         # TODO: Check with Bjorn, he wanted: (a)-[r:RELTYPE {name: a.name + '<->' + b.name}]->(b)
         if element._is_relationship:
-            return (
-                f"<{element._metatype}({element.source} ←→ {element.target})>"
-            )
+            return f"<{element._metatype}({element.source} ←→ {element.target})>"
 
         data = element._data
         if naming == Naming.qualified:
@@ -104,10 +99,7 @@ class Model:
     ) -> "Model":
         """Make a Model from an iterable container of elements"""
         return Model(
-            elements={
-                element["@id"]: element
-                for element in elements
-            },
+            elements={element["@id"]: element for element in elements},
             **kwargs,
         )
 
@@ -139,6 +131,7 @@ class Model:
     def _add_labels(self):
         """Attempts to add a label to the elements"""
         from .label import get_label
+
         for element in self.elements.values():
             label = get_label(element=element)
             if label:
@@ -149,31 +142,19 @@ class Model:
         elements = self.elements
 
         self.all_relationships = {
-            id_: element
-            for id_, element in elements.items()
-            if element._is_relationship
+            id_: element for id_, element in elements.items() if element._is_relationship
         }
         self.all_non_relationships = {
-            id_: element
-            for id_, element in elements.items()
-            if not element._is_relationship
+            id_: element for id_, element in elements.items() if not element._is_relationship
         }
 
-        owned = [
-            element
-            for element in elements.values()
-            if element.get_owner() is None
-        ]
+        owned = [element for element in elements.values() if element.get_owner() is None]
         self.ownedElement = ListOfNamedItems(
-            element
-            for element in owned
-            if not element._is_relationship
+            element for element in owned if not element._is_relationship
         )
 
         self.ownedRelationship = [
-            relationship
-            for relationship in owned
-            if relationship._is_relationship
+            relationship for relationship in owned if relationship._is_relationship
         ]
 
         by_metatype = defaultdict(list)
@@ -201,9 +182,7 @@ class Model:
                 endpts1, endpts2 = endpoints[key1], endpoints[key2]
                 for endpt1 in endpts1:
                     for endpt2 in endpts2:
-                        endpt1._derived[f"{direction}{metatype}"] += [
-                            {"@id": endpt2._data["@id"]}
-                        ]
+                        endpt1._derived[f"{direction}{metatype}"] += [{"@id": endpt2._data["@id"]}]
 
 
 @dataclass(repr=False)
@@ -239,13 +218,12 @@ class Element:
         return Instance(*args, **kwargs, element=self)
 
     def __dir__(self):
-        return sorted(set(
-            list(super().__dir__()) + [
-                key
-                for key in [*self._data, *self._derived]
-                if key.isidentifier()
-            ]
-        ))
+        return sorted(
+            set(
+                list(super().__dir__())
+                + [key for key in [*self._data, *self._derived] if key.isidentifier()]
+            )
+        )
 
     def __eq__(self, other):
         if isinstance(other, str):
@@ -275,10 +253,7 @@ class Element:
         if isinstance(item, (dict, str)):
             item = self.__safe_dereference(item)
         elif isinstance(item, (list, tuple, set)):
-            items = [
-                self.__safe_dereference(subitem)
-                for subitem in item
-            ]
+            items = [self.__safe_dereference(subitem) for subitem in item]
             return type(item)(items)
         return item
 
@@ -295,9 +270,9 @@ class Element:
     @property
     def relationships(self) -> Dict[str, Any]:
         return {
-            key: self[key] for key in self._derived
-            if key.startswith("through") or
-            key.startswith("reverse")
+            key: self[key]
+            for key in self._derived
+            if key.startswith("through") or key.startswith("reverse")
         }
 
     def get(self, key: str, default: Any = None) -> Any:

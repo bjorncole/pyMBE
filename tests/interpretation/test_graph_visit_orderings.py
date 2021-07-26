@@ -4,7 +4,6 @@ from pymbe.interpretation.interp_playbooks import (
 )
 from pymbe.interpretation.results import *
 
-
 ROCKET_BUILDING = "Model::Kerbal::Rocket Building::"
 PARTS_LIBRARY = "Model::Kerbal::Parts Library::"
 
@@ -20,31 +19,29 @@ def test_feature_sequence_templates1(kerbal_client, kerbal_lpg, kerbal_stable_na
     assert len(seq_templates) == 39
 
     solid_booster_id = qualified_name_to_id[f"{ROCKET_BUILDING}Solid Booster <<PartDefinition>>"]
-    boosters_id = qualified_name_to_id[f"{ROCKET_BUILDING}Solid Stage::boosters: Solid Booster <<PartUsage>>"]
+    boosters_id = qualified_name_to_id[
+        f"{ROCKET_BUILDING}Solid Stage::boosters: Solid Booster <<PartUsage>>"
+    ]
     liquid_stage_id = qualified_name_to_id[f"{ROCKET_BUILDING}Liquid Stage <<PartDefinition>>"]
-    engines_id = qualified_name_to_id[f"{ROCKET_BUILDING}Liquid Stage::engines: Liquid Engine <<PartUsage>>"]
-    tanks_id = qualified_name_to_id[f"{ROCKET_BUILDING}Liquid Stage::tanks: Fuel Tank Section <<PartUsage>>"]
-    krp_mass_id = qualified_name_to_id[f"{ROCKET_BUILDING}Kerbal Rocket Part::Mass: Real <<AttributeUsage>>"]
+    engines_id = qualified_name_to_id[
+        f"{ROCKET_BUILDING}Liquid Stage::engines: Liquid Engine <<PartUsage>>"
+    ]
+    tanks_id = qualified_name_to_id[
+        f"{ROCKET_BUILDING}Liquid Stage::tanks: Fuel Tank Section <<PartUsage>>"
+    ]
+    krp_mass_id = qualified_name_to_id[
+        f"{ROCKET_BUILDING}Kerbal Rocket Part::Mass: Real <<AttributeUsage>>"
+    ]
 
     print(pprint_double_id_list(seq_templates, kerbal_lpg.model))
 
-    assert [
-        liquid_stage_id,
-        engines_id] in seq_templates
+    assert [liquid_stage_id, engines_id] in seq_templates
 
-    assert(any([krp_mass_id in seq for seq in seq_templates]))
+    assert any([krp_mass_id in seq for seq in seq_templates])
 
-    assert (any([
-        (engines_id in seq) and
-        (liquid_stage_id in seq)
-        for seq in seq_templates])
-    )
+    assert any([(engines_id in seq) and (liquid_stage_id in seq) for seq in seq_templates])
 
-    assert (any([
-        (tanks_id in seq) and
-        (liquid_stage_id in seq)
-        for seq in seq_templates])
-    )
+    assert any([(tanks_id in seq) and (liquid_stage_id in seq) for seq in seq_templates])
 
 
 def test_feature_sequence_templates2(kerbal_lpg, kerbal_stable_names):
@@ -54,20 +51,20 @@ def test_feature_sequence_templates2(kerbal_lpg, kerbal_stable_names):
 
     coupler_usage_id = qualified_name_to_id[
         f"{ROCKET_BUILDING}Rocket::stages: Rocket Stage::Coupler to "
-        f"Carrying Stage: Coupler <<PartUsage>>"]
+        f"Carrying Stage: Coupler <<PartUsage>>"
+    ]
     rocket_id = qualified_name_to_id[f"{ROCKET_BUILDING}Rocket <<PartDefinition>>"]
-    stages_feat = qualified_name_to_id[f"{ROCKET_BUILDING}Rocket::stages: Rocket Stage <<PartUsage>>"]
+    stages_feat = qualified_name_to_id[
+        f"{ROCKET_BUILDING}Rocket::stages: Rocket Stage <<PartUsage>>"
+    ]
     sep_force_id = qualified_name_to_id[
         f"{ROCKET_BUILDING}Rocket::stages: Rocket Stage::Coupler to Carrying Stage: "
-        f"Coupler::Separation Force: Real <<AttributeUsage>>"]
+        f"Coupler::Separation Force: Real <<AttributeUsage>>"
+    ]
 
     print(pprint_double_id_list(seq_templates, kerbal_lpg.model))
 
-    assert [
-        rocket_id,
-        stages_feat,
-        coupler_usage_id,
-        sep_force_id] in seq_templates
+    assert [rocket_id, stages_feat, coupler_usage_id, sep_force_id] in seq_templates
 
 
 def test_feature_sequence_templates3(kerbal_lpg, kerbal_stable_names):
@@ -77,18 +74,17 @@ def test_feature_sequence_templates3(kerbal_lpg, kerbal_stable_names):
 
     coupler_usage_id = qualified_name_to_id[
         f"{ROCKET_BUILDING}Rocket::stages: Rocket Stage::Coupler to "
-        f"Carrying Stage: Coupler <<PartUsage>>"]
+        f"Carrying Stage: Coupler <<PartUsage>>"
+    ]
     rocket_id = qualified_name_to_id[f"{ROCKET_BUILDING}Rocket <<PartDefinition>>"]
     sep_force_id = qualified_name_to_id[
         f"{ROCKET_BUILDING}Rocket::stages: Rocket Stage::Coupler to Carrying Stage: "
-        f"Coupler::Separation Force: Real <<AttributeUsage>>"]
+        f"Coupler::Separation Force: Real <<AttributeUsage>>"
+    ]
 
     print(pprint_double_id_list(seq_templates, kerbal_lpg.model))
 
-    assert [
-        rocket_id,
-        coupler_usage_id,
-        sep_force_id] not in seq_templates
+    assert [rocket_id, coupler_usage_id, sep_force_id] not in seq_templates
 
 
 def test_feature_sequence_templates4(simple_parts_lpg, simple_parts_stable_names):
@@ -97,29 +93,33 @@ def test_feature_sequence_templates4(simple_parts_lpg, simple_parts_stable_names
     seq_templates = build_sequence_templates(simple_parts_lpg)
 
     power_group_id = qualified_name_to_id[f"{SIMPLE_MODEL}Power Group: Part <<PartUsage>>"]
-    power_user_part_id = qualified_name_to_id[f"{SIMPLE_MODEL}Power Group: Part::Power User: Part <<PartUsage>>"]
-    power_in_port_id = qualified_name_to_id[f"{SIMPLE_MODEL}Power Group: Part::Power User: "
-                                            f"Part::Power In: Port <<PortUsage>>"]
+    power_user_part_id = qualified_name_to_id[
+        f"{SIMPLE_MODEL}Power Group: Part::Power User: Part <<PartUsage>>"
+    ]
+    power_in_port_id = qualified_name_to_id[
+        f"{SIMPLE_MODEL}Power Group: Part::Power User: " f"Part::Power In: Port <<PortUsage>>"
+    ]
 
     print(seq_templates)
 
-    assert [
-        power_group_id,
-        power_user_part_id,
-        power_in_port_id] in seq_templates
+    assert [power_group_id, power_user_part_id, power_in_port_id] in seq_templates
 
 
 def test_expression_sequence_templates(kerbal_lpg, kerbal_stable_names):
     *_, qualified_name_to_id = kerbal_stable_names
 
-    top_plus = qualified_name_to_id[f'{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ (sum (engines.Mass'
-                                    f' (FRE.engines)), sum (tanks.Full Mass (FRE.tanks))) => '
-                                    f'$result <<OperatorExpression>>']
+    top_plus = qualified_name_to_id[
+        f"{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ (sum (engines.Mass"
+        f" (FRE.engines)), sum (tanks.Full Mass (FRE.tanks))) => "
+        f"$result <<OperatorExpression>>"
+    ]
 
-    fre_1_result = qualified_name_to_id[f'{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ (sum (engines.Mass ' +
-                                 f'(FRE.engines)), sum (tanks.Full Mass (FRE.tanks))) => $result::sum ' +
-                                 f'(tanks.Full Mass (FRE.tanks)) => $result::tanks.Full Mass (FRE.tanks) => ' +
-                                 f'$result::FRE.Full Mass::FRE.Full Mass <<Feature>>']
+    fre_1_result = qualified_name_to_id[
+        f"{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ (sum (engines.Mass "
+        + f"(FRE.engines)), sum (tanks.Full Mass (FRE.tanks))) => $result::sum "
+        + f"(tanks.Full Mass (FRE.tanks)) => $result::tanks.Full Mass (FRE.tanks) => "
+        + f"$result::FRE.Full Mass::FRE.Full Mass <<Feature>>"
+    ]
 
     expr_sequences = build_expression_sequence_templates(lpg=kerbal_lpg)
     top_plus_paths = 0

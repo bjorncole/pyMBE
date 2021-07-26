@@ -10,7 +10,7 @@ __all__ = (
 )
 
 
-from .model import Model, Instance
+from .model import Instance, Model
 from .widget.client import SysML2ClientWidget
 from .widget.containment import ContainmentTree
 from .widget.diagram import M0Viewer, M1Viewer

@@ -1,21 +1,19 @@
 import warnings
 
+import networkx as nx
 import pytest
 
-import networkx as nx
-
+from pymbe.graph import SysML2LabeledPropertyGraph
 from tests.conftest import kerbal_model
 
-from pymbe.graph import SysML2LabeledPropertyGraph
-
-
 SEED_NODE_NAMES = ("FL-T100 Fuel Tank", """RT-5 "Flea" Solid Fuel Booster""")
+
 
 def test_lpg(kerbal_model):
     lpg = SysML2LabeledPropertyGraph(model=kerbal_model)
     assert len(lpg.nodes) == len(kerbal_model.all_non_relationships)
     assert len(lpg.edges) == len(kerbal_model.all_relationships)
-    
+
     banded = lpg.get_projection("Banded")
     assert len(banded.nodes) > 0
     assert len(banded.nodes) < len(lpg.nodes)
@@ -25,11 +23,7 @@ def test_lpg(kerbal_model):
 
 def test_spanning_graph(kerbal_model):
     lpg = SysML2LabeledPropertyGraph(model=kerbal_model)
-    nodes = [
-        id_
-        for id_, data in lpg.nodes.items()
-        if data.get("name") in SEED_NODE_NAMES
-    ]
+    nodes = [id_ for id_, data in lpg.nodes.items() if data.get("name") in SEED_NODE_NAMES]
     small_directed = lpg.get_spanning_graph(
         graph=lpg.graph,
         seeds=nodes,
@@ -89,9 +83,7 @@ def test_spanning_graph(kerbal_model):
 def test_path_graph(kerbal_model):
     lpg = SysML2LabeledPropertyGraph(model=kerbal_model)
     source, target = [
-        id_
-        for id_, data in lpg.nodes.items()
-        if data.get("name") in SEED_NODE_NAMES
+        id_ for id_, data in lpg.nodes.items() if data.get("name") in SEED_NODE_NAMES
     ]
     path_graph = lpg.get_path_graph(
         lpg.graph,

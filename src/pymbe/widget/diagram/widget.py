@@ -61,9 +61,9 @@ class M1Viewer(ipyw.Box, BaseWidget):
     @trt.validate("children")
     def _validate_children(self, proposal: trt.Bunch):
         children = proposal.value
-        if children:
-            return children
-        return [self.elk_diagram]
+        if not children:
+            children = [self.elk_diagram]
+        return children
 
     def update(self, change: trt.Bunch):
         self.drawn_graph = nx.Graph()

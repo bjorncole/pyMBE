@@ -1,10 +1,13 @@
 # a set of queries to run on Labeled Property Graphs
-import networkx as nx
 import math
+from typing import List
+
+import networkx as nx
 
 from ..graph.lpg import SysML2LabeledPropertyGraph
-from ..interpretation.results import *
-from .metamodel_navigator import *
+from ..label import get_label
+from ..model import Element
+from .metamodel_navigator import feature_multiplicity
 
 
 def roll_up_lower_multiplicity(
@@ -57,10 +60,12 @@ def roll_up_multiplicity(
             )
             for part_path in part_paths:
                 # TODO: check that the path actually exists
-                corrected_mult = math.prod([
-                    feature_multiplicity(model.elements[element_id], bound)
-                    for element_id in part_path
-                ])
+                corrected_mult = math.prod(
+                    [
+                        feature_multiplicity(model.elements[element_id], bound)
+                        for element_id in part_path
+                    ]
+                )
                 total_mult += corrected_mult
         except nx.NetworkXNoPath:
             print("Found no path when rolling up multiplicity.")
@@ -98,7 +103,7 @@ def roll_up_multiplicity_for_type(
                         lpg,
                         all_elements[redef_id],
                         bound,
-                )
+                    )
         return running_total
     else:
         return 0
@@ -111,8 +116,8 @@ def get_types_for_feature(
     ptg = lpg.get_projection("Part Typing")
     rdg = lpg.get_projection("Redefinition and Subsetting")
 
-    # approach is to see source and target ends of feature typing and then see if there is a redefinition
-    # path back to the requested feature
+    # approach is to see source and target ends of feature typing and then see
+    # if there is a redefinition path back to the requested feature
 
     types = []
     if feature_id in list(ptg.nodes):
@@ -135,7 +140,8 @@ def get_features_typed_by_type(
     ptg = lpg.get_projection("Part Typing")
     rdg = lpg.get_projection("Redefinition and Subsetting")
 
-    # approach is to look at clusters of redefinitions and see if the most redefined connects to the type
+    # approach is to look at clusters of redefinitions and see if the most redefined
+    # connects to the type
 
     features = []
 

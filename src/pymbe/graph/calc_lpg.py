@@ -10,7 +10,6 @@ from ..interpretation.m0_operators import (
 )
 from .lpg import SysML2LabeledPropertyGraph
 
-
 COLLECTABLE_EXPRESSIONS = ("Expression", "FeatureReferenceExpression")
 
 
@@ -19,7 +18,7 @@ class CalculationGroup:
 
     def __init__(self, eig: nx.MultiDiGraph, instance_dict: dict, calculation_list: list):
         self.graph = eig
-        self.instance_dict=instance_dict
+        self.instance_dict = instance_dict
 
         self.solved_nodes = []
         self.unsolved_nodes = list(eig.nodes)
@@ -29,8 +28,8 @@ class CalculationGroup:
         self.calculation_log = []
 
     def solve_graph(self, lpg: SysML2LabeledPropertyGraph):
-        # evaluating the expression tree is a reverse-order breadth-first search (cover all children of a given
-        # node and then move up to that node)
+        # evaluating the expression tree is a reverse-order breadth-first search
+        # (cover all children of a given node and then move up to that node)
         elements = lpg.model.elements
         for step in self.calculation_list:
             src, tgt, type_ = step
@@ -59,7 +58,9 @@ class CalculationGroup:
                     for index, seq in enumerate(source_instances):
                         evaluate_and_apply_literal(seq[-1], target_instances[index][-1])
 
-                        self.calculation_log.append(f"[Literal] {seq} is being assigned to {target_instances[index]}")
+                        self.calculation_log.append(
+                            f"[Literal] {seq} is being assigned to {target_instances[index]}"
+                        )
 
                 elif src_metatype == "FeatureReferenceExpression":
                     for m0_obj in source_instances:
@@ -79,7 +80,9 @@ class CalculationGroup:
                         for member in src_data["member"]:
                             if lpg.nodes[member["@id"]]["@type"] in COLLECTABLE_EXPRESSIONS:
                                 collect_sub_expressions.append(lpg.nodes[member["@id"]])
-                                collect_sub_expression_results.append(lpg.nodes[lpg.nodes[member["@id"]]["result"]["@id"]])
+                                collect_sub_expression_results.append(
+                                    lpg.nodes[lpg.nodes[member["@id"]]["result"]["@id"]]
+                                )
 
                         for member in src_data["input"]:
                             collect_sub_inputs.append(lpg.nodes[member["@id"]])
@@ -91,7 +94,9 @@ class CalculationGroup:
                                 if input_inst[0] == m0_operator_seq[0]:
                                     input_point = input_inst[-1]
                             path_point = None
-                            input_instances = self.instance_dict[collect_sub_expression_results[1]["@id"]]
+                            input_instances = self.instance_dict[
+                                collect_sub_expression_results[1]["@id"]
+                            ]
                             for input_inst in input_instances:
                                 if input_inst[0] == m0_operator_seq[0]:
                                     path_point = input_inst[-1]
@@ -174,11 +179,11 @@ class CalculationGroup:
 
                     # Base sequence is there to filter as appropriate to the expression scope
 
-                    # note that the PathStepExpression has two arguments in order, which are the steps in the path
-                    # expressed as FeatureReferenceExpressions
+                    # note that the PathStepExpression has two arguments in order, which are the
+                    # steps in the path expressed as FeatureReferenceExpressions
 
-                    # the input parameter is now expected to deliver instances of the start of the path in the
-                    # PathStepExpression
+                    # the input parameter is now expected to deliver instances of the start of the
+                    # path in the PathStepExpression
 
                     for index, m0_operator_seq in enumerate(source_instances):
                         input_point = None
@@ -192,8 +197,10 @@ class CalculationGroup:
                             if input_inst[0] == m0_operator_seq[0]:
                                 path_point = input_inst[-1]
 
-                        self.calculation_log.append(f"[PSE] Calling collect with base = {m0_operator_seq[0]}\n" +
-                            f", collection input {input_point}\n, and path input {path_point}")
+                        self.calculation_log.append(
+                            f"[PSE] Calling collect with base = {m0_operator_seq[0]}\n"
+                            + f", collection input {input_point}\n, and path input {path_point}"
+                        )
 
                         if path_point is None or path_point.value is None:
                             print("Path point value is empty! " + str(path_point))
@@ -215,7 +222,9 @@ class CalculationGroup:
         """
         pass
 
-        # Look through the calculation list and the relevant sequences, use this to build needed alternative
-        # OpenMDAO problems - turn over passing of variables to OpenMDAO - ignore the Assignment / Value Binding steps
+        # Look through the calculation list and the relevant sequences, use this to build needed
+        # alternative OpenMDAO problems - turn over passing of variables to OpenMDAO - ignore the
+        # Assignment / Value Binding steps
 
-        # Once problems are built, execute and bring results back to input / result parameter sequences as needed
+        # Once problems are built, execute and bring results back to input / result parameter
+        # sequences as needed
