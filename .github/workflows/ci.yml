@@ -82,7 +82,6 @@ jobs:
           environment-file: .github/environment.yml
 
       - name: lint
-        continue-on-error: true
         shell: bash -l {0}
         run: |
           anaconda-project run setup

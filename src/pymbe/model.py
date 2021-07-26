@@ -1,5 +1,4 @@
 import json
-
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
@@ -7,7 +6,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Set, Tuple, Union
 from uuid import uuid4
 from warnings import warn
-
 
 OWNER_KEYS = ("owner", "owningRelatedElement", "owningRelationship")
 VALUE_METATYPES = ("AttributeDefinition", "AttributeUsage", "DataType")
@@ -21,8 +19,7 @@ class ListOfNamedItems(list):
         item_map = {
             item._data["name"]: item
             for item in self
-            if isinstance(item, Element)
-            and "name" in item._data
+            if isinstance(item, Element) and "name" in item._data
         }
         if key in item_map:
             return item_map[key]
@@ -32,36 +29,33 @@ class ListOfNamedItems(list):
 class Naming(Enum):
     """An enumeration for how to repr SysML elements"""
 
-    identifier = "IDENTIFIER"
-    long = "LONG"
-    qualified = "QUALIFIED"
-    short = "SHORT"
+    IDENTIFIER = "identifier"
+    LONG = "long"
+    QUALIFIED = "qualified"
+    SHORT = "short"
 
     def get_name(self, element: "Element") -> str:
-        naming = self._value_
+        naming = self._value_  # pylint: disable=no-member
 
         # TODO: Check with Bjorn, he wanted: (a)-[r:RELTYPE {name: a.name + '<->' + b.name}]->(b)
         if element._is_relationship:
-            return (
-                f"<{element._metatype}({element.source} ←→ {element.target})>"
-            )
+            return f"<{element._metatype}({element.source} ←→ {element.target})>"
 
         data = element._data
-        if naming == Naming.qualified:
+        if naming == Naming.QUALIFIED:
             return f"""<{data["qualifiedName"]}>"""
 
-        if naming == Naming.identifier:
+        if naming == Naming.IDENTIFIER:
             return f"""<{data["@id"]}>"""
 
         name = data.get("name") or data["@id"]
-        if naming == Naming.short:
+        if naming == Naming.SHORT:
             return f"<{name}>"
-        else:
-            return f"""<{name} «{data["@type"]}»>"""
+        return f"""<{name} «{data["@type"]}»>"""
 
 
 @dataclass(repr=False)
-class Model:
+class Model:  # pylint: disable=too-many-instance-attributes
     """A SysML v2 Model"""
 
     # TODO: Look into making elements immutable (e.g., frozen dict)
@@ -72,13 +66,19 @@ class Model:
     all_relationships: Dict[str, "Element"] = field(default_factory=dict)
     all_non_relationships: Dict[str, "Element"] = field(default_factory=dict)
 
-    ownedElement: ListOfNamedItems = field(default_factory=ListOfNamedItems)
-    ownedMetatype: Dict[str, List["Element"]] = field(default_factory=dict)
-    ownedRelationship: List["Element"] = field(default_factory=list)
+    ownedElement: ListOfNamedItems = field(  # pylint: disable=invalid-name
+        default_factory=ListOfNamedItems
+    )
+    ownedMetatype: Dict[str, List["Element"]] = field(  # pylint: disable=invalid-name
+        default_factory=dict
+    )
+    ownedRelationship: List["Element"] = field(  # pylint: disable=invalid-name
+        default_factory=list
+    )
 
     source: Any = None
 
-    _naming: Naming = Naming.long  # The scheme to use for repr'ing the elements
+    _naming: Naming = Naming.LONG  # The scheme to use for repr'ing the elements
 
     def __post_init__(self):
         self.elements = {
@@ -104,10 +104,7 @@ class Model:
     ) -> "Model":
         """Make a Model from an iterable container of elements"""
         return Model(
-            elements={
-                element["@id"]: element
-                for element in elements
-            },
+            elements={element["@id"]: element for element in elements},
             **kwargs,
         )
 
@@ -138,7 +135,8 @@ class Model:
 
     def _add_labels(self):
         """Attempts to add a label to the elements"""
-        from .label import get_label
+        from .label import get_label  # pylint: disable=import-outside-toplevel
+
         for element in self.elements.values():
             label = get_label(element=element)
             if label:
@@ -149,31 +147,19 @@ class Model:
         elements = self.elements
 
         self.all_relationships = {
-            id_: element
-            for id_, element in elements.items()
-            if element._is_relationship
+            id_: element for id_, element in elements.items() if element._is_relationship
         }
         self.all_non_relationships = {
-            id_: element
-            for id_, element in elements.items()
-            if not element._is_relationship
+            id_: element for id_, element in elements.items() if not element._is_relationship
         }
 
-        owned = [
-            element
-            for element in elements.values()
-            if element.get_owner() is None
-        ]
+        owned = [element for element in elements.values() if element.get_owner() is None]
         self.ownedElement = ListOfNamedItems(
-            element
-            for element in owned
-            if not element._is_relationship
+            element for element in owned if not element._is_relationship
         )
 
         self.ownedRelationship = [
-            relationship
-            for relationship in owned
-            if relationship._is_relationship
+            relationship for relationship in owned if relationship._is_relationship
         ]
 
         by_metatype = defaultdict(list)
@@ -201,9 +187,7 @@ class Model:
                 endpts1, endpts2 = endpoints[key1], endpoints[key2]
                 for endpt1 in endpts1:
                     for endpt2 in endpts2:
-                        endpt1._derived[f"{direction}{metatype}"] += [
-                            {"@id": endpt2._data["@id"]}
-                        ]
+                        endpt1._derived[f"{direction}{metatype}"] += [{"@id": endpt2._data["@id"]}]
 
 
 @dataclass(repr=False)
@@ -216,7 +200,8 @@ class Element:
     _id: str = field(default_factory=lambda: str(uuid4()))
     _metatype: str = "Element"
     _derived: Dict[str, List] = field(default_factory=lambda: defaultdict(list))
-    _instances: List["Instance"] = field(default_factory=list)
+    # TODO: replace this with instances sequences
+    # _instances: List["Instance"] = field(default_factory=list)
     _is_abstract: bool = False
     _is_relationship: bool = False
 
@@ -230,18 +215,20 @@ class Element:
                 self._data[key] = ListOfNamedItems(items)
 
     def __call__(self, *args, **kwargs):
+        element = kwargs.pop("element", None)
+        if element:
+            warn("When instantiating an element, you cannot pass it element.")
         if self._metatype in VALUE_METATYPES:
             return ValueHolder(*args, **kwargs, element=self)
         return Instance(*args, **kwargs, element=self)
 
     def __dir__(self):
-        return sorted(set(
-            list(super().__dir__()) + [
-                key
-                for key in [*self._data, *self._derived]
-                if key.isidentifier()
-            ]
-        ))
+        return sorted(
+            set(
+                list(super().__dir__())
+                + [key for key in [*self._data, *self._derived] if key.isidentifier()]
+            )
+        )
 
     def __eq__(self, other):
         if isinstance(other, str):
@@ -254,8 +241,8 @@ class Element:
     def __getattr__(self, key: str):
         try:
             return self[key]
-        except KeyError:
-            raise AttributeError(f"Cannot find {key}")
+        except KeyError as exc:
+            raise AttributeError(f"Cannot find {key}") from exc
 
     def __getitem__(self, key: str):
         found = False
@@ -271,10 +258,7 @@ class Element:
         if isinstance(item, (dict, str)):
             item = self.__safe_dereference(item)
         elif isinstance(item, (list, tuple, set)):
-            items = [
-                self.__safe_dereference(subitem)
-                for subitem in item
-            ]
+            items = [self.__safe_dereference(subitem) for subitem in item]
             return type(item)(items)
         return item
 
@@ -291,9 +275,9 @@ class Element:
     @property
     def relationships(self) -> Dict[str, Any]:
         return {
-            key: self[key] for key in self._derived
-            if key.startswith("through") or
-            key.startswith("reverse")
+            key: self[key]
+            for key in self._derived
+            if key.startswith("through") or key.startswith("reverse")
         }
 
     def get(self, key: str, default: Any = None) -> Any:
@@ -335,22 +319,32 @@ class Element:
 @dataclass
 class Instance:
     """
-    An M0 instantiation of an M1 element.
+    An M0 instantiation in the M0 universe (i.e., real things) interpreted from an M1 element.
 
     Sequences of instances are intended to follow the mathematical base semantics of SysML v2.
     """
 
     element: Element
+    number: int = None
     name: str = ""
 
+    __instances = defaultdict(list)
+
     def __post_init__(self):
-        element = self.element
-        if self not in element._instances:
-            element._instances += [self]
+        siblings = self.__instances[self.element]
+        if self.number is None:
+            self.number = len(siblings) + 1
+        siblings += [self]
         if not self.name:
-            id_ = element._instances.index(self) + 1
+            element = self.element
             name = element.label or element._id
-            self.name = f"{name}#{id_}"
+            self.name = f"{name}#{self.number}"
+
+    def __repr__(self):
+        return self.name
+
+    def __hash__(self):
+        return hash(id(self))
 
 
 @dataclass

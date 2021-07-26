@@ -1,41 +1,33 @@
 import re
 from datetime import timezone
-from dateutil import parser
 from functools import lru_cache
 from pathlib import Path
 from typing import Dict, List, Tuple, Union
 from warnings import warn
 
-import ipywidgets as ipyw
 import requests
 import sysml_v2_api_client as sysml2
 import traitlets as trt
+from dateutil import parser
+from ipywidgets.widgets.trait_types import TypedTuple
 
 from .label import get_label
 from .model import Model
 
-
 TIMEZONES = {
     "CEST": "UTC+2",
-
     "EDT": "UTC-4",
     "EST": "UTC-5",
-
     "CDT": "UTC-5",
     "CST": "UTC-6",
-
     "MDT": "UTC-6",
     "MST": "UTC-7",
-
     "PDT": "UTC-7",
     "PST": "UTC-8",
-
     "AKDT": "UTC-8",
     "AKST": "UTC-9",
-
     "HDT": "UTC-9",
     "HST": "UTC-10",
-
     "AoE": "UTC-12",
     "SST": "UTC-11",
     "AST": "UTC-4",
@@ -78,7 +70,7 @@ class SysML2Client(trt.HasTraits):
     _projects_api: sysml2.ProjectApi = trt.Instance(sysml2.ProjectApi)
 
     folder_path: Path = trt.Instance(Path, allow_none=True)
-    json_files: Tuple[Path] = ipyw.trait_types.TypedTuple(trt.Instance(Path))
+    json_files: Tuple[Path] = TypedTuple(trt.Instance(Path))
     json_file: Path = trt.Instance(Path, allow_none=True)
 
     selected_project: str = trt.Unicode(allow_none=True)
@@ -133,10 +125,7 @@ class SysML2Client(trt.HasTraits):
                 name=" ".join(project.name.split()[:-6]),
             )
 
-        results = {
-            project.id: process_project_safely(project)
-            for project in projects
-        }
+        results = {project.id: process_project_safely(project) for project in projects}
 
         return {
             project_id: project_data
@@ -199,11 +188,11 @@ class SysML2Client(trt.HasTraits):
                 "records at a time!  True pagination is not supported yet."
             )
         return (
-            f"{self.host}/"
-            f"projects/{self.selected_project}/"
-            f"commits/{self.selected_commit}/"
-            f"elements"
-        ) + f"?page[size]={self.page_size}" if self.page_size else ""
+            (f"{self.host}/projects/{self.selected_project}/commits/{self.selected_commit}")
+            + f"/elements?page[size]={self.page_size}"
+            if self.page_size
+            else ""
+        )
 
     @lru_cache
     def _retrieve_data(self, url: str) -> List[Dict]:
@@ -214,8 +203,7 @@ class SysML2Client(trt.HasTraits):
 
             if not response.ok:
                 raise requests.HTTPError(
-                    f"Failed to retrieve elements from '{url}', "
-                    f"reason: {response.reason}"
+                    f"Failed to retrieve elements from '{url}', " f"reason: {response.reason}"
                 )
 
             result += response.json()

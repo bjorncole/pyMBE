@@ -10,7 +10,7 @@ def feature_multiplicity(feature: Element, bound: str) -> int:
         value = multiplicity[f"{bound}Bound"]
         if bound == "lower" and value is None:
             return multiplicity.upperBound.value
-        elif value is not None:
+        if value is not None:
             return value.value
     return 1
 
@@ -22,7 +22,7 @@ def safe_feature_data(feature: Element, key: str) -> Element:
     num_types = len(values)
     if num_types == 0:
         return None
-    elif num_types == 1:
+    if num_types == 1:
         return feature._model.elements[values[0]["@id"]]
-    else:
-        raise NotImplementedError(f"No logic for multiple {key}!")
+
+    raise NotImplementedError(f"No logic for multiple {key}!")

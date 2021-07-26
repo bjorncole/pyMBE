@@ -2,7 +2,6 @@
 # Module for computing useful labels and signatures for SysML v2 elements
 from .model import Element, Model
 
-
 DEFAULT_MULTIPLICITY_LIMITS = dict(lower="0", upper="*")
 
 
@@ -16,35 +15,28 @@ def get_label(element: Element) -> str:
     types: list = data.get("type") or []
     if isinstance(types, dict):
         types = [types]
-    type_names = [
-        model.elements[type_["@id"]]._data.get("name")
-        for type_ in types
-    ]
-    type_names = [
-        str(type_name)
-        for type_name in type_names
-        if type_name
-    ]
+    type_names = [model.elements[type_["@id"]]._data.get("name") for type_ in types]
+    type_names = [str(type_name) for type_name in type_names if type_name]
     value = element._data.get("value")
     if name:
         if type_names:
             # TODO: look into using other types (if there are any)
             name += f": {type_names[0]}"
         return name
-    elif value and metatype.startswith("Literal"):
+    if value and metatype.startswith("Literal"):
         metatype = type_names[0] if type_names else metatype.replace("Literal", "Occurred Literal")
         return f"{value} «{metatype}»"
-    elif metatype == "MultiplicityRange":
+    if metatype == "MultiplicityRange":
         return get_label_for_multiplicity(multiplicity=element)
-    elif metatype.endswith("Expression"):
+    if metatype.endswith("Expression"):
         return get_label_for_expression(
             expression=element,
             type_names=type_names,
         )
-    elif "@id" in data:
+    if "@id" in data:
         return f"""{data["@id"]} «{metatype}»"""
-    else:
-        return "blank"
+
+    return "blank"
 
 
 def get_label_for_id(element_id: str, model: Model) -> str:
@@ -56,17 +48,14 @@ def get_label_for_expression(
     type_names: list,
 ) -> str:
     metatype = expression._metatype
-    all_elements = expression._model.elements
     if metatype not in (
         "Expression",
         "FeatureReferenceExpression",
         "InvocationExpression",
         "OperatorExpression",
-        "PathStepExpression"
+        "PathStepExpression",
     ):
-        raise NotImplementedError(
-            f"Cannot create M1 signature for: {metatype}"
-        )
+        raise NotImplementedError(f"Cannot create M1 signature for: {metatype}")
 
     if metatype == "FeatureReferenceExpression":
         try:
@@ -87,8 +76,7 @@ def get_label_for_expression(
 
     if "input" in expression._data:
         inputs = [
-            expression._model.elements[an_input["@id"]]
-            for an_input in expression._data["input"]
+            expression._model.elements[an_input["@id"]] for an_input in expression._data["input"]
         ]
     else:
         inputs = []

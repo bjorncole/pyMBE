@@ -1,9 +1,10 @@
 # The playbooks here build up random sets of instances from a given model using
 # "set building" step for classifiers and features
-# NOTE: This playbook is an initial attempt to randomly generate sequences to fill in sets that are interpretations of the user model
+# NOTE: This playbook is an initial attempt to randomly generate sequences to fill
+#       in sets that are interpretations of the user model
 
 import logging
-
+import traceback
 from random import randint, sample
 
 import networkx as nx
@@ -11,19 +12,15 @@ import networkx as nx
 from ..graph.lpg import SysML2LabeledPropertyGraph
 from ..label import get_label, get_label_for_id
 from ..model import Element, Model
-from ..query.query import (
-    feature_multiplicity,
-    roll_up_multiplicity_for_type,
-    safe_feature_data,
-)
+from ..query.metamodel_navigator import safe_feature_data
+from ..query.query import feature_multiplicity, roll_up_multiplicity_for_type
+from .results import pprint_dict_keys
 from .set_builders import (
     create_set_with_new_instances,
     extend_sequences_by_sampling,
     extend_sequences_with_new_expr,
     extend_sequences_with_new_value_holder,
 )
-from .results import pprint_dict_keys
-
 
 logger = logging.getLogger(__name__)
 
@@ -48,16 +45,15 @@ TYPES_FOR_ROLL_UP_MULTIPLICITY = (
 )
 
 
-def random_generator_playbook(
-        lpg: SysML2LabeledPropertyGraph,
-        name_hints: dict = None) -> dict:
+def random_generator_playbook(lpg: SysML2LabeledPropertyGraph, name_hints: dict = None) -> dict:
     """
-    Main routine to execute a playbook to randomly generate sequences as an interpretation of a SysML v2 model
+    Main routine to execute a playbook to randomly generate sequences as an interpretation
+    of a SysML v2 model
+
     :param lpg: Labeled propery graph of the M1 model
     :param name_hints: A dictionary to make labeling instances more clean
     :return: A dictionary of sequences keyed by the id of a given M1 type
     """
-
 
     all_elements = lpg.model.elements
     name_hints = name_hints or {}
@@ -90,19 +86,22 @@ def random_generator_playbook(
 
     random_generator_playbook_phase_1_singletons(lpg.model, scg, instances_dict)
 
-    # PHASE 2: Combine sets of instances into sets that are marked as more general in the user model
+    # PHASE 2: Combine sets of instances into sets that are marked as more general in the
+    #          user model
 
-    # "Roll up" the graph through a breadth-first search from the most general classifier down to the most specific
-    # and then move in reverse order from the specific (subset) to the general (superset)
+    # "Roll up" the graph through a breadth-first search from the most general classifier down to
+    # the most specific and then move in reverse order from the specific (subset) to
+    # the general (superset)
 
     random_generator_playbook_phase_2_rollup(scg, instances_dict)
 
-    # Fill in any part definitions that still don't have instances yet (because they get filtered out by the
-    # Part Definition pre-defined graph (neither typed nor subclassed))
+    # Fill in any part definitions that still don't have instances yet (because they get filtered
+    # out by the Part Definition pre-defined graph (neither typed nor subclassed))
 
     random_generator_playbook_phase_2_unconnected(lpg.model, instances_dict)
 
-    # PHASE 3: Expand the dictionaries out into feature sequences by pulling from instances developed here
+    # PHASE 3: Expand the dictionaries out into feature sequences by pulling from instances
+    #          developed here
 
     random_generator_playbook_phase_3(lpg.model, feature_sequences, instances_dict)
 
@@ -141,11 +140,7 @@ def random_generator_phase_1_multiplicities(
     :return: dictionary of multiplicities for instance generation, indexed by classifier ID
     """
     elements = lpg.model.elements
-    abstracts = [
-        node_id
-        for node_id in ptg.nodes
-        if elements[node_id]._is_abstract
-    ]
+    abstracts = [node_id for node_id in ptg.nodes if elements[node_id]._is_abstract]
 
     # find the maximal amount of types directly based on instances
     type_multiplicities = {
@@ -230,7 +225,7 @@ def random_generator_playbook_phase_2_rollup(
         for gen in bfs_list:
             new_superset = []
             # use the BFS dictionary to be assured that everything is covered
-            #update_dict = generate_superset_instances(scg, gen, visited_nodes, instances_dict)
+            # update_dict = generate_superset_instances(scg, gen, visited_nodes, instances_dict)
 
             for subset_node in bfs_dict[gen]:
                 new_superset.extend(instances_dict[subset_node])
@@ -252,8 +247,7 @@ def random_generator_playbook_phase_2_unconnected(
     finishing_list = [
         element
         for element in model.elements.values()
-        if element._metatype == "PartDefinition"
-        and element._id not in instances_dict
+        if element._metatype == "PartDefinition" and element._id not in instances_dict
     ]
     new_instances = {
         element._data["@id"]: create_set_with_new_instances(
@@ -280,13 +274,13 @@ def random_generator_playbook_phase_3(
     :param lpg: Active SysML graph
     :param ptg: Part Typing Graph projection from the LPG
     :param instances_dict: Working dictionary of interpreted sequences for the model
-    :return: (Temporarily return a trace of actions) None - side effect is addition of new instances to the instances dictionary
+    :return: (Temporarily return a trace of actions) None - side effect is addition of new
+        instances to the instances dictionary
     """
     logger.debug("Starting things up")
-    already_drawn, last_sequence = {}, []
+    already_drawn = {}
     for feature_sequence in feature_sequences:
         new_sequences = []
-        feat = None
         for index, feature_id in enumerate(feature_sequence):
             if feature_id in instances_dict and index > 0:
                 # don't repeat draws if you encounter the same feature again
@@ -305,10 +299,11 @@ def random_generator_playbook_phase_3(
                             f"{get_label_for_id(feature_id, model)}, "
                             f"id = {feature_id}"
                         )
-                    elif len(types) > 1:
-                        raise NotImplementedError("Cannot handle features with multiple types yet!")
-                    else:
-                        typ = types[0]
+                    if len(types) > 1:
+                        raise NotImplementedError(
+                            "Cannot handle features with multiple types yet!"
+                        )
+                    typ = types[0]
             else:
                 typ = feature_id
 
@@ -316,11 +311,8 @@ def random_generator_playbook_phase_3(
                 if metatype in TYPES_FOR_FEATURING:
                     # hack for usage at top
                     new_sequences = [instances_dict[typ][0]]
-                    if typ in already_drawn:
-                        pass
-                    else:
-                        new_list = [item for item in new_sequences[0]]
-                        already_drawn[typ] = new_list
+                    if typ not in already_drawn:
+                        already_drawn[typ] = list(new_sequences[0])
                 else:
                     new_sequences = instances_dict[typ]
             else:
@@ -335,8 +327,8 @@ def random_generator_playbook_phase_3(
                     remaining = [item for seq in instances_dict[typ] for item in seq]
 
                 logger.info("About to extend sequences.")
-                logger.info(f"New sequences is currently {new_sequences}")
-                logger.info(f"Already drawn is currently {already_drawn}")
+                logger.info("New sequences is currently %s", new_sequences)
+                logger.info("Already drawn is currently %s", already_drawn)
 
                 new_sequences = extend_sequences_by_sampling(
                     new_sequences,
@@ -348,7 +340,7 @@ def random_generator_playbook_phase_3(
                 )
 
                 logger.info("Sequences extended.")
-                logger.info(f"New sequences is currently {new_sequences}")
+                logger.info("New sequences is currently %s", new_sequences)
 
                 freshly_drawn = [seq[-1] for seq in new_sequences]
                 if typ in already_drawn:
@@ -356,10 +348,11 @@ def random_generator_playbook_phase_3(
                 else:
                     already_drawn[typ] = freshly_drawn
 
-                logger.info(f"Already drawn is currently {pprint_dict_keys(already_drawn, model)}")
+                logger.info(
+                    "Already drawn is currently %s", pprint_dict_keys(already_drawn, model)
+                )
 
             instances_dict[feature_id] = new_sequences
-        last_sequence = feature_sequence
 
 
 def random_generator_playbook_phase_4(
@@ -370,8 +363,8 @@ def random_generator_playbook_phase_4(
     """
     Generate interpreting sequences for Expressions in the model
 
-    :param expr_sequences: Sequences that represent the membership structure for expressions in the model and the features
-        to which expressions provide values
+    :param expr_sequences: Sequences that represent the membership structure for expressions
+        in the model and the features to which expressions provide values
     :param lpg: Active SysML graph
     :param instances_dict: Working dictionary of interpreted sequences for the model
     :return: None - side effect is addition of new instances to the instances dictionary
@@ -381,7 +374,8 @@ def random_generator_playbook_phase_4(
         new_sequences = []
         # get the featuring type of the first expression
         seq_featuring_type = safe_feature_data(all_elements[expr_seq[0]], "featuringType")
-        # FIXME: I don't know what it means for binding connectors to own these expressions, but need to figure out eventually
+        # FIXME: I don't know what it means for binding connectors to own these expressions,
+        #        but need to figure out eventually
         if seq_featuring_type["@type"] == "BindingConnector":
             continue
         new_sequences = instances_dict[seq_featuring_type["@id"]._id]
@@ -403,11 +397,7 @@ def random_generator_playbook_phase_4(
                         for type_ in types
                         if type_ and "@id" in type_
                     ]
-                    type_names = [
-                        str(type_name)
-                        for type_name in type_names
-                        if type_name
-                    ]
+                    type_names = [str(type_name) for type_name in type_names if type_name]
 
                     new_sequences = extend_sequences_with_new_expr(
                         new_sequences,
@@ -433,15 +423,13 @@ def random_generator_playbook_phase_4(
 
 
 def random_generator_playbook_phase_5(
-    lpg: SysML2LabeledPropertyGraph,
-    cug: nx.DiGraph,
-    instances_dict: dict
+    lpg: SysML2LabeledPropertyGraph, cug: nx.DiGraph, instances_dict: dict
 ):
     """
-    Generate instances for connector usages and their specializations and randomly connect ends to legal
-    sources and targets
+    Generate instances for connector usages and their specializations and randomly
+    connect ends to legal sources and targets
     :param lpg: Active SysML graph
-    :param cug: A connector usage graph projection to see where connector source and target are linked
+    :param cug: A connector usage graph projection to see where their source/targets are linked
     :param instances_dict: Working dictionary of interpreted sequences for the model
     :return: None - side effect is addition of new instances to the instances dictionary
     """
@@ -449,14 +437,14 @@ def random_generator_playbook_phase_5(
     # Generate sequences for connection and interface ends
     for node_id in list(cug.nodes):
         node = lpg.nodes[node_id]
-        if node['@type'] in ('ConnectionUsage', 'InterfaceUsage', 'SuccessionUsage'):
+        if node["@type"] in ("ConnectionUsage", "InterfaceUsage", "SuccessionUsage"):
 
             connector_ends = node["connectorEnd"]
 
-            connector_id = node['@id']
+            connector_id = node["@id"]
 
-            source_feat_id = node['source'][0]['@id']
-            target_feat_id = node['target'][0]['@id']
+            source_feat_id = node["source"][0]["@id"]
+            target_feat_id = node["target"][0]["@id"]
 
             source_sequences = instances_dict[source_feat_id]
             target_sequences = instances_dict[target_feat_id]
@@ -515,8 +503,8 @@ def build_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list:
                 try:
                     leaf_path = nx.shortest_path(connected_sub, leaf, root)
                     sorted_feature_groups.append(leaf_path)
-                except:
-                    pass
+                except (nx.NetworkXNoPath, nx.NodeNotFound):
+                    logger.debug("Could not find path: %s", traceback.format_exc())
 
         # TODO: Look into adding the topologically sorted connected subcomponents
         # sorted_feature_groups.append(
@@ -553,10 +541,7 @@ def build_expression_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list
 
     # FIXME: Need projections to work correctly
     # TODO: @Bjorn: should we remove all the implied edges? We could add a key to them
-    to_remove = [
-        edge for edge in evg.edges
-        if edge[2] == "ImpliedParameterFeedforward"
-    ]
+    to_remove = [edge for edge in evg.edges if edge[2] == "ImpliedParameterFeedforward"]
 
     for source, target, *_ in to_remove:
         evg.remove_edge(source, target)
@@ -571,8 +556,8 @@ def build_expression_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list
                 try:
                     leaf_path = nx.shortest_path(connected_sub, root, leaf)
                     sorted_feature_groups.append(leaf_path)
-                except:
-                    pass
+                except (nx.NetworkXNoPath, nx.NodeNotFound):
+                    logger.debug("Could not find path: %s", traceback.format_exc())
 
     return sorted_feature_groups
 
@@ -585,15 +570,15 @@ def validate_working_data(lpg: SysML2LabeledPropertyGraph) -> bool:
     """
     # check that all the elements of the graph are in fact proper model elements
     all_non_relations = lpg.nodes
-    for nr_key, nr in all_non_relations.items():
+    for id_, non_relation in all_non_relations.items():
         try:
-            nr_type = nr["@type"]
+            non_relation["@type"]
         except KeyError:
-            print(f"No type found in {nr}, id = '{nr_key}'")
+            print(f"No type found in {non_relation}, id = '{id_}'")
             return False
         except TypeError:
-            print(f"Expecting dict of model element data, got = {nr}")
-        if "@id" not in nr:
-            print(f"No '@id' found in {nr}, id = '{nr_key}'")
+            print(f"Expecting dict of model element data, got = {non_relation}")
+        if "@id" not in non_relation:
+            print(f"No '@id' found in {non_relation}, id = '{id_}'")
             return False
     return True

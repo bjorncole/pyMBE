@@ -1,16 +1,10 @@
 import pytest
-
 import requests
 import urllib3
 
-from tests.conftest import (
-    all_kerbal_names,
-    kerbal_client,
-    kerbal_ids_by_type,
-)
+from tests.conftest import all_kerbal_names, kerbal_client, kerbal_ids_by_type
 
-
-SYSML_SERVER_URL = "http://sysml2.intercax.com"
+SYSML_SERVER_URL = "http://sysml2-sst.intercax.com"  # Alternative: sysml2.intercax.com
 
 
 def can_connect(host: str, port: int = 9000):
@@ -22,7 +16,7 @@ def can_connect(host: str, port: int = 9000):
 
 
 def test_client_load_kerbal(kerbal_client):
-    assert len(kerbal_client.model.elements) == 389
+    assert len(kerbal_client.model.elements) == 380
 
 
 def test_client_load_find_names(all_kerbal_names):
@@ -58,7 +52,9 @@ def test_remote_connection(kerbal_client):
     client.page_size = 20
 
     client.selected_project = list(client.projects)[0]
-    client.selected_commit = client._commits_api.get_commits_by_project(client.selected_project)[0].id
+    client.selected_commit = client._commits_api.get_commits_by_project(client.selected_project)[
+        0
+    ].id
     client._download_elements()
 
     model = client.model

@@ -5,8 +5,7 @@ import traitlets as trt
 
 from ..client import SysML2Client
 
-
-__all__ = ("ElementDetails", "SysML2ClientWidget")
+__all__ = ("SysML2ClientWidget",)
 
 
 @ipyw.register
@@ -65,8 +64,8 @@ class SysML2ClientWidget(SysML2Client, ipyw.GridspecLayout):
             self.download_elements,
             self.progress_bar,
         ):
-            widget.layout.height="95%"
-            widget.layout.width="auto"
+            widget.layout.height = "95%"
+            widget.layout.width = "auto"
             widget.layout.overflow_y = "hidden"
             widget.layout.overflow_x = "hidden"
             widget.layout.min_height = None
@@ -166,13 +165,11 @@ class SysML2ClientWidget(SysML2Client, ipyw.GridspecLayout):
         progress.layout.visibility = "hidden"
 
     def _get_project_options(self):
-        project_name_instances = Counter(
-            project["name"]
-            for project in self.projects.values()
-        )
+        project_name_instances = Counter(project["name"] for project in self.projects.values())
 
         return {
-            data["name"] + (
+            data["name"]
+            + (
                 f""" ({data["created"].strftime("%Y-%m-%d %H:%M:%S")})"""
                 if project_name_instances[data["name"]] > 1
                 else ""

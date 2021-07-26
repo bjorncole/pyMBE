@@ -2,20 +2,15 @@ import typing as ty
 
 import networkx as nx
 import traitlets as trt
-
 from ipyelk import ElementLoader, MarkElementWidget
 from ipyelk.elements import layout_options as opt
 
 from .part_diagram import PartDiagram
 from .parts import Part
-from .relationships import (
-    METATYPE_TO_RELATIONSHIP_TYPES,
-    DirectedAssociation,
-    Relationship,
-)
+from .relationships import Relationship
 
 
-class SysmlLoader(ElementLoader):
+class SysmlLoader(ElementLoader):  # pylint: disable=abstract-method
     """A customized loader for SysML LPGs."""
 
     all_parts: ty.Dict[str, Part] = trt.Dict(
@@ -59,7 +54,7 @@ class SysmlLoader(ElementLoader):
             part_diagram.labels = []
             part_diagram.ports = []
 
-    def load(self, new: nx.Graph, old: nx.Graph = None) -> MarkElementWidget:
+    def load_from_graphs(self, new: nx.Graph, old: nx.Graph = None) -> MarkElementWidget:
         new = nx.Graph() if new in (None, trt.Undefined) else new
         old = nx.Graph() if old in (None, trt.Undefined) else old
 
@@ -108,4 +103,4 @@ class SysmlLoader(ElementLoader):
         #     if part.metadata.sysml_id in exiting_nodes:
         #         parent.children.remove(part)
 
-        return super().load(root=part_diagram)
+        return self.load(root=part_diagram)

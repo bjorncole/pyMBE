@@ -1,9 +1,9 @@
 import json
-import requests
-
 from copy import deepcopy
+from warnings import warn
 
 import rdflib as rdf
+import requests
 import traitlets as trt
 
 from ..model import Model
@@ -33,8 +33,7 @@ class SysML2RDFGraph(trt.HasTraits):
             data = response.json()
             if "@context" not in data:
                 raise ValueError(
-                    "Download context does not have a "
-                    f"@context key: {list(data.keys())}"
+                    "Download context does not have a " f"@context key: {list(data.keys())}"
                 )
             self._cached_contexts[context_url] = data["@context"]
         jsonld_item["@context"].update(self._cached_contexts[context_url])
@@ -53,12 +52,10 @@ class SysML2RDFGraph(trt.HasTraits):
         if not self.merge:
             old_graph = self.graph
             self.graph = rdf.Graph()
+            warn(f"Deleting old graph: {old_graph}")
             del old_graph
 
-        elements = [
-            self.import_context(element)
-            for element in self.model.elements.values()
-        ]
+        elements = [self.import_context(element) for element in self.model.elements.values()]
         self.graph.parse(
             data=json.dumps(elements),
             format="application/ld+json",
