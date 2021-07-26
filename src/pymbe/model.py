@@ -51,8 +51,7 @@ class Naming(Enum):
         name = data.get("name") or data["@id"]
         if naming == Naming.short:
             return f"<{name}>"
-        else:
-            return f"""<{name} «{data["@type"]}»>"""
+        return f"""<{name} «{data["@type"]}»>"""
 
 
 @dataclass(repr=False)

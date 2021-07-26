@@ -299,12 +299,11 @@ def random_generator_playbook_phase_3(
                             f"{get_label_for_id(feature_id, model)}, "
                             f"id = {feature_id}"
                         )
-                    elif len(types) > 1:
+                    if len(types) > 1:
                         raise NotImplementedError(
                             "Cannot handle features with multiple types yet!"
                         )
-                    else:
-                        typ = types[0]
+                    typ = types[0]
             else:
                 typ = feature_id
 

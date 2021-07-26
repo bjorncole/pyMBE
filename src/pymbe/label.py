@@ -23,20 +23,20 @@ def get_label(element: Element) -> str:
             # TODO: look into using other types (if there are any)
             name += f": {type_names[0]}"
         return name
-    elif value and metatype.startswith("Literal"):
+    if value and metatype.startswith("Literal"):
         metatype = type_names[0] if type_names else metatype.replace("Literal", "Occurred Literal")
         return f"{value} «{metatype}»"
-    elif metatype == "MultiplicityRange":
+    if metatype == "MultiplicityRange":
         return get_label_for_multiplicity(multiplicity=element)
-    elif metatype.endswith("Expression"):
+    if metatype.endswith("Expression"):
         return get_label_for_expression(
             expression=element,
             type_names=type_names,
         )
-    elif "@id" in data:
+    if "@id" in data:
         return f"""{data["@id"]} «{metatype}»"""
-    else:
-        return "blank"
+
+    return "blank"
 
 
 def get_label_for_id(element_id: str, model: Model) -> str:

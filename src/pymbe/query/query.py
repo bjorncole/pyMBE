@@ -105,8 +105,7 @@ def roll_up_multiplicity_for_type(
                         bound,
                     )
         return running_total
-    else:
-        return 0
+    return 0
 
 
 def get_types_for_feature(
