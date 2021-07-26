@@ -174,7 +174,7 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
         return {key: value for key, value in instructions.items() if key in function_attributes}
 
     def get_implied_edges(self, *implied_edge_types):
-        from .edge_generators import IMPLIED_GENERATORS
+        from .edge_generators import IMPLIED_GENERATORS  # pylint: disable=import-outside-toplevel
 
         new_edges = []
         for implied_edge_type in implied_edge_types:
@@ -216,7 +216,7 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
             implied_edge_types=tuple(sorted(implied_edge_types)),
         ).copy()
 
-    @lru_cache
+    @lru_cache(maxsize=128)
     def _adapt(
         self,
         excluded_node_types: ty.Union[list, set, tuple] = None,
@@ -275,8 +275,7 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
     def _make_undirected(graph):
         if graph.is_multigraph():
             return nx.MultiGraph(graph)
-        else:
-            return nx.Graph(graph)
+        return nx.Graph(graph)
 
     def get_path_graph(
         self,
@@ -285,7 +284,7 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):
         target: str,
         enforce_directionality: bool = True,
         try_reverse: bool = True,
-    ):
+    ):  # pylint: disable=too-many-arguments
         """Make a new graph with the shortest paths between two nodes"""
         new_graph = graph if enforce_directionality else self._make_undirected(graph)
         try:

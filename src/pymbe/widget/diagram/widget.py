@@ -32,7 +32,7 @@ class Diagram(ipyelk.Diagram):
 
 
 @ipyw.register
-class M1Viewer(ipyw.Box, BaseWidget):
+class M1Viewer(ipyw.Box, BaseWidget):  # pylint: disable=too-many-ancestors
     """An ipywidget to interact with a SysML2 model through an LPG."""
 
     description = trt.Unicode("M1 Diagram").tag(sync=True)
@@ -118,7 +118,7 @@ class M1Viewer(ipyw.Box, BaseWidget):
         trt.dlink(
             (self.lpg, "sysml_projections"),
             (toolbar.projection_selector, "options"),
-            lambda x: tuple(x),
+            lambda x: tuple(x),  # pylint: disable=unncessary-lambda
         )
         toolbar.projection_selector.options = tuple(self.lpg.sysml_projections)
         toolbar._update_children()

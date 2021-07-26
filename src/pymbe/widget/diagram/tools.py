@@ -17,7 +17,7 @@ BUTTON_ICONS = {
 
 
 @ipyw.register
-class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):
+class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):  # pylint: disable=too-many-ancestors
     """A customized toolbar for pymbe's diagram."""
 
     accordion: ipyw.Accordion = trt.Instance(ipyw.Accordion)
@@ -130,13 +130,13 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):
         }
         titles, widgets = zip(*accordion.items())
         return ipyw.Accordion(
-            _titles={idx: title for idx, title in enumerate(titles)},
+            _titles=dict(enumerate(titles)),
             children=widgets,
             selected_index=None,
         )
 
     @trt.validate("children")
-    def _validate_children(self, proposal):
+    def _validate_children(self, *_):
         return [
             self.buttons,
             self.accordion,
@@ -144,7 +144,7 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):
         ]
 
     @trt.validate("layout")
-    def _validate_layout(self, proposal):
+    def _validate_layout(self, proposal):  # pylint: disable=no-self-use
         layout = proposal.value
         layout.width = "auto"
         layout.visibility = "visible"
@@ -190,11 +190,15 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):
             self.loader.height = "40px" if change.new == "hidden" else "40px"
 
     def get_tool(self, tool_type: ty.Type[ipyelk.Tool]) -> ipyelk.Tool:
-        matches = [tool for tool in self.tools if type(tool) is tool_type]
+        matches = [
+            tool
+            for tool in self.tools
+            if type(tool) is tool_type  # pylint: disable=unidiomatic-typecheck
+        ]
         num_matches = len(matches)
         if num_matches > 1:
             raise ipyelk.exceptions.NotUniqueError(f"Found too many tools with type {tool_type}")
-        elif num_matches < 1:
+        if num_matches < 1:
             raise ipyelk.exceptions.NotFoundError(f"No tool matching type {tool_type}")
 
         return matches[0]
@@ -219,6 +223,8 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):
             selectors = [self.node_type_selector]
         elif selector == "edges":
             selectors = [self.edge_type_selector, self.edge_type_reverser]
-        for selector in selectors:
-            selector.options = options
+        else:
+            raise ValueError(f"'selector' must be 'nodes' or 'edges', not '{selector}'")
+        for a_selector in selectors:
+            a_selector.options = options
         self._update_rows_in_multiselect(selectors=selectors)
