@@ -41,7 +41,7 @@ def create_set_with_new_instances(
         new_list = []
         m1_metatype = m1_type._metatype
         m1_typename = m1_type.name
-        for m in range(0, quantities[index]):
+        for value_index in range(quantities[index]):
             if m1_metatype in VALUE_HOLDER_TYPES:
                 new_list.append(
                     ValueHolder(
@@ -49,7 +49,7 @@ def create_set_with_new_instances(
                         m1_typename,
                         None,
                         m1_type,
-                        m,
+                        value_index,
                     )
                 )
             else:

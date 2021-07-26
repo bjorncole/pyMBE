@@ -1,5 +1,4 @@
 """ look in setup.cfg """
-# pylint: disable=invalid-name
 import re
 from pathlib import Path
 

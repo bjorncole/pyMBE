@@ -29,10 +29,10 @@ class ListOfNamedItems(list):
 class Naming(Enum):
     """An enumeration for how to repr SysML elements"""
 
-    identifier = "IDENTIFIER"
-    long = "LONG"
-    qualified = "QUALIFIED"
-    short = "SHORT"
+    IDENTIFIER = "identifier"
+    LONG = "long"
+    QUALIFIED = "qualified"
+    SHORT = "short"
 
     def get_name(self, element: "Element") -> str:
         naming = self._value_  # pylint: disable=no-member
@@ -42,14 +42,14 @@ class Naming(Enum):
             return f"<{element._metatype}({element.source} ←→ {element.target})>"
 
         data = element._data
-        if naming == Naming.qualified:
+        if naming == Naming.QUALIFIED:
             return f"""<{data["qualifiedName"]}>"""
 
-        if naming == Naming.identifier:
+        if naming == Naming.IDENTIFIER:
             return f"""<{data["@id"]}>"""
 
         name = data.get("name") or data["@id"]
-        if naming == Naming.short:
+        if naming == Naming.SHORT:
             return f"<{name}>"
         return f"""<{name} «{data["@type"]}»>"""
 
@@ -66,13 +66,13 @@ class Model:  # pylint: disable=too-many-instance-attributes
     all_relationships: Dict[str, "Element"] = field(default_factory=dict)
     all_non_relationships: Dict[str, "Element"] = field(default_factory=dict)
 
-    ownedElement: ListOfNamedItems = field(default_factory=ListOfNamedItems)
-    ownedMetatype: Dict[str, List["Element"]] = field(default_factory=dict)
-    ownedRelationship: List["Element"] = field(default_factory=list)
+    ownedElement: ListOfNamedItems = field(default_factory=ListOfNamedItems)  # pylint: disable=invalid-name
+    ownedMetatype: Dict[str, List["Element"]] = field(default_factory=dict)  # pylint: disable=invalid-name
+    ownedRelationship: List["Element"] = field(default_factory=list)  # pylint: disable=invalid-name
 
     source: Any = None
 
-    _naming: Naming = Naming.long  # The scheme to use for repr'ing the elements
+    _naming: Naming = Naming.LONG  # The scheme to use for repr'ing the elements
 
     def __post_init__(self):
         self.elements = {

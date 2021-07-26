@@ -5,7 +5,6 @@ max-line-length = 99
 disable=attribute-defined-outside-init,
         cyclic-import,
         fixme,
-        invalid-name,
         missing-class-docstring,
         missing-function-docstring,
         missing-module-docstring,

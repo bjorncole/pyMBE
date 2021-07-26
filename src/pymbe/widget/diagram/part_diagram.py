@@ -26,14 +26,14 @@ class PartDiagram(Partition):
     default_edge: Type[Relationship] = Field(default=DirectedAssociation)
 
     symbols: SymbolSpec = SymbolSpec().add(
-        make_arrow_symbol(identifier="generalization", r=8, closed=True),
-        make_arrow_symbol(identifier="directed_association", r=8, closed=False),
-        make_containment_symbol(identifier="containment", r=8),
-        make_feature_typing_symbol(identifier="feature_typing", r=8),
-        make_redefinition_symbol(identifier="redefinition", r=8),
-        make_subsetting_symbol(identifier="subsetting", r=8),
-        make_rhombus_symbol(identifier="composition", r=8),
-        make_rhombus_symbol(identifier="aggregation", r=8),
+        make_arrow_symbol(identifier="generalization", size=8, closed=True),
+        make_arrow_symbol(identifier="directed_association", size=8, closed=False),
+        make_containment_symbol(identifier="containment", size=8),
+        make_feature_typing_symbol(identifier="feature_typing", size=8),
+        make_redefinition_symbol(identifier="redefinition", size=8),
+        make_subsetting_symbol(identifier="subsetting", size=8),
+        make_rhombus_symbol(identifier="composition", size=8),
+        make_rhombus_symbol(identifier="aggregation", size=8),
     )
 
     style: Dict[str, Dict] = {
