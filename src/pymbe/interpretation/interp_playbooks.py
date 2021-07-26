@@ -504,8 +504,8 @@ def build_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list:
                 try:
                     leaf_path = nx.shortest_path(connected_sub, leaf, root)
                     sorted_feature_groups.append(leaf_path)
-                except Exception:
-                    logger.warning(traceback.format_exc())
+                except (nx.NetworkXNoPath, nx.NodeNotFound):
+                    logger.debug(f"Could not find path: {traceback.format_exc()}")
 
         # TODO: Look into adding the topologically sorted connected subcomponents
         # sorted_feature_groups.append(
@@ -557,8 +557,8 @@ def build_expression_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list
                 try:
                     leaf_path = nx.shortest_path(connected_sub, root, leaf)
                     sorted_feature_groups.append(leaf_path)
-                except Exception:
-                    logger.warning(traceback.format_exc())
+                except (nx.NetworkXNoPath, nx.NodeNotFound):
+                    logger.debug(f"Could not find path: {traceback.format_exc()}")
 
     return sorted_feature_groups
 
