@@ -2,8 +2,7 @@
 max-line-length = 99
 
 [MESSAGES CONTROL]
-disable=abstract-method,
-        arguments-differ,
+disable=arguments-differ,
         attribute-defined-outside-init,
         bad-option-value,
         cyclic-import,
@@ -11,7 +10,6 @@ disable=abstract-method,
         import-outside-toplevel,
         inconsistent-return-statements,
         invalid-name,
-        logging-fstring-interpolation,
         missing-class-docstring,
         missing-function-docstring,
         missing-module-docstring,
@@ -30,9 +28,7 @@ disable=abstract-method,
         too-many-locals,
         too-many-nested-blocks,
         too-many-statements,
-        unnecessary-comprehension,
         unnecessary-lambda,
-        unnecessary-pass,
         unused-argument
 
 [REPORTS]

@@ -311,11 +311,8 @@ def random_generator_playbook_phase_3(
                 if metatype in TYPES_FOR_FEATURING:
                     # hack for usage at top
                     new_sequences = [instances_dict[typ][0]]
-                    if typ in already_drawn:
-                        pass
-                    else:
-                        new_list = [item for item in new_sequences[0]]
-                        already_drawn[typ] = new_list
+                    if typ not in already_drawn:
+                        already_drawn[typ] = list(new_sequences[0])
                 else:
                     new_sequences = instances_dict[typ]
             else:
@@ -330,8 +327,8 @@ def random_generator_playbook_phase_3(
                     remaining = [item for seq in instances_dict[typ] for item in seq]
 
                 logger.info("About to extend sequences.")
-                logger.info(f"New sequences is currently {new_sequences}")
-                logger.info(f"Already drawn is currently {already_drawn}")
+                logger.info("New sequences is currently %s", new_sequences)
+                logger.info("Already drawn is currently %s", already_drawn)
 
                 new_sequences = extend_sequences_by_sampling(
                     new_sequences,
@@ -343,7 +340,7 @@ def random_generator_playbook_phase_3(
                 )
 
                 logger.info("Sequences extended.")
-                logger.info(f"New sequences is currently {new_sequences}")
+                logger.info("New sequences is currently %s", new_sequences)
 
                 freshly_drawn = [seq[-1] for seq in new_sequences]
                 if typ in already_drawn:
@@ -351,7 +348,9 @@ def random_generator_playbook_phase_3(
                 else:
                     already_drawn[typ] = freshly_drawn
 
-                logger.info(f"Already drawn is currently {pprint_dict_keys(already_drawn, model)}")
+                logger.info(
+                    "Already drawn is currently %s", pprint_dict_keys(already_drawn, model)
+                )
 
             instances_dict[feature_id] = new_sequences
 
@@ -505,7 +504,7 @@ def build_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list:
                     leaf_path = nx.shortest_path(connected_sub, leaf, root)
                     sorted_feature_groups.append(leaf_path)
                 except (nx.NetworkXNoPath, nx.NodeNotFound):
-                    logger.debug(f"Could not find path: {traceback.format_exc()}")
+                    logger.debug("Could not find path: %s", traceback.format_exc())
 
         # TODO: Look into adding the topologically sorted connected subcomponents
         # sorted_feature_groups.append(
@@ -558,7 +557,7 @@ def build_expression_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list
                     leaf_path = nx.shortest_path(connected_sub, root, leaf)
                     sorted_feature_groups.append(leaf_path)
                 except (nx.NetworkXNoPath, nx.NodeNotFound):
-                    logger.debug(f"Could not find path: {traceback.format_exc()}")
+                    logger.debug("Could not find path: %s", traceback.format_exc())
 
     return sorted_feature_groups
 

@@ -220,7 +220,6 @@ class CalculationGroup:
         :param lpg:
         :return:
         """
-        pass
 
         # Look through the calculation list and the relevant sequences, use this to build needed
         # alternative OpenMDAO problems - turn over passing of variables to OpenMDAO - ignore the

@@ -10,7 +10,7 @@ from .parts import Part
 from .relationships import Relationship
 
 
-class SysmlLoader(ElementLoader):
+class SysmlLoader(ElementLoader):  # pylint: disable=abstract-method
     """A customized loader for SysML LPGs."""
 
     all_parts: ty.Dict[str, Part] = trt.Dict(
