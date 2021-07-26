@@ -151,9 +151,7 @@ def extend_sequences_with_new_expr(
             expr_string,
             expr,
         )
-        new_seq = [step for step in seq]
-        new_seq.append(new_holder)
-        new_sequences.append(new_seq)
+        new_sequences.append(seq + [new_holder])
 
     return new_sequences
 
