@@ -4,8 +4,6 @@ import ipytree as ipyt
 import ipywidgets as ipyw
 import traitlets as trt
 
-from pymbe.widget.diagram import relationships
-
 from ..model import Element, Model
 from .core import BaseWidget
 

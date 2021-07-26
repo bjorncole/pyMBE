@@ -197,7 +197,7 @@ class M1Viewer(ipyw.Box, BaseWidget):
             button.disabled = failed = True
             try:
                 failed = self._update_drawn_graph(button=button)
-            except Exception as exc:
+            except Exception:
                 warn(f"Button click for {button} failed: {traceback.format_exc()}")
             finally:
                 button.disabled = failed

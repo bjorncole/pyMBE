@@ -56,7 +56,6 @@ def get_label_for_expression(
     type_names: list,
 ) -> str:
     metatype = expression._metatype
-    all_elements = expression._model.elements
     if metatype not in (
         "Expression",
         "FeatureReferenceExpression",

@@ -8,8 +8,6 @@ from typing import Any, Dict, List, Set, Tuple, Union
 from uuid import uuid4
 from warnings import warn
 
-from traitlets.traitlets import default
-
 
 OWNER_KEYS = ("owner", "owningRelatedElement", "owningRelationship")
 VALUE_METATYPES = ("AttributeDefinition", "AttributeUsage", "DataType")

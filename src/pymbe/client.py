@@ -184,8 +184,8 @@ class SysML2Client(trt.HasTraits):
                 "records at a time!  True pagination is not supported yet."
             )
         return (
-            (f"{self.host}/projects/{self.selected_project}/commits/{self.selected_commit}/elements")
-            + f"?page[size]={self.page_size}"
+            (f"{self.host}/projects/{self.selected_project}/commits/{self.selected_commit}")
+            + f"/elements?page[size]={self.page_size}"
             if self.page_size
             else ""
         )
