@@ -1,8 +1,8 @@
 import networkx as nx
 
+from pymbe.label import get_label_for_id
 from pymbe.query.query import (
     get_features_typed_by_type,
-    get_label_for_id,
     get_types_for_feature,
     roll_up_lower_multiplicity,
     roll_up_multiplicity_for_type,
