@@ -5,13 +5,13 @@ from testbook import testbook
 def test_tutorial(tb):
     """Test the Tutorial notebook"""
     client = tb.ref("client")
-    diagram = tb.ref("diagram")
+    m1_diagram = tb.ref("m1_diagram")
 
-    assert len(diagram.model.elements) > 0
+    assert len(m1_diagram.model.elements) > 0
 
-    assert len(diagram.model.elements) == len(client.model.elements)
+    assert len(m1_diagram.model.elements) == len(client.model.elements)
 
-    assert not set(diagram.model.elements).symmetric_difference(set(client.model.elements))
+    assert not set(m1_diagram.model.elements).symmetric_difference(set(client.model.elements))
 
 
 @testbook("tests/jupyter/notebooks/Playbook Explorer Parts Test.ipynb", execute=True)
