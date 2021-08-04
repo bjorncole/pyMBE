@@ -115,7 +115,7 @@ class SysML2ClientWidget(SysML2Client, ipyw.GridspecLayout):
     def _make_commit_selector(self):
         selector = ipyw.Dropdown(
             description="Commit:",
-            options=self._get_project_commits(),
+            options=list(self._get_project_commits()),
         )
         trt.link((selector, "value"), (self, "selected_commit"))
         return selector
@@ -143,13 +143,13 @@ class SysML2ClientWidget(SysML2Client, ipyw.GridspecLayout):
         progress_bar.layout.visibility = "hidden"
         return progress_bar
 
-    @trt.observe("_api_configuration")
+    @trt.observe("projects")
     def _update_apis(self, *_):
         self.project_selector.options = self._get_project_options()
 
     @trt.observe("selected_project")
     def _update_commit_options(self, *_):
-        self.commit_selector.options = self._get_project_commits()
+        self.commit_selector.options = list(self._get_project_commits())
 
     def _download_elements(self, *_):
         progress = self.progress_bar

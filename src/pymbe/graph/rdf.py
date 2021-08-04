@@ -33,7 +33,7 @@ class SysML2RDFGraph(trt.HasTraits):
             data = response.json()
             if "@context" not in data:
                 raise ValueError(
-                    "Download context does not have a " f"@context key: {list(data.keys())}"
+                    f"Download context does not have a @context key: {list(data.keys())}"
                 )
             self._cached_contexts[context_url] = data["@context"]
         jsonld_item["@context"].update(self._cached_contexts[context_url])

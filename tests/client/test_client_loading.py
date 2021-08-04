@@ -1,6 +1,5 @@
 import pytest
 import requests
-import urllib3
 
 from tests.conftest import all_kerbal_names, kerbal_client, kerbal_ids_by_type
 
@@ -34,9 +33,9 @@ def test_client_load_find_types(kerbal_ids_by_type):
 
 
 def test_bad_connection(kerbal_client):
-    with pytest.raises(urllib3.exceptions.MaxRetryError) as exc:
+    with pytest.raises(requests.exceptions.ConnectionError) as exc:
         kerbal_client.host_url = "http://some.bad.url"
-    assert "Max retries exceeded" in exc.value.args[0]
+    assert exc.value.args[0].url == "/projects"
 
 
 @pytest.mark.skipif(
@@ -52,9 +51,7 @@ def test_remote_connection(kerbal_client):
     client.page_size = 20
 
     client.selected_project = list(client.projects)[0]
-    client.selected_commit = client._commits_api.get_commits_by_project(client.selected_project)[
-        0
-    ].id
+    client.selected_commit = list(client._get_project_commits())[0]
     client._download_elements()
 
     model = client.model
