@@ -81,6 +81,10 @@ commands:
   notebooks/Tutorial.ipynb:
     env_spec: user
     notebook: notebooks/Tutorial.ipynb
+  vscode:
+    env_spec: developer
+    unix: code .
+    windows: code .
 
 channels:
 - conda-forge
