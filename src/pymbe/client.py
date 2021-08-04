@@ -107,13 +107,12 @@ class SysML2Client(trt.HasTraits):
 
     @trt.default("projects")
     def _make_projects(self):
-        projects = self._projects_api.get_projects()
-
         def process_project_safely(project) -> dict:
             # protect against projects that can't be parsed
             try:
+                name = project["name"]
                 created = parser.parse(
-                    " ".join(project.name.split()[-6:]),
+                    " ".join(name.split()[-6:]),
                     tzinfos=TIMEZONES,
                 ).astimezone(timezone.utc)
             except ValueError:
@@ -121,11 +120,13 @@ class SysML2Client(trt.HasTraits):
                 return dict()
             return dict(
                 created=created,
-                full_name=project.name,
-                name=" ".join(project.name.split()[:-6]),
+                full_name=name,
+                name=" ".join(name.split()[:-6]),
             )
 
-        results = {project.id: process_project_safely(project) for project in projects}
+        projects = self._retrieve_data(self.projects_url)
+
+        results = {project["@id"]: process_project_safely(project) for project in projects}
 
         return {
             project_id: project_data
@@ -181,6 +182,10 @@ class SysML2Client(trt.HasTraits):
         return f"{self.host_url}:{self.host_port}"
 
     @property
+    def projects_url(self):
+        return f"{self.host}/projects"
+
+    @property
     def elements_url(self):
         if not self.paginate:
             warn(
@@ -188,7 +193,7 @@ class SysML2Client(trt.HasTraits):
                 "records at a time!  True pagination is not supported yet."
             )
         return (
-            (f"{self.host}/projects/{self.selected_project}/commits/{self.selected_commit}")
+            (f"{self.projects_url}/{self.selected_project}/commits/{self.selected_commit}")
             + f"/elements?page[size]={self.page_size}"
             if self.page_size
             else ""
