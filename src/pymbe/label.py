@@ -73,7 +73,6 @@ def get_label_for_expression(
         return f"FRE.{referent_name}"
 
     prefix = ""
-
     if "input" in expression._data:
         inputs = [
             expression._model.elements[an_input["@id"]] for an_input in expression._data["input"]
@@ -82,7 +81,7 @@ def get_label_for_expression(
         inputs = []
     if isinstance(inputs, Element):
         inputs = [inputs]
-    input_names = [an_input.name for an_input in inputs]
+    input_names = [an_input.name for an_input in inputs if an_input.name]
     try:
         result: Element = expression.result
     except AttributeError:
@@ -112,7 +111,8 @@ def get_label_for_expression(
                     path_step_names.append(refered.get("name") or refered._id)
 
         prefix = ".".join(path_step_names)
-    return f"""{prefix} ({", ".join(input_names)}) => {result.name}"""
+    inputs = f""" ({", ".join(input_names)})""" if input_names else ""
+    return f"""{prefix}{inputs} => {result.name or "Unnamed Result"}"""
 
 
 def get_label_for_multiplicity(multiplicity: Element) -> str:

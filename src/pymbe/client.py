@@ -6,7 +6,6 @@ from typing import Dict, List, Tuple, Union
 from warnings import warn
 
 import requests
-import sysml_v2_api_client as sysml2
 import traitlets as trt
 from dateutil import parser
 from ipywidgets.widgets.trait_types import TypedTuple
@@ -64,11 +63,6 @@ class SysML2Client(trt.HasTraits):
 
     paginate = trt.Bool(default_value=True)
 
-    _api_configuration: sysml2.Configuration = trt.Instance(sysml2.Configuration)
-    _commits_api: sysml2.CommitApi = trt.Instance(sysml2.CommitApi)
-    _elements_api: sysml2.ElementApi = trt.Instance(sysml2.ElementApi)
-    _projects_api: sysml2.ProjectApi = trt.Instance(sysml2.ProjectApi)
-
     folder_path: Path = trt.Instance(Path, allow_none=True)
     json_files: Tuple[Path] = TypedTuple(trt.Instance(Path))
     json_file: Path = trt.Instance(Path, allow_none=True)
@@ -81,29 +75,6 @@ class SysML2Client(trt.HasTraits):
     name_hints = trt.Dict()
 
     _next_url_regex = re.compile(r'<(http://.*)>; rel="next"')
-
-    @trt.default("_api_configuration")
-    def _make_api_configuration(self):
-        return sysml2.Configuration(host=self.host)
-
-    @trt.default("_commits_api")
-    def _make_commits_api(self):
-        with sysml2.ApiClient(self._api_configuration) as client:
-            api = sysml2.CommitApi(client)
-        return api
-
-    @trt.default("_elements_api")
-    def _make_elements_api(self):
-        with sysml2.ApiClient(self._api_configuration) as client:
-            api = sysml2.ElementApi(client)
-        return api
-
-    @trt.default("_projects_api")
-    def _make_projects_api(self):
-        with sysml2.ApiClient(self._api_configuration) as client:
-            # TODO: add check for a bad URL not to make this call
-            api = sysml2.ProjectApi(client)
-        return api
 
     @trt.default("projects")
     def _make_projects(self):
@@ -136,19 +107,6 @@ class SysML2Client(trt.HasTraits):
 
     @trt.observe("host_url", "host_port")
     def _update_api_configuration(self, *_):
-        old_api_configuration = self._api_configuration
-        self._api_configuration = self._make_api_configuration()
-        if old_api_configuration:
-            del old_api_configuration
-
-    @trt.observe("_api_configuration")
-    def _update_apis(self, *_):
-        for api_type in ("commit", "element", "project"):
-            api_attr = f"_{api_type}s_api"
-            old_api = getattr(self, api_attr)
-            api_maker = getattr(self, f"_make{api_attr}")
-            setattr(self, api_attr, api_maker())
-            del old_api
         self.projects = self._make_projects()
 
     @trt.observe("selected_commit")
@@ -186,18 +144,22 @@ class SysML2Client(trt.HasTraits):
         return f"{self.host}/projects"
 
     @property
+    def commits_url(self):
+        return f"{self.projects_url}/{self.selected_project}/commits"
+
+    @property
     def elements_url(self):
         if not self.paginate:
             warn(
                 "By default, disabling pagination still retrieves 100 "
                 "records at a time!  True pagination is not supported yet."
             )
-        return (
-            (f"{self.projects_url}/{self.selected_project}/commits/{self.selected_commit}")
-            + f"/elements?page[size]={self.page_size}"
-            if self.page_size
-            else ""
-        )
+        if not self.selected_project:
+            raise SystemError("No selected project!")
+        if not self.selected_commit:
+            raise SystemError("No selected commit!")
+        arguments = f"?page[size]={self.page_size}" if self.page_size else ""
+        return f"{self.commits_url}/{self.selected_commit}/elements{arguments}"
 
     @lru_cache
     def _retrieve_data(self, url: str) -> List[Dict]:
@@ -226,13 +188,7 @@ class SysML2Client(trt.HasTraits):
         return result
 
     def _get_project_commits(self):
-        # TODO: add more info about the commit when API provides it
-        return [
-            commit.id
-            for commit in self._commits_api.get_commits_by_project(
-                self.selected_project,
-            )
-        ]
+        return {commit["@id"]: commit for commit in self._retrieve_data(self.commits_url)}
 
     def _download_elements(self):
         elements = self._retrieve_data(self.elements_url)
