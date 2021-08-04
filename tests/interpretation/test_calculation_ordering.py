@@ -1,7 +1,5 @@
-import logging
-
 from pymbe.interpretation.calc_dependencies import generate_execution_order
-from pymbe.interpretation.results import *
+from tests.conftest import kerbal_lpg, kerbal_random_stage_5_complete, kerbal_stable_names
 
 ROCKET_BUILDING = "Model::Kerbal::Rocket Building::"
 PARTS_LIBRARY = "Model::Kerbal::Parts Library::"
@@ -16,19 +14,22 @@ def test_kerbal_calc_order1(kerbal_lpg, kerbal_random_stage_5_complete, kerbal_s
 
     number_liquid_stages = len(kerbal_random_stage_5_complete[liquid_stage_type])
 
+    if number_liquid_stages < 1:
+        print(">>> Didn't make any liquid stages!!!")
+
     dcg = generate_execution_order(kerbal_lpg)
 
     # the execution order will be ordered for examination
 
     sum_1_result = qualified_name_to_id[
         f"{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ (sum (engines.Mass"
-        + f" (FRE.engines)), sum (tanks.Full Mass (FRE.tanks))) => $result::sum"
-        + f" (tanks.Full Mass (FRE.tanks)) => $result::tanks.Full Mass (FRE.tanks) <<Feature>>"
+        " (FRE.engines)), sum (tanks.Full Mass (FRE.tanks))) => $result::sum"
+        " (tanks.Full Mass (FRE.tanks)) => $result::tanks.Full Mass (FRE.tanks) <<Feature>>"
     ]
     top_plus = qualified_name_to_id[
         f"{ROCKET_BUILDING}Liquid Stage::Full Mass: Real::+ (sum (engines.Mass "
-        f"(FRE.engines)), sum (tanks.Full Mass (FRE.tanks))) => "
-        f"$result <<OperatorExpression>>"
+        "(FRE.engines)), sum (tanks.Full Mass (FRE.tanks))) => "
+        "$result <<OperatorExpression>>"
     ]
 
     sum_1_in_dcg = None
