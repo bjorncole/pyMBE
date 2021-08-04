@@ -7,7 +7,6 @@ description: |
 
 variables:
   MAX_LINE_LENGTH: 99
-  SYSML_V2_API_REPO: https://github.com/Systems-Modeling/SysML-v2-API-Python-Client.git@2021-05
 
 commands:
   lab:
@@ -20,10 +19,9 @@ commands:
     env_spec: developer
     unix: |
       git submodule update --init
-      pip install git+{{SYSML_V2_API_REPO}} --no-dependencies
       pip install -e . --no-dependencies
     windows: |
-      git submodule update --init & pip install git+{{SYSML_V2_API_REPO}} --no-dependencies & pip install -e . --no-dependencies
+      git submodule update --init & pip install -e . --no-dependencies
   lint:
     description: lint the code
     env_spec: developer
