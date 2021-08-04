@@ -23,6 +23,8 @@ def generate_execution_order(lpg: SysML2LabeledPropertyGraph) -> list:
     roots = [node for node in eig.nodes if eig.in_degree(node) == 0]
 
     for root in roots:
+        if len(all_elements[root].featuringType) == 0:
+            continue
         context = all_elements[root].featuringType[0].get("@id")
         execution_contexts[context] = []
 
