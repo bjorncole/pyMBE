@@ -468,7 +468,10 @@ def random_generator_playbook_phase_5(
                 target_indices = list(range(0, min_side))
                 target_indices.extend(other_steps)
 
-            for indx, seq in enumerate(connectors):
+            # taking over indx to wrap around
+            indx = 0
+
+            for seq in connectors:
                 new_source_seq = []
                 new_target_seq = []
 
@@ -486,6 +489,11 @@ def random_generator_playbook_phase_5(
 
                 extended_source_sequences.append(new_source_seq)
                 extended_target_sequences.append(new_target_seq)
+
+                if indx >= len(target_indices) - 1:
+                    indx = 0
+                else:
+                    indx = indx + 1
 
             instances_dict[connector_ends[0]["@id"]] = extended_source_sequences
             instances_dict[connector_ends[1]["@id"]] = extended_target_sequences

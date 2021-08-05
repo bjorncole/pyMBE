@@ -7,7 +7,11 @@ def feature_multiplicity(feature: Element, bound: str) -> int:
         raise ValueError(f"'bound' must be 'upper' or 'lower', not '{bound}'")
     multiplicity = feature.multiplicity
     if multiplicity:
-        value = multiplicity[f"{bound}Bound"]
+        # need to watch for multiplicities with no bounds (assume 1 for now like SysML v1)
+        try:
+            value = multiplicity[f"{bound}Bound"]
+        except KeyError:
+            return 1
         if bound == "lower" and value is None:
             return multiplicity.upperBound.value
         if value is not None:
