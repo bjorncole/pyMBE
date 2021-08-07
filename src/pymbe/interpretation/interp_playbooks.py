@@ -293,7 +293,7 @@ def random_generator_playbook_phase_3(
                 if isinstance(types, Element):
                     typ = types._id
                 else:
-                    if len(types) == 0:
+                    if not types:
                         raise NotImplementedError(
                             "Cannot handle untyped features! Tried on "
                             f"{get_label_for_id(feature_id, model)}, "
