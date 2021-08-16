@@ -1,8 +1,8 @@
-from functools import lru_cache
 import json
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, List, Set, Tuple, Union
 from uuid import uuid4
@@ -126,7 +126,9 @@ class Model:  # pylint: disable=too-many-instance-attributes
 
     @property
     def packages(self) -> Tuple["Element"]:
-        return tuple(element for element in self.elements.values() if element._metatype == "Package")
+        return tuple(
+            element for element in self.elements.values() if element._metatype == "Package"
+        )
 
     def save_to_file(self, filepath: Union[Path, str], indent: int = 2) -> bool:
         if isinstance(filepath, str):
@@ -315,7 +317,7 @@ class Element:  # pylint: disable=too-many-instance-attributes
 
     @property
     def owning_package(self) -> "Element":
-        """ A lazy property to remember what package elements belongs to. """
+        """A lazy property to remember what package elements belongs to."""
         if self._package is None:
             owner = self.get_owner()
             while owner and owner._metatype != "Package":
