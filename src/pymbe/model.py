@@ -1,3 +1,4 @@
+from functools import lru_cache
 import json
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -123,6 +124,10 @@ class Model:  # pylint: disable=too-many-instance-attributes
             source=filepath.resolve(),
         )
 
+    @property
+    def packages(self) -> Tuple["Element"]:
+        return tuple(element for element in self.elements.values() if element._metatype == "Package")
+
     def save_to_file(self, filepath: Union[Path, str], indent: int = 2) -> bool:
         if isinstance(filepath, str):
             filepath = Path(filepath)
@@ -204,6 +209,7 @@ class Element:
     # _instances: List["Instance"] = field(default_factory=list)
     _is_abstract: bool = False
     _is_relationship: bool = False
+    _package: "Element" = None
 
     def __post_init__(self):
         self._id = self._data["@id"]
@@ -279,6 +285,25 @@ class Element:
             for key in self._derived
             if key.startswith("through") or key.startswith("reverse")
         }
+
+    @property
+    def owning_package(self) -> "Element":
+        """ A lazy property to remember what package elements belongs to. """
+        if self._package is None:
+            owner = self.get_owner()
+            while owner and owner._metatype != "Package":
+                owner = owner.get_owner()
+            self._package = owner
+        return self._package
+
+    @lru_cache(maxsize=1024)
+    def is_in_package(self, package: "Element") -> bool:
+        owning_package = self.owning_package
+        while owning_package:
+            if owning_package == package:
+                return True
+            owning_package = owning_package.owning_package
+        return False
 
     def get(self, key: str, default: Any = None) -> Any:
         try:

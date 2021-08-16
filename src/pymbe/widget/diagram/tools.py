@@ -44,6 +44,10 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):  # pylint: disable=too-m
         ipyw.SelectMultiple,
         kw=dict(rows=10),
     )
+    package_selector: ipyw.SelectMultiple = trt.Instance(
+        ipyw.SelectMultiple,
+        kw=dict(rows=10),
+    )
     projection_selector: ipyw.Dropdown = trt.Instance(ipyw.Dropdown, args=())
     refresh_diagram: ipyw.Button = trt.Instance(
         ipyw.Button,
@@ -107,11 +111,12 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):  # pylint: disable=too-m
     def _make_accordion(self):
         accordion = {
             "Projection": self.projection_selector,
-            "Type Filter": ipyw.Accordion(
-                _titles={0: "Node Types", 1: "Edge Types"},
+            "Filter": ipyw.Accordion(
+                _titles={0: "Node Types", 1: "Edge Types", 2: "Packages"},
                 children=[
                     self.node_type_selector,
                     self.edge_type_selector,
+                    self.package_selector,
                 ],
                 selected_index=None,
             ),

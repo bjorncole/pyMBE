@@ -198,6 +198,7 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):  # pylint: disable=too-many-ins
         excluded_edge_types: ty.Union[list, set, tuple] = None,
         reversed_edge_types: ty.Union[list, set, tuple] = None,
         implied_edge_types: ty.Union[list, set, tuple] = None,
+        included_packages: ty.Union[list, set, tuple] = None,
     ) -> ty.Union[nx.Graph, nx.DiGraph]:
         """
         Using the existing graph, filter by node and edge types, and/or
@@ -207,6 +208,7 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):  # pylint: disable=too-many-ins
         excluded_node_types = excluded_node_types or []
         reversed_edge_types = reversed_edge_types or []
         implied_edge_types = implied_edge_types or []
+        included_packages = included_packages or []
 
         # NOTE: Sorting into a tuple to make the LRU Cache work
         return self._adapt(
@@ -214,6 +216,7 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):  # pylint: disable=too-many-ins
             excluded_node_types=tuple(sorted(excluded_node_types)),
             reversed_edge_types=tuple(sorted(reversed_edge_types)),
             implied_edge_types=tuple(sorted(implied_edge_types)),
+            included_packages=tuple(sorted(included_packages)),
         ).copy()
 
     @lru_cache(maxsize=128)
@@ -223,6 +226,7 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):  # pylint: disable=too-many-ins
         excluded_edge_types: ty.Union[list, set, tuple] = None,
         reversed_edge_types: ty.Union[list, set, tuple] = None,
         implied_edge_types: ty.Union[list, set, tuple] = None,
+        included_packages: ty.Union[list, set, tuple] = None,
     ) -> nx.Graph:
         graph = self.graph.copy()
         new_edges = self.get_implied_edges(*implied_edge_types)
@@ -248,6 +252,14 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):  # pylint: disable=too-many-ins
             ],
             [],
         )
+        if included_packages:
+            all_elements = self.model.elements
+            included_nodes = [
+                node_id
+                for node_id in included_nodes
+                if all_elements[node_id] in included_packages
+                or any(all_elements[node_id].is_in_package(pkg) for pkg in included_packages)
+            ]
         subgraph = graph.__class__(graph.subgraph(included_nodes))
 
         def _process_edge(src, tgt, typ, data, rev_types):

@@ -70,6 +70,11 @@ class M1Viewer(ipyw.Box, BaseWidget):  # pylint: disable=too-many-ancestors
         self.lpg.model = change.new
         toolbar: Toolbar = self.elk_diagram.toolbar
 
+        toolbar.package_selector.options = {
+            pkg.name: pkg
+            for pkg in self.lpg.model.packages
+        }
+
         toolbar.update_dropdown_options(
             selector="nodes",
             options={
@@ -233,6 +238,7 @@ class M1Viewer(ipyw.Box, BaseWidget):  # pylint: disable=too-many-ancestors
                 *reversed_edges,
             },
             implied_edge_types={*instructions.get("implied_edge_types", [])},
+            included_packages=toolbar.package_selector.value,
         )
 
         if button is toolbar.filter_to_path:

@@ -1,5 +1,5 @@
 import re
-from datetime import timezone
+from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
 from typing import Dict, List, Tuple, Union
@@ -81,18 +81,17 @@ class SysML2Client(trt.HasTraits):
         def process_project_safely(project) -> dict:
             # protect against projects that can't be parsed
             try:
-                name = project["name"]
-                created = parser.parse(
-                    " ".join(name.split()[-6:]),
-                    tzinfos=TIMEZONES,
-                ).astimezone(timezone.utc)
+                name_with_date = project["name"]
+                name = " ".join(name_with_date.split()[:-6])
+                timestamp = " ".join(name_with_date.split()[-6:])
+                created = self._parse_timestamp(timestamp)
             except ValueError:
                 # TODO: revise this when the API server changes the project name
                 return dict()
             return dict(
                 created=created,
-                full_name=name,
-                name=" ".join(name.split()[:-6]),
+                full_name=name_with_date,
+                name=name,
             )
 
         projects = self._retrieve_data(self.projects_url)
@@ -187,8 +186,24 @@ class SysML2Client(trt.HasTraits):
                 raise SystemError(f"Found multiple 'next' pagination urls: {urls}")
         return result
 
+    @staticmethod
+    def _parse_timestamp(timestamp: str) -> datetime:
+        if isinstance(timestamp, datetime):
+            return timestamp
+        return parser.parse(timestamp, tzinfos=TIMEZONES).astimezone(timezone.utc)
+
     def _get_project_commits(self):
-        return {commit["@id"]: commit for commit in self._retrieve_data(self.commits_url)}
+        def clean_fields(data: dict) -> dict:
+            for key, value in tuple(data.items()):
+                if not isinstance(key, str):
+                    continue
+                if key == "timestamp":
+                    data[key] = self._parse_timestamp(value)
+            return data
+        commits = sorted(self._retrieve_data(self.commits_url), key=lambda x: x["timestamp"])
+        return {
+            commit["@id"]: clean_fields(commit) for commit in commits
+        }
 
     def _download_elements(self):
         elements = self._retrieve_data(self.elements_url)
