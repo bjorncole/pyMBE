@@ -185,11 +185,14 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):  # pylint: disable=too-many-ins
             new_edges += edge_generator(lpg=self)
         return new_edges
 
-    def get_projection(self, projection: str) -> nx.Graph:
+    def get_projection(self, projection: str, packages: ty.Optional[ty.Union[ty.List[Element], ty.Tuple[Element]]] = None) -> nx.Graph:
+        if isinstance(packages, Element):
+            packages = [packages]
         return self.adapt(
             **self.get_projection_instructions(
                 projection=projection,
-            )
+            ),
+            included_packages=packages or [],
         )
 
     def adapt(
@@ -216,7 +219,7 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):  # pylint: disable=too-many-ins
             excluded_node_types=tuple(sorted(excluded_node_types)),
             reversed_edge_types=tuple(sorted(reversed_edge_types)),
             implied_edge_types=tuple(sorted(implied_edge_types)),
-            included_packages=tuple(sorted(included_packages)),
+            included_packages=tuple(sorted(included_packages, key=lambda el: el._id)),
         ).copy()
 
     @lru_cache(maxsize=128)

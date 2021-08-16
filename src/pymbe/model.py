@@ -196,7 +196,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
 
 
 @dataclass(repr=False)
-class Element:
+class Element:  # pylint: disable=too-many-instance-attributes
     """A SysML v2 Element"""
 
     _data: dict
@@ -211,14 +211,27 @@ class Element:
     _is_relationship: bool = False
     _package: "Element" = None
 
+    # TODO: Add comparison to allow sorting of elements (e.g., by name and then by id)
+
     def __post_init__(self):
-        self._id = self._data["@id"]
-        self._metatype = self._data["@type"]
-        self._is_abstract = bool(self._data.get("isAbstract"))
-        self._is_relationship = "relatedElement" in self._data
-        for key, items in self._data.items():
+        if not self._data:
+            self._is_proxy = True
+        else:
+            self.resolve()
+
+    def resolve(self):
+        if not self._data:
+            raise NotImplementedError("Need to add functionality to get data for the element")
+        data = self._data
+        self._id = data["@id"]
+        self._metatype = data["@type"]
+
+        self._is_abstract = bool(data.get("isAbstract"))
+        self._is_relationship = "relatedElement" in data
+        for key, items in data.items():
             if key.startswith("owned") and isinstance(items, list):
-                self._data[key] = ListOfNamedItems(items)
+                data[key] = ListOfNamedItems(items)
+        self._is_proxy = False
 
     def __call__(self, *args, **kwargs):
         element = kwargs.pop("element", None)
@@ -273,6 +286,10 @@ class Element:
 
     def __repr__(self):
         return self._model._naming.get_name(element=self)
+
+    @property
+    def is_proxy(self):
+        return not self._data
 
     @property
     def label(self) -> str:
