@@ -284,6 +284,16 @@ class Element:  # pylint: disable=too-many-instance-attributes
     def __hash__(self):
         return hash(self._data["@id"])
 
+    def __lt__(self, other):
+        if isinstance(other, str):
+            if other in self._model.elements:
+                other = self._model.elements[other]
+        if not isinstance(other, Element):
+            raise ValueError(f"Cannot compare an element to {type(other)}")
+        if self.get("name", None) and other.get("name", None):
+            return self.name < other.name
+        return self._id < other._id
+
     def __repr__(self):
         return self._model._naming.get_name(element=self)
 

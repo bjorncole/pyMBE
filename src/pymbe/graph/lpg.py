@@ -219,7 +219,7 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):  # pylint: disable=too-many-ins
             excluded_node_types=tuple(sorted(excluded_node_types)),
             reversed_edge_types=tuple(sorted(reversed_edge_types)),
             implied_edge_types=tuple(sorted(implied_edge_types)),
-            included_packages=tuple(sorted(included_packages, key=lambda el: el._id)),
+            included_packages=tuple(sorted(included_packages)),
         ).copy()
 
     @lru_cache(maxsize=128)

@@ -72,7 +72,7 @@ class M1Viewer(ipyw.Box, BaseWidget):  # pylint: disable=too-many-ancestors
 
         toolbar.package_selector.options = {
             pkg.name: pkg
-            for pkg in self.lpg.model.packages
+            for pkg in sorted(self.lpg.model.packages)
         }
 
         toolbar.update_dropdown_options(
