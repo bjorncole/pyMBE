@@ -13,8 +13,12 @@ def feature_multiplicity(feature: Element, bound: str) -> int:
         except KeyError:
             return 1
         if bound == "lower" and value is None:
+            if multiplicity.upperBound._metatype == "LiteralInfinity":
+                return 0
             return multiplicity.upperBound.value
         if value is not None:
+            if value._metatype == "LiteralInfinity":
+                return float("inf")
             return value.value
     return 1
 

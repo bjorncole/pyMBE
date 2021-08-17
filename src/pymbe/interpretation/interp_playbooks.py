@@ -291,9 +291,9 @@ def random_generator_playbook_phase_3(
             if metatype in TYPES_FOR_FEATURING:
                 types = safe_feature_data(feature, "type")
                 if isinstance(types, Element):
-                    typ = (types._id or [])
+                    typ = types._id or []
                 else:
-                    if len(types) == 0:
+                    if not types:
                         raise NotImplementedError(
                             "Cannot handle untyped features! Tried on "
                             f"{get_label_for_id(feature_id, model)}, "
@@ -583,7 +583,10 @@ def validate_working_data(lpg: SysML2LabeledPropertyGraph) -> bool:
         try:
             non_relation["@type"]
         except KeyError:
-            print(f"No metatype found in {non_relation}, id = '{id_}', name = {(lpg.model.elements[id_].name or '')}")
+            print(
+                f"No metatype found in {non_relation}, id = '{id_}', "
+                "name = {(lpg.model.elements[id_].name or '')}"
+            )
             return False
         except TypeError:
             print(f"Expecting dict of model element data, got = {non_relation}")

@@ -12,6 +12,9 @@ from .inspector import ElementInspector
 class UI(DockBox):
     """A user interface for the integrated widget"""
 
+    # buttons
+    pop_log_out: ipyw.Button = trt.Instance(ipyw.Button)
+
     # widgets
     client: SysML2ClientWidget = trt.Instance(SysML2ClientWidget)
     tree: ContainmentTree = trt.Instance(ContainmentTree, args=())
@@ -96,6 +99,16 @@ class UI(DockBox):
             )
         ]
 
+    @trt.default("pop_log_out")
+    def _make_pop_log_out_button(self):
+        button = ipyw.Button(
+            description="",
+            icon="book",
+            tooltip="Pop Log",
+        )
+        button.on_click(self._pop_log_out)
+        return button
+
     @trt.observe("diagram_height")
     def _update_diagram_height(self, *_):
         self.m0_viewer.layout.height = f"{self.diagram_height}vh"
@@ -104,3 +117,6 @@ class UI(DockBox):
     @classmethod
     def new(cls, host_url: str) -> DockPop:
         return DockPop([cls(host_url=host_url)], description="SysML Model")
+
+    def _pop_log_out(self):
+        DockPop([self.log_out], mode="split-right")
