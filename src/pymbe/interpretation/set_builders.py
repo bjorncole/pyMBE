@@ -15,9 +15,8 @@ from .interpretation import LiveExpressionNode, ValueHolder
 # 2. Sub-select from other sets (a la feature dictionaries)
 
 # In both cases, use a reference sequence to find the minimal length intepretations
-# Both classifiers and features can be made this way, just difference of lengths
+# Both classifiers and features can be made this way, just difference of lengthh
 
-MAX_MULTIPLICITY = 100
 VALUE_HOLDER_TYPES = ("AttributeDefinition", "AttributeUsage", "DataType")
 
 

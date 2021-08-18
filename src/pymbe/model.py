@@ -77,6 +77,8 @@ class Model:  # pylint: disable=too-many-instance-attributes
         default_factory=list
     )
 
+    MAX_MULTIPLICITY = 100
+
     source: Any = None
 
     _naming: Naming = Naming.LONG  # The scheme to use for repr'ing the elements
