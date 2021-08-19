@@ -4,12 +4,13 @@ from typing import List
 
 import networkx as nx
 
-#from pymbe.interpretation.set_builders import MAX_MULTIPLICITY
-
 from ..graph.lpg import SysML2LabeledPropertyGraph
 from ..label import get_label
 from ..model import Element
 from .metamodel_navigator import feature_multiplicity
+
+#from pymbe.interpretation.set_builders import MAX_MULTIPLICITY
+
 
 
 def roll_up_lower_multiplicity(

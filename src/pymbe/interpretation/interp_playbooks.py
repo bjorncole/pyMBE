@@ -330,10 +330,13 @@ def random_generator_playbook_phase_3(
                 logger.info("New sequences is currently %s", new_sequences)
                 logger.info("Already drawn is currently %s", already_drawn)
 
+                lower_mult = feature_multiplicity(feature, "lower")
+                upper_mult = min(feature_multiplicity(feature, "upper"), model.MAX_MULTIPLICITY)
+
                 new_sequences = extend_sequences_by_sampling(
                     new_sequences,
-                    feature_multiplicity(feature, "lower"),
-                    feature_multiplicity(feature, "upper"),
+                    lower_mult,
+                    upper_mult,
                     remaining,
                     False,
                     {},

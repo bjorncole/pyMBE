@@ -92,9 +92,6 @@ def extend_sequences_by_sampling(
     #        have the same type!
 
     total_draw, draws_per = 0, []
-    if upper_mult > MAX_MULTIPLICITY:
-        warn(f"Upper multiplicity is capped from {upper_mult} down to {MAX_MULTIPLICITY}")
-        upper_mult = MAX_MULTIPLICITY
     for _ in range(0, len(previous_sequences)):
         draw = random.randint(lower_mult, upper_mult)
         total_draw = total_draw + draw
