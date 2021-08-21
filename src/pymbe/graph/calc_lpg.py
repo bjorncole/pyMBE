@@ -5,8 +5,7 @@ from ..interpretation.m0_operators import (
     evaluate_and_apply_dot,
     evaluate_and_apply_fre,
     evaluate_and_apply_literal,
-    evaluate_and_apply_plus,
-    evaluate_and_apply_sum,
+    evaluate_and_apply_atomic_binary
 )
 from .lpg import SysML2LabeledPropertyGraph
 
@@ -118,7 +117,7 @@ class CalculationGroup:
                                     target_instances[index][-1],
                                 )
 
-                    elif src_data["operator"] == "+":
+                    elif src_data["operator"] in ("+", "-", "*", "/", "**"):
                         for member in src_data["input"]:
                             collect_sub_inputs.append(lpg.nodes[member["@id"]])
 
@@ -139,10 +138,11 @@ class CalculationGroup:
                                         elif input_index == 1:
                                             y_point = input_inst[-1]
 
-                            evaluate_and_apply_plus(
+                            evaluate_and_apply_atomic_binary(
                                 x_point,
                                 y_point,
                                 target_instances[index][-1],
+                                src_data["operator"]
                             )
 
                 elif src_metatype == "InvocationExpression":

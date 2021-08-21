@@ -59,6 +59,7 @@ Expression Value:
     - InvocationExpression
     - LiteralInteger
     - LiteralReal
+    - LiteralRational
     - OperatorExpression
     - PathStepExpression
   included_edge_types:

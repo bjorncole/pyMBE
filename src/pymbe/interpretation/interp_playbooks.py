@@ -45,13 +45,17 @@ TYPES_FOR_ROLL_UP_MULTIPLICITY = (
 )
 
 
-def random_generator_playbook(lpg: SysML2LabeledPropertyGraph, name_hints: dict = None) -> dict:
+def random_generator_playbook(
+        lpg: SysML2LabeledPropertyGraph,
+        name_hints: dict = None,
+        filtered_feat_packages: list = []) -> dict:
     """
     Main routine to execute a playbook to randomly generate sequences as an interpretation
     of a SysML v2 model
 
     :param lpg: Labeled propery graph of the M1 model
     :param name_hints: A dictionary to make labeling instances more clean
+    :param filtered_feat_packages: A list of names by which to down filter feature, expression sequence templates
     :return: A dictionary of sequences keyed by the id of a given M1 type
     """
 
@@ -69,7 +73,13 @@ def random_generator_playbook(lpg: SysML2LabeledPropertyGraph, name_hints: dict 
     ptg = lpg.get_projection("Part Typing")
     scg = lpg.get_projection("Part Definition")
 
-    feature_sequences = build_sequence_templates(lpg=lpg)
+    all_feature_sequences = build_sequence_templates(lpg=lpg)
+
+    if len(filtered_feat_packages) == 0:
+        feature_sequences = all_feature_sequences
+    else:
+        feature_sequences = [seq for seq in all_feature_sequences
+                             if lpg.model.elements[seq[-1]].owning_package in filtered_feat_packages]
 
     full_multiplicities = random_generator_phase_1_multiplicities(lpg, ptg, scg)
 
@@ -107,7 +117,13 @@ def random_generator_playbook(lpg: SysML2LabeledPropertyGraph, name_hints: dict 
 
     # PHASE 4: Expand sequences to support computations
 
-    expr_sequences = build_expression_sequence_templates(lpg=lpg)
+    all_expr_sequences = build_expression_sequence_templates(lpg=lpg)
+
+    if len(filtered_feat_packages) == 0:
+        expr_sequences = all_expr_sequences
+    else:
+        expr_sequences = [seq for seq in all_expr_sequences
+                             if lpg.model.elements[seq[-1]].owning_package in filtered_feat_packages]
 
     # for indx, seq in enumerate(expr_sequences):
     #    print("Sequence number " + str(indx))
@@ -157,17 +173,22 @@ def random_generator_phase_1_multiplicities(
     # look at all the types in the feature sequences
     for typ, mult in type_multiplicities.items():
         if typ in abstracts:
-            specifics = list(scg.successors(typ))
-            taken = 0
-            no_splits = len(specifics)
-            # need to sub-divide the abstract quantities
-            for index, specific in enumerate(specifics):
-                if index < (no_splits - 1):
-                    draw = randint(0, mult)
-                    taken = taken + draw
-                else:
-                    draw = mult - taken
-                full_multiplicities[specific] = draw
+            if typ not in scg.nodes:
+                full_multiplicities[typ] = mult
+            try:
+                specifics = list(scg.successors(typ))
+                taken = 0
+                no_splits = len(specifics)
+                # need to sub-divide the abstract quantities
+                for index, specific in enumerate(specifics):
+                    if index < (no_splits - 1):
+                        draw = randint(0, mult)
+                        taken = taken + draw
+                    else:
+                        draw = mult - taken
+                    full_multiplicities[specific] = draw
+            except nx.NetworkXError:
+                continue
         else:
             full_multiplicities[typ] = mult
 
@@ -232,7 +253,6 @@ def random_generator_playbook_phase_2_rollup(
 
             instances_dict[gen] = new_superset
 
-
 def random_generator_playbook_phase_2_unconnected(
     model: Model,
     instances_dict: dict,
@@ -280,6 +300,12 @@ def random_generator_playbook_phase_3(
     logger.debug("Starting things up")
     already_drawn = {}
     for feature_sequence in feature_sequences:
+        # skip if the feature is abstract or its owning type is
+        last_item = model.elements[feature_sequence[-1]]
+        if last_item.isAbstract or last_item.owner.isAbstract:
+            print(f"Skipped sequnce ending in {last_item}")
+            continue
+
         new_sequences = []
         for index, feature_id in enumerate(feature_sequence):
             if feature_id in instances_dict and index > 0:
@@ -316,15 +342,18 @@ def random_generator_playbook_phase_3(
                 else:
                     new_sequences = instances_dict[typ]
             else:
-                if typ in already_drawn:
-                    remaining = [
-                        item
-                        for seq in instances_dict[typ]
-                        for item in seq
-                        if item not in already_drawn[typ]
-                    ]
-                else:
-                    remaining = [item for seq in instances_dict[typ] for item in seq]
+                try:
+                    if typ in already_drawn:
+                        remaining = [
+                            item
+                            for seq in instances_dict[typ]
+                            for item in seq
+                            if item not in already_drawn[typ]
+                        ]
+                    else:
+                        remaining = [item for seq in instances_dict[typ] for item in seq]
+                except KeyError:
+                    raise KeyError(f"Cannot find type {model.elements[typ]}, id {typ} in instances dict made so far!")
 
                 logger.info("About to extend sequences.")
                 logger.info("New sequences is currently %s", new_sequences)
@@ -379,6 +408,8 @@ def random_generator_playbook_phase_4(
         seq_featuring_type = safe_feature_data(all_elements[expr_seq[0]], "featuringType")
         # FIXME: I don't know what it means for binding connectors to own these expressions,
         #        but need to figure out eventually
+        if isinstance(seq_featuring_type, list):
+            continue
         if seq_featuring_type["@type"] == "BindingConnector":
             continue
         new_sequences = instances_dict[seq_featuring_type["@id"]._id]
@@ -439,15 +470,17 @@ def random_generator_playbook_phase_5(
 
     # Generate sequences for connection and interface ends
     for node_id in list(cug.nodes):
-        node = lpg.nodes[node_id]
-        if node["@type"] in ("ConnectionUsage", "InterfaceUsage", "SuccessionUsage"):
+        node = lpg.model.elements[node_id]
+        if node._metatype in ("ConnectionUsage", "InterfaceUsage", "SuccessionUsage"):
 
-            connector_ends = node["connectorEnd"]
+            connector_ends = node.connectorEnd
 
-            connector_id = node["@id"]
+            connector_id = node._id
 
-            source_feat_id = node["source"][0]["@id"]
-            target_feat_id = node["target"][0]["@id"]
+            source_feat_id = node.source[0].chainingFeature[-1]._id
+            target_feat_id = node.target[0].chainingFeature[-1]._id
+
+            print(node.source)
 
             source_sequences = instances_dict[source_feat_id]
             target_sequences = instances_dict[target_feat_id]
@@ -498,8 +531,8 @@ def random_generator_playbook_phase_5(
                 else:
                     indx = indx + 1
 
-            instances_dict[connector_ends[0]["@id"]] = extended_source_sequences
-            instances_dict[connector_ends[1]["@id"]] = extended_target_sequences
+            instances_dict[connector_ends[0]._id] = extended_source_sequences
+            instances_dict[connector_ends[1]._id] = extended_target_sequences
 
 
 def build_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list:
@@ -550,13 +583,6 @@ def generate_superset_instances(
 def build_expression_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list:
     evg = lpg.get_projection("Expression Value")
 
-    # FIXME: Need projections to work correctly
-    # TODO: @Bjorn: should we remove all the implied edges? We could add a key to them
-    to_remove = [edge for edge in evg.edges if edge[2] == "ImpliedParameterFeedforward"]
-
-    for source, target, *_ in to_remove:
-        evg.remove_edge(source, target)
-
     sorted_feature_groups = []
     for comp in nx.connected_components(evg.to_undirected()):
         connected_sub = nx.subgraph(evg, list(comp))
@@ -579,7 +605,9 @@ def validate_working_data(lpg: SysML2LabeledPropertyGraph) -> bool:
 
     :return: A Boolean indicating that the user model is ready to be interpreted
     """
-    # FIXME: Convert to the element-model style for better accuracy
+    # FIXME: Convert to a check on feature sequences and expression sequnces to find:
+    #   - Do all members of the sequences have findable types?
+    #   - Can the multiplicity of all members be properly calculated?
 
     # check that all the elements of the graph are in fact proper model elements
     for id_, non_relation in lpg.model.all_non_relationships.items():

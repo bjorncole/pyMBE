@@ -102,9 +102,69 @@ def evaluate_and_apply_sum(m0_expr: ValueHolder, m0_result: ValueHolder):
     m0_result.value = total
 
 
-def evaluate_and_apply_plus(
+def evaluate_and_apply_atomic_binary(
     x_expr: ValueHolder,
     y_expr: ValueHolder,
     m0_result: ValueHolder,
+    operator: str
 ):
-    m0_result.value = x_expr.value + y_expr.value
+    numbers = [0.0, 0.0]
+
+    for index, expr in enumerate([x_expr, y_expr]):
+        if isinstance(expr.value, int) or isinstance(expr.value, float):
+            numbers[index] = expr.value
+        elif isinstance(expr.value, list):
+            if isinstance(expr.value[0], list):
+                numbers[index] = expr.value[0][-1].value
+            elif isinstance(expr.value[0].value, int) or isinstance(expr.value[0].value, float):
+                numbers[index] = expr.value[0].value
+
+    if operator == "+":
+        evaluate_and_apply_plus(numbers[0], numbers[1], m0_result)
+    elif operator == "-":
+        evaluate_and_apply_minus(numbers[0], numbers[1], m0_result)
+    elif operator == "*":
+        evaluate_and_apply_times(numbers[0], numbers[1], m0_result)
+    elif operator == "/":
+        evaluate_and_apply_times(numbers[0], numbers[1], m0_result)
+    elif operator == "**":
+        evaluate_and_apply_power(numbers[0], numbers[1], m0_result)
+
+
+def evaluate_and_apply_plus(
+    x_expr: float,
+    y_expr: float,
+    m0_result: ValueHolder,
+):
+    m0_result.value = x_expr + y_expr
+
+def evaluate_and_apply_minus(
+    x_expr: float,
+    y_expr: float,
+    m0_result: ValueHolder,
+):
+    m0_result.value = x_expr - y_expr
+
+def evaluate_and_apply_times(
+    x_expr: float,
+    y_expr: float,
+    m0_result: ValueHolder,
+):
+    m0_result.value = x_expr * y_expr
+
+def evaluate_and_apply_divider(
+    x_expr: float,
+    y_expr: float,
+    m0_result: ValueHolder,
+):
+    m0_result.value = x_expr / y_expr
+
+def evaluate_and_apply_power(
+    x_expr: float,
+    y_expr: float,
+    m0_result: ValueHolder,
+):
+    print(x_expr)
+    print(y_expr)
+
+    m0_result.value = x_expr ** y_expr
