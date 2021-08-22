@@ -77,7 +77,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
         default_factory=list
     )
 
-    MAX_MULTIPLICITY = 100
+    max_multiplicity = 100
 
     source: Any = None
 

@@ -1,11 +1,12 @@
 import networkx as nx
 
 from ..interpretation.m0_operators import (
+    evaluate_and_apply_atomic_binary,
     evaluate_and_apply_collect,
     evaluate_and_apply_dot,
     evaluate_and_apply_fre,
     evaluate_and_apply_literal,
-    evaluate_and_apply_atomic_binary
+    evaluate_and_apply_sum,
 )
 from .lpg import SysML2LabeledPropertyGraph
 
@@ -139,10 +140,7 @@ class CalculationGroup:
                                             y_point = input_inst[-1]
 
                             evaluate_and_apply_atomic_binary(
-                                x_point,
-                                y_point,
-                                target_instances[index][-1],
-                                src_data["operator"]
+                                x_point, y_point, target_instances[index][-1], src_data["operator"]
                             )
 
                 elif src_metatype == "InvocationExpression":

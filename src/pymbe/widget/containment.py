@@ -175,7 +175,7 @@ class ContainmentTree(ipyt.Tree, BaseWidget):
 
         return ElementNode(
             icon=self.icons_by_type.get(metatype, self.default_icon),
-            name=data.get("name") or element._id,
+            name=data.get("name") or data.get("effectiveName") or element._id,
             _data=data,
             _identifier=data["@id"],
             _owner=owner_id,

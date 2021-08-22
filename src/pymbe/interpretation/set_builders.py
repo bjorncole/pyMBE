@@ -1,7 +1,6 @@
 import itertools
 import random
 from typing import Dict, List
-from warnings import warn
 
 from ..model import Element
 from .interpretation import LiveExpressionNode, ValueHolder
