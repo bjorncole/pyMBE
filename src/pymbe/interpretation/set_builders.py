@@ -97,7 +97,7 @@ def extend_sequences_by_sampling(
         draws_per.append(draw)
 
     set_extended = []
-    if len(sample_set) == 0 and fallback_to_generate:
+    if not sample_set and fallback_to_generate:
         new_list = [fallback_type() for _ in range(total_draw)]
 
         last_draw = 0
@@ -165,11 +165,6 @@ def extend_sequences_with_new_value_holder(
 
     for indx, seq in enumerate(previous_sequences):
         new_holder = ValueHolder(seq, base_name, None, base_ele, indx)
-
-        new_sequence = []
-        new_sequence += seq
-        new_sequence.append(new_holder)
-
-        new_sequences.append(new_sequence)
+        new_sequences.append(seq + [new_holder])
 
     return new_sequences
