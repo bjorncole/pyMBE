@@ -1,16 +1,14 @@
-from operator import add, mul
-from operator import pow as power
-from operator import sub, truediv
+import operator as op
 
 from ..interpretation.interpretation import LiveExpressionNode, ValueHolder
-from ..model import Instance
+from ..model import Instance, InstanceDictType
 
-OPERATOR_MAPPING = {
-    "+": add,
-    "-": sub,
-    "*": mul,
-    "/": truediv,
-    "**": power,
+OPERATORS = {
+    "+": op.add,
+    "-": op.sub,
+    "*": op.mul,
+    "/": op.truediv,
+    "**": op.pow,
 }
 
 
@@ -19,11 +17,9 @@ def sequence_dot_operator(left_item, right_side_seqs):
         return []
     left_len = len(left_item)
     right_len = len(right_side_seqs[0])
-    # print('Left is ' + str(left_len) + ' right is ' + str(right_len))
-    matched_items = []
 
+    matched_items = []
     for right_item in right_side_seqs:
-        # print(str(right_item[0:(right_len-1)]))
         if left_len != right_len:
             if str(left_item) == str(right_item[0 : (right_len - 1)]):
                 matched_items.append(right_item)
@@ -37,7 +33,7 @@ def sequence_dot_operator(left_item, right_side_seqs):
 def evaluate_and_apply_collect(
     base_scope: Instance,
     m0_expr: LiveExpressionNode,
-    instance_dict: dict,
+    instance_dict: InstanceDictType,
     m0_collection_input: ValueHolder,
     m0_collection_path: ValueHolder,
     result_holder: ValueHolder,
@@ -56,7 +52,7 @@ def evaluate_and_apply_collect(
 def evaluate_and_apply_dot(
     base_scope: Instance,
     m0_expr: LiveExpressionNode,
-    instance_dict: dict,
+    instance_dict: InstanceDictType,
     m0_collection_input: ValueHolder,
     m0_collection_path: ValueHolder,
     result_holder: ValueHolder,
@@ -74,7 +70,7 @@ def evaluate_and_apply_dot(
 
 def evaluate_and_apply_fre(
     m0_expr: LiveExpressionNode,
-    instance_dict: dict,
+    instance_dict: InstanceDictType,
 ) -> list:
     """
     Evaluate a feature reference expression at m0, e.g., return the list of sequences
@@ -98,8 +94,7 @@ def evaluate_and_apply_literal(m0_expr: LiveExpressionNode, m0_result: ValueHold
     viable result feature
 
     :param m0_expr:
-    :param instance_dict:
-    :return:
+    :param m0_result:
     """
     literal_value = m0_expr.base_att["value"]
     m0_result.value = literal_value
@@ -128,7 +123,9 @@ def evaluate_and_apply_atomic_binary(
             elif isinstance(expr.value[0].value, (float, int)):
                 numbers[index] = expr.value[0].value
 
-    func = OPERATOR_MAPPING.get(operator)
+    func = OPERATORS.get(operator)
     if not func:
-        raise NotImplementedError(f"Cannot evaluate operator: '{operator}'")
+        # Start by looking at existing operators at:
+        # https://docs.python.org/3/library/operator.html#mapping-operators-to-functions
+        raise NotImplementedError(f"Operator ({operator}) needs to be implemented")
     m0_result.value = func(*numbers)

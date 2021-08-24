@@ -9,11 +9,10 @@ from random import randint, sample
 from typing import Dict, List
 
 import networkx as nx
-from traitlets.traitlets import Instance
 
 from ..graph.lpg import SysML2LabeledPropertyGraph
 from ..label import get_label
-from ..model import Element, Model
+from ..model import Element, InstanceDictType, Model
 from ..query.metamodel_navigator import safe_feature_data
 from ..query.query import feature_multiplicity, roll_up_multiplicity_for_type
 from .results import pprint_dict_keys
@@ -45,8 +44,6 @@ TYPES_FOR_ROLL_UP_MULTIPLICITY = (
     "PartDefinition",
     "PortDefinition",
 )
-
-InstanceDictType = Dict[str, List[List[Instance]]]
 
 
 def random_generator_playbook(
@@ -144,7 +141,7 @@ def random_generator_phase_1_multiplicities(
     lpg: SysML2LabeledPropertyGraph,
     ptg: nx.DiGraph,
     scg: nx.DiGraph,
-) -> dict:
+) -> Dict[str, int]:
     """
     Calculates the multiplicities for classifiers in the considered model
     to support initial generation.
@@ -198,7 +195,7 @@ def random_generator_playbook_phase_1_singletons(
     model: Model,
     scg: nx.DiGraph,
     instances_dict: InstanceDictType,
-) -> None:
+):
     """
     Calculates instances for classifiers that aren't directly typed (but may have
     members or be superclasses for model elements that have sequences generated for them).
@@ -225,7 +222,7 @@ def random_generator_playbook_phase_1_singletons(
 def random_generator_playbook_phase_2_rollup(
     scg: nx.DiGraph,
     instances_dict: InstanceDictType,
-) -> None:
+):
     """
     Build up set of sequences for classifiers by taking the union of sequences
     already generated for the classifier subclasses.
@@ -253,7 +250,7 @@ def random_generator_playbook_phase_2_rollup(
 def random_generator_playbook_phase_2_unconnected(
     model: Model,
     instances_dict: InstanceDictType,
-) -> None:
+):
     """
     Final pass to generate sequences for classifiers that haven't been given sequences yet.
 
@@ -280,7 +277,7 @@ def random_generator_playbook_phase_3(
     model: Model,
     feature_sequences: List[List[str]],
     instances_dict: InstanceDictType,
-) -> list:
+):
     """
     Begin generating interpreting sequences for Features in the model by extending
     classifier sequences with randomly selected instances of classifiers that type
@@ -299,8 +296,8 @@ def random_generator_playbook_phase_3(
     for feature_sequence in feature_sequences:
         # skip if the feature is abstract or its owning type is
         last_item = model.elements[feature_sequence[-1]]
-        if last_item.isAbstract or last_item.owner.isAbstract:
-            print(f"Skipped sequnce ending in {last_item}")
+        if last_item.isAbstract:
+            print(f"Skipped sequence ending in {last_item}")
             continue
 
         new_sequences = []
@@ -371,9 +368,9 @@ def add_nested_features(
             "in instances dict made so far!"
         ) from exc
 
-    logger.info("About to extend sequences.")
-    logger.info("New sequences is currently %s", new_sequences)
-    logger.info("Already drawn is currently %s", already_drawn)
+    logger.debug("About to extend sequences.")
+    logger.debug("New sequences is currently %s", new_sequences)
+    logger.debug("Already drawn is currently %s", already_drawn)
 
     lower_mult = feature_multiplicity(feature, "lower")
     upper_mult = min(feature_multiplicity(feature, "upper"), model.max_multiplicity)
@@ -387,8 +384,8 @@ def add_nested_features(
         {},
     )
 
-    logger.info("Sequences extended.")
-    logger.info("New sequences is currently %s", new_sequences)
+    logger.debug("Sequences extended.")
+    logger.debug("New sequences is currently %s", new_sequences)
 
     freshly_drawn = [seq[-1] for seq in new_sequences]
     if classifier_id in already_drawn:
@@ -396,7 +393,7 @@ def add_nested_features(
     else:
         already_drawn[classifier_id] = freshly_drawn
 
-    logger.info("Already drawn is currently %s", pprint_dict_keys(already_drawn, model))
+    logger.debug("Already drawn is currently %s", pprint_dict_keys(already_drawn, model))
     return new_sequences
 
 
@@ -404,7 +401,7 @@ def random_generator_playbook_phase_4(
     model: Model,
     expr_sequences: List[List[str]],
     instances_dict: InstanceDictType,
-) -> None:
+):
     """
     Generate interpreting sequences for Expressions in the model
 
@@ -613,6 +610,8 @@ def validate_working_data(
     for sequence in feature_sequences:
         for element_id in sequence:
             element = model.elements[element_id]
+            if element._metatype not in TYPES_FOR_FEATURING:
+                continue
             if not element.get("type"):
                 raise ValueError(f"Feature {element}, ({element_id}) does not have a type!")
             try:

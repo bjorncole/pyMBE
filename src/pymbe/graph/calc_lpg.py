@@ -1,3 +1,5 @@
+from typing import List, Tuple
+
 import networkx as nx
 
 from ..interpretation.m0_operators import (
@@ -8,6 +10,7 @@ from ..interpretation.m0_operators import (
     evaluate_and_apply_literal,
     evaluate_and_apply_sum,
 )
+from ..model import InstanceDictType
 from .lpg import SysML2LabeledPropertyGraph
 
 COLLECTABLE_EXPRESSIONS = ("Expression", "FeatureReferenceExpression")
@@ -16,7 +19,12 @@ COLLECTABLE_EXPRESSIONS = ("Expression", "FeatureReferenceExpression")
 class CalculationGroup:
     """A graph to represent the active expression tree in a model."""
 
-    def __init__(self, eig: nx.MultiDiGraph, instance_dict: dict, calculation_list: list):
+    def __init__(
+        self,
+        eig: nx.MultiDiGraph,
+        instance_dict: InstanceDictType,
+        calculation_list: List[Tuple[str, str, str]],
+    ):
         self.graph = eig
         self.instance_dict = instance_dict
 

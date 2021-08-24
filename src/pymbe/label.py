@@ -52,9 +52,9 @@ def get_label_for_expression(
         "Expression",
         "FeatureReferenceExpression",
         "InvocationExpression",
+        "NullExpression",
         "OperatorExpression",
         "PathStepExpression",
-        "NullExpression",
     ):
         raise NotImplementedError(f"Cannot create M1 signature for: {metatype}")
 
@@ -85,7 +85,9 @@ def get_label_for_expression(
         inputs = []
     if isinstance(inputs, Element):
         inputs = [inputs]
-    input_names = [(an_input.name or an_input.effectiveName) for an_input in inputs]
+    input_names = [
+        (an_input.name or an_input.effectiveName or "Unnamed Input") for an_input in inputs
+    ]
     try:
         result: Element = expression.result
     except AttributeError:
