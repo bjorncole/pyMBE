@@ -1,5 +1,3 @@
-import typing as ty
-
 import ipywidgets as ipyw
 import traitlets as trt
 from ipyelk import Diagram, ElementLoader
@@ -47,7 +45,6 @@ class M0Viewer(ipyw.Box, BaseWidget):
     interpretation: InstanceDictType = trt.Dict()
 
     package_selector: ipyw.SelectMultiple = trt.Instance(ipyw.SelectMultiple, args=())
-    # selected_packages: tuple = trt.Tuple(args=())
 
     port_size: int = trt.Integer(15)
 
@@ -94,13 +91,6 @@ class M0Viewer(ipyw.Box, BaseWidget):
 
         return diagram
 
-    # @trt.default("package_selector")
-    # def _make_package_selector(self):
-    #     selector = ipyw.SelectMultiple(
-    #         options=self._get_model_packages()
-    #     )
-    #     trt.link((selector, "value"), (self, "selected_packages"))
-
     @trt.default("layout")
     def _make_layout(self):
         return dict(height="100%")
@@ -108,11 +98,11 @@ class M0Viewer(ipyw.Box, BaseWidget):
     def _get_model_packages(self):
         if not self.model:
             return {}
-        return {
-            element.name: element
-            for element in self.model.elements.values()
-            if element._metatype == "Package"
-        }
+        return dict(
+            sorted(
+                (package.name, package) for package in self.model.ownedMetatype.get("Package", [])
+            )
+        )
 
     def update(self, *_):
         self.package_selector.options = self._get_model_packages()

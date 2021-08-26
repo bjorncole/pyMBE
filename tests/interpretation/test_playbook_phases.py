@@ -1,5 +1,5 @@
-import pytest
 import networkx as nx
+import pytest
 
 from pymbe.interpretation.interp_playbooks import (
     random_generator_phase_1_multiplicities,

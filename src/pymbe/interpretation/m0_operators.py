@@ -3,7 +3,6 @@ import operator as op
 from ..interpretation.interpretation import LiveExpressionNode, ValueHolder
 from ..model import Instance, InstanceDictType
 
-
 # TODO: go through KerML spec for the remaining operators
 OPERATORS = {
     "+": op.add,
@@ -125,7 +124,9 @@ def evaluate_and_apply_atomic_binary(
                 numbers[index] = expr.value[0][-1].value
             elif isinstance(expr.value[0].value, (float, int)):
                 numbers[index] = expr.value[0].value
-        assert isinstance(numbers[index], (int, float)), f"Should be a number, not {numbers[index]}"
+        assert isinstance(
+            numbers[index], (int, float)
+        ), f"Should be a number, not {numbers[index]}"
 
     func = OPERATORS.get(operator)
     if not func:
