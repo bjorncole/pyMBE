@@ -3,12 +3,15 @@ import operator as op
 from ..interpretation.interpretation import LiveExpressionNode, ValueHolder
 from ..model import Instance, InstanceDictType
 
+
+# TODO: go through KerML spec for the remaining operators
 OPERATORS = {
     "+": op.add,
     "-": op.sub,
     "*": op.mul,
     "/": op.truediv,
     "**": op.pow,
+    "%": op.mod,
 }
 
 
@@ -117,15 +120,17 @@ def evaluate_and_apply_atomic_binary(
     for index, expr in enumerate([x_expr, y_expr]):
         if isinstance(expr.value, (float, int)):
             numbers[index] = expr.value
-        elif isinstance(expr.value, list):
-            if isinstance(expr.value[0], list):
+        elif isinstance(expr.value, (list, tuple)):
+            if isinstance(expr.value[0], (list, tuple)):
                 numbers[index] = expr.value[0][-1].value
             elif isinstance(expr.value[0].value, (float, int)):
                 numbers[index] = expr.value[0].value
+        assert isinstance(numbers[index], (int, float)), f"Should be a number, not {numbers[index]}"
 
     func = OPERATORS.get(operator)
     if not func:
         # Start by looking at existing operators at:
         # https://docs.python.org/3/library/operator.html#mapping-operators-to-functions
         raise NotImplementedError(f"Operator ({operator}) needs to be implemented")
+
     m0_result.value = func(*numbers)
