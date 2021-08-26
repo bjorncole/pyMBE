@@ -3,6 +3,7 @@ from typing import List, Tuple
 import networkx as nx
 
 from ..interpretation.m0_operators import (
+    OPERATORS,
     evaluate_and_apply_atomic_binary,
     evaluate_and_apply_collect,
     evaluate_and_apply_dot,
@@ -126,7 +127,7 @@ class CalculationGroup:
                                     target_instances[index][-1],
                                 )
 
-                    elif src_data["operator"] in ("+", "-", "*", "/", "**"):
+                    elif src_data["operator"] in OPERATORS:
                         for member in src_data["input"]:
                             collect_sub_inputs.append(lpg.nodes[member["@id"]])
 
