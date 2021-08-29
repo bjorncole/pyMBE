@@ -49,12 +49,12 @@ def pprint_edges(list_to_print: list, model: Model) -> list:
 def pprint_calc_steps(list_to_print: list, model: Model, signature_map: dict) -> list:
     print_lines = []
     for seq in list_to_print:
-        left_sig = f"{model.elements[seq[0]]}"
-        right_sig = f"{model.elements[seq[1]]}"
+        left_sig = f"{get_label_for_id(seq[0], model)} <<{model.elements[seq[0]]._metatype}>>"
+        right_sig = f"{get_label_for_id(seq[1], model)} <<{model.elements[seq[1]]._metatype}>>"
         if seq[0] in signature_map:
-            left_sig = f" ({signature_map[seq[0]]})"
+            left_sig = f"{signature_map[seq[0]]} <<{model.elements[seq[0]]._metatype}>>"
         if seq[1] in signature_map:
-            right_sig = f" ({signature_map[seq[1]]})"
+            right_sig = f"{signature_map[seq[1]]} <<{model.elements[seq[1]]._metatype}>>"
         left_label = f"{left_sig}"
         right_label = f"{right_sig}"
         seq_line = [left_label, right_label, seq[2]]
