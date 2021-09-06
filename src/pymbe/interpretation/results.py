@@ -5,20 +5,21 @@ from ..label import get_label, get_label_for_id
 from ..model import Model
 
 
-def pprint_interpretation(interpretation: dict, model: Model) -> list:
+def pprint_interpretation(interpretation: dict, model: Model, show_empty: bool = True) -> list:
     print_lines = []
     for key, val in interpretation.items():
-        print_lines.append(
-            get_label(model.elements[key]) + ", id = " + key + ", size = " + str(len(val))
-        )
-        short_list = []
-        for indx, ind_val in enumerate(val):
-            if indx < 5:
-                short_list.append(ind_val)
-        if len(val) > 4:
-            short_list.append([".."])
+        if show_empty or len(str(len(val))) > 0:
+            print_lines.append(
+                get_label(model.elements[key]) + ", id = " + key + ", size = " + str(len(val))
+            )
+            short_list = []
+            for indx, ind_val in enumerate(val):
+                if indx < 5:
+                    short_list.append(ind_val)
+            if len(val) > 4:
+                short_list.append([".."])
 
-        print_lines.extend(short_list)
+            print_lines.extend(short_list)
     return print_lines
 
 
