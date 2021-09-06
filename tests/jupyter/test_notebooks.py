@@ -1,6 +1,8 @@
+import pytest
 from testbook import testbook
 
 
+@pytest.mark.skip()
 @testbook("docs/tutorials/01-Basic.ipynb", execute=True)
 def test_tutorial(tb):
     """Test the Tutorial notebook"""
@@ -14,10 +16,11 @@ def test_tutorial(tb):
     assert not set(m1_diagram.model.elements).symmetric_difference(set(tree.model.elements))
 
 
-# @testbook("tests/jupyter/notebooks/Playbook Explorer Parts Test.ipynb", execute=True)
-# def test_simple_parts_explorer(tb):
-#     m0_interpretation = tb.ref("m0_interpretation")
-#     assert m0_interpretation
+@pytest.mark.skip()
+@testbook("tests/jupyter/notebooks/Playbook Explorer Parts Test.ipynb", execute=True)
+def test_simple_parts_explorer(tb):
+    m0_interpretation = tb.ref("m0_interpretation")
+    assert m0_interpretation
 
 
 @testbook("docs/how_to_guides/SysML Model.ipynb", execute=True)
