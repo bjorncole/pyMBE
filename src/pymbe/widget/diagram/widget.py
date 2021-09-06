@@ -199,7 +199,7 @@ class M1Viewer(ipyw.Box, BaseWidget):  # pylint: disable=too-many-ancestors
             if id_ in self.lpg.graph.edges
         )
 
-    async def _on_update_diagram_button_click(self, button: ipyw.Button):
+    def _on_update_diagram_button_click(self, button: ipyw.Button):
         with self.log_out:
             button.disabled = failed = True
             try:

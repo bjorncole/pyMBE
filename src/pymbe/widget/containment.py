@@ -1,3 +1,4 @@
+import json
 import threading
 import typing as ty
 
@@ -5,6 +6,7 @@ import ipytree as ipyt
 import ipywidgets as ipyw
 import traitlets as trt
 from wxyz.lab import DockPop
+from wxyz.html import File, FileBox
 
 from ..model import Element, Model
 from .client import SysML2ClientWidget
@@ -27,12 +29,43 @@ class ElementNode(ipyt.Node):
 
 
 @ipyw.register
+class SysML2FileLoader(FileBox, BaseWidget):
+    """A simple UI for loading SysML models from File"""
+
+    description: str = trt.Unicode("File Loader").tag(sync=True)
+
+    observer = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.accept = ["json"]
+        self.multiple = False
+
+    def update(self, *_):
+        self.children = []
+
+    def _load_model(self, change: trt.Bunch):
+        self.model = Model.load(json.loads(change.new))
+
+    @trt.observe("children")
+    def _update_model(self, change: trt.Bunch):
+        if isinstance(change.old, (list, tuple)) and change.old:
+            old, *_ = change.old
+            if isinstance(old, File):
+                old.unobserve(self._load_model)
+        if isinstance(change.new, (list, tuple)) and change.new:
+            new, *_ = change.new
+            new.observe(self._load_model, "value")
+
+
+@ipyw.register
 class ContainmentTree(ipyw.VBox, BaseWidget):
     """A widget to explore the structure and data in a project."""
 
     description: str = trt.Unicode("Containment Tree").tag(sync=True)
 
     client: SysML2ClientWidget = trt.Instance(SysML2ClientWidget)
+    file_loader: SysML2FileLoader = trt.Instance(SysML2FileLoader, args=())
 
     default_icon: str = trt.Unicode("genderless").tag(sync=True)
     indeterminate_icon: str = trt.Unicode("question").tag(sync=True)
@@ -40,7 +73,7 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
     tree = trt.Instance(ipyt.Tree, kw=dict(layout=dict(overflow_y="auto")))
     add_widget: ty.Callable = trt.Callable(allow_none=True)
 
-    load_from_file: ipyw.Button = trt.Instance(
+    launch_file_loader: ipyw.Button = trt.Instance(
         ipyw.Button,
         kw=dict(
             icon="folder-open",
@@ -101,9 +134,12 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
         self.tree.observe(self._update_selected, "selected_nodes")
 
         self.launch_api.on_click(self._pop_api_client)
+        self.launch_file_loader.on_click(self._pop_file_loader)
         self.pop_log.on_click(self._pop_log_out)
+
         for linked_attribute in ("model", "log_out"):
-            trt.link((self, linked_attribute), (self.client, linked_attribute))
+            for widget in (self.client, self.file_loader):
+                trt.link((self, linked_attribute), (widget, linked_attribute))
 
     @trt.default("client")
     def _make_client(self) -> SysML2ClientWidget:
@@ -111,21 +147,27 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
         client._set_layout()
         return client
 
+    @trt.default("add_widget")
+    def _make_add_widget(self) -> ty.Callable:
+        def add_widget(widget: ipyw.DOMWidget, mode="split-right"):
+            DockPop([widget], mode=mode)
+        return add_widget
+
     @property
     def selected_nodes(self):
         return self.tree.selected_nodes
 
     def _pop_api_client(self, *_):
         with self.log_out:
-            mode = "split-top"
-            if self.add_widget:
-                self.add_widget(self.client, mode=mode)
-            else:
-                DockPop([self.client], mode=mode)
+            self.add_widget(self.client, mode="split-top")
+
+    def _pop_file_loader(self, *_):
+        with self.log_out:
+            self.add_widget(self.file_loader, mode="split-top")
 
     def _pop_log_out(self, *_):
         with self.log_out:
-            DockPop([self.log_out], mode="split-right")
+            self.add_widget(self.log_out, mode="split-right")
 
     @trt.validate("children")
     def _validated_children(self, proposal: trt.Bunch) -> tuple:
@@ -135,7 +177,7 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
         return tuple(
             [
                 ipyw.HBox(
-                    children=[self.load_from_file, self.launch_api],
+                    children=[self.launch_file_loader, self.launch_api, self.pop_log],
                     layout=dict(min_height="50px"),
                 ),
                 self.tree,
@@ -154,6 +196,23 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
             element_ids = {node._identifier for node in self.selected_nodes}
             self.update_selected(*element_ids)
 
+    def _add_selected_node_lineage(self, missing_element_id: str):
+        element = self.model.elements[missing_element_id]
+        nodes_by_id = self.nodes_by_id
+        lineage = [element]
+        while element.owner and element.owner._id not in self.nodes_by_id:
+            element = element.owner
+            lineage += [element]
+
+        if not element.owner:
+            return
+
+        for element in reversed(lineage):
+            nodes_by_id[element._id] = node = self._make_node(element=element, opened=True)
+            parent = nodes_by_id[element.owner._id]
+            parent.add_node(node)
+            parent.opened = True
+
     @trt.observe("selected")
     def _update_selected_nodes(self, *_):
         with self.log_out:
@@ -164,6 +223,10 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
                 if not self.selected:
                     self.deselect_nodes()
                     return
+
+                for element_id in self.selected:
+                    if element_id not in self.nodes_by_id:
+                        self._add_selected_node_lineage(element_id)
 
                 nodes_to_deselect = [
                     node for node in self.selected_nodes if node._identifier not in self.selected
@@ -277,7 +340,7 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
             tree.remove_node(node)
             del node
 
-    def _make_node(self, element: Element, root=None):
+    def _make_node(self, element: Element, root=None, opened=False):
         node = self.nodes_by_id.get(element._id)
         if node:
             return node
@@ -295,7 +358,7 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
         node = ElementNode(
             icon=icon,
             name=element.get("effectiveName") or f"{element._id} «{element._metatype}»",
-            opened=False,
+            opened=opened,
             selected=element._id in self.selected,
             _data=data,
             _element=element,
