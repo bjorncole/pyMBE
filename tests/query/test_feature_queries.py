@@ -38,7 +38,7 @@ def test_type_to_feature1(kerbal_client, kerbal_lpg, kerbal_stable_names):
     assert get_features_typed_by_type(kerbal_lpg, engine_type_feat) == [engines_feat]
 
 
-@pytest.mark.skip()
+@pytest.mark.skip("Need to refactor tests, after 0.19.0 upgrades")
 def test_type_to_feature2(simple_parts_client, simple_parts_lpg, simple_parts_stable_names):
     *_, qualified_name_to_id = simple_parts_stable_names
 
@@ -197,7 +197,7 @@ def test_type_multiplicity_rollup1(kerbal_lpg, kerbal_stable_names):
     assert rocket_upper == 0
 
 
-@pytest.mark.skip()
+@pytest.mark.skip("Need to refactor tests, after 0.19.0 upgrades")
 def test_type_multiplicity_rollup2(simple_parts_lpg, simple_parts_stable_names):
     *_, qualified_name_to_id = simple_parts_stable_names
 
