@@ -1,10 +1,9 @@
 # a set of queries to run on Labeled Property Graphs
 import math
 from typing import List
+from warnings import warn
 
 import networkx as nx
-
-from pymbe.interpretation.set_builders import MAX_MULTIPLICITY
 
 from ..graph.lpg import SysML2LabeledPropertyGraph
 from ..label import get_label
@@ -39,7 +38,14 @@ def roll_up_multiplicity(
     feature: Element,
     bound: str,
 ) -> int:
+
+    max_multiplicity = lpg.model.max_multiplicity
+
     banded_featuring_graph = lpg.get_projection("Expanded Banded")
+
+    # Need to check that we are dealing with a DAG, otherwise take care with cycles
+    if not nx.is_directed_acyclic_graph(banded_featuring_graph):
+        warn("Banded featuring graph is not an acyclic digraph!!!")
 
     banded_roots = [
         node
@@ -54,6 +60,7 @@ def roll_up_multiplicity(
         # case where the usage is actually top of a nesting set
         if feature_id == part_tree_root:
             total_mult = 1
+
         try:
             part_paths = nx.all_simple_paths(
                 banded_featuring_graph,
@@ -66,7 +73,7 @@ def roll_up_multiplicity(
                     [
                         min(
                             feature_multiplicity(model.elements[element_id], bound),
-                            MAX_MULTIPLICITY,
+                            max_multiplicity,
                         )
                         for element_id in part_path
                     ]
@@ -76,7 +83,7 @@ def roll_up_multiplicity(
             print("Found no path when rolling up multiplicity.")
         except nx.NodeNotFound:
             # nothing to roll up, so just use own multiplicity
-            total_mult = min(feature_multiplicity(feature, bound), MAX_MULTIPLICITY)
+            total_mult = min(feature_multiplicity(feature, bound), max_multiplicity)
 
     return total_mult
 
@@ -96,6 +103,8 @@ def roll_up_multiplicity_for_type(
     if element._id in ptg.nodes:
         feat_ids = get_features_typed_by_type(lpg, element._id)
         for feat_id in feat_ids:
+            if lpg.model.elements[feat_id].isAbstract:
+                continue
             running_total += roll_up_multiplicity(
                 lpg,
                 all_elements[feat_id],

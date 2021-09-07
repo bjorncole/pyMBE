@@ -1,7 +1,6 @@
 import itertools
 import random
 from typing import Dict, List
-from warnings import warn
 
 from ..model import Element
 from .interpretation import LiveExpressionNode, ValueHolder
@@ -17,7 +16,6 @@ from .interpretation import LiveExpressionNode, ValueHolder
 # In both cases, use a reference sequence to find the minimal length intepretations
 # Both classifiers and features can be made this way, just difference of lengths
 
-MAX_MULTIPLICITY = 100
 VALUE_HOLDER_TYPES = ("AttributeDefinition", "AttributeUsage", "DataType")
 
 
@@ -93,16 +91,13 @@ def extend_sequences_by_sampling(
     #        have the same type!
 
     total_draw, draws_per = 0, []
-    if upper_mult > MAX_MULTIPLICITY:
-        warn(f"Upper multiplicity is capped from {upper_mult} down to {MAX_MULTIPLICITY}")
-        upper_mult = MAX_MULTIPLICITY
     for _ in range(0, len(previous_sequences)):
         draw = random.randint(lower_mult, upper_mult)
         total_draw = total_draw + draw
         draws_per.append(draw)
 
     set_extended = []
-    if len(sample_set) == 0 and fallback_to_generate:
+    if not sample_set and fallback_to_generate:
         new_list = [fallback_type() for _ in range(total_draw)]
 
         last_draw = 0
@@ -143,6 +138,41 @@ def extend_sequences_by_sampling(
     return set_extended
 
 
+def extend_sequences_with_new_instance(
+    previous_sequences: list, lower_mult: int, upper_mult: int, m1_type: Element, first_step: bool
+) -> list:
+
+    total_draw, draws_per = 0, []
+    for _ in range(0, len(previous_sequences)):
+        draw = random.randint(lower_mult, upper_mult)
+        total_draw = total_draw + draw
+        draws_per.append(draw)
+    if first_step:
+        total_draw = random.randint(lower_mult, upper_mult)
+
+    set_extended = []
+
+    new_list = [m1_type() for _ in range(total_draw)]
+
+    if first_step:
+        return [[item] for item in new_list]
+
+    last_draw = 0
+    for index, seq in enumerate(previous_sequences):
+        for pull in new_list[last_draw : last_draw + draws_per[index]]:
+            new_seq = []
+            new_seq = new_seq + seq
+            new_seq.append(pull)
+
+            # TODO: Look at making a generator instead
+
+            set_extended.append(new_seq)
+
+        last_draw = last_draw + draws_per[index]
+
+    return set_extended
+
+
 def extend_sequences_with_new_expr(
     previous_sequences: List[Element],
     expr_string: str,
@@ -170,11 +200,6 @@ def extend_sequences_with_new_value_holder(
 
     for indx, seq in enumerate(previous_sequences):
         new_holder = ValueHolder(seq, base_name, None, base_ele, indx)
-
-        new_sequence = []
-        new_sequence += seq
-        new_sequence.append(new_holder)
-
-        new_sequences.append(new_sequence)
+        new_sequences.append(seq + [new_holder])
 
     return new_sequences

@@ -68,14 +68,16 @@ class Model:  # pylint: disable=too-many-instance-attributes
     all_non_relationships: Dict[str, "Element"] = field(default_factory=dict)
 
     ownedElement: ListOfNamedItems = field(  # pylint: disable=invalid-name
-        default_factory=ListOfNamedItems
+        default_factory=ListOfNamedItems,
     )
     ownedMetatype: Dict[str, List["Element"]] = field(  # pylint: disable=invalid-name
-        default_factory=dict
+        default_factory=dict,
     )
     ownedRelationship: List["Element"] = field(  # pylint: disable=invalid-name
-        default_factory=list
+        default_factory=list,
     )
+
+    max_multiplicity = 100
 
     source: Any = None
 
@@ -130,7 +132,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
             element for element in self.elements.values() if element._metatype == "Package"
         )
 
-    def save_to_file(self, filepath: Union[Path, str], indent: int = 2) -> bool:
+    def save_to_file(self, filepath: Union[Path, str], indent: int = 2):
         if isinstance(filepath, str):
             filepath = Path(filepath)
         filepath.write_text(
@@ -412,3 +414,6 @@ class ValueHolder(Instance):
         if value is None:
             value = "unset"
         return f"{self.name} ({value})"
+
+
+InstanceDictType = Dict[str, List[List[Instance]]]

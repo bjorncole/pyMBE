@@ -6,19 +6,20 @@
 import logging
 import traceback
 from random import randint, sample
+from typing import Dict, List
 
 import networkx as nx
 
 from ..graph.lpg import SysML2LabeledPropertyGraph
 from ..label import get_label, get_label_for_id
-from ..model import Element, Model
-from ..query.metamodel_navigator import safe_feature_data
+from ..model import Element, InstanceDictType, Model
 from ..query.query import feature_multiplicity, roll_up_multiplicity_for_type
 from .results import pprint_dict_keys
 from .set_builders import (
     create_set_with_new_instances,
     extend_sequences_by_sampling,
     extend_sequences_with_new_expr,
+    extend_sequences_with_new_instance,
     extend_sequences_with_new_value_holder,
 )
 
@@ -42,83 +43,80 @@ TYPES_FOR_ROLL_UP_MULTIPLICITY = (
     "InterfaceDefinition",
     "PartDefinition",
     "PortDefinition",
+    "StateDefinition",
 )
 
 
-def random_generator_playbook(lpg: SysML2LabeledPropertyGraph, name_hints: dict = None) -> dict:
+def random_generator_playbook(
+    lpg: SysML2LabeledPropertyGraph,
+    name_hints: Dict[str, str] = None,
+    filtered_feat_packages: List[Element] = None,
+    phase_limit: int = 10,
+) -> InstanceDictType:
     """
     Main routine to execute a playbook to randomly generate sequences as an interpretation
     of a SysML v2 model
 
     :param lpg: Labeled propery graph of the M1 model
     :param name_hints: A dictionary to make labeling instances more clean
+    :param filtered_feat_packages: A list of packages by which to down filter feature and
+        expression sequence templates
     :return: A dictionary of sequences keyed by the id of a given M1 type
     """
 
     all_elements = lpg.model.elements
     name_hints = name_hints or {}
-    can_interpret = validate_working_data(lpg)
+    filtered_feat_packages = filtered_feat_packages or []
 
-    if not can_interpret:
-        return {}
+    # all_feature_sequences = build_sequence_templates(lpg=lpg)
 
-    # PHASE 1: Create a set of instances for part definitions based on usage multiplicities
+    expression_sequences = build_expression_sequence_templates(lpg=lpg)
+    feature_sequences = build_banded_sequence_templates(
+        lpg=lpg, package_filter=filtered_feat_packages
+    )
 
-    # work from part definitions to establish how many definitions are needed
+    if filtered_feat_packages:
+        expression_sequences = [
+            seq
+            for seq in expression_sequences
+            if all_elements[seq[-1]].owning_package in filtered_feat_packages
+        ]
 
-    ptg = lpg.get_projection("Part Typing")
-    scg = lpg.get_projection("Part Definition")
+    validate_working_data(
+        expression_sequences=expression_sequences,
+        feature_sequences=feature_sequences,
+        model=lpg.model,
+    )
 
-    feature_sequences = build_sequence_templates(lpg=lpg)
-
-    full_multiplicities = random_generator_phase_1_multiplicities(lpg, ptg, scg)
-
-    instances_dict = {
-        type_id: create_set_with_new_instances(
-            sequence_template=[all_elements[type_id]],
-            quantities=[number],
-            name_hints=name_hints,
-        )
-        for type_id, number in full_multiplicities.items()
-    }
-
-    # pick up the definitions that aren't matched to a usage yet
-
-    random_generator_playbook_phase_1_singletons(lpg.model, scg, instances_dict)
-
-    # PHASE 2: Combine sets of instances into sets that are marked as more general in the
-    #          user model
-
-    # "Roll up" the graph through a breadth-first search from the most general classifier down to
-    # the most specific and then move in reverse order from the specific (subset) to
-    # the general (superset)
-
-    random_generator_playbook_phase_2_rollup(scg, instances_dict)
-
-    # Fill in any part definitions that still don't have instances yet (because they get filtered
-    # out by the Part Definition pre-defined graph (neither typed nor subclassed))
-
-    random_generator_playbook_phase_2_unconnected(lpg.model, instances_dict)
+    instances_dict = {}
 
     # PHASE 3: Expand the dictionaries out into feature sequences by pulling from instances
     #          developed here
 
-    random_generator_playbook_phase_3(lpg.model, feature_sequences, instances_dict)
+    if phase_limit < 3:
+        return instances_dict
+
+    random_generator_playbook_phase_3_new_instances(lpg.model, feature_sequences, instances_dict)
+
+    # do one rollup for features (subsetting and redefinition)
+    # and one for classifiers (subclassificaiton and typing)
+
+    random_generator_playbook_phase_3_rollup(
+        lpg.model, lpg.get_projection("Redefinition and Subsetting"), instances_dict
+    )
+
+    random_generator_playbook_phase_3_rollup(
+        lpg.model, lpg.get_projection("Generalization"), instances_dict
+    )
+
+    if phase_limit < 4:
+        return instances_dict
 
     # PHASE 4: Expand sequences to support computations
-
-    expr_sequences = build_expression_sequence_templates(lpg=lpg)
-
-    # for indx, seq in enumerate(expr_sequences):
-    #    print("Sequence number " + str(indx))
-    #    for item in seq:
-    #        print(get_label(all_elements[item], all_elements) + ", id = " + item)
-
     # Move through existing sequences and then start to pave further with new steps
+    random_generator_playbook_phase_4(lpg.model, expression_sequences, instances_dict)
 
-    random_generator_playbook_phase_4(lpg.model, expr_sequences, instances_dict)
-
-    # attached connector ends to sequences(
+    # PHASE 5: Interpret connection usages and map ConnectionEnds at M0
 
     random_generator_playbook_phase_5(lpg, lpg.get_projection("Connection"), instances_dict)
 
@@ -129,7 +127,7 @@ def random_generator_phase_1_multiplicities(
     lpg: SysML2LabeledPropertyGraph,
     ptg: nx.DiGraph,
     scg: nx.DiGraph,
-) -> dict:
+) -> Dict[str, int]:
     """
     Calculates the multiplicities for classifiers in the considered model
     to support initial generation.
@@ -157,17 +155,22 @@ def random_generator_phase_1_multiplicities(
     # look at all the types in the feature sequences
     for typ, mult in type_multiplicities.items():
         if typ in abstracts:
-            specifics = list(scg.successors(typ))
-            taken = 0
-            no_splits = len(specifics)
-            # need to sub-divide the abstract quantities
-            for index, specific in enumerate(specifics):
-                if index < (no_splits - 1):
-                    draw = randint(0, mult)
-                    taken = taken + draw
-                else:
-                    draw = mult - taken
-                full_multiplicities[specific] = draw
+            if typ not in scg.nodes:
+                full_multiplicities[typ] = mult
+            try:
+                specifics = list(scg.successors(typ))
+                taken = 0
+                no_splits = len(specifics)
+                # need to sub-divide the abstract quantities
+                for index, specific in enumerate(specifics):
+                    if index < (no_splits - 1):
+                        draw = randint(0, mult)
+                        taken = taken + draw
+                    else:
+                        draw = mult - taken
+                    full_multiplicities[specific] = draw
+            except nx.NetworkXError:
+                continue
         else:
             full_multiplicities[typ] = mult
 
@@ -177,8 +180,8 @@ def random_generator_phase_1_multiplicities(
 def random_generator_playbook_phase_1_singletons(
     model: Model,
     scg: nx.DiGraph,
-    instances_dict: dict,
-) -> None:
+    instances_dict: InstanceDictType,
+):
     """
     Calculates instances for classifiers that aren't directly typed (but may have
     members or be superclasses for model elements that have sequences generated for them).
@@ -204,8 +207,8 @@ def random_generator_playbook_phase_1_singletons(
 
 def random_generator_playbook_phase_2_rollup(
     scg: nx.DiGraph,
-    instances_dict: dict,
-) -> None:
+    instances_dict: InstanceDictType,
+):
     """
     Build up set of sequences for classifiers by taking the union of sequences
     already generated for the classifier subclasses.
@@ -224,9 +227,6 @@ def random_generator_playbook_phase_2_rollup(
 
         for gen in bfs_list:
             new_superset = []
-            # use the BFS dictionary to be assured that everything is covered
-            # update_dict = generate_superset_instances(scg, gen, visited_nodes, instances_dict)
-
             for subset_node in bfs_dict[gen]:
                 new_superset.extend(instances_dict[subset_node])
 
@@ -235,8 +235,8 @@ def random_generator_playbook_phase_2_rollup(
 
 def random_generator_playbook_phase_2_unconnected(
     model: Model,
-    instances_dict: dict,
-) -> None:
+    instances_dict: InstanceDictType,
+):
     """
     Final pass to generate sequences for classifiers that haven't been given sequences yet.
 
@@ -261,9 +261,9 @@ def random_generator_playbook_phase_2_unconnected(
 
 def random_generator_playbook_phase_3(
     model: Model,
-    feature_sequences: list,
-    instances_dict: dict,
-) -> list:
+    feature_sequences: List[List[str]],
+    instances_dict: InstanceDictType,
+):
     """
     Begin generating interpreting sequences for Features in the model by extending
     classifier sequences with randomly selected instances of classifiers that type
@@ -280,18 +280,152 @@ def random_generator_playbook_phase_3(
     logger.debug("Starting things up")
     already_drawn = {}
     for feature_sequence in feature_sequences:
+        # skip if the feature is abstract or its owning type is
+        last_item = model.elements[feature_sequence[-1]]
+        if last_item.isAbstract:
+            print(f"Skipped sequence ending in {last_item}")
+            continue
+
+        new_sequences = []
+        first_type = True
+        for type_id in feature_sequence:
+            if type_id in instances_dict and not first_type:
+                # Don't repeat draws if you encounter the same feature again
+                continue
+            # sample set will be the last element in the sequence for classifiers
+            type_ = model.elements[type_id]
+            metatype = type_._metatype
+            if metatype in TYPES_FOR_FEATURING:
+                feature_types = type_.get("type")
+                if isinstance(feature_types, Element):
+                    classifier_id = feature_types._id or []
+                elif len(feature_types) > 1:
+                    raise NotImplementedError("Cannot handle features with multiple types yet!")
+                else:
+                    classifier_id = feature_types[0]._id
+            else:
+                classifier_id = type_id
+
+            if first_type:
+                if metatype in TYPES_FOR_FEATURING:
+                    # TODO: refactor this "hack" for usage at top
+                    new_sequences = [instances_dict[classifier_id][0]]
+                    if classifier_id not in already_drawn:
+                        already_drawn[classifier_id] = list(new_sequences[0])
+                else:
+                    new_sequences = instances_dict[classifier_id]
+            else:
+                # We know every type after the first must be a feature in SysML v2
+                new_sequences = add_nested_features(
+                    already_drawn=already_drawn,
+                    classifier_id=classifier_id,
+                    feature=type_,
+                    instances_dict=instances_dict,
+                    new_sequences=new_sequences,
+                    model=model,
+                )
+
+            first_type = False
+            instances_dict[type_id] = new_sequences
+
+
+def add_nested_features(
+    already_drawn: Dict[str, List[str]],
+    classifier_id: str,
+    feature: Element,
+    instances_dict: InstanceDictType,
+    new_sequences: List[List[str]],
+    model: Model,
+):
+    """Interpret nested features within a given type."""
+    try:
+        if classifier_id in already_drawn:
+            remaining = [
+                item
+                for seq in instances_dict[classifier_id]
+                for item in seq
+                if item not in already_drawn[classifier_id]
+            ]
+        else:
+            remaining = [item for seq in instances_dict[classifier_id] for item in seq]
+    except KeyError as exc:
+        raise KeyError(
+            f"Cannot find type {model.elements[classifier_id]}, id {classifier_id} "
+            "in instances dict made so far!"
+        ) from exc
+
+    logger.debug("About to extend sequences.")
+    logger.debug("New sequences is currently %s", new_sequences)
+    logger.debug("Already drawn is currently %s", already_drawn)
+
+    lower_mult = feature_multiplicity(feature, "lower")
+    upper_mult = min(feature_multiplicity(feature, "upper"), model.max_multiplicity)
+
+    new_sequences = extend_sequences_by_sampling(
+        new_sequences,
+        lower_mult,
+        upper_mult,
+        remaining,
+        False,
+        {},
+    )
+
+    logger.debug("Sequences extended.")
+    logger.debug("New sequences is currently %s", new_sequences)
+
+    freshly_drawn = [seq[-1] for seq in new_sequences]
+    if classifier_id in already_drawn:
+        already_drawn[classifier_id] += freshly_drawn
+    else:
+        already_drawn[classifier_id] = freshly_drawn
+
+    logger.debug("Already drawn is currently %s", pprint_dict_keys(already_drawn, model))
+    return new_sequences
+
+
+def random_generator_playbook_phase_3_new_instances(
+    model: Model,
+    feature_sequences: list,
+    instances_dict: dict,
+) -> list:
+    """
+    Begin generating interpreting sequences for Features in the model by extending
+    classifier sequences with newly generated instances of classifiers that type
+    nested features.
+
+    :param model: A pointer to the active model for which sequences are being generated
+    :param feature_sequences: Sequences that represent the nesting structure of the features
+    :param instances_dict: Working dictionary of interpreted sequences for the model
+    :return: (Temporarily return a trace of actions) None - side effect is addition of new
+        instances to the instances dictionary
+    """
+
+    # FIXME: This approach does not currently support moving from abstract classifiers to
+    #        non-abstract classifiers but it is hard to know how to do this correctly with
+    #        the SysML v2 libraries and implicit use of core definition types like Part or Port
+
+    logger.debug("Starting things up")
+    for feature_sequence in feature_sequences:
+        # skip if the feature is abstract or its owning type is
+        last_item = model.elements[feature_sequence[-1]]
+        if last_item.isAbstract or last_item.owner.isAbstract:
+            print(f"Skipped sequnce ending in {last_item}")
+            continue
+
         new_sequences = []
         for index, feature_id in enumerate(feature_sequence):
-            if feature_id in instances_dict and index > 0:
-                # don't repeat draws if you encounter the same feature again
+            # if you've seen this feature before, move deeper into the sequence
+            if feature_id in instances_dict:
+                new_sequences = instances_dict[feature_id]
                 continue
+
             # sample set will be the last element in the sequence for classifiers
             feature = model.elements[feature_id]
             metatype = feature._metatype
             if metatype in TYPES_FOR_FEATURING:
-                types = safe_feature_data(feature, "type")
+                types = feature.type
                 if isinstance(types, Element):
-                    typ = types._id or []
+                    typ_id = types._id or []
                 else:
                     if not types:
                         raise NotImplementedError(
@@ -303,63 +437,71 @@ def random_generator_playbook_phase_3(
                         raise NotImplementedError(
                             "Cannot handle features with multiple types yet!"
                         )
-                    typ = types[0]
+                    typ_id = types[0]
             else:
-                typ = feature_id
+                typ_id = feature_id
 
-            if index == 0:
-                if metatype in TYPES_FOR_FEATURING:
-                    # hack for usage at top
-                    new_sequences = [instances_dict[typ][0]]
-                    if typ not in already_drawn:
-                        already_drawn[typ] = list(new_sequences[0])
-                else:
-                    new_sequences = instances_dict[typ]
-            else:
-                if typ in already_drawn:
-                    remaining = [
-                        item
-                        for seq in instances_dict[typ]
-                        for item in seq
-                        if item not in already_drawn[typ]
-                    ]
-                else:
-                    remaining = [item for seq in instances_dict[typ] for item in seq]
+            lower_mult = feature_multiplicity(feature, "lower")
+            upper_mult = min(feature_multiplicity(feature, "upper"), model.MAX_MULTIPLICITY)
 
-                logger.info("About to extend sequences.")
-                logger.info("New sequences is currently %s", new_sequences)
-                logger.info("Already drawn is currently %s", already_drawn)
+            new_sequences = extend_sequences_with_new_instance(
+                new_sequences,
+                lower_mult,
+                upper_mult,
+                model.elements[typ_id],
+                index == 0,  # set first step true on first time in the loop
+            )
+            # only do interpretation for usages, not types (they will get sequences from rollup)
+            if metatype in TYPES_FOR_FEATURING or index == 0:
+                instances_dict[feature_id] = new_sequences
 
-                new_sequences = extend_sequences_by_sampling(
-                    new_sequences,
-                    feature_multiplicity(feature, "lower"),
-                    feature_multiplicity(feature, "upper"),
-                    remaining,
-                    False,
-                    {},
-                )
 
-                logger.info("Sequences extended.")
-                logger.info("New sequences is currently %s", new_sequences)
+def random_generator_playbook_phase_3_rollup(
+    model: Model,
+    scg: nx.DiGraph,
+    instances_dict: dict,
+) -> None:
+    """
+    Build up set of sequences for classifiers by taking the union of sequences
+    already generated for the classifier subclasses.
 
-                freshly_drawn = [seq[-1] for seq in new_sequences]
-                if typ in already_drawn:
-                    already_drawn[typ] += freshly_drawn
-                else:
-                    already_drawn[typ] = freshly_drawn
+    :param model: Active SysML model
+    :param scg: Generalization graph projection from the LPG
+    :param instances_dict: Working dictionary of interpreted sequences for the model
+    :return: None - side effect is addition of new instances to the instances dictionary
+    """
+    roots = [node for node in scg.nodes if scg.in_degree(node) == 0]
 
-                logger.info(
-                    "Already drawn is currently %s", pprint_dict_keys(already_drawn, model)
-                )
+    # FIXME: Generalization graph has multiple paths to elements (can be redefine and type
+    #        for example) which may lead to some elements being skipped for rollup
 
-            instances_dict[feature_id] = new_sequences
+    for root in roots:
+        bfs_dict = dict(nx.bfs_successors(scg, root))
+        bfs_list = list(bfs_dict.keys())
+        bfs_list.reverse()
+
+        for gen in bfs_list:
+            new_superset = []
+            # use the BFS dictionary to be assured that everything is covered
+            # update_dict = generate_superset_instances(scg, gen, visited_nodes, instances_dict)
+
+            for subset_node in bfs_dict[gen]:
+                if subset_node in instances_dict:
+                    try:
+                        new_superset.extend(instances_dict[subset_node])
+                    except KeyError as exc:
+                        raise KeyError(
+                            f"Cannot find {model.elements[subset_node]} in instances_dict!"
+                        ) from exc
+
+            instances_dict[gen] = new_superset
 
 
 def random_generator_playbook_phase_4(
     model: Model,
-    expr_sequences: list,
-    instances_dict: dict,
-) -> None:
+    expr_sequences: List[List[str]],
+    instances_dict: InstanceDictType,
+):
     """
     Generate interpreting sequences for Expressions in the model
 
@@ -373,12 +515,18 @@ def random_generator_playbook_phase_4(
     for expr_seq in expr_sequences:
         new_sequences = []
         # get the featuring type of the first expression
-        seq_featuring_type = safe_feature_data(all_elements[expr_seq[0]], "featuringType")
+        # seq_featuring_type = safe_feature_data(all_elements[expr_seq[0]], "featuringType")
+        seq_featuring_type = model.elements[expr_seq[0]].featuringType
         # FIXME: I don't know what it means for binding connectors to own these expressions,
         #        but need to figure out eventually
-        if seq_featuring_type["@type"] == "BindingConnector":
+        if isinstance(seq_featuring_type, list):
             continue
-        new_sequences = instances_dict[seq_featuring_type["@id"]._id]
+        if seq_featuring_type._metatype == "BindingConnector":
+            continue
+        try:
+            new_sequences = instances_dict[seq_featuring_type._id]
+        except KeyError as exc:
+            raise KeyError(f"Could not find {seq_featuring_type}") from exc
 
         for feature_id in expr_seq:
             # sample set will be the last element in the sequence for classifiers
@@ -423,7 +571,9 @@ def random_generator_playbook_phase_4(
 
 
 def random_generator_playbook_phase_5(
-    lpg: SysML2LabeledPropertyGraph, cug: nx.DiGraph, instances_dict: dict
+    lpg: SysML2LabeledPropertyGraph,
+    cug: nx.DiGraph,
+    instances_dict: InstanceDictType,
 ):
     """
     Generate instances for connector usages and their specializations and randomly
@@ -436,18 +586,29 @@ def random_generator_playbook_phase_5(
 
     # Generate sequences for connection and interface ends
     for node_id in list(cug.nodes):
-        node = lpg.nodes[node_id]
-        if node["@type"] in ("ConnectionUsage", "InterfaceUsage", "SuccessionUsage"):
+        node = lpg.model.elements[node_id]
+        if node._metatype in ("ConnectionUsage", "InterfaceUsage", "SuccessionUsage"):
 
-            connector_ends = node["connectorEnd"]
+            connector_ends = node.connectorEnd
 
-            connector_id = node["@id"]
+            connector_id = node._id
 
-            source_feat_id = node["source"][0]["@id"]
-            target_feat_id = node["target"][0]["@id"]
+            source_feat_id = node.source[0].chainingFeature[-1]._id
+            target_feat_id = node.target[0].chainingFeature[-1]._id
 
-            source_sequences = instances_dict[source_feat_id]
-            target_sequences = instances_dict[target_feat_id]
+            try:
+                source_sequences = instances_dict[source_feat_id]
+            except KeyError as exc:
+                raise KeyError(
+                    f"Cannot find {lpg.model.elements[source_feat_id]} in the interpretation!"
+                ) from exc
+
+            try:
+                target_sequences = instances_dict[target_feat_id]
+            except KeyError as exc:
+                raise KeyError(
+                    f"Cannot find {lpg.model.elements[target_feat_id]} in the interpretation!"
+                ) from exc
 
             connectors = instances_dict[connector_id]
 
@@ -457,16 +618,22 @@ def random_generator_playbook_phase_5(
             min_side = min(len(source_sequences), len(target_sequences))
             max_side = max(len(source_sequences), len(target_sequences))
 
-            if len(source_sequences) <= len(target_sequences):
-                source_indices = list(range(0, min_side))
-                other_steps = sample(range(0, min_side), (max_side - min_side))
-                source_indices.extend(other_steps)
-                target_indices = sample(range(0, max_side), max_side)
-            else:
-                source_indices = sample(range(0, max_side), max_side)
-                other_steps = sample(range(0, min_side), (max_side - min_side))
-                target_indices = list(range(0, min_side))
-                target_indices.extend(other_steps)
+            try:
+                if len(source_sequences) <= len(target_sequences):
+                    source_indices = list(range(0, min_side))
+                    other_steps = sample(range(0, min_side), (max_side - min_side))
+                    source_indices.extend(other_steps)
+                    target_indices = sample(range(0, max_side), max_side)
+                else:
+                    source_indices = sample(range(0, max_side), max_side)
+                    other_steps = sample(range(0, min_side), (max_side - min_side))
+                    target_indices = list(range(0, min_side))
+                    target_indices.extend(other_steps)
+            except ValueError as exc:
+                raise ValueError(
+                    f"Sample larger than population or is negative. Min_side size is {min_side} "
+                    f"and max_side size is {max_side}."
+                ) from exc
 
             # taking over indx to wrap around
             indx = 0
@@ -495,11 +662,16 @@ def random_generator_playbook_phase_5(
                 else:
                     indx = indx + 1
 
-            instances_dict[connector_ends[0]["@id"]] = extended_source_sequences
-            instances_dict[connector_ends[1]["@id"]] = extended_target_sequences
+            instances_dict[connector_ends[0]._id] = extended_source_sequences
+            instances_dict[connector_ends[1]._id] = extended_target_sequences
 
 
-def build_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list:
+def build_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> List[List[str]]:
+    """
+    Compute minimal length sequence of M1 types for all features in the model.
+
+    :return: list of lists of Element IDs (as strings) representing feature nesting.
+    """
     part_featuring_graph = lpg.get_projection("Part Featuring")
     sorted_feature_groups = []
     for comp in nx.connected_components(part_featuring_graph.to_undirected()):
@@ -514,45 +686,56 @@ def build_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list:
                 except (nx.NetworkXNoPath, nx.NodeNotFound):
                     logger.debug("Could not find path: %s", traceback.format_exc())
 
-        # TODO: Look into adding the topologically sorted connected subcomponents
-        # sorted_feature_groups.append(
-        #     [node for node in nx.topological_sort(connected_sub)]
-        # )
+    return sorted_feature_groups
+
+
+def build_banded_sequence_templates(
+    lpg: SysML2LabeledPropertyGraph,
+    package_filter: List[Element] = None,
+) -> list:
+    part_featuring_graph = lpg.get_projection("Banded")
+    sorted_feature_groups = []
+    for comp in nx.connected_components(part_featuring_graph.to_undirected()):
+        connected_sub = nx.subgraph(part_featuring_graph, list(comp))
+        leaves = [node for node in connected_sub.nodes if connected_sub.in_degree(node) == 0]
+        roots = [node for node in connected_sub.nodes if connected_sub.out_degree(node) == 0]
+
+        for leaf_id in leaves:
+            # FIXME: Filter by package here - if the leaf is not in
+            #        the target package(s) skip looking for paths
+            leaf = lpg.model.elements[leaf_id]
+            if "Literal" in leaf._metatype:
+                continue
+            if package_filter and lpg.model.elements[leaf_id].owning_package not in package_filter:
+                continue
+            for root_id in roots:
+                try:
+                    leaf_paths = nx.all_simple_paths(connected_sub, leaf_id, root_id)
+
+                    for leaf_path in leaf_paths:
+                        leaf_path.reverse()
+                        first, *nested = leaf_path
+                        filtered_path = [first] + [
+                            item_id
+                            for item_id in nested
+                            if lpg.model.elements[item_id]._metatype in TYPES_FOR_FEATURING
+                        ]
+
+                        sorted_feature_groups.append(filtered_path)
+                except (nx.NetworkXNoPath, nx.NodeNotFound):
+                    logger.debug("Could not find path: %s", traceback.format_exc())
 
     return sorted_feature_groups
 
 
-def generate_superset_instances(
-    part_def_graph: nx.MultiDiGraph,
-    superset_node: str,
-    visited_nodes: set,
-    instances_dict: dict,
-) -> dict:
+def build_expression_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> List[List[str]]:
     """
-    Take specific classifiers and push the calculated instances to more general classifiers
+    Compute minimal length sequence of M1 types for all expression steps in the model.
 
-    :return:
+    :return: list of lists of Element IDs (as strings) representing feature nesting.
     """
-    new_superset = []
-    subset_nodes = part_def_graph.predecessors(superset_node)
-    if all(subset_node in visited_nodes for subset_node in subset_nodes):
-        for subset_node in part_def_graph.predecessors(superset_node):
-            new_superset.extend(instances_dict[subset_node])
-    else:
-        return {}
 
-    return {superset_node: new_superset}
-
-
-def build_expression_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list:
     evg = lpg.get_projection("Expression Value")
-
-    # FIXME: Need projections to work correctly
-    # TODO: @Bjorn: should we remove all the implied edges? We could add a key to them
-    to_remove = [edge for edge in evg.edges if edge[2] == "ImpliedParameterFeedforward"]
-
-    for source, target, *_ in to_remove:
-        evg.remove_edge(source, target)
 
     sorted_feature_groups = []
     for comp in nx.connected_components(evg.to_undirected()):
@@ -570,24 +753,31 @@ def build_expression_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list
     return sorted_feature_groups
 
 
-def validate_working_data(lpg: SysML2LabeledPropertyGraph) -> bool:
+def validate_working_data(
+    expression_sequences: List[List[str]],
+    feature_sequences: List[List[str]],
+    model: Model,
+):
     """
-    Helper method to check that the user model is valid for instance generation
-
-    :return: A Boolean indicating that the user model is ready to be interpreted
+    Helper method to check that the user model is valid for instance generation by ensuring
+    that all the feature sequence templates of the model have types and multiplicities.
     """
-    # FIXME: Convert to the element-model style for better accuracy
+    for sequence in expression_sequences:
+        for element_id in sequence:
+            # TODO: Add checks for expression sequences
+            pass
 
-    # check that all the elements of the graph are in fact proper model elements
-    for id_, non_relation in lpg.model.all_non_relationships.items():
-        try:
-            non_relation["@type"]
-        except KeyError:
-            print(
-                f"No metatype found in {non_relation}, id = '{id_}', "
-                "name = {(lpg.model.elements[id_].name or '')}"
-            )
-            return False
-        except TypeError:
-            print(f"Expecting dict of model element data, got = {non_relation}")
-    return True
+    for sequence in feature_sequences:
+        for element_id in sequence:
+            element = model.elements[element_id]
+            if element._metatype not in TYPES_FOR_FEATURING:
+                continue
+            if not element.get("type"):
+                raise ValueError(f"Feature {element}, ({element_id}) does not have a type!")
+            try:
+                for bound in ("upper", "lower"):
+                    feature_multiplicity(element, bound)
+            except Exception as exc:
+                raise ValueError(
+                    f"Failed to get '{bound}' multiplicity for {element} ({element_id})"
+                ) from exc
