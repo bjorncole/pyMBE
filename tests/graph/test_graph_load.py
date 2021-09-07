@@ -1,5 +1,5 @@
-import pytest
 import networkx as nx
+import pytest
 
 from tests.conftest import kerbal_ids_by_type, kerbal_lpg, kerbal_model_loaded_client
 

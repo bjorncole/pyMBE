@@ -1,6 +1,7 @@
-import pytest
 import logging
 from warnings import warn
+
+import pytest
 
 from pymbe.graph.calc_lpg import CalculationGroup
 from pymbe.interpretation.calc_dependencies import generate_execution_order
