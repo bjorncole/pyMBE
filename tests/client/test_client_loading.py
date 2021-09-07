@@ -32,12 +32,6 @@ def test_client_load_find_types(kerbal_ids_by_type):
     assert len(kerbal_ids_by_type["PartDefinition"]) == 17
 
 
-def test_bad_connection(kerbal_client):
-    with pytest.raises(requests.exceptions.ConnectionError) as exc:
-        kerbal_client.host_url = "http://some.bad.url"
-    assert exc.value.args[0].url == "/projects"
-
-
 @pytest.mark.skipif(
     not can_connect(host=SYSML_SERVER_URL),
     reason=f"Can't connect to {SYSML_SERVER_URL}",

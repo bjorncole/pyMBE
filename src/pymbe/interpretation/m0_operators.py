@@ -1,5 +1,17 @@
+import operator as op
+
 from ..interpretation.interpretation import LiveExpressionNode, ValueHolder
-from ..model import Instance
+from ..model import Instance, InstanceDictType
+
+# TODO: go through KerML spec for the remaining operators
+OPERATORS = {
+    "+": op.add,
+    "-": op.sub,
+    "*": op.mul,
+    "/": op.truediv,
+    "**": op.pow,
+    "%": op.mod,
+}
 
 
 def sequence_dot_operator(left_item, right_side_seqs):
@@ -7,11 +19,9 @@ def sequence_dot_operator(left_item, right_side_seqs):
         return []
     left_len = len(left_item)
     right_len = len(right_side_seqs[0])
-    # print('Left is ' + str(left_len) + ' right is ' + str(right_len))
-    matched_items = []
 
+    matched_items = []
     for right_item in right_side_seqs:
-        # print(str(right_item[0:(right_len-1)]))
         if left_len != right_len:
             if str(left_item) == str(right_item[0 : (right_len - 1)]):
                 matched_items.append(right_item)
@@ -25,7 +35,7 @@ def sequence_dot_operator(left_item, right_side_seqs):
 def evaluate_and_apply_collect(
     base_scope: Instance,
     m0_expr: LiveExpressionNode,
-    instance_dict: dict,
+    instance_dict: InstanceDictType,
     m0_collection_input: ValueHolder,
     m0_collection_path: ValueHolder,
     result_holder: ValueHolder,
@@ -44,7 +54,7 @@ def evaluate_and_apply_collect(
 def evaluate_and_apply_dot(
     base_scope: Instance,
     m0_expr: LiveExpressionNode,
-    instance_dict: dict,
+    instance_dict: InstanceDictType,
     m0_collection_input: ValueHolder,
     m0_collection_path: ValueHolder,
     result_holder: ValueHolder,
@@ -62,7 +72,7 @@ def evaluate_and_apply_dot(
 
 def evaluate_and_apply_fre(
     m0_expr: LiveExpressionNode,
-    instance_dict: dict,
+    instance_dict: InstanceDictType,
 ) -> list:
     """
     Evaluate a feature reference expression at m0, e.g., return the list of sequences
@@ -86,8 +96,7 @@ def evaluate_and_apply_literal(m0_expr: LiveExpressionNode, m0_result: ValueHold
     viable result feature
 
     :param m0_expr:
-    :param instance_dict:
-    :return:
+    :param m0_result:
     """
     literal_value = m0_expr.base_att["value"]
     m0_result.value = literal_value
@@ -103,68 +112,26 @@ def evaluate_and_apply_sum(m0_expr: ValueHolder, m0_result: ValueHolder):
 
 
 def evaluate_and_apply_atomic_binary(
-    x_expr: ValueHolder,
-    y_expr: ValueHolder,
-    m0_result: ValueHolder,
-    operator: str
+    x_expr: ValueHolder, y_expr: ValueHolder, m0_result: ValueHolder, operator: str
 ):
     numbers = [0.0, 0.0]
 
     for index, expr in enumerate([x_expr, y_expr]):
-        if isinstance(expr.value, int) or isinstance(expr.value, float):
+        if isinstance(expr.value, (float, int)):
             numbers[index] = expr.value
-        elif isinstance(expr.value, list):
-            if isinstance(expr.value[0], list):
+        elif isinstance(expr.value, (list, tuple)):
+            if isinstance(expr.value[0], (list, tuple)):
                 numbers[index] = expr.value[0][-1].value
-            elif isinstance(expr.value[0].value, int) or isinstance(expr.value[0].value, float):
+            elif isinstance(expr.value[0].value, (float, int)):
                 numbers[index] = expr.value[0].value
+        assert isinstance(
+            numbers[index], (int, float)
+        ), f"Should be a number, not {numbers[index]}"
 
-    if operator == "+":
-        evaluate_and_apply_plus(numbers[0], numbers[1], m0_result)
-    elif operator == "-":
-        evaluate_and_apply_minus(numbers[0], numbers[1], m0_result)
-    elif operator == "*":
-        evaluate_and_apply_times(numbers[0], numbers[1], m0_result)
-    elif operator == "/":
-        evaluate_and_apply_times(numbers[0], numbers[1], m0_result)
-    elif operator == "**":
-        evaluate_and_apply_power(numbers[0], numbers[1], m0_result)
+    func = OPERATORS.get(operator)
+    if not func:
+        # Start by looking at existing operators at:
+        # https://docs.python.org/3/library/operator.html#mapping-operators-to-functions
+        raise NotImplementedError(f"Operator ({operator}) needs to be implemented")
 
-
-def evaluate_and_apply_plus(
-    x_expr: float,
-    y_expr: float,
-    m0_result: ValueHolder,
-):
-    m0_result.value = x_expr + y_expr
-
-def evaluate_and_apply_minus(
-    x_expr: float,
-    y_expr: float,
-    m0_result: ValueHolder,
-):
-    m0_result.value = x_expr - y_expr
-
-def evaluate_and_apply_times(
-    x_expr: float,
-    y_expr: float,
-    m0_result: ValueHolder,
-):
-    m0_result.value = x_expr * y_expr
-
-def evaluate_and_apply_divider(
-    x_expr: float,
-    y_expr: float,
-    m0_result: ValueHolder,
-):
-    m0_result.value = x_expr / y_expr
-
-def evaluate_and_apply_power(
-    x_expr: float,
-    y_expr: float,
-    m0_result: ValueHolder,
-):
-    print(x_expr)
-    print(y_expr)
-
-    m0_result.value = x_expr ** y_expr
+    m0_result.value = func(*numbers)

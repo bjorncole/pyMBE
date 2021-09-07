@@ -9,9 +9,6 @@ from ..label import get_label
 from ..model import Element
 from .metamodel_navigator import feature_multiplicity
 
-#from pymbe.interpretation.set_builders import MAX_MULTIPLICITY
-
-
 
 def roll_up_lower_multiplicity(
     lpg: SysML2LabeledPropertyGraph,
@@ -41,7 +38,7 @@ def roll_up_multiplicity(
     bound: str,
 ) -> int:
 
-    MAX_MULTIPLICITY = lpg.model.MAX_MULTIPLICITY
+    max_multiplicity = lpg.model.max_multiplicity
 
     banded_featuring_graph = lpg.get_projection("Expanded Banded")
 
@@ -74,7 +71,7 @@ def roll_up_multiplicity(
                     [
                         min(
                             feature_multiplicity(model.elements[element_id], bound),
-                            MAX_MULTIPLICITY,
+                            max_multiplicity,
                         )
                         for element_id in part_path
                     ]
@@ -84,7 +81,7 @@ def roll_up_multiplicity(
             print("Found no path when rolling up multiplicity.")
         except nx.NodeNotFound:
             # nothing to roll up, so just use own multiplicity
-            total_mult = min(feature_multiplicity(feature, bound), MAX_MULTIPLICITY)
+            total_mult = min(feature_multiplicity(feature, bound), max_multiplicity)
 
     return total_mult
 

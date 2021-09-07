@@ -66,6 +66,9 @@ class M1Viewer(ipyw.Box, BaseWidget):  # pylint: disable=too-many-ancestors
         return children
 
     def update(self, change: trt.Bunch):
+        if not change.new:
+            return
+
         self.drawn_graph = nx.Graph()
         self.lpg.model = change.new
         toolbar: Toolbar = self.elk_diagram.toolbar
