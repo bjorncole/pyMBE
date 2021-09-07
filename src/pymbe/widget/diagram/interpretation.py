@@ -25,6 +25,8 @@ class M0Viewer(ipyw.Box, BaseWidget):
     """A viewer for M0 interpretations"""
 
     description: str = trt.Unicode("M0 Diagram").tag(sync=True)
+    icon_class: str = trt.Unicode("jp-ExtensionIcon").tag(sync=True)
+
     diagram: Diagram = trt.Instance(Diagram)
     loader: ElementLoader = trt.Instance(
         ElementLoader,

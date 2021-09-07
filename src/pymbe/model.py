@@ -132,7 +132,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
             element for element in self.elements.values() if element._metatype == "Package"
         )
 
-    def save_to_file(self, filepath: Union[Path, str], indent: int = 2) -> bool:
+    def save_to_file(self, filepath: Union[Path, str], indent: int = 2):
         if isinstance(filepath, str):
             filepath = Path(filepath)
         filepath.write_text(

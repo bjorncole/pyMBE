@@ -1,5 +1,5 @@
-import pytest
 import networkx as nx
+import pytest
 
 from pymbe.label import get_label_for_id
 from pymbe.query.query import (

@@ -12,7 +12,8 @@ __all__ = ("SysML2ClientWidget",)
 class SysML2ClientWidget(SysML2Client, ipyw.GridspecLayout):
     """An ipywidget to interact with a SysML v2 API."""
 
-    description = trt.Unicode("API Client").tag(sync=True)
+    description: str = trt.Unicode("API Client").tag(sync=True)
+    icon_class: str = trt.Unicode("jp-DownloadIcon").tag(sync=True)
 
     # file_uploader: ipyw.FileUpload = trt.Instance(ipyw.FileUpload)
     host_url_input: ipyw.Text = trt.Instance(ipyw.Text)
