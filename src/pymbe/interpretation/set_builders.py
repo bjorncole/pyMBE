@@ -139,11 +139,7 @@ def extend_sequences_by_sampling(
 
 
 def extend_sequences_with_new_instance(
-    previous_sequences: list,
-    lower_mult: int,
-    upper_mult: int,
-    m1_type: Element,
-    first_step: bool
+    previous_sequences: list, lower_mult: int, upper_mult: int, m1_type: Element, first_step: bool
 ) -> list:
 
     total_draw, draws_per = 0, []
@@ -163,7 +159,7 @@ def extend_sequences_with_new_instance(
 
     last_draw = 0
     for index, seq in enumerate(previous_sequences):
-        for pull in new_list[last_draw: last_draw + draws_per[index]]:
+        for pull in new_list[last_draw : last_draw + draws_per[index]]:
             new_seq = []
             new_seq = new_seq + seq
             new_seq.append(pull)

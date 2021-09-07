@@ -1,6 +1,7 @@
 # a set of queries to run on Labeled Property Graphs
 import math
 from typing import List
+from warnings import warn
 
 import networkx as nx
 
@@ -43,7 +44,8 @@ def roll_up_multiplicity(
     banded_featuring_graph = lpg.get_projection("Expanded Banded")
 
     # Need to check that we are dealing with a DAG, otherwise take care with cycles
-    ebg_is_dag = nx.is_directed_acyclic_graph(banded_featuring_graph)
+    if not nx.is_directed_acyclic_graph(banded_featuring_graph):
+        warn("Banded featuring graph is not an acyclic digraph!!!")
 
     banded_roots = [
         node
