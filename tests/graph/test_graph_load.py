@@ -27,7 +27,6 @@ def test_graph_projection_part_def_node_filter(kerbal_lpg, kerbal_ids_by_type):
     assert len(pdg.nodes) == len(kerbal_ids_by_type["PartDefinition"]) - 1
 
 
-
 @pytest.mark.skip("Need to refactor tests, after 0.19.0 upgrades")
 def test_graph_projection_part_def_components(kerbal_lpg):
     pdg = kerbal_lpg.get_projection("Part Definition")
