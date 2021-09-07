@@ -8,7 +8,7 @@ from ..model import Model
 def pprint_interpretation(interpretation: dict, model: Model, show_empty: bool = True) -> list:
     print_lines = []
     for key, val in interpretation.items():
-        if show_empty or len(str(len(val))) > 0:
+        if show_empty or len(val) > 0:
             print_lines.append(
                 get_label(model.elements[key]) + ", id = " + key + ", size = " + str(len(val))
             )

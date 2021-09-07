@@ -52,6 +52,7 @@ def random_generator_playbook(
     lpg: SysML2LabeledPropertyGraph,
     name_hints: Dict[str, str] = None,
     filtered_feat_packages: List[Element] = None,
+    phase_limit: int = 10
 ) -> InstanceDictType:
     """
     Main routine to execute a playbook to randomly generate sequences as an interpretation
@@ -71,17 +72,12 @@ def random_generator_playbook(
     #all_feature_sequences = build_sequence_templates(lpg=lpg)
 
     expression_sequences = build_expression_sequence_templates(lpg=lpg)
-    feature_sequences = build_banded_sequence_templates(lpg=lpg)
+    feature_sequences = build_banded_sequence_templates(lpg=lpg, package_filter=filtered_feat_packages)
 
     if filtered_feat_packages:
         expression_sequences = [
             seq
             for seq in expression_sequences
-            if all_elements[seq[-1]].owning_package in filtered_feat_packages
-        ]
-        feature_sequences = [
-            seq
-            for seq in feature_sequences
             if all_elements[seq[-1]].owning_package in filtered_feat_packages
         ]
 
@@ -617,16 +613,20 @@ def random_generator_playbook_phase_5(
             min_side = min(len(source_sequences), len(target_sequences))
             max_side = max(len(source_sequences), len(target_sequences))
 
-            if len(source_sequences) <= len(target_sequences):
-                source_indices = list(range(0, min_side))
-                other_steps = sample(range(0, min_side), (max_side - min_side))
-                source_indices.extend(other_steps)
-                target_indices = sample(range(0, max_side), max_side)
-            else:
-                source_indices = sample(range(0, max_side), max_side)
-                other_steps = sample(range(0, min_side), (max_side - min_side))
-                target_indices = list(range(0, min_side))
-                target_indices.extend(other_steps)
+            try:
+                if len(source_sequences) <= len(target_sequences):
+                    source_indices = list(range(0, min_side))
+                    other_steps = sample(range(0, min_side), (max_side - min_side))
+                    source_indices.extend(other_steps)
+                    target_indices = sample(range(0, max_side), max_side)
+                else:
+                    source_indices = sample(range(0, max_side), max_side)
+                    other_steps = sample(range(0, min_side), (max_side - min_side))
+                    target_indices = list(range(0, min_side))
+                    target_indices.extend(other_steps)
+            except ValueError:
+                raise ValueError(f"Sample larger than population or is negative. Min_side size is {min_side} "
+                                 f"and max_side size is {max_side}.")
 
             # taking over indx to wrap around
             indx = 0
@@ -681,7 +681,10 @@ def build_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> List[List[str]]
 
     return sorted_feature_groups
 
-def build_banded_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list:
+def build_banded_sequence_templates(
+        lpg: SysML2LabeledPropertyGraph,
+        package_filter: List[Element] = None,
+) -> list:
     part_featuring_graph = lpg.get_projection("Banded")
     sorted_feature_groups = []
     for comp in nx.connected_components(part_featuring_graph.to_undirected()):
@@ -693,6 +696,8 @@ def build_banded_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> list:
             # FIXME: Filter by package here - if the leaf is not in the target package(s), skip looking for paths
             leaf = lpg.model.elements[leaf_id]
             if "Literal" in leaf._metatype:
+                continue
+            if package_filter and lpg.model.elements[leaf_id].owning_package not in package_filter:
                 continue
             for root_id in roots:
                 try:
