@@ -42,6 +42,9 @@ def roll_up_multiplicity(
 
     banded_featuring_graph = lpg.get_projection("Expanded Banded")
 
+    # Need to check that we are dealing with a DAG, otherwise take care with cycles
+    ebg_is_dag = nx.is_directed_acyclic_graph(banded_featuring_graph)
+
     banded_roots = [
         node
         for node in banded_featuring_graph.nodes
@@ -55,6 +58,7 @@ def roll_up_multiplicity(
         # case where the usage is actually top of a nesting set
         if feature_id == part_tree_root:
             total_mult = 1
+
         try:
             part_paths = nx.all_simple_paths(
                 banded_featuring_graph,
