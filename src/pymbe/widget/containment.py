@@ -1,12 +1,13 @@
+import asyncio
 import json
-import threading
 import typing as ty
+from pathlib import Path
 
 import ipytree as ipyt
 import ipywidgets as ipyw
 import traitlets as trt
-from wxyz.lab import DockPop
 from wxyz.html import File, FileBox
+from wxyz.lab import DockPop
 
 from ..model import Element, Model
 from .client import SysML2ClientWidget
@@ -30,11 +31,10 @@ class ElementNode(ipyt.Node):
 
 @ipyw.register
 class SysML2FileLoader(FileBox, BaseWidget):
-    """A simple UI for loading SysML models from File"""
+    """A simple UI for loading SysML models from disk."""
 
     description: str = trt.Unicode("File Loader").tag(sync=True)
-
-    observer = None
+    icon_class: str = trt.Unicode("jp-JsonIcon").tag(sync=True)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -45,17 +45,19 @@ class SysML2FileLoader(FileBox, BaseWidget):
         self.children = []
 
     def _load_model(self, change: trt.Bunch):
-        self.model = Model.load(json.loads(change.new))
+        with self.log_out:
+            self.model = Model.load(json.loads(change.new))
 
     @trt.observe("children")
     def _update_model(self, change: trt.Bunch):
-        if isinstance(change.old, (list, tuple)) and change.old:
-            old, *_ = change.old
-            if isinstance(old, File):
-                old.unobserve(self._load_model)
-        if isinstance(change.new, (list, tuple)) and change.new:
-            new, *_ = change.new
-            new.observe(self._load_model, "value")
+        with self.log_out:
+            if isinstance(change.old, (list, tuple)) and change.old:
+                old, *_ = change.old
+                if isinstance(old, File):
+                    old.unobserve(self._load_model)
+            if isinstance(change.new, (list, tuple)) and change.new:
+                new, *_ = change.new
+                new.observe(self._load_model, "value")
 
 
 @ipyw.register
@@ -63,6 +65,7 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
     """A widget to explore the structure and data in a project."""
 
     description: str = trt.Unicode("Containment Tree").tag(sync=True)
+    icon_class: str = trt.Unicode("jp-TreeViewIcon").tag(sync=True)
 
     client: SysML2ClientWidget = trt.Instance(SysML2ClientWidget)
     file_loader: SysML2FileLoader = trt.Instance(SysML2FileLoader, args=())
@@ -86,7 +89,7 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
         kw=dict(
             icon="cloud-download-alt",
             layout=dict(width="40px"),
-            tooltip="Launch API",
+            tooltip="Launch SysML Rest API client",
         ),
     )
     pop_log: ipyw.Button = trt.Instance(
@@ -94,7 +97,15 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
         kw=dict(
             icon="book",
             layout=dict(width="40px"),
-            tooltip="Pop Log",
+            tooltip="Show log",
+        ),
+    )
+    save_model: ipyw.Button = trt.Instance(
+        ipyw.Button,
+        kw=dict(
+            icon="save",
+            layout=dict(width="40px"),
+            tooltip="Save to file",
         ),
     )
 
@@ -136,6 +147,7 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
         self.launch_api.on_click(self._pop_api_client)
         self.launch_file_loader.on_click(self._pop_file_loader)
         self.pop_log.on_click(self._pop_log_out)
+        self.save_model.on_click(self._save_to_disk)
 
         for linked_attribute in ("model", "log_out"):
             for widget in (self.client, self.file_loader):
@@ -151,23 +163,42 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
     def _make_add_widget(self) -> ty.Callable:
         def add_widget(widget: ipyw.DOMWidget, mode="split-right"):
             DockPop([widget], mode=mode)
+
         return add_widget
 
     @property
     def selected_nodes(self):
         return self.tree.selected_nodes
 
-    def _pop_api_client(self, *_):
-        with self.log_out:
-            self.add_widget(self.client, mode="split-top")
-
     def _pop_file_loader(self, *_):
         with self.log_out:
             self.add_widget(self.file_loader, mode="split-top")
 
+    def _save_to_disk(self, *_):
+        with self.log_out:
+            if not self.model:
+                print("No model loaded!")
+                return
+
+            filepath = Path(".") / f"{self.model.name}.json"
+            filepath = filepath.resolve().absolute()
+            if filepath.exists():
+                print(f"Overwriting {filepath}")
+            self.model.save_to_file(filepath=filepath)
+            print(f"Saved model to '{filepath}'")
+
+    def _pop_api_client(self, *_):
+        with self.log_out:
+            self.add_widget(self.client, mode="split-top")
+
     def _pop_log_out(self, *_):
         with self.log_out:
-            self.add_widget(self.log_out, mode="split-right")
+            # TextEditorIcon or PaletteIcon
+            self.log_out.add_traits(
+                description=trt.Unicode("Log").tag(sync=True),
+                icon_class=trt.Unicode("jp-ListIcon").tag(sync=True),
+            )
+            self.add_widget(self.log_out, mode="split-bottom")
 
     @trt.validate("children")
     def _validated_children(self, proposal: trt.Bunch) -> tuple:
@@ -177,7 +208,12 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
         return tuple(
             [
                 ipyw.HBox(
-                    children=[self.launch_file_loader, self.launch_api, self.pop_log],
+                    children=[
+                        self.launch_file_loader,
+                        self.launch_api,
+                        self.save_model,
+                        self.pop_log,
+                    ],
                     layout=dict(min_height="50px"),
                 ),
                 self.tree,
@@ -247,14 +283,13 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
         for root in roots:
             self.tree.add_node(root)
 
-    # @trt.observe("icons_by_type", "default_icon")
-    # def _update_icons(self, *_):
-    #     for id_, node in self.nodes_by_id.items():
-    #         new_icon = node.element
-    #         node.icon = self.icons_by_type.get(
-    #             element_data["@type"],
-    #             self.default_icon,
-    #         )
+    @trt.observe("icons_by_type", "default_icon")
+    def _update_icons(self, *_):
+        for node in self.nodes_by_id.values():
+            node.icon = self.icons_by_type.get(
+                node._element._metatype,
+                self.default_icon,
+            )
 
     def update(self, change: trt.Bunch):
         with self.log_out:
@@ -297,28 +332,36 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
                 self.nodes_by_id = nodes
                 self._update_tree()
 
-    def _observe_node_selection(self, change: trt.Bunch = None):
-        def add_node(parent, child):
-            if child not in parent.nodes:
-                parent.add_node(child)
+    @staticmethod
+    async def add_node(parent: ipyt.Node, child: ipyt.Node):
+        if child not in parent.nodes:
+            parent.add_node(child)
+            parent.opened = True
 
+    def _observe_node_selection(self, change: trt.Bunch = None):
         with self.log_out:
+
             parent_node: ElementNode = change.owner
-            parent_element = parent_node._element
-            elements = parent_element.get("ownedElement", [])
+            selected: bool = change.new
+
+            if not selected:
+                return
+
             if parent_node.icon == self.indeterminate_icon:
                 parent_node.icon = self.icons_by_type.get(parent_node._metatype, self.default_icon)
-            if not elements:
+            else:
                 parent_node.unobserve(self._observe_node_selection)
-                return
-            nodes = {element._id: self._make_node(element) for element in elements}
-            self.nodes_by_id.update(nodes)
-            threads = [
-                threading.Thread(target=add_node, args=(parent_node, node))
-                for node in nodes.values()
-            ]
-            # start executing the threads for adding the nodes
-            _ = [thread.start() for thread in threads]
+
+            nodes = {
+                element._id: self._make_node(element)
+                for element in parent_node._element.get("ownedElement", [])
+            }
+            if nodes:
+                self.nodes_by_id.update(nodes)
+                for node in nodes.values():
+                    asyncio.create_task(self.add_node(parent_node, node))
+
+            parent_node.unobserve(self._observe_node_selection)
 
     def select_nodes(self, *nodes: str):
         """Select a list of nodes"""

@@ -11,16 +11,15 @@ from typing import Dict, List
 import networkx as nx
 
 from ..graph.lpg import SysML2LabeledPropertyGraph
-from ..label import get_label
+from ..label import get_label, get_label_for_id
 from ..model import Element, InstanceDictType, Model
-from ..query.metamodel_navigator import safe_feature_data
 from ..query.query import feature_multiplicity, roll_up_multiplicity_for_type
 from .results import pprint_dict_keys
 from .set_builders import (
     create_set_with_new_instances,
     extend_sequences_by_sampling,
-    extend_sequences_with_new_instance,
     extend_sequences_with_new_expr,
+    extend_sequences_with_new_instance,
     extend_sequences_with_new_value_holder,
 )
 
@@ -44,7 +43,7 @@ TYPES_FOR_ROLL_UP_MULTIPLICITY = (
     "InterfaceDefinition",
     "PartDefinition",
     "PortDefinition",
-    "StateDefinition"
+    "StateDefinition",
 )
 
 
@@ -52,7 +51,7 @@ def random_generator_playbook(
     lpg: SysML2LabeledPropertyGraph,
     name_hints: Dict[str, str] = None,
     filtered_feat_packages: List[Element] = None,
-    phase_limit: int = 10
+    phase_limit: int = 10,
 ) -> InstanceDictType:
     """
     Main routine to execute a playbook to randomly generate sequences as an interpretation
@@ -69,10 +68,12 @@ def random_generator_playbook(
     name_hints = name_hints or {}
     filtered_feat_packages = filtered_feat_packages or []
 
-    #all_feature_sequences = build_sequence_templates(lpg=lpg)
+    # all_feature_sequences = build_sequence_templates(lpg=lpg)
 
     expression_sequences = build_expression_sequence_templates(lpg=lpg)
-    feature_sequences = build_banded_sequence_templates(lpg=lpg, package_filter=filtered_feat_packages)
+    feature_sequences = build_banded_sequence_templates(
+        lpg=lpg, package_filter=filtered_feat_packages
+    )
 
     if filtered_feat_packages:
         expression_sequences = [
@@ -97,18 +98,15 @@ def random_generator_playbook(
 
     random_generator_playbook_phase_3_new_instances(lpg.model, feature_sequences, instances_dict)
 
-    # do one rollup for features (subsetting and redefinition) and one for classifiers (subclassificaiton and typing)
+    # do one rollup for features (subsetting and redefinition)
+    # and one for classifiers (subclassificaiton and typing)
 
     random_generator_playbook_phase_3_rollup(
-        lpg.model,
-        lpg.get_projection("Redefinition and Subsetting"),
-        instances_dict
+        lpg.model, lpg.get_projection("Redefinition and Subsetting"), instances_dict
     )
 
     random_generator_playbook_phase_3_rollup(
-        lpg.model,
-        lpg.get_projection("Generalization"),
-        instances_dict
+        lpg.model, lpg.get_projection("Generalization"), instances_dict
     )
 
     if phase_limit < 4:
@@ -402,9 +400,9 @@ def random_generator_playbook_phase_3_new_instances(
         instances to the instances dictionary
     """
 
-    #FIXME: This approach does not currently support moving from abstract classifiers to non-abstract classifiers
-    #   but it is hard to know how to do this correctly with the SysML v2 libraries and implicit use of core
-    #   definition types like Part or Port
+    # FIXME: This approach does not currently support moving from abstract classifiers to
+    #        non-abstract classifiers but it is hard to know how to do this correctly with
+    #        the SysML v2 libraries and implicit use of core definition types like Part or Port
 
     logger.debug("Starting things up")
     for feature_sequence in feature_sequences:
@@ -451,11 +449,12 @@ def random_generator_playbook_phase_3_new_instances(
                 lower_mult,
                 upper_mult,
                 model.elements[typ_id],
-                index==0 # set first step true on first time in the loop
+                index == 0,  # set first step true on first time in the loop
             )
             # only do interpretation for usages, not types (they will get sequences from rollup)
             if metatype in TYPES_FOR_FEATURING or index == 0:
                 instances_dict[feature_id] = new_sequences
+
 
 def random_generator_playbook_phase_3_rollup(
     model: Model,
@@ -473,8 +472,8 @@ def random_generator_playbook_phase_3_rollup(
     """
     roots = [node for node in scg.nodes if scg.in_degree(node) == 0]
 
-    #FIXME: Generalization graph has multiple paths to elements (can be redefine and type for example)
-    #   which may lead to some elements being skipped for rollup
+    # FIXME: Generalization graph has multiple paths to elements (can be redefine and type
+    #        for example) which may lead to some elements being skipped for rollup
 
     for root in roots:
         bfs_dict = dict(nx.bfs_successors(scg, root))
@@ -490,8 +489,10 @@ def random_generator_playbook_phase_3_rollup(
                 if subset_node in instances_dict:
                     try:
                         new_superset.extend(instances_dict[subset_node])
-                    except KeyError:
-                        raise KeyError(f"Cannot find {model.elements[subset_node]} in instances_dict!")
+                    except KeyError as exc:
+                        raise KeyError(
+                            f"Cannot find {model.elements[subset_node]} in instances_dict!"
+                        ) from exc
 
             instances_dict[gen] = new_superset
 
@@ -514,7 +515,7 @@ def random_generator_playbook_phase_4(
     for expr_seq in expr_sequences:
         new_sequences = []
         # get the featuring type of the first expression
-        #seq_featuring_type = safe_feature_data(all_elements[expr_seq[0]], "featuringType")
+        # seq_featuring_type = safe_feature_data(all_elements[expr_seq[0]], "featuringType")
         seq_featuring_type = model.elements[expr_seq[0]].featuringType
         # FIXME: I don't know what it means for binding connectors to own these expressions,
         #        but need to figure out eventually
@@ -524,8 +525,8 @@ def random_generator_playbook_phase_4(
             continue
         try:
             new_sequences = instances_dict[seq_featuring_type._id]
-        except KeyError:
-            raise KeyError(f"Could not find {seq_featuring_type}")
+        except KeyError as exc:
+            raise KeyError(f"Could not find {seq_featuring_type}") from exc
 
         for feature_id in expr_seq:
             # sample set will be the last element in the sequence for classifiers
@@ -597,13 +598,17 @@ def random_generator_playbook_phase_5(
 
             try:
                 source_sequences = instances_dict[source_feat_id]
-            except KeyError:
-                raise KeyError(f"Cannot find {lpg.model.elements[source_feat_id]} in the interpretation!")
+            except KeyError as exc:
+                raise KeyError(
+                    f"Cannot find {lpg.model.elements[source_feat_id]} in the interpretation!"
+                ) from exc
 
             try:
                 target_sequences = instances_dict[target_feat_id]
-            except KeyError:
-                raise KeyError(f"Cannot find {lpg.model.elements[target_feat_id]} in the interpretation!")
+            except KeyError as exc:
+                raise KeyError(
+                    f"Cannot find {lpg.model.elements[target_feat_id]} in the interpretation!"
+                ) from exc
 
             connectors = instances_dict[connector_id]
 
@@ -624,9 +629,11 @@ def random_generator_playbook_phase_5(
                     other_steps = sample(range(0, min_side), (max_side - min_side))
                     target_indices = list(range(0, min_side))
                     target_indices.extend(other_steps)
-            except ValueError:
-                raise ValueError(f"Sample larger than population or is negative. Min_side size is {min_side} "
-                                 f"and max_side size is {max_side}.")
+            except ValueError as exc:
+                raise ValueError(
+                    f"Sample larger than population or is negative. Min_side size is {min_side} "
+                    f"and max_side size is {max_side}."
+                ) from exc
 
             # taking over indx to wrap around
             indx = 0
@@ -681,9 +688,10 @@ def build_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> List[List[str]]
 
     return sorted_feature_groups
 
+
 def build_banded_sequence_templates(
-        lpg: SysML2LabeledPropertyGraph,
-        package_filter: List[Element] = None,
+    lpg: SysML2LabeledPropertyGraph,
+    package_filter: List[Element] = None,
 ) -> list:
     part_featuring_graph = lpg.get_projection("Banded")
     sorted_feature_groups = []
@@ -693,7 +701,8 @@ def build_banded_sequence_templates(
         roots = [node for node in connected_sub.nodes if connected_sub.out_degree(node) == 0]
 
         for leaf_id in leaves:
-            # FIXME: Filter by package here - if the leaf is not in the target package(s), skip looking for paths
+            # FIXME: Filter by package here - if the leaf is not in
+            #        the target package(s) skip looking for paths
             leaf = lpg.model.elements[leaf_id]
             if "Literal" in leaf._metatype:
                 continue
@@ -707,8 +716,9 @@ def build_banded_sequence_templates(
                         leaf_path.reverse()
                         first, *nested = leaf_path
                         filtered_path = [first] + [
-                            item_id for item_id in nested if
-                                lpg.model.elements[item_id]._metatype in TYPES_FOR_FEATURING
+                            item_id
+                            for item_id in nested
+                            if lpg.model.elements[item_id]._metatype in TYPES_FOR_FEATURING
                         ]
 
                         sorted_feature_groups.append(filtered_path)

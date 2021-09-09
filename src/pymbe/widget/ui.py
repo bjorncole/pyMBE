@@ -61,8 +61,7 @@ class UI(DockBox):
         all_widgets = self.tree, self.inspector, self.m1_viewer, self.m0_viewer
 
         self.log_out_links = [
-            trt.link((self, "log_out"), (widget, "log_out"))
-            for widget in all_widgets
+            trt.link((self, "log_out"), (widget, "log_out")) for widget in all_widgets
         ]
 
         first, *other_widgets = all_widgets

@@ -1,6 +1,8 @@
 import logging
 from warnings import warn
 
+import pytest
+
 from pymbe.graph.calc_lpg import CalculationGroup
 from pymbe.interpretation.calc_dependencies import generate_execution_order
 from pymbe.interpretation.results import pprint_edges
@@ -11,6 +13,7 @@ PARTS_LIBRARY = "Model::Kerbal::Parts Library::"
 logger = logging.getLogger(__name__)
 
 
+@pytest.mark.skip("Need to refactor tests, after 0.19.0 upgrades")
 def test_basic_kerbal_solve(kerbal_lpg, kerbal_random_stage_5_complete, kerbal_stable_names):
     # check that literal assignments go correctly
 
