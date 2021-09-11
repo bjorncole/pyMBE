@@ -1,17 +1,17 @@
 import asyncio
-import json
 import typing as ty
 from pathlib import Path
 
 import ipytree as ipyt
 import ipywidgets as ipyw
 import traitlets as trt
-from wxyz.html import File, FileBox
 from wxyz.lab import DockPop
 
 from ..model import Element, Model
-from .client import SysML2ClientWidget
+from .client import SysML2ClientWidget, SysML2FileLoader
 from .core import BaseWidget
+
+__all__ = ("ContainmentTree",)
 
 
 class ElementNode(ipyt.Node):
@@ -27,37 +27,6 @@ class ElementNode(ipyt.Node):
         super().__init__(*args, **kwargs)
         self.close_icon = "caret-down"
         self.open_icon = "caret-right"
-
-
-@ipyw.register
-class SysML2FileLoader(FileBox, BaseWidget):
-    """A simple UI for loading SysML models from disk."""
-
-    description: str = trt.Unicode("File Loader").tag(sync=True)
-    icon_class: str = trt.Unicode("jp-JsonIcon").tag(sync=True)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.accept = ["json"]
-        self.multiple = False
-
-    def update(self, *_):
-        self.children = []
-
-    def _load_model(self, change: trt.Bunch):
-        with self.log_out:
-            self.model = Model.load(json.loads(change.new))
-
-    @trt.observe("children")
-    def _update_model(self, change: trt.Bunch):
-        with self.log_out:
-            if isinstance(change.old, (list, tuple)) and change.old:
-                old, *_ = change.old
-                if isinstance(old, File):
-                    old.unobserve(self._load_model)
-            if isinstance(change.new, (list, tuple)) and change.new:
-                new, *_ = change.new
-                new.observe(self._load_model, "value")
 
 
 @ipyw.register
@@ -81,7 +50,7 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
         kw=dict(
             icon="folder-open",
             layout=dict(width="40px"),
-            tooltip="Load from file",
+            tooltip="Launch file loader for SysML v2 models",
         ),
     )
     launch_api: ipyw.Button = trt.Instance(
@@ -89,7 +58,7 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
         kw=dict(
             icon="cloud-download-alt",
             layout=dict(width="40px"),
-            tooltip="Launch SysML Rest API client",
+            tooltip="Launch client for Pilot Implementation of the SysMLv2 ReST API",
         ),
     )
     pop_log: ipyw.Button = trt.Instance(
@@ -176,16 +145,10 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
 
     def _save_to_disk(self, *_):
         with self.log_out:
-            if not self.model:
+            if not self.model or not self.model.elements:
                 print("No model loaded!")
                 return
-
-            filepath = Path(".") / f"{self.model.name}.json"
-            filepath = filepath.resolve().absolute()
-            if filepath.exists():
-                print(f"Overwriting {filepath}")
-            self.model.save_to_file(filepath=filepath)
-            print(f"Saved model to '{filepath}'")
+            self.model.save_to_file(filepath=Path(".") / self.model.name)
 
     def _pop_api_client(self, *_):
         with self.log_out:
@@ -298,9 +261,12 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
                 return
 
             model_id = str(model.source) or "SYSML_MODEL"
+            model_name = model.name
+            if model.source:
+                model_name += f" ({model.source})"
             model_node = ElementNode(
                 icon=self.icons_by_type["Model"],
-                name=model.name,
+                name=model_name,
                 _data=dict(source=model.source),
                 _identifier=model_id,
                 _owner=None,

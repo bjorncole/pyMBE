@@ -123,9 +123,7 @@ class SysML2Client(trt.HasTraits):
         elements = elements or []
         self.model = Model.load(
             elements=elements,
-            name=f"""{
-                self.projects[self.selected_project]["name"]
-            } ({self.host})""",
+            name=self.projects[self.selected_project]["name"],
             source=self.elements_url,
         )
         for element in self.model.elements.values():

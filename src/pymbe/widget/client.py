@@ -1,17 +1,59 @@
+import json
 from collections import Counter
 
 import ipywidgets as ipyw
 import traitlets as trt
+from wxyz.html import File, FileBox
 
 from ..client import SysML2Client
+from ..model import Model
+from .core import BaseWidget
 
-__all__ = ("SysML2ClientWidget",)
+__all__ = ("SysML2ClientWidget", "SysML2FileLoader")
+
+
+@ipyw.register
+class SysML2FileLoader(FileBox, BaseWidget):
+    """A simple UI for loading SysML models from disk."""
+
+    closable: bool = trt.Bool(True).tag(sync=True)
+    description: str = trt.Unicode("File Loader").tag(sync=True)
+    icon_class: str = trt.Unicode("jp-JsonIcon").tag(sync=True)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.accept = ["json"]
+        self.multiple = False
+
+    def update(self, *_):
+        self.children = []
+
+    def _load_model(self, change: trt.Bunch):
+        with self.log_out:
+            model_file, *other = self.children
+            assert not other, f"Should only have one file, but also found {other}"
+            self.model = Model.load(
+                elements=json.loads(change.new),
+                name=".".join(model_file.name.split(".")[:-1]),
+            )
+
+    @trt.observe("children")
+    def _update_model(self, change: trt.Bunch):
+        with self.log_out:
+            if isinstance(change.old, (list, tuple)) and change.old:
+                old, *_ = change.old
+                if isinstance(old, File):
+                    old.unobserve(self._load_model)
+            if isinstance(change.new, (list, tuple)) and change.new:
+                new, *_ = change.new
+                new.observe(self._load_model, "value")
 
 
 @ipyw.register
 class SysML2ClientWidget(SysML2Client, ipyw.GridspecLayout):
     """An ipywidget to interact with a SysML v2 API."""
 
+    closable: bool = trt.Bool(True).tag(sync=True)
     description: str = trt.Unicode("API Client").tag(sync=True)
     icon_class: str = trt.Unicode("jp-DownloadIcon").tag(sync=True)
 

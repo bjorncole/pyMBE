@@ -135,6 +135,10 @@ class Model:  # pylint: disable=too-many-instance-attributes
     def save_to_file(self, filepath: Union[Path, str], indent: int = 2):
         if isinstance(filepath, str):
             filepath = Path(filepath)
+        if not filepath.name.endswith(".json"):
+            filepath = filepath.parent / f"{filepath.name}.json"
+        if filepath.exists():
+            warn(f"Overwriting {filepath}")
         filepath.write_text(
             json.dumps(
                 [element._data for element in self.elements.values()],
