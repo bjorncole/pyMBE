@@ -9,14 +9,13 @@ from pymbe.query.query import (
     roll_up_multiplicity_for_type,
     roll_up_upper_multiplicity,
 )
-from tests.conftest import kerbal_model_loaded_client
 
 ROCKET_BUILDING = "Model::Kerbal::Rocket Building::"
 PARTS_LIBRARY = "Model::Kerbal::Parts Library::"
 SIMPLE_MODEL = "Model::Simple Parts Model::"
 
 
-def test_feature_to_type1(kerbal_client, kerbal_lpg, kerbal_stable_names):
+def test_feature_to_type1(kerbal_lpg, kerbal_stable_names):
     *_, qualified_name_to_id = kerbal_stable_names
 
     engines_feat = qualified_name_to_id[
@@ -27,7 +26,7 @@ def test_feature_to_type1(kerbal_client, kerbal_lpg, kerbal_stable_names):
     assert get_types_for_feature(kerbal_lpg, engines_feat) == [engine_type_feat]
 
 
-def test_type_to_feature1(kerbal_client, kerbal_lpg, kerbal_stable_names):
+def test_type_to_feature1(kerbal_lpg, kerbal_stable_names):
     *_, qualified_name_to_id = kerbal_stable_names
 
     engines_feat = qualified_name_to_id[

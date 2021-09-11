@@ -82,7 +82,7 @@ def test_phase_1_singleton_instances(kerbal_random_stage_1_complete, kerbal_stab
 
 @pytest.mark.skip("Need to refactor tests, after 0.19.0 upgrades")
 def test_phase_2_instance_creation(
-    kerbal_lpg, kerbal_random_stage_1_complete, kerbal_stable_names, kerbal_client
+    kerbal_lpg, kerbal_random_stage_1_complete, kerbal_stable_names
 ):
     *_, qualified_name_to_id = kerbal_stable_names
 

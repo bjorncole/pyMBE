@@ -8,7 +8,7 @@ import traitlets as trt
 from wxyz.lab import DockPop
 
 from ..model import Element, Model
-from .client import SysML2ClientWidget, SysML2FileLoader
+from .client import APIClientWidget, SysML2FileLoader
 from .core import BaseWidget
 
 __all__ = ("ContainmentTree",)
@@ -36,7 +36,7 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
     description: str = trt.Unicode("Containment Tree").tag(sync=True)
     icon_class: str = trt.Unicode("jp-TreeViewIcon").tag(sync=True)
 
-    client: SysML2ClientWidget = trt.Instance(SysML2ClientWidget)
+    api_client: APIClientWidget = trt.Instance(APIClientWidget)
     file_loader: SysML2FileLoader = trt.Instance(SysML2FileLoader, args=())
 
     default_icon: str = trt.Unicode("genderless").tag(sync=True)
@@ -119,14 +119,14 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
         self.save_model.on_click(self._save_to_disk)
 
         for linked_attribute in ("model", "log_out"):
-            for widget in (self.client, self.file_loader):
+            for widget in (self.api_client, self.file_loader):
                 trt.link((self, linked_attribute), (widget, linked_attribute))
 
-    @trt.default("client")
-    def _make_client(self) -> SysML2ClientWidget:
-        client = SysML2ClientWidget(host_url="http://sysml2.intercax.com")
-        client._set_layout()
-        return client
+    @trt.default("api_client")
+    def _make_api_client(self) -> APIClientWidget:
+        api_client = APIClientWidget(host_url="http://sysml2.intercax.com")
+        api_client._set_layout()
+        return api_client
 
     @trt.default("add_widget")
     def _make_add_widget(self) -> ty.Callable:
@@ -152,7 +152,7 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
 
     def _pop_api_client(self, *_):
         with self.log_out:
-            self.add_widget(self.client, mode="split-top")
+            self.add_widget(self.api_client, mode="split-top")
 
     def _pop_log_out(self, *_):
         with self.log_out:

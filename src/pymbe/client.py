@@ -1,17 +1,14 @@
 import re
 from datetime import datetime, timezone
 from functools import lru_cache
-from pathlib import Path
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Optional
 from warnings import warn
 
 import ipywidgets as ipyw
 import requests
 import traitlets as trt
 from dateutil import parser
-from ipywidgets.widgets.trait_types import TypedTuple
 
-from .label import get_label
 from .model import Model
 
 TIMEZONES = {
@@ -37,7 +34,7 @@ TIMEZONES = {
 }
 
 
-class SysML2Client(trt.HasTraits):
+class APIClient(trt.HasTraits):
     """
         A traitleted SysML v2 API Client.
 
@@ -45,8 +42,6 @@ class SysML2Client(trt.HasTraits):
         - Add ability to use element download pagination.
 
     """
-
-    model: Model = trt.Instance(Model, allow_none=True)
 
     host_url = trt.Unicode(
         default_value="http://localhost",
@@ -64,10 +59,6 @@ class SysML2Client(trt.HasTraits):
     )
 
     paginate = trt.Bool(default_value=True)
-
-    folder_path: Path = trt.Instance(Path, allow_none=True)
-    json_files: Tuple[Path] = TypedTuple(trt.Instance(Path))
-    json_file: Path = trt.Instance(Path, allow_none=True)
 
     selected_project: str = trt.Unicode(allow_none=True)
     selected_commit: str = trt.Unicode(allow_none=True)
@@ -115,32 +106,6 @@ class SysML2Client(trt.HasTraits):
     @trt.observe("host_url", "host_port")
     def _update_api_configuration(self, *_):
         self.projects = self._make_projects()
-
-    @trt.observe("selected_commit")
-    def _update_elements(self, *_, elements=None):
-        if not (self.selected_commit or elements):
-            return
-        elements = elements or []
-        self.model = Model.load(
-            elements=elements,
-            name=self.projects[self.selected_project]["name"],
-            source=self.elements_url,
-        )
-        for element in self.model.elements.values():
-            if "label" not in element._derived:
-                element._derived["label"] = get_label(element)
-
-    @trt.observe("folder_path")
-    def _update_json_files(self, *_):
-        if self.folder_path.exists():
-            self.json_files = tuple(self.folder_path.glob("*.json"))
-
-    @trt.observe("json_file")
-    def _update_elements_from_file(self, change: trt.Bunch = None):
-        if change is None:
-            return
-        if change.new != change.old and change.new.exists():
-            self.model = Model.load_from_file(self.json_file)
 
     @property
     def host(self):
@@ -212,12 +177,22 @@ class SysML2Client(trt.HasTraits):
         commits = sorted(self._retrieve_data(self.commits_url), key=lambda x: x["timestamp"])
         return {commit["@id"]: clean_fields(commit) for commit in commits}
 
-    def _download_elements(self):
+    def get_model(self) -> Optional[Model]:
+        """Download a model from the current `elements_url`."""
+        if not self.selected_commit:
+            return None
+
         elements = self._retrieve_data(self.elements_url)
+        if not elements:
+            return None
+
         max_elements = self.page_size if self.paginate else 100
         if len(elements) == max_elements:
             warn("There are probably more elements that were not retrieved!")
-        self._update_elements(elements=elements)
 
-    def _load_from_file(self, file_path: Union[str, Path]):
-        self.model = Model.load_from_file(file_path)
+        return Model.load(
+            elements=elements,
+            name=self.projects[self.selected_project]["name"],
+            source=self.elements_url,
+            _api=self,
+        )

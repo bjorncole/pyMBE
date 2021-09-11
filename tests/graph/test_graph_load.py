@@ -1,8 +1,6 @@
 import networkx as nx
 import pytest
 
-from tests.conftest import kerbal_ids_by_type, kerbal_lpg, kerbal_model_loaded_client
-
 
 def test_graph_load(kerbal_lpg):
     assert len(kerbal_lpg.nodes) == 152

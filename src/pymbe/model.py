@@ -81,6 +81,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
 
     source: Any = None
 
+    _api: Any = None
     _naming: Naming = Naming.LONG  # The scheme to use for repr'ing the elements
 
     def __post_init__(self):

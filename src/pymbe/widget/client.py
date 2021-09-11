@@ -5,11 +5,11 @@ import ipywidgets as ipyw
 import traitlets as trt
 from wxyz.html import File, FileBox
 
-from ..client import SysML2Client
+from ..client import APIClient
 from ..model import Model
 from .core import BaseWidget
 
-__all__ = ("SysML2ClientWidget", "SysML2FileLoader")
+__all__ = ("APIClientWidget", "SysML2FileLoader")
 
 
 @ipyw.register
@@ -50,19 +50,21 @@ class SysML2FileLoader(FileBox, BaseWidget):
 
 
 @ipyw.register
-class SysML2ClientWidget(SysML2Client, ipyw.GridspecLayout):
+class APIClientWidget(APIClient, ipyw.GridspecLayout):
     """An ipywidget to interact with a SysML v2 API."""
 
     closable: bool = trt.Bool(True).tag(sync=True)
     description: str = trt.Unicode("API Client").tag(sync=True)
     icon_class: str = trt.Unicode("jp-DownloadIcon").tag(sync=True)
 
+    model: Model = trt.Instance(Model, allow_none=True)
+
     # file_uploader: ipyw.FileUpload = trt.Instance(ipyw.FileUpload)
     host_url_input: ipyw.Text = trt.Instance(ipyw.Text)
     host_port_input: ipyw.IntText = trt.Instance(ipyw.IntText)
     project_selector: ipyw.Dropdown = trt.Instance(ipyw.Dropdown)
     commit_selector: ipyw.Dropdown = trt.Instance(ipyw.Dropdown)
-    download_elements: ipyw.Button = trt.Instance(ipyw.Button)
+    download_model: ipyw.Button = trt.Instance(ipyw.Button)
     progress_bar: ipyw.IntProgress = trt.Instance(ipyw.IntProgress)
 
     def __init__(self, n_rows=4, n_columns=12, **kwargs):
@@ -82,7 +84,7 @@ class SysML2ClientWidget(SysML2Client, ipyw.GridspecLayout):
             self.host_port_input,
             self.project_selector,
             self.commit_selector,
-            self.download_elements,
+            self.download_model,
             self.progress_bar,
         ]
 
@@ -96,7 +98,7 @@ class SysML2ClientWidget(SysML2Client, ipyw.GridspecLayout):
         self[0, idx:] = self.host_port_input
         self[1, :idx] = self.project_selector
         self[2, :idx] = self.commit_selector
-        self[1:3, idx:] = self.download_elements
+        self[1:3, idx:] = self.download_model
         self[3, :] = self.progress_bar
 
         for widget in (
@@ -104,7 +106,7 @@ class SysML2ClientWidget(SysML2Client, ipyw.GridspecLayout):
             self.host_port_input,
             self.project_selector,
             self.commit_selector,
-            self.download_elements,
+            self.download_model,
             self.progress_bar,
         ):
             widget.layout.height = "95%"
@@ -119,7 +121,7 @@ class SysML2ClientWidget(SysML2Client, ipyw.GridspecLayout):
         self.layout = layout
 
     @trt.default("host_url_input")
-    def _make_host_url_input(self):
+    def _make_host_url_input(self) -> ipyw.Text:
         input_box = ipyw.Text(
             default_value=self.host_url,
             description="Server:",
@@ -132,7 +134,7 @@ class SysML2ClientWidget(SysML2Client, ipyw.GridspecLayout):
         return input_box
 
     @trt.default("host_port_input")
-    def _make_host_port_input(self):
+    def _make_host_port_input(self) -> ipyw.IntText:
         input_box = ipyw.IntText(
             default_value=self.host_port,
             min=1,
@@ -146,7 +148,7 @@ class SysML2ClientWidget(SysML2Client, ipyw.GridspecLayout):
         return input_box
 
     @trt.default("project_selector")
-    def _make_project_selector(self):
+    def _make_project_selector(self) -> ipyw.Dropdown:
         selector = ipyw.Dropdown(
             description="Project:",
             options=self._get_project_options(),
@@ -155,7 +157,7 @@ class SysML2ClientWidget(SysML2Client, ipyw.GridspecLayout):
         return selector
 
     @trt.default("commit_selector")
-    def _make_commit_selector(self):
+    def _make_commit_selector(self) -> ipyw.Dropdown:
         selector = ipyw.Dropdown(
             description="Commit:",
             options=self._get_commit_selector_options() if self.project_selector.options else {},
@@ -163,18 +165,18 @@ class SysML2ClientWidget(SysML2Client, ipyw.GridspecLayout):
         trt.link((selector, "value"), (self, "selected_commit"))
         return selector
 
-    @trt.default("download_elements")
-    def _make_download_elements_button(self):
+    @trt.default("download_model")
+    def _make_download_model_button(self) -> ipyw.Button:
         button = ipyw.Button(
             icon="cloud-download",
             tooltip="Fetch elements from remote host.",
             layout=dict(max_width="6rem"),
         )
-        button.on_click(self._download_elements)
+        button.on_click(self._download_model)
         return button
 
     @trt.default("progress_bar")
-    def _make_progress_bar(self):
+    def _make_progress_bar(self) -> ipyw.IntProgress:
         progress_bar = ipyw.IntProgress(
             description="Loading:",
             min=0,
@@ -201,14 +203,17 @@ class SysML2ClientWidget(SysML2Client, ipyw.GridspecLayout):
             for id_, data in self._get_project_commits().items()
         }
 
-    def _download_elements(self, *_):
+    def _download_model(self, *_):
         progress = self.progress_bar
         progress.value = 0
         progress.layout.visibility = "visible"
 
         progress.value += 1
 
-        super()._download_elements()
+        model = self.get_model()
+        if not model or not model.elements:
+            raise ValueError(f"Could not download model from: {self.elements_url}")
+        self.model = model
         progress.value += 1
 
         progress.value = progress.max

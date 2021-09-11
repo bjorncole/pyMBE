@@ -1,7 +1,7 @@
 import pytest
 import requests
 
-from tests.conftest import all_kerbal_names, kerbal_client, kerbal_ids_by_type
+from pymbe.client import APIClient
 
 SYSML_SERVER_URL = "http://sysml2-sst.intercax.com"  # Alternative: sysml2.intercax.com
 
@@ -14,8 +14,8 @@ def can_connect(host: str, port: int = 9000):
         return False
 
 
-def test_client_load_kerbal(kerbal_client):
-    assert len(kerbal_client.model.elements) == 380
+def test_client_load_kerbal(kerbal_model):
+    assert len(kerbal_model.elements) == 380
 
 
 def test_client_load_find_names(all_kerbal_names):
@@ -36,8 +36,8 @@ def test_client_load_find_types(kerbal_ids_by_type):
     not can_connect(host=SYSML_SERVER_URL),
     reason=f"Can't connect to {SYSML_SERVER_URL}",
 )
-def test_remote_connection(kerbal_client):
-    client = kerbal_client
+def test_remote_connection():
+    client = APIClient()
     client.host_url = SYSML_SERVER_URL
 
     assert client.projects
@@ -46,7 +46,6 @@ def test_remote_connection(kerbal_client):
 
     client.selected_project = list(client.projects)[0]
     client.selected_commit = list(client._get_project_commits())[0]
-    client._download_elements()
+    model = client.get_model()
 
-    model = client.model
     assert model.elements
