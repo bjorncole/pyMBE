@@ -32,7 +32,7 @@ class UI(DockBox):
         super().__init__(*args, **kwargs)
         self.description = "SysML Model"
 
-        self.tree.client.host_url = host_url
+        self.tree.api_client.host_url = host_url
 
         self.children = [
             self.tree,
