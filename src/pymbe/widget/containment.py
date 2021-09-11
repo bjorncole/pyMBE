@@ -145,7 +145,7 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
 
     def _save_to_disk(self, *_):
         with self.log_out:
-            if not self.model or not self.model.elements:
+            if not self.model:
                 print("No model loaded!")
                 return
             self.model.save_to_file(filepath=Path(".") / self.model.name)

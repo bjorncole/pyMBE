@@ -133,6 +133,9 @@ class Model:  # pylint: disable=too-many-instance-attributes
         )
 
     def save_to_file(self, filepath: Union[Path, str], indent: int = 2):
+        if not self.elements:
+            warn("Model has no elements, nothing to save!")
+            return
         if isinstance(filepath, str):
             filepath = Path(filepath)
         if not filepath.name.endswith(".json"):
