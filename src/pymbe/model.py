@@ -55,6 +55,12 @@ class Naming(Enum):
         return f"""<{name} «{data["@type"]}»>"""
 
 
+class ModelClient:
+
+    def get_element_data(self, element_id: str) -> dict:
+        raise NotImplementedError("Must be implemented by the subclass")
+
+
 @dataclass(repr=False)
 class Model:  # pylint: disable=too-many-instance-attributes
     """A SysML v2 Model"""
@@ -81,7 +87,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
 
     source: Any = None
 
-    _api: Any = None
+    _api: ModelClient = None
     _naming: Naming = Naming.LONG  # The scheme to use for repr'ing the elements
 
     def __post_init__(self):
@@ -133,6 +139,39 @@ class Model:  # pylint: disable=too-many-instance-attributes
             element for element in self.elements.values() if element._metatype == "Package"
         )
 
+    def get_element(self, element_id: str, fail: bool = True) -> "Element":
+        """Get an element, or retrieve it from the API if it is there"""
+        elements = self.elements
+        element: "Element" = None
+        if element_id in elements:
+            return elements[element_id]
+        if self._api:
+            data = self._api.get_element_data(element_id)
+            if data:
+                element = self._add_element(data)
+        if fail and not element:
+            raise KeyError(f"Could not retrieve '{element_id}' from the API")
+        return element
+
+    def _add_element(self, data: dict) -> "Element":
+        id_ = data["@id"]
+        type_ = data["@type"]
+        self.elements[id_] = element = Element(_data=data, _model=self)
+        self._add_labels(element)
+        if type_ not in self.ownedMetatype:
+            self.ownedMetatype[type_] = []
+        self.ownedMetatype[type_].append(element)
+
+        if element._is_relationship:
+            self.all_relationships[id_] = element
+            self.ownedRelationship += [element]
+        else:
+            self.all_non_relationships[id_] = element
+
+        if element.get_owner() is None:
+            self.ownedElement += [element]
+        return element
+
     def save_to_file(self, filepath: Union[Path, str], indent: int = 2):
         if not self.elements:
             warn("Model has no elements, nothing to save!")
@@ -150,11 +189,12 @@ class Model:  # pylint: disable=too-many-instance-attributes
             ),
         )
 
-    def _add_labels(self):
+    def _add_labels(self, *elements):
         """Attempts to add a label to the elements"""
         from .label import get_label  # pylint: disable=import-outside-toplevel
 
-        for element in self.elements.values():
+        elements = elements or self.elements.values()
+        for element in elements:
             label = get_label(element=element)
             if label:
                 element._derived["label"] = label
@@ -194,7 +234,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
         for relationship in self.all_relationships.values():
             endpoints = {
                 endpoint_type: [
-                    self.elements[endpoint["@id"]]
+                    self.get_element(endpoint["@id"])
                     for endpoint in relationship._data[endpoint_type]
                 ]
                 for endpoint_type in ("source", "target")
@@ -298,8 +338,7 @@ class Element:  # pylint: disable=too-many-instance-attributes
 
     def __lt__(self, other):
         if isinstance(other, str):
-            if other in self._model.elements:
-                other = self._model.elements[other]
+            other = self._model.get_element(other, fail=False) or other
         if not isinstance(other, Element):
             raise ValueError(f"Cannot compare an element to {type(other)}")
         if self.get("name", None) and other.get("name", None):
@@ -351,7 +390,7 @@ class Element:  # pylint: disable=too-many-instance-attributes
             return default
 
     def get_element(self, element_id) -> "Element":
-        return self._model.elements.get(element_id)
+        return self._model.get(element_id)
 
     def get_owner(self) -> "Element":
         data = self._data
@@ -362,7 +401,7 @@ class Element:  # pylint: disable=too-many-instance-attributes
                 break
         if owner_id is None:
             return None
-        return self._model.elements[owner_id]
+        return self._model.get_element(owner_id)
 
     @staticmethod
     def new(data: dict, model: Model) -> "Element":
@@ -375,7 +414,7 @@ class Element:  # pylint: disable=too-many-instance-attributes
                 if len(item) > 1:
                     warn(f"Found a reference with more than one entry: {item}")
                 item = item["@id"]
-            return self._model.elements[item]
+            return self._model.get_element(item)
         except KeyError:
             return item
 

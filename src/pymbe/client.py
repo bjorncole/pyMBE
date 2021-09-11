@@ -9,7 +9,7 @@ import requests
 import traitlets as trt
 from dateutil import parser
 
-from .model import Model
+from .model import Model, ModelClient
 
 TIMEZONES = {
     "CEST": "UTC+2",
@@ -34,7 +34,7 @@ TIMEZONES = {
 }
 
 
-class APIClient(trt.HasTraits):
+class APIClient(trt.HasTraits, ModelClient):
     """
         A traitleted SysML v2 API Client.
 
@@ -130,8 +130,7 @@ class APIClient(trt.HasTraits):
             raise SystemError("No selected project!")
         if not self.selected_commit:
             raise SystemError("No selected commit!")
-        arguments = f"?page[size]={self.page_size}" if self.page_size else ""
-        return f"{self.commits_url}/{self.selected_commit}/elements{arguments}"
+        return f"{self.commits_url}/{self.selected_commit}/elements"
 
     @lru_cache
     def _retrieve_data(self, url: str) -> List[Dict]:
@@ -181,8 +180,10 @@ class APIClient(trt.HasTraits):
         """Download a model from the current `elements_url`."""
         if not self.selected_commit:
             return None
-
-        elements = self._retrieve_data(self.elements_url)
+        url = self.elements_url
+        if self.page_size:
+            url += f"?page[size]={self.page_size}"
+        elements = self._retrieve_data(url)
         if not elements:
             return None
 
@@ -196,3 +197,10 @@ class APIClient(trt.HasTraits):
             source=self.elements_url,
             _api=self,
         )
+
+    def get_element_data(self, element_id: str) -> dict:
+        url = f"{self.elements_url}/{element_id}"
+        try:
+            return self._retrieve_data(url)
+        except requests.HTTPError:
+            return {}
