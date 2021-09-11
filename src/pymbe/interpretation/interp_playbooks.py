@@ -283,7 +283,7 @@ def random_generator_playbook_phase_3(
         # skip if the feature is abstract or its owning type is
         last_item = model.elements[feature_sequence[-1]]
         if last_item.isAbstract:
-            print(f"Skipped sequence ending in {last_item}")
+            #print(f"Skipped sequence ending in {last_item}")
             continue
 
         new_sequences = []
@@ -409,7 +409,7 @@ def random_generator_playbook_phase_3_new_instances(
         # skip if the feature is abstract or its owning type is
         last_item = model.elements[feature_sequence[-1]]
         if last_item.isAbstract or last_item.owner.isAbstract:
-            print(f"Skipped sequnce ending in {last_item}")
+            #print(f"Skipped sequnce ending in {last_item}")
             continue
 
         new_sequences = []
@@ -618,15 +618,20 @@ def random_generator_playbook_phase_5(
             min_side = min(len(source_sequences), len(target_sequences))
             max_side = max(len(source_sequences), len(target_sequences))
 
+            if min_side == 0:
+                instances_dict[connector_ends[0]._id] = []
+                instances_dict[connector_ends[1]._id] = []
+                continue # nothing to connect
+
             try:
                 if len(source_sequences) <= len(target_sequences):
                     source_indices = list(range(0, min_side))
-                    other_steps = sample(range(0, min_side), (max_side - min_side))
+                    other_steps = [randint(0, min_side - 1) for _ in range(0, (max_side - min_side))]
                     source_indices.extend(other_steps)
                     target_indices = sample(range(0, max_side), max_side)
                 else:
                     source_indices = sample(range(0, max_side), max_side)
-                    other_steps = sample(range(0, min_side), (max_side - min_side))
+                    other_steps = [randint(0, min_side - 1) for _ in range(0, (max_side - min_side))]
                     target_indices = list(range(0, min_side))
                     target_indices.extend(other_steps)
             except ValueError as exc:
