@@ -1,7 +1,10 @@
+from warnings import warn
+
 import pytest
 import requests
 
 from pymbe.client import APIClient
+from pymbe.model import Element
 
 SYSML_SERVER_URL = "http://sysml2-sst.intercax.com"  # Alternative: sysml2.intercax.com
 
@@ -49,3 +52,43 @@ def test_remote_connection():
     model = client.get_model()
 
     assert model.elements
+
+    # Test resolving an element from the API
+    element: Element = [
+        el for el in model.ownedElement if el.get("name") and not el._is_relationship
+    ][0]
+    label = element.label
+    element._data = {}
+    element._derived = {}
+    element._is_proxy = True
+    model.ownedElement.remove(element)
+    model.ownedMetatype.pop(element._metatype)
+    model.all_non_relationships.pop(element._id)
+    model.elements.pop(element._id)
+    element.resolve()
+    assert label == element.label
+    assert element in model.ownedElement
+    assert element in model.ownedMetatype[element._metatype]
+    assert model.all_non_relationships[element._id] == element
+    assert model.elements[element._id] == element
+
+    owned_relationships: Element = [rel for rel in model.ownedElement if rel._is_relationship]
+    if not owned_relationships:
+        warn("Model does not have any owned relationships!")
+    else:
+        relationship = owned_relationships[0]
+        label = relationship.label
+        relationship._data = {}
+        relationship._derived = {}
+        relationship._is_proxy = True
+        model.ownedElement.remove(relationship)
+        model.ownedRelationship.remove(relationship)
+        model.ownedMetatype[relationship._metatype].remove(relationship)
+        model.all_relationships.pop(relationship._id)
+        model.elements.pop(relationship._id)
+        relationship.resolve()
+        assert label == relationship.label
+        assert relationship in model.ownedElement
+        assert relationship in model.ownedMetatype[relationship._metatype]
+        assert model.all_relationships[relationship._id] == relationship
+        assert model.elements[relationship._id] == relationship

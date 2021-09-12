@@ -1,7 +1,6 @@
 import pytest
 
 from pymbe.model import VALUE_METATYPES, ValueHolder
-from tests.conftest import kerbal_model
 
 
 @pytest.mark.skip("Need to refactor tests, after 0.19.0 upgrades")

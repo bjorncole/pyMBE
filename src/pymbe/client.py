@@ -11,6 +11,8 @@ from dateutil import parser
 
 from .model import Model, ModelClient
 
+URL_CACHE_SIZE = 1024
+
 TIMEZONES = {
     "CEST": "UTC+2",
     "CET": "UTC+1",
@@ -132,7 +134,10 @@ class APIClient(trt.HasTraits, ModelClient):
             raise SystemError("No selected commit!")
         return f"{self.commits_url}/{self.selected_commit}/elements"
 
-    @lru_cache
+    def reset_cache(self):
+        self._retrieve_data.cache_clear()
+
+    @lru_cache(maxsize=URL_CACHE_SIZE)
     def _retrieve_data(self, url: str) -> List[Dict]:
         """Retrieve model data from a URL using pagination"""
         result = []
@@ -143,19 +148,22 @@ class APIClient(trt.HasTraits, ModelClient):
                 raise requests.HTTPError(
                     f"Failed to retrieve elements from '{url}', reason: {response.reason}"
                 )
-
-            result += response.json()
+            data = response.json()
+            if not isinstance(data, list):
+                return data
+            result += data
 
             link = response.headers.get("Link")
             if not link:
                 break
 
             urls = self._next_url_regex.findall(link)
-            url = None
-            if len(urls) == 1:
-                url = urls[0]
-            elif len(urls) > 1:
-                raise SystemError(f"Found multiple 'next' pagination urls: {urls}")
+            if len(urls) > 1:
+                raise requests.HTTPError(
+                    "Found multiple 'next' pagination urls: "
+                    ", ".join(map(lambda x: f"<{x}>", urls))
+                )
+            url = urls[0] if urls else None
         return result
 
     @staticmethod
@@ -199,8 +207,7 @@ class APIClient(trt.HasTraits, ModelClient):
         )
 
     def get_element_data(self, element_id: str) -> dict:
-        url = f"{self.elements_url}/{element_id}"
         try:
-            return self._retrieve_data(url)
+            return self._retrieve_data(f"{self.elements_url}/{element_id}")
         except requests.HTTPError:
             return {}
