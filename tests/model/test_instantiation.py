@@ -3,7 +3,7 @@ import pytest
 from pymbe.model import VALUE_METATYPES, ValueHolder
 
 
-@pytest.mark.skip("Need to refactor tests, after 0.19.0 upgrades")
+@pytest.mark.skip("Need to refactor tests, after upgrades")
 def test_instantiation(kerbal_model):
     model = kerbal_model
 
