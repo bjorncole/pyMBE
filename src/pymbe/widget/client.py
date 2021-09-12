@@ -9,11 +9,11 @@ from ..client import APIClient
 from ..model import Model
 from .core import BaseWidget
 
-__all__ = ("APIClientWidget", "SysML2FileLoader")
+__all__ = ("APIClientWidget", "FileLoader")
 
 
 @ipyw.register
-class SysML2FileLoader(FileBox, BaseWidget):
+class FileLoader(FileBox, BaseWidget):
     """A simple UI for loading SysML models from disk."""
 
     closable: bool = trt.Bool(True).tag(sync=True)

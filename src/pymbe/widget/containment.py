@@ -8,7 +8,7 @@ import traitlets as trt
 from wxyz.lab import DockPop
 
 from ..model import Element, Model
-from .client import APIClientWidget, SysML2FileLoader
+from .client import APIClientWidget, FileLoader
 from .core import BaseWidget
 
 __all__ = ("ContainmentTree",)
@@ -37,7 +37,7 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
     icon_class: str = trt.Unicode("jp-TreeViewIcon").tag(sync=True)
 
     api_client: APIClientWidget = trt.Instance(APIClientWidget)
-    file_loader: SysML2FileLoader = trt.Instance(SysML2FileLoader, args=())
+    file_loader: FileLoader = trt.Instance(FileLoader, args=())
 
     default_icon: str = trt.Unicode("genderless").tag(sync=True)
     indeterminate_icon: str = trt.Unicode("question").tag(sync=True)
