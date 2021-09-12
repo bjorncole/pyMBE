@@ -2,7 +2,7 @@ import pytest
 from testbook import testbook
 
 
-@pytest.mark.skip("Need to refactor tests, after 0.19.0 upgrades")
+@pytest.mark.skip("Need to refactor tests, after upgrades")
 @testbook("docs/tutorials/01-Basic.ipynb", execute=True)
 def test_tutorial(tb):
     """Test the Tutorial notebook"""
@@ -16,7 +16,7 @@ def test_tutorial(tb):
     assert not set(m1_diagram.model.elements).symmetric_difference(set(tree.model.elements))
 
 
-@pytest.mark.skip("Need to refactor tests, after 0.19.0 upgrades")
+@pytest.mark.skip("Need to refactor tests, after upgrades")
 @testbook("tests/jupyter/notebooks/Playbook Explorer Parts Test.ipynb", execute=True)
 def test_simple_parts_explorer(tb):
     m0_interpretation = tb.ref("m0_interpretation")

@@ -46,6 +46,8 @@ TYPES_FOR_ROLL_UP_MULTIPLICITY = (
     "StateDefinition",
 )
 
+TYPES_FOR_CONNECTOR_INSTANCES = ("ConnectionUsage", "InterfaceUsage", "SuccessionUsage")
+
 
 def random_generator_playbook(
     lpg: SysML2LabeledPropertyGraph,
@@ -283,7 +285,7 @@ def random_generator_playbook_phase_3(
         # skip if the feature is abstract or its owning type is
         last_item = model.elements[feature_sequence[-1]]
         if last_item.isAbstract:
-            print(f"Skipped sequence ending in {last_item}")
+            # print(f"Skipped sequence ending in {last_item}")
             continue
 
         new_sequences = []
@@ -409,7 +411,7 @@ def random_generator_playbook_phase_3_new_instances(
         # skip if the feature is abstract or its owning type is
         last_item = model.elements[feature_sequence[-1]]
         if last_item.isAbstract or last_item.owner.isAbstract:
-            print(f"Skipped sequnce ending in {last_item}")
+            # print(f"Skipped sequnce ending in {last_item}")
             continue
 
         new_sequences = []
@@ -578,92 +580,83 @@ def random_generator_playbook_phase_5(
     """
     Generate instances for connector usages and their specializations and randomly
     connect ends to legal sources and targets
+
     :param lpg: Active SysML graph
     :param cug: A connector usage graph projection to see where their source/targets are linked
     :param instances_dict: Working dictionary of interpreted sequences for the model
+
     :return: None - side effect is addition of new instances to the instances dictionary
     """
-
+    elements = lpg.model.elements
     # Generate sequences for connection and interface ends
-    for node_id in list(cug.nodes):
-        node = lpg.model.elements[node_id]
-        if node._metatype in ("ConnectionUsage", "InterfaceUsage", "SuccessionUsage"):
+    for connector_id in cug.nodes:
+        connector = elements[connector_id]
+        if connector._metatype not in TYPES_FOR_CONNECTOR_INSTANCES:
+            continue
 
-            connector_ends = node.connectorEnd
+        connector_ends = connector.connectorEnd
+        if len(connector_ends) != 2:
+            raise NotImplementedError(
+                f"Cannot process connector {connector} because it"
+                f" it has {len(connector_ends) or 'no'} connector end(s)"
+            )
 
-            connector_id = node._id
+        source, *other_sources = connector.source
+        target, *other_targets = connector.target
+        if other_sources or other_targets:
+            raise NotImplementedError(
+                f"Cannot process connector {connector} because it"
+                " has multiple sources and/or targets"
+            )
 
-            source_feat_id = node.source[0].chainingFeature[-1]._id
-            target_feat_id = node.target[0].chainingFeature[-1]._id
+        try:
+            source_sequences = instances_dict[source.chainingFeature[-1]._id]
+        except KeyError as exc:
+            raise KeyError(f"Cannot find chaining feature sequences for {source}!") from exc
 
-            try:
-                source_sequences = instances_dict[source_feat_id]
-            except KeyError as exc:
-                raise KeyError(
-                    f"Cannot find {lpg.model.elements[source_feat_id]} in the interpretation!"
-                ) from exc
+        try:
+            target_sequences = instances_dict[target.chainingFeature[-1]._id]
+        except KeyError as exc:
+            raise KeyError(f"Cannot find chaining feature sequences for {target}!") from exc
 
-            try:
-                target_sequences = instances_dict[target_feat_id]
-            except KeyError as exc:
-                raise KeyError(
-                    f"Cannot find {lpg.model.elements[target_feat_id]} in the interpretation!"
-                ) from exc
+        # Get sequence sizes for each side
+        sizes = len(source_sequences), len(target_sequences)
+        min_side, max_side = min(sizes), max(sizes)
 
-            connectors = instances_dict[connector_id]
+        # if one side has no connections, there's nothing to connect
+        if min_side < 1:
+            for connector_end in connector_ends:
+                instances_dict[connector_end._id] = []
+            continue
 
-            extended_source_sequences = []
-            extended_target_sequences = []
+        try:
+            indeces = list(range(min_side)) + [
+                randint(0, min_side - 1) for _ in range(max_side - min_side)
+            ]
+            if len(source_sequences) <= len(target_sequences):
+                connector_ends_indeces = indeces, sample(range(max_side), max_side)
+            else:
+                connector_ends_indeces = sample(range(max_side), max_side), indeces
+        except ValueError as exc:
+            raise ValueError(
+                "Sample larger than population or is negative. Sizes are:"
+                f" {min_side} and {max_side}."
+            ) from exc
 
-            min_side = min(len(source_sequences), len(target_sequences))
-            max_side = max(len(source_sequences), len(target_sequences))
-
-            try:
-                if len(source_sequences) <= len(target_sequences):
-                    source_indices = list(range(0, min_side))
-                    other_steps = sample(range(0, min_side), (max_side - min_side))
-                    source_indices.extend(other_steps)
-                    target_indices = sample(range(0, max_side), max_side)
-                else:
-                    source_indices = sample(range(0, max_side), max_side)
-                    other_steps = sample(range(0, min_side), (max_side - min_side))
-                    target_indices = list(range(0, min_side))
-                    target_indices.extend(other_steps)
-            except ValueError as exc:
-                raise ValueError(
-                    f"Sample larger than population or is negative. Min_side size is {min_side} "
-                    f"and max_side size is {max_side}."
-                ) from exc
-
-            # taking over indx to wrap around
-            indx = 0
-
-            for seq in connectors:
-                new_source_seq = []
-                new_target_seq = []
-
-                for item in seq:
-                    new_source_seq.append(item)
-                    new_target_seq.append(item)
-
-                for jndx, item in enumerate(source_sequences[source_indices[indx]]):
-                    if jndx > 0:
-                        new_source_seq.append(item)
-
-                for jndx, item in enumerate(target_sequences[target_indices[indx]]):
-                    if jndx > 0:
-                        new_target_seq.append(item)
-
-                extended_source_sequences.append(new_source_seq)
-                extended_target_sequences.append(new_target_seq)
-
-                if indx >= len(target_indices) - 1:
-                    indx = 0
-                else:
-                    indx = indx + 1
-
-            instances_dict[connector_ends[0]._id] = extended_source_sequences
-            instances_dict[connector_ends[1]._id] = extended_target_sequences
+        connector_ends_sequences = (source_sequences, target_sequences)
+        connector_sequences = instances_dict[connector_id]
+        for connector_end, connector_end_indeces, connector_end_sequences in zip(
+            connector_ends, connector_ends_indeces, connector_ends_sequences
+        ):
+            instances_dict[connector_end._id] = [
+                [
+                    sequence
+                    + connector_end_sequences[
+                        connector_end_indeces[idx % len(connector_end_sequences)]
+                    ][1:]
+                ]
+                for idx, sequence in enumerate(connector_sequences)
+            ]
 
 
 def build_sequence_templates(lpg: SysML2LabeledPropertyGraph) -> List[List[str]]:
