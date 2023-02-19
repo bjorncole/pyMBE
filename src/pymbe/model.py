@@ -120,7 +120,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
         )
 
     @staticmethod
-    def load_from_file(filepath: Union[Path, str]) -> "Model":
+    def load_from_file(filepath: Union[Path, str], encoding: str = "utf-8") -> "Model":
         """Make a model from a JSON file"""
         if isinstance(filepath, str):
             filepath = Path(filepath)
@@ -129,7 +129,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
             raise ValueError(f"'{filepath}' does not exist!")
 
         return Model.load(
-            elements=json.loads(filepath.read_text()),
+            elements=json.loads(filepath.read_text(encoding=encoding)),
             name=filepath.name,
             source=filepath.resolve(),
         )
@@ -182,7 +182,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
                 self.all_non_relationships[id_] = element
         return element
 
-    def save_to_file(self, filepath: Union[Path, str] = None, indent: int = 2):
+    def save_to_file(self, filepath: Union[Path, str] = None, indent: int = 2, encoding: str = "utf-8"):
         filepath = filepath or self.name
         if not self.elements:
             warn("Model has no elements, nothing to save!")
@@ -198,6 +198,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
                 [element._data for element in self.elements.values()],
                 indent=indent,
             ),
+            encoding=encoding,
         )
 
     def _add_labels(self, *elements):
@@ -406,7 +407,7 @@ class Element:  # pylint: disable=too-many-instance-attributes
             return default
 
     def get_element(self, element_id) -> "Element":
-        return self._model.get(element_id)
+        return self._model.get_element(element_id)
 
     def get_owner(self) -> "Element":
         data = self._data
