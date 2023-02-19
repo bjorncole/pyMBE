@@ -200,7 +200,7 @@ class APIClientWidget(APIClient, ipyw.GridspecLayout):
 
     def _get_commit_selector_options(self):
         return {
-            f"""{data["timestamp"].strftime("%a %b %d %H:%M:%S %Y")} <{id_}>""": id_
+            f"""{data["created"].strftime("%a %b %d %H:%M:%S %Y")} <{id_}>""": id_
             for id_, data in self._get_project_commits().items()
         }
 
