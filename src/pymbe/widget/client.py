@@ -70,9 +70,10 @@ class APIClientWidget(APIClient, ipyw.GridspecLayout):
     def __init__(self, n_rows=4, n_columns=12, **kwargs):
         super().__init__(n_rows=n_rows, n_columns=n_columns, **kwargs)
 
-    def _ipython_display_(self, **kwargs):
-        super()._ipython_display_(**kwargs)
-        self._set_layout()
+    # FIXME: figure out where this is supposed to go or why it was needed.
+    # def _ipython_display_(self, **kwargs):
+    #     super()._ipython_display_(**kwargs)
+    #     self._set_layout()
 
     @trt.validate("children")
     def _set_children(self, proposal):
