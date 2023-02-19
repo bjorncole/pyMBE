@@ -15,8 +15,11 @@ def get_label(element: Element) -> str:
     types: list = data.get("type") or []
     if isinstance(types, dict):
         types = [types]
-    type_names = [model.elements[type_["@id"]]._data.get("name") for type_ in types]
-    type_names = [str(type_name) for type_name in type_names if type_name]
+    try:
+        type_names = [model.elements[type_["@id"]]._data.get("name") for type_ in types]
+        type_names = [str(type_name) for type_name in type_names if type_name]
+    except KeyError:
+        type_names = ["Unresolved type"]
     value = element._data.get("value")
     if name:
         if type_names:
