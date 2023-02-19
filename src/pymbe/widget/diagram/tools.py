@@ -149,7 +149,7 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):  # pylint: disable=too-m
         ]
 
     @trt.validate("layout")
-    def _validate_layout(self, proposal):  # pylint: disable=no-self-use
+    def _validate_layout(self, proposal):
         layout = proposal.value
         layout.width = "auto"
         layout.visibility = "visible"
