@@ -7,7 +7,7 @@ ROCKET_BUILDING = "Model::Kerbal::Rocket Building::"
 PARTS_LIBRARY = "Model::Kerbal::Parts Library::"
 
 
-@pytest.mark.skip("Need to refactor tests, after 0.19.0 upgrades")
+@pytest.mark.skip("Need to refactor tests, after upgrades")
 def test_kerbal_calc_order(kerbal_lpg, kerbal_random_stage_5_complete, kerbal_stable_names):
     # check that the right number of values are created for their features
 
