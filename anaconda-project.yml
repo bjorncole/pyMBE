@@ -114,6 +114,8 @@ env_specs:
     - tabulate
     - wxyz_html
     - wxyz_lab
+    - pip:
+      - pyecore
   developer:
     description: The environment for developing pymbe
     inherit_from:
