@@ -2,7 +2,7 @@ from pymbe.interpretation.interp_playbooks import (
     build_expression_sequence_templates,
     build_sequence_templates,
 )
-from pymbe.interpretation.results import *
+from pymbe.interpretation.results import pprint_double_id_list
 
 ROCKET_BUILDING = "Model::Kerbal::Rocket Building::"
 PARTS_LIBRARY = "Model::Kerbal::Parts Library::"
@@ -11,15 +11,15 @@ SIMPLE_MODEL = "Model::Simple Parts Model::"
 PARTS_LIBRARY = "Model::Simple Parts Model::Fake Library::"
 
 
-def test_feature_sequence_templates1(kerbal_client, kerbal_lpg, kerbal_stable_names):
+def test_feature_sequence_templates1(kerbal_lpg, kerbal_stable_names):
     *_, qualified_name_to_id = kerbal_stable_names
 
     seq_templates = build_sequence_templates(kerbal_lpg)
 
     assert len(seq_templates) == 39
 
-    solid_booster_id = qualified_name_to_id[f"{ROCKET_BUILDING}Solid Booster <<PartDefinition>>"]
-    boosters_id = qualified_name_to_id[
+    _solid_booster_id = qualified_name_to_id[f"{ROCKET_BUILDING}Solid Booster <<PartDefinition>>"]
+    _boosters_id = qualified_name_to_id[
         f"{ROCKET_BUILDING}Solid Stage::boosters: Solid Booster <<PartUsage>>"
     ]
     liquid_stage_id = qualified_name_to_id[f"{ROCKET_BUILDING}Liquid Stage <<PartDefinition>>"]

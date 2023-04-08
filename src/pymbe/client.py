@@ -1,18 +1,17 @@
 import re
 from datetime import datetime, timezone
 from functools import lru_cache
-from pathlib import Path
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Optional
 from warnings import warn
 
 import ipywidgets as ipyw
 import requests
 import traitlets as trt
 from dateutil import parser
-from ipywidgets.widgets.trait_types import TypedTuple
 
-from .label import get_label
-from .model import Model
+from .model import Model, ModelClient
+
+URL_CACHE_SIZE = 1024
 
 TIMEZONES = {
     "CEST": "UTC+2",
@@ -37,7 +36,7 @@ TIMEZONES = {
 }
 
 
-class SysML2Client(trt.HasTraits):
+class APIClient(trt.HasTraits, ModelClient):
     """
         A traitleted SysML v2 API Client.
 
@@ -45,8 +44,6 @@ class SysML2Client(trt.HasTraits):
         - Add ability to use element download pagination.
 
     """
-
-    model: Model = trt.Instance(Model, allow_none=True)
 
     host_url = trt.Unicode(
         default_value="http://localhost",
@@ -64,10 +61,6 @@ class SysML2Client(trt.HasTraits):
     )
 
     paginate = trt.Bool(default_value=True)
-
-    folder_path: Path = trt.Instance(Path, allow_none=True)
-    json_files: Tuple[Path] = TypedTuple(trt.Instance(Path))
-    json_file: Path = trt.Instance(Path, allow_none=True)
 
     selected_project: str = trt.Unicode(allow_none=True)
     selected_commit: str = trt.Unicode(allow_none=True)
@@ -116,34 +109,6 @@ class SysML2Client(trt.HasTraits):
     def _update_api_configuration(self, *_):
         self.projects = self._make_projects()
 
-    @trt.observe("selected_commit")
-    def _update_elements(self, *_, elements=None):
-        if not (self.selected_commit or elements):
-            return
-        elements = elements or []
-        self.model = Model.load(
-            elements=elements,
-            name=f"""{
-                self.projects[self.selected_project]["name"]
-            } ({self.host})""",
-            source=self.elements_url,
-        )
-        for element in self.model.elements.values():
-            if "label" not in element._derived:
-                element._derived["label"] = get_label(element)
-
-    @trt.observe("folder_path")
-    def _update_json_files(self, *_):
-        if self.folder_path.exists():
-            self.json_files = tuple(self.folder_path.glob("*.json"))
-
-    @trt.observe("json_file")
-    def _update_elements_from_file(self, change: trt.Bunch = None):
-        if change is None:
-            return
-        if change.new != change.old and change.new.exists():
-            self.model = Model.load_from_file(self.json_file)
-
     @property
     def host(self):
         return f"{self.host_url}:{self.host_port}"
@@ -167,10 +132,12 @@ class SysML2Client(trt.HasTraits):
             raise SystemError("No selected project!")
         if not self.selected_commit:
             raise SystemError("No selected commit!")
-        arguments = f"?page[size]={self.page_size}" if self.page_size else ""
-        return f"{self.commits_url}/{self.selected_commit}/elements{arguments}"
+        return f"{self.commits_url}/{self.selected_commit}/elements"
 
-    @lru_cache
+    def reset_cache(self):
+        self._retrieve_data.cache_clear()
+
+    @lru_cache(maxsize=URL_CACHE_SIZE)
     def _retrieve_data(self, url: str) -> List[Dict]:
         """Retrieve model data from a URL using pagination"""
         result = []
@@ -181,19 +148,22 @@ class SysML2Client(trt.HasTraits):
                 raise requests.HTTPError(
                     f"Failed to retrieve elements from '{url}', reason: {response.reason}"
                 )
-
-            result += response.json()
+            data = response.json()
+            if not isinstance(data, list):
+                return data
+            result += data
 
             link = response.headers.get("Link")
             if not link:
                 break
 
             urls = self._next_url_regex.findall(link)
-            url = None
-            if len(urls) == 1:
-                url = urls[0]
-            elif len(urls) > 1:
-                raise SystemError(f"Found multiple 'next' pagination urls: {urls}")
+            if len(urls) > 1:
+                raise requests.HTTPError(
+                    "Found multiple 'next' pagination urls: "
+                    ", ".join(map(lambda x: f"<{x}>", urls))
+                )
+            url = urls[0] if urls else None
         return result
 
     @staticmethod
@@ -207,19 +177,37 @@ class SysML2Client(trt.HasTraits):
             for key, value in tuple(data.items()):
                 if not isinstance(key, str):
                     continue
-                if key == "timestamp":
+                if key == "created":
                     data[key] = self._parse_timestamp(value)
             return data
 
-        commits = sorted(self._retrieve_data(self.commits_url), key=lambda x: x["timestamp"])
+        commits = sorted(self._retrieve_data(self.commits_url), key=lambda x: x["created"])
         return {commit["@id"]: clean_fields(commit) for commit in commits}
 
-    def _download_elements(self):
-        elements = self._retrieve_data(self.elements_url)
+    def get_model(self) -> Optional[Model]:
+        """Download a model from the current `elements_url`."""
+        if not self.selected_commit:
+            return None
+        url = self.elements_url
+        if self.page_size:
+            url += f"?page[size]={self.page_size}"
+        elements = self._retrieve_data(url)
+        if not elements:
+            return None
+
         max_elements = self.page_size if self.paginate else 100
         if len(elements) == max_elements:
             warn("There are probably more elements that were not retrieved!")
-        self._update_elements(elements=elements)
 
-    def _load_from_file(self, file_path: Union[str, Path]):
-        self.model = Model.load_from_file(file_path)
+        return Model.load(
+            elements=elements,
+            name=self.projects[self.selected_project]["name"],
+            source=self.elements_url,
+            _api=self,
+        )
+
+    def get_element_data(self, element_id: str) -> dict:
+        try:
+            return self._retrieve_data(f"{self.elements_url}/{element_id}")
+        except requests.HTTPError:
+            return {}
