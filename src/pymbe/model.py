@@ -1,4 +1,5 @@
 import json
+import os
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
@@ -18,13 +19,22 @@ class ListOfNamedItems(list):
     # FIXME: figure out why __dir__ of returned objects think they are lists
     def __getitem__(self, key):
         item_map = {
-            item._data["name"]: item
+            item._data["declaredName"]: item
             for item in self
-            if isinstance(item, Element) and "name" in item._data
+            if isinstance(item, Element) and "declaredName" in item._data
+        }
+        effective_item_map = {
+            item._data["effectiveName"]: item
+            for item in self
+            if isinstance(item, Element) and "effectiveName" in item._data
         }
         if key in item_map:
             return item_map[key]
-        return super().__getitem__(key)
+        if key in effective_item_map:
+            return effective_item_map[key]
+        if isinstance(key, int):
+            return super().__getitem__(key)
+        return None
 
 
 class Naming(Enum):
@@ -90,9 +100,16 @@ class Model:  # pylint: disable=too-many-instance-attributes
     _initializing: bool = True
     _naming: Naming = Naming.LONG  # The scheme to use for repr'ing the elements
 
+    _metamodel_hints: Dict[str, List[List[str]]] = field(default_factory=dict) # hints about attribute primary v derived, expected value type, etc.
+
     def __post_init__(self):
+
+        self._load_metahints()
+
         self.elements = {
-            id_: Element(_data=data, _model=self)
+            id_: Element(_data=data,
+                         _model=self,
+                         _metamodel_hints={att[0]: att[1:] for att in self._metamodel_hints[data["@type"]]})
             for id_, data in self.elements.items()
             if isinstance(data, dict)
         }
@@ -258,6 +275,12 @@ class Model:  # pylint: disable=too-many-instance-attributes
                     for endpt2 in endpts2:
                         endpt1._derived[f"{direction}{metatype}"] += [{"@id": endpt2._data["@id"]}]
 
+    def _load_metahints(self):
+        """Load data file to get attribute hints"""
+        metahint_res = open("../../resources/sysml_ecore_atts.json", "r")
+        self._metamodel_hints = json.load(metahint_res)
+        metahint_res.close()
+
 
 @dataclass(repr=False)
 class Element:  # pylint: disable=too-many-instance-attributes
@@ -265,6 +288,8 @@ class Element:  # pylint: disable=too-many-instance-attributes
 
     _data: Dict[str, Any]
     _model: Model
+
+    _metamodel_hints: Dict[str,List[str]]
 
     _id: str = field(default_factory=lambda: str(uuid4()))
     _metatype: str = "Element"
@@ -289,6 +314,7 @@ class Element:  # pylint: disable=too-many-instance-attributes
             return
 
         model = self._model
+
         if not self._data:
             if not model._api:
                 raise SystemError("Model must have an API to retrieve the data from!")
@@ -300,8 +326,14 @@ class Element:  # pylint: disable=too-many-instance-attributes
         self._is_abstract = bool(data.get("isAbstract"))
         self._is_relationship = bool(data.get("relatedElement"))
         for key, items in data.items():
+            # set up owned elements to be referencable by their name
             if key.startswith("owned") and isinstance(items, list):
                 data[key] = ListOfNamedItems(items)
+            # add Pythonic property to Element object based on metamodel for primary data values
+            elif key in self._metamodel_hints and \
+                self._metamodel_hints[key][1] == 'primary' and \
+                self._metamodel_hints[key][3] != 'EReference':
+                    setattr(self, key, items)
         if not model._initializing:
             self._model._add_element(self)
         self._is_proxy = False
