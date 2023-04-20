@@ -12,6 +12,8 @@ from warnings import warn
 OWNER_KEYS = ("owner", "owningRelatedElement", "owningRelationship")
 VALUE_METATYPES = ("AttributeDefinition", "AttributeUsage", "DataType")
 
+def is_id_item(item):
+    return isinstance(item, dict) and item['@id'] is not None and isinstance(item['@id'], str)
 
 class ListOfNamedItems(list):
     """A list that also can return items by their name."""
