@@ -1,5 +1,4 @@
 import json
-import os
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
@@ -166,7 +165,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
             return element
         if not element and self._api:
             data = self._api.get_element_data(element_id) if resolve else {}
-            element = Element(_id=element_id, _data=data, _model=self)
+            element = Element(_id=element_id, _data=data, _model=self, _metamodel_hints=self._metamodel_hints[data["@type"]])
         if element and resolve and element._is_proxy:
             element.resolve()
         if fail and element is None:
@@ -456,7 +455,7 @@ class Element:  # pylint: disable=too-many-instance-attributes
 
     @staticmethod
     def new(data: dict, model: Model) -> "Element":
-        return Element(_data=data, _model=model)
+        return Element(_data=data, _model=model, _metamodel_hints=self._metamodel_hints[data["@type"]])
 
     def __safe_dereference(self, item):
         """If given a reference to another element, try to get that element"""
