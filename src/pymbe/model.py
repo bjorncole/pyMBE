@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from functools import lru_cache
 from pathlib import Path
+from importlib import resources as lib_resources
 from typing import Any, Collection, Dict, List, Tuple, Union
 from uuid import uuid4
 from warnings import warn
@@ -278,9 +279,8 @@ class Model:  # pylint: disable=too-many-instance-attributes
 
     def _load_metahints(self):
         """Load data file to get attribute hints"""
-        metahint_res = open("../../resources/sysml_ecore_atts.json", "r")
-        self._metamodel_hints = json.load(metahint_res)
-        metahint_res.close()
+        with lib_resources.open_text("pymbe.static_data", "sysml_ecore_atts.json") as t:
+            self._metamodel_hints = json.load(t)
 
 
 @dataclass(repr=False)
