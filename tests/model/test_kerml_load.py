@@ -32,7 +32,7 @@ def test_classifier_load(basic_load_files):
     # Level 3 check
     # find Adding Machine
 
-    level3_classes = [classifier for classifier in list(level2.elements.values()) if classifier._metatype == 'Classifier']
+    level3_classes = [classifier for classifier in list(level3.elements.values()) if classifier._metatype == 'Classifier']
 
     assert "Adding Machine" in [classifier.declaredName for classifier in level3_classes]
 
