@@ -77,11 +77,6 @@ class UI(DockBox):
             )
             for widget in other_widgets
         ]
-        self.lpg_links = [
-            trt.link(
-                (self.m1_viewer, "lpg"),
-            )
-        ]
 
     @trt.observe("diagram_height")
     def _update_diagram_height(self, *_):
