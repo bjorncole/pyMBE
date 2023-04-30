@@ -1,7 +1,7 @@
 from .model import Instance, Model, is_id_item
 from .widget.client import APIClientWidget
 from .widget.containment import ContainmentTree
-from .widget.diagram import M0Viewer, M1Viewer
+from .widget.diagram import M1Viewer
 from .widget.inspector import ElementInspector
 from .widget.ui import UI
 

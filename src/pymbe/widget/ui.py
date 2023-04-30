@@ -3,7 +3,7 @@ import traitlets as trt
 from wxyz.lab import DockBox, DockPop
 
 from .containment import ContainmentTree
-from .diagram import M0Viewer, M1Viewer
+from .diagram import M1Viewer
 from .inspector import ElementInspector
 
 
@@ -14,7 +14,6 @@ class UI(DockBox):
     # widgets
     tree: ContainmentTree = trt.Instance(ContainmentTree, args=())
     inspector: ElementInspector = trt.Instance(ElementInspector, args=())
-    m0_viewer: M0Viewer = trt.Instance(M0Viewer, args=())
     m1_viewer: M1Viewer = trt.Instance(M1Viewer, args=())
 
     # links
