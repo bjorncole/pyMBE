@@ -366,9 +366,6 @@ class Element:  # pylint: disable=too-many-instance-attributes
         element = kwargs.pop("element", None)
         if element:
             warn("When instantiating an element, you cannot pass it element.")
-        if self._metatype in VALUE_METATYPES:
-            return ValueHolder(*args, **kwargs, element=self)
-        return Instance(*args, **kwargs, element=self)
 
     def __dir__(self):
         return sorted(

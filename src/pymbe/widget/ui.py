@@ -37,7 +37,6 @@ class UI(DockBox):
             self.tree,
             self.inspector,
             self.m1_viewer,
-            self.m0_viewer,
         ]
 
         self.dock_layout = dict(
@@ -81,7 +80,6 @@ class UI(DockBox):
         self.lpg_links = [
             trt.link(
                 (self.m1_viewer, "lpg"),
-                (self.m0_viewer, "lpg"),
             )
         ]
 
