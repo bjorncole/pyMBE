@@ -57,7 +57,7 @@ class UI(DockBox):
         # TODO: find a way to avoid doing these three lines
         self._update_diagram_height()
 
-        all_widgets = self.tree, self.inspector, self.m1_viewer, self.m0_viewer
+        all_widgets = self.tree, self.inspector, self.m1_viewer
 
         self.log_out_links = [
             trt.link((self, "log_out"), (widget, "log_out")) for widget in all_widgets
@@ -87,7 +87,6 @@ class UI(DockBox):
 
     @trt.observe("diagram_height")
     def _update_diagram_height(self, *_):
-        self.m0_viewer.layout.height = f"{self.diagram_height}vh"
         self.m1_viewer.layout.height = f"{self.diagram_height}vh"
 
     @classmethod
