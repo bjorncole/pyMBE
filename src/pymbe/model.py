@@ -366,9 +366,6 @@ class Element:  # pylint: disable=too-many-instance-attributes
         element = kwargs.pop("element", None)
         if element:
             warn("When instantiating an element, you cannot pass it element.")
-        if self._metatype in VALUE_METATYPES:
-            return ValueHolder(*args, **kwargs, element=self)
-        return Instance(*args, **kwargs, element=self)
 
     def __dir__(self):
         return sorted(
@@ -490,50 +487,3 @@ class Element:  # pylint: disable=too-many-instance-attributes
             return self._model.get_element(item)
         except KeyError:
             return item
-
-
-@dataclass
-class Instance:
-    """
-    An M0 instantiation in the M0 universe (i.e., real things) interpreted from an M1 element.
-
-    Sequences of instances are intended to follow the mathematical base semantics of SysML v2.
-    """
-
-    element: Element
-    number: int = None
-    name: str = ""
-
-    __instances = defaultdict(list)
-
-    def __post_init__(self):
-        siblings = self.__instances[self.element]
-        if self.number is None:
-            self.number = len(siblings) + 1
-        siblings += [self]
-        if not self.name:
-            element = self.element
-            name = element.label or element._id
-            self.name = f"{name}#{self.number}"
-
-    def __repr__(self):
-        return self.name
-
-    def __hash__(self):
-        return hash(id(self))
-
-
-@dataclass
-class ValueHolder(Instance):
-    """An M0 instantiation of a Value element"""
-
-    value: Any = None
-
-    def __repr__(self):
-        value = self.value
-        if value is None:
-            value = "unset"
-        return f"{self.name} ({value})"
-
-
-InstanceDictType = Dict[str, List[List[Instance]]]
