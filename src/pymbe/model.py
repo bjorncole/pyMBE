@@ -143,7 +143,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
         if not filepath.is_file():
             raise ValueError(f"'{filepath}' does not exist!")
         
-        with open(filepath, 'r', 'UTF-8') as raw_post_fp:
+        with open(filepath, 'r', encoding='UTF-8') as raw_post_fp:
             element_raw_post_data = json.load(raw_post_fp)
 
             factored_data = []
