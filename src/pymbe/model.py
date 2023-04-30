@@ -143,12 +143,12 @@ class Model:  # pylint: disable=too-many-instance-attributes
         if not filepath.is_file():
             raise ValueError(f"'{filepath}' does not exist!")
         
-        with open(filepath, 'r') as fp:
-            element_raw_post_data = json.load(fp)
+        with open(filepath, 'r', 'UTF-8') as raw_post_fp:
+            element_raw_post_data = json.load(raw_post_fp)
 
             factored_data = []
             for raw_post in element_raw_post_data:
-                factored_data_element = {**{k: v for k, v in raw_post["payload"].items()}, "@id": raw_post["identity"]["@id"]}
+                factored_data_element = dict(raw_post["payload"].items()) | {"@id": raw_post["identity"]["@id"]}
                 factored_data.append(factored_data_element)
 
         return Model.load(
