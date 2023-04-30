@@ -1,4 +1,4 @@
-from .model import Instance, Model
+from .model import Instance, Model, is_id_item
 from .widget.client import APIClientWidget
 from .widget.containment import ContainmentTree
 from .widget.diagram import M0Viewer, M1Viewer
@@ -14,4 +14,5 @@ __all__ = (
     "Model",
     "APIClientWidget",
     "UI",
+    "is_id_item"
 )

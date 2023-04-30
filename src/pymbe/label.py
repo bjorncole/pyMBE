@@ -10,7 +10,7 @@ def get_label(element: Element) -> str:
     metatype = element._metatype
     model = element._model
     data = element._data
-    name = data.get("name") or data.get("effectiveName")
+    name = data.get("name") or data.get("effectiveName") or data.get("declaredName")
 
     # Get the element type(s)
     types: list = data.get("type") or []
