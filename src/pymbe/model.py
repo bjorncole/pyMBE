@@ -302,8 +302,8 @@ class Model:  # pylint: disable=too-many-instance-attributes
 
     def _load_metahints(self):
         """Load data file to get attribute hints"""
-        with lib_resources.open_text("pymbe.static_data", "sysml_ecore_atts.json") as t:
-            self._metamodel_hints = json.load(t)
+        with lib_resources.open_text("pymbe.static_data", "sysml_ecore_atts.json") as sysml_ecore:
+            self._metamodel_hints = json.load(sysml_ecore)
 
 
 @dataclass(repr=False)
