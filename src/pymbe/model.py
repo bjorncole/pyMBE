@@ -152,6 +152,29 @@ class Model:  # pylint: disable=too-many-instance-attributes
             name=filepath.name,
             source=filepath.resolve(),
         )
+    
+    @staticmethod
+    def load_from_post_file(filepath: Union[Path, str], encoding: str = "utf-8") -> "Model":
+        """Make a model from a JSON file formatted to POST to v2 API (includes payload fields)"""
+        if isinstance(filepath, str):
+            filepath = Path(filepath)
+
+        if not filepath.is_file():
+            raise ValueError(f"'{filepath}' does not exist!")
+        
+        with open(filepath, 'r', encoding='UTF-8') as raw_post_fp:
+            element_raw_post_data = json.load(raw_post_fp)
+
+            factored_data = []
+            for raw_post in element_raw_post_data:
+                factored_data_element = dict(raw_post["payload"].items()) | {"@id": raw_post["identity"]["@id"]}
+                factored_data.append(factored_data_element)
+
+        return Model.load(
+            elements=factored_data,
+            name=filepath.name,
+            source=filepath.resolve(),
+        )
 
     @property
     def packages(self) -> Tuple["Element"]:
