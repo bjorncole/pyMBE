@@ -35,4 +35,22 @@ def test_pythonic_through_reverse(basic_load_files):
     Test that 'through' and 'reverse' Pythonic properties work correctly
     '''
 
-    assert True
+    level1 = basic_load_files["Level1"]
+
+    leve1_features = [feature for feature in list(level1.elements.values()) if feature._metatype == 'Feature']
+    leve1_feature_typings = [ft for ft in list(level1.elements.values()) if ft._metatype == 'FeatureTyping']
+
+    level3 = basic_load_files["Level3"]
+
+    key_invar = [invariant for invariant in list(level3.elements.values()) if invariant._metatype == 'Invariant'][0]
+
+    assert len(key_invar.ownedRelationship[0].ownedRelatedElement[0].throughParameterMembership) == 2
+
+    # assert same navigation across "through" rel as from relationship ends
+
+    for ft in leve1_feature_typings:
+        assert ft.source[0].throughFeatureTyping[0] == ft.target[0]
+
+    test_ft_1 = [tf for tf in leve1_features if tf.declaredName == "Test Feature 1"]
+
+    assert len(test_ft_1[0].reverseFeatureMembership) == 1
