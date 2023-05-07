@@ -58,14 +58,14 @@ def get_label_for_expression(
         return f" {expression.operator} ".join(map(get_label_for_expression, expression.throughParameterMembership))
     
     # case for the Features under an expression
-    elif meta == 'Feature':
+    if meta == 'Feature':
         return get_label_for_expression(expression.throughFeatureValue[0])
     
-    elif meta == 'FeatureReferenceExpression':
+    if meta == 'FeatureReferenceExpression':
     # case for FeatureReferenceExpression - terminal case #1
         name_to_render = expression.throughMembership[0].declaredName
         return name_to_render
-    elif meta == 'FeatureChainExpression':
+    if meta == 'FeatureChainExpression':
         # first item will be FRE to another feature
         first_item = expression.throughParameterMembership[0].throughFeatureValue[0].throughMembership[0].declaredName
         # check if this is a two-item feature chain or n > 2
@@ -79,12 +79,11 @@ def get_label_for_expression(
             other_items = '.'.join([chain.declaredName for chain in chains])
             return first_item + '.' + other_items
     # covers Literal expression cases
-    elif hasattr(expression, "value"):
+    if hasattr(expression, "value"):
         return str(expression.value)
-        
-    else:
-        return f"<<{meta} {expression._id}>>"
-        raise NotImplementedError(f"Cannot process {expression._metatype} elements yet!")
+    
+    warn(f"Cannot process {expression._metatype} elements yet!")
+    return f"<<{meta} {expression._id}>>"
 
 
 def get_label_for_multiplicity(multiplicity: Element) -> str:
