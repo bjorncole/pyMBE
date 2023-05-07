@@ -82,6 +82,10 @@ def get_label_for_expression(
     if hasattr(expression, "value"):
         return str(expression.value)
     
+    if expression._metatype == 'InvocationExpression':
+        body = ', '.join(map(get_label_for_expression, expression.throughParameterMembership))
+        return f"{expression.throughFeatureTyping[0].declaredName}({body})"
+
     warn(f"Cannot process {expression._metatype} elements yet!")
     return f"<<{meta} {expression._id}>>"
 
