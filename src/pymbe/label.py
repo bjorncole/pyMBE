@@ -52,42 +52,45 @@ def get_label_for_expression(
 
     meta = expression._metatype
 
+    expression_label = f"<<{meta} {expression._id}>>"
+
     if meta == 'OperatorExpression':
     # case for OperatorExpression - recurse on the parameters
     
-        return f" {expression.operator} ".join(map(get_label_for_expression, expression.throughParameterMembership))
+        expression_label = f" {expression.operator} ".join(map(get_label_for_expression, expression.throughParameterMembership))
     
     # case for the Features under an expression
-    if meta == 'Feature':
-        return get_label_for_expression(expression.throughFeatureValue[0])
+    elif meta == 'Feature':
+        expression_label = get_label_for_expression(expression.throughFeatureValue[0])
     
-    if meta == 'FeatureReferenceExpression':
+    elif meta == 'FeatureReferenceExpression':
     # case for FeatureReferenceExpression - terminal case #1
-        name_to_render = expression.throughMembership[0].declaredName
-        return name_to_render
-    if meta == 'FeatureChainExpression':
+        expression_label = expression.throughMembership[0].declaredName
+    elif meta == 'FeatureChainExpression':
         # first item will be FRE to another feature
-        first_item = expression.throughParameterMembership[0].throughFeatureValue[0].throughMembership[0].declaredName
+        expression_label = expression.throughParameterMembership[0].throughFeatureValue[0].throughMembership[0].declaredName
         # check if this is a two-item feature chain or n > 2
         if hasattr(expression, "throughMembership"):
             # this is the n = 2 case
             second_item = expression.throughMembership[0].declaredName
-            return first_item + '.' + second_item
+            expression_label += f".{second_item}"
         else:
             # this is the n > 2 case
             chains = expression.throughOwningMembership[0].throughFeatureChaining
             other_items = '.'.join([chain.declaredName for chain in chains])
-            return first_item + '.' + other_items
-    # covers Literal expression cases
-    if hasattr(expression, "value"):
-        return str(expression.value)
-    
-    if expression._metatype == 'InvocationExpression':
-        body = ', '.join(map(get_label_for_expression, expression.throughParameterMembership))
-        return f"{expression.throughFeatureTyping[0].declaredName}({body})"
+            expression_label += f".{other_items}"
 
-    warn(f"Cannot process {expression._metatype} elements yet!")
-    return f"<<{meta} {expression._id}>>"
+    # covers Literal expression cases
+    elif hasattr(expression, "value"):
+        expression_label = str(expression.value)
+    
+    elif expression._metatype == 'InvocationExpression':
+        body = ', '.join(map(get_label_for_expression, expression.throughParameterMembership))
+        expression_label = f"{expression.throughFeatureTyping[0].declaredName}({body})"
+
+    else:
+        warn(f"Cannot process {expression._metatype} elements yet!")
+    return expression_label
 
 
 def get_label_for_multiplicity(multiplicity: Element) -> str:
