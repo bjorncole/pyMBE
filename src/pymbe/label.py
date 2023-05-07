@@ -1,6 +1,7 @@
 # TODO: Refactor this whole thing and integrate it better with the new Model approach
 # Module for computing useful labels and signatures for SysML v2 elements
 from warnings import warn
+
 from .model import Element, Model
 
 DEFAULT_MULTIPLICITY_LIMITS = dict(lower="0", upper="*")
@@ -46,29 +47,34 @@ def get_label_for_id(element_id: str, model: Model) -> str:
     return get_label(model.elements[element_id])
 
 
-def get_label_for_expression(
-    expression: Element
-) -> str:
+def get_label_for_expression(expression: Element) -> str:
 
     meta = expression._metatype
 
     expression_label = f"<<{meta} {expression._id}>>"
 
-    if meta == 'OperatorExpression':
-    # case for OperatorExpression - recurse on the parameters
-    
-        expression_label = f" {expression.operator} ".join(map(get_label_for_expression, expression.throughParameterMembership))
-    
+    if meta == "OperatorExpression":
+        # case for OperatorExpression - recurse on the parameters
+
+        expression_label = f" {expression.operator} ".join(
+            map(get_label_for_expression, expression.throughParameterMembership)
+        )
+
     # case for the Features under an expression
-    elif meta == 'Feature':
+    elif meta == "Feature":
         expression_label = get_label_for_expression(expression.throughFeatureValue[0])
-    
-    elif meta == 'FeatureReferenceExpression':
-    # case for FeatureReferenceExpression - terminal case #1
+
+    elif meta == "FeatureReferenceExpression":
+        # case for FeatureReferenceExpression - terminal case #1
         expression_label = expression.throughMembership[0].declaredName
-    elif meta == 'FeatureChainExpression':
+    elif meta == "FeatureChainExpression":
         # first item will be FRE to another feature
-        expression_label = expression.throughParameterMembership[0].throughFeatureValue[0].throughMembership[0].declaredName
+        expression_label = (
+            expression.throughParameterMembership[0]
+            .throughFeatureValue[0]
+            .throughMembership[0]
+            .declaredName
+        )
         # check if this is a two-item feature chain or n > 2
         if hasattr(expression, "throughMembership"):
             # this is the n = 2 case
@@ -77,15 +83,15 @@ def get_label_for_expression(
         else:
             # this is the n > 2 case
             chains = expression.throughOwningMembership[0].throughFeatureChaining
-            other_items = '.'.join([chain.declaredName for chain in chains])
+            other_items = ".".join([chain.declaredName for chain in chains])
             expression_label += f".{other_items}"
 
     # covers Literal expression cases
     elif hasattr(expression, "value"):
         expression_label = str(expression.value)
-    
-    elif expression._metatype == 'InvocationExpression':
-        body = ', '.join(map(get_label_for_expression, expression.throughParameterMembership))
+
+    elif expression._metatype == "InvocationExpression":
+        body = ", ".join(map(get_label_for_expression, expression.throughParameterMembership))
         expression_label = f"{expression.throughFeatureTyping[0].declaredName}({body})"
 
     else:

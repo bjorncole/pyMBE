@@ -11,6 +11,7 @@ PYMBE_ROOT = Path(pymbe.__file__).parent
 TESTS_ROOT = Path(__file__).parent
 FIXTURES = TESTS_ROOT / "fixtures"
 
+
 def get_model_from_payload_form(filename: str) -> pm.Model:
     if not filename.endswith(".json"):
         filename += ".json"
@@ -18,6 +19,7 @@ def get_model_from_payload_form(filename: str) -> pm.Model:
     json_file = FIXTURES / filename
 
     return pm.Model.load_from_post_file(json_file)
+
 
 def get_model(filename: str) -> pm.Model:
     if not filename.endswith(".json"):
@@ -48,4 +50,3 @@ def basic_load_files() -> Dict[str, pm.Model]:
     level3 = get_model_from_payload_form("Model_Loader_Test_Level_3")
     literal = get_model_from_payload_form("Model_Loader_Literal_Test")
     return {"Level1": level1, "Level2": level2, "Level3": level3, "Literals": literal}
-

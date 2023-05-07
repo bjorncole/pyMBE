@@ -3,8 +3,8 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
 from functools import lru_cache
-from pathlib import Path
 from importlib import resources as lib_resources
+from pathlib import Path
 from typing import Any, Collection, Dict, List, Tuple, Union
 from uuid import uuid4
 from warnings import warn
@@ -12,8 +12,10 @@ from warnings import warn
 OWNER_KEYS = ("owner", "owningRelatedElement", "owningRelationship")
 VALUE_METATYPES = ("AttributeDefinition", "AttributeUsage", "DataType")
 
+
 def is_id_item(item):
-    return isinstance(item, dict) and item['@id'] is not None and isinstance(item['@id'], str)
+    return isinstance(item, dict) and item["@id"] is not None and isinstance(item["@id"], str)
+
 
 class ListOfNamedItems(list):
     """A list that also can return items by their name."""
@@ -102,16 +104,20 @@ class Model:  # pylint: disable=too-many-instance-attributes
     _initializing: bool = True
     _naming: Naming = Naming.LONG  # The scheme to use for repr'ing the elements
 
-    _metamodel_hints: Dict[str, List[List[str]]] = field(default_factory=dict) # hints about attribute primary v derived, expected value type, etc.
+    _metamodel_hints: Dict[str, List[List[str]]] = field(
+        default_factory=dict
+    )  # hints about attribute primary v derived, expected value type, etc.
 
     def __post_init__(self):
 
         self._load_metahints()
 
         self.elements = {
-            id_: Element(_data=data,
-                         _model=self,
-                         _metamodel_hints={att[0]: att[1:] for att in self._metamodel_hints[data["@type"]]})
+            id_: Element(
+                _data=data,
+                _model=self,
+                _metamodel_hints={att[0]: att[1:] for att in self._metamodel_hints[data["@type"]]},
+            )
             for id_, data in self.elements.items()
             if isinstance(data, dict)
         }
@@ -152,7 +158,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
             name=filepath.name,
             source=filepath.resolve(),
         )
-    
+
     @staticmethod
     def load_from_post_file(filepath: Union[Path, str], encoding: str = "utf-8") -> "Model":
         """Make a model from a JSON file formatted to POST to v2 API (includes payload fields)"""
@@ -161,13 +167,15 @@ class Model:  # pylint: disable=too-many-instance-attributes
 
         if not filepath.is_file():
             raise ValueError(f"'{filepath}' does not exist!")
-        
-        with open(filepath, 'r', encoding='UTF-8') as raw_post_fp:
+
+        with open(filepath, "r", encoding="UTF-8") as raw_post_fp:
             element_raw_post_data = json.load(raw_post_fp)
 
             factored_data = []
             for raw_post in element_raw_post_data:
-                factored_data_element = dict(raw_post["payload"].items()) | {"@id": raw_post["identity"]["@id"]}
+                factored_data_element = dict(raw_post["payload"].items()) | {
+                    "@id": raw_post["identity"]["@id"]
+                }
                 factored_data.append(factored_data_element)
 
         return Model.load(
@@ -189,7 +197,12 @@ class Model:  # pylint: disable=too-many-instance-attributes
             return element
         if not element and self._api:
             data = self._api.get_element_data(element_id) if resolve else {}
-            element = Element(_id=element_id, _data=data, _model=self, _metamodel_hints=self._metamodel_hints[data["@type"]])
+            element = Element(
+                _id=element_id,
+                _data=data,
+                _model=self,
+                _metamodel_hints=self._metamodel_hints[data["@type"]],
+            )
         if element and resolve and element._is_proxy:
             element.resolve()
         if fail and element is None:
@@ -224,7 +237,9 @@ class Model:  # pylint: disable=too-many-instance-attributes
                 self.all_non_relationships[id_] = element
         return element
 
-    def save_to_file(self, filepath: Union[Path, str] = None, indent: int = 2, encoding: str = "utf-8"):
+    def save_to_file(
+        self, filepath: Union[Path, str] = None, indent: int = 2, encoding: str = "utf-8"
+    ):
         filepath = filepath or self.name
         if not self.elements:
             warn("Model has no elements, nothing to save!")
@@ -313,7 +328,7 @@ class Element:  # pylint: disable=too-many-instance-attributes
     _data: Dict[str, Any]
     _model: Model
 
-    _metamodel_hints: Dict[str,List[str]]
+    _metamodel_hints: Dict[str, List[str]]
 
     _id: str = field(default_factory=lambda: str(uuid4()))
     _metatype: str = "Element"
@@ -354,10 +369,12 @@ class Element:  # pylint: disable=too-many-instance-attributes
             if key.startswith("owned") and isinstance(items, list):
                 data[key] = ListOfNamedItems(items)
             # add Pythonic property to Element object based on metamodel for primary data values
-            elif key in self._metamodel_hints and \
-                self._metamodel_hints[key][1] == 'primary' and \
-                self._metamodel_hints[key][3] != 'EReference':
-                    setattr(self, key, items)
+            elif (
+                key in self._metamodel_hints
+                and self._metamodel_hints[key][1] == "primary"
+                and self._metamodel_hints[key][3] != "EReference"
+            ):
+                setattr(self, key, items)
         if not model._initializing:
             self._model._add_element(self)
         self._is_proxy = False
@@ -475,7 +492,9 @@ class Element:  # pylint: disable=too-many-instance-attributes
 
     @staticmethod
     def new(data: dict, model: Model) -> "Element":
-        return Element(_data=data, _model=model, _metamodel_hints=model._metamodel_hints[data["@type"]])
+        return Element(
+            _data=data, _model=model, _metamodel_hints=model._metamodel_hints[data["@type"]]
+        )
 
     def __safe_dereference(self, item):
         """If given a reference to another element, try to get that element"""
