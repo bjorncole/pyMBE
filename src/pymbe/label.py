@@ -35,7 +35,6 @@ def get_label(element: Element) -> str:
     if metatype.endswith("Expression"):
         return get_label_for_expression(
             expression=element,
-            type_names=type_names,
         )
     if "@id" in data:
         return f"""{data["@id"]} «{metatype}»"""
@@ -48,84 +47,44 @@ def get_label_for_id(element_id: str, model: Model) -> str:
 
 
 def get_label_for_expression(
-    expression: Element,
-    type_names: list,
+    expression: Element
 ) -> str:
-    metatype = expression._metatype
-    if metatype not in (
-        "Expression",
-        "FeatureReferenceExpression",
-        "InvocationExpression",
-        "NullExpression",
-        "OperatorExpression",
-        "PathStepExpression",
-    ):
-        warn(f"Cannot create M1 signature for: {metatype}")
-        return f"{metatype}({expression._id})"
 
-    if metatype == "NullExpression":
-        return "{}"
+    meta = expression._metatype
 
-    if metatype == "FeatureReferenceExpression":
-        try:
-            referent = expression.referent
-            referent_name = referent.name
-            name_chain = referent.qualifiedName.split("::")
-            index = 0
-            while not referent_name and index < len(name_chain):
-                index += 1
-                referent_name = name_chain[-index]
-                if referent_name.lower() == "null":
-                    referent_name = None
-        except (AttributeError, KeyError, TypeError):
-            referent_name = "UNNAMED"
-        return f"FRE.{referent_name}"
-
-    prefix = ""
-    if "input" in expression._data:
-        inputs = [
-            expression._model.elements[an_input["@id"]] for an_input in expression._data["input"]
-        ]
+    if meta == 'OperatorExpression':
+    # case for OperatorExpression - recurse on the parameters
+    
+        return f" {expression.operator} ".join(map(get_label_for_expression, expression.throughParameterMembership))
+    
+    # case for the Features under an expression
+    elif meta == 'Feature':
+        return get_label_for_expression(expression.throughFeatureValue[0])
+    
+    elif meta == 'FeatureReferenceExpression':
+    # case for FeatureReferenceExpression - terminal case #1
+        name_to_render = expression.throughMembership[0].declaredName
+        return name_to_render
+    elif meta == 'FeatureChainExpression':
+        # first item will be FRE to another feature
+        first_item = expression.throughParameterMembership[0].throughFeatureValue[0].throughMembership[0].declaredName
+        # check if this is a two-item feature chain or n > 2
+        if hasattr(expression, "throughMembership"):
+            # this is the n = 2 case
+            second_item = expression.throughMembership[0].declaredName
+            return first_item + '.' + second_item
+        else:
+            # this is the n > 2 case
+            chains = expression.throughOwningMembership[0].throughFeatureChaining
+            other_items = '.'.join([chain.declaredName for chain in chains])
+            return first_item + '.' + other_items
+    # covers Literal expression cases
+    elif hasattr(expression, "value"):
+        return str(expression.value)
+        
     else:
-        inputs = []
-    if isinstance(inputs, Element):
-        inputs = [inputs]
-    input_names = [
-        (an_input.name or an_input.effectiveName or "Unnamed Input") for an_input in inputs
-    ]
-    try:
-        result: Element = expression.result
-    except AttributeError:
-        result = None
-
-    if result and metatype == "Expression":
-        parameter_members = [result] + inputs
-        # Scan memberships to find non-parameter members
-        non_parameter_members = [
-            get_label(element=owned_member)
-            for owned_member in expression.ownedMember
-            if owned_member not in parameter_members
-        ]
-        prefix = non_parameter_members[0] if non_parameter_members else ""
-    elif metatype == "OperatorExpression":
-        prefix = expression["operator"]
-    elif metatype == "InvocationExpression":
-        prefix = type_names[0] if type_names else ""
-    elif metatype == "PathStepExpression":
-        path_step_names = []
-        for owned_fm in expression.ownedFeatureMembership:
-            if owned_fm._metatype == "FeatureMembership":
-                member = owned_fm.memberElement
-                # expect FRE here
-                refered = member.get("referent")
-                if refered:
-                    path_step_names.append(refered.get("name") or refered._id)
-
-        prefix = ".".join(path_step_names)
-    inputs = f""" ({", ".join(input_names)})""" if input_names else ""
-    if result is None:
-        return f"""{prefix}{inputs} => {"Null Result"}"""
-    return f"""{prefix}{inputs} => {result.name or result.effectiveName}"""
+        return f"<<{meta} {expression._id}>>"
+        raise NotImplementedError(f"Cannot process {expression._metatype} elements yet!")
 
 
 def get_label_for_multiplicity(multiplicity: Element) -> str:
