@@ -348,7 +348,7 @@ class Element:  # pylint: disable=too-many-instance-attributes
         self._metatype = data["@type"]
 
         self._is_abstract = bool(data.get("isAbstract"))
-        self._is_relationship = bool(data.get("relatedElement"))
+        self._is_relationship = bool(data.get("source")) and bool(data.get("target"))
         for key, items in data.items():
             # set up owned elements to be referencable by their name
             if key.startswith("owned") and isinstance(items, list):
