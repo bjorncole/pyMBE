@@ -12,5 +12,5 @@ __all__ = (
     "Model",
     "APIClientWidget",
     "UI",
-    "is_id_item"
+    "is_id_item",
 )
