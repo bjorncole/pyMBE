@@ -319,7 +319,8 @@ class Model:  # pylint: disable=too-many-instance-attributes
         """Load data file to get attribute hints"""
         with lib_resources.open_text("pymbe.static_data", "sysml_ecore_atts.json") as sysml_ecore:
             self._metamodel_hints = json.load(sysml_ecore)
-
+        with lib_resources.open_text("pymbe.static_data", "sysml_ecore_derived_refs.json") as sysml_ecore:
+            self._metamodel_hints = self._metamodel_hints | json.load(sysml_ecore)
 
 @dataclass(repr=False)
 class Element:  # pylint: disable=too-many-instance-attributes
@@ -415,6 +416,13 @@ class Element:  # pylint: disable=too-many-instance-attributes
                 item = source[key]
                 break
         if not found:
+            if key in self._metamodel_hints and \
+                self._metamodel_hints[key][1] == "derived" and \
+                self._metamodel_hints[key][3] == "EReference":
+                    found = True
+                    item = derive_attribute(key, self)
+
+        if not found:
             raise KeyError(f"No '{key}' in {self}")
 
         if isinstance(item, (dict, str)):
@@ -506,3 +514,18 @@ class Element:  # pylint: disable=too-many-instance-attributes
             return self._model.get_element(item)
         except KeyError:
             return item
+
+
+def derive_attribute(key : str, ele : Element):
+
+    # entry point for deriving attributes within elements on demand
+
+    if key == 'type':
+        return derive_type(ele)
+    else:
+        raise NotImplementedError(f"The method to derive {key} has yet to be developed.")
+
+def derive_type(ele : Element):
+
+    if hasattr(ele, "throughFeatureTyping"):
+        return ele.throughFeatureTyping
