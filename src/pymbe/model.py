@@ -535,8 +535,7 @@ def derive_type(ele : Element):
     if hasattr(ele, "throughFeatureTyping"):
         return ele.throughFeatureTyping
     
-    else:
-        return []
+    return []
     
 def derive_owned_member(ele: Element):
 
@@ -551,13 +550,13 @@ def derive_owned_member(ele: Element):
 
     return found_ele
     
-def derive_owned_x(ele : Element, ownedKind: str):
+def derive_owned_x(ele : Element, owned_kind: str):
 
     found_ele = []
 
     for owned_rel in ele.ownedRelationship:
         for owned_related_ele in owned_rel.ownedRelatedElement:
-            if owned_related_ele._metatype == ownedKind:
+            if owned_related_ele._metatype == owned_kind:
                 found_ele.append(owned_related_ele)
 
     return found_ele
