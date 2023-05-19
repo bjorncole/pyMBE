@@ -523,12 +523,12 @@ def derive_attribute(key : str, ele : Element):
 
     if key == 'type':
         return derive_type(ele)
-    elif "owned" in key and key not in ("ownedMember",):
+    if "owned" in key and key not in ("ownedMember",):
         return derive_owned_x(ele, key[5:])
-    elif key == "ownedMember":
+    if key == "ownedMember":
         return derive_owned_member(ele)
-    else:
-        raise NotImplementedError(f"The method to derive {key} has yet to be developed.")
+    
+    raise NotImplementedError(f"The method to derive {key} has yet to be developed.")
 
 def derive_type(ele : Element):
 
@@ -542,12 +542,12 @@ def derive_owned_member(ele: Element):
 
     found_ele = []
 
-    for ownedRel in ele.ownedRelationship:
-        if ownedRel._metatype == "OwningMembership":
+    for owned_rel in ele.ownedRelationship:
+        if owned_rel._metatype == "OwningMembership":
             # TODO: Make this work with generalization of metatypes
 
-            for ownedRelatedEle in ownedRel.ownedRelatedElement:
-                found_ele.append(ownedRelatedEle)
+            for owned_related_ele in owned_rel.ownedRelatedElement:
+                found_ele.append(owned_related_ele)
 
     return found_ele
     
@@ -555,9 +555,9 @@ def derive_owned_x(ele : Element, ownedKind: str):
 
     found_ele = []
 
-    for ownedRel in ele.ownedRelationship:
-        for ownedRelatedEle in ownedRel.ownedRelatedElement:
-            if ownedRelatedEle._metatype == ownedKind:
-                found_ele.append(ownedRelatedEle)
+    for owned_rel in ele.ownedRelationship:
+        for owned_related_ele in owned_rel.ownedRelatedElement:
+            if owned_related_ele._metatype == ownedKind:
+                found_ele.append(owned_related_ele)
 
     return found_ele
