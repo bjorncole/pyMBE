@@ -1,8 +1,3 @@
-import json
-import pymbe.api as pm
-
-from typing import Any, Collection, Dict, List, Tuple, Union
-
 from pymbe.model import Model, Element
 
 from uuid import uuid4
