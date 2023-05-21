@@ -344,8 +344,8 @@ class Element:  # pylint: disable=too-many-instance-attributes
     # TODO: Add comparison to allow sorting of elements (e.g., by name and then by id)
 
     def __post_init__(self):
-        if not self._model._initializing:
-            self._model.elements[self._id] = self
+        #if not self._model._initializing:
+        #    self._model.elements[self._id] = self
         if self._data:
             self.resolve()
 
