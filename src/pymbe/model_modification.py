@@ -1,6 +1,6 @@
 from pymbe.model import Model, Element
 
-from typing import Any, Collection, Dict, List, Tuple, Union
+from typing import Any, Dict
 
 from uuid import uuid4
 
@@ -68,12 +68,12 @@ def own_new_element(owner : Element, ele: Element, model: Model):
     Common helper to link new elements to their owners.
     '''
 
-    memberName = ''
+    member_name = ''
     if 'declaredName' in ele._data:
-        memberName = ele.declaredName
+        member_name = ele.declaredName
 
     om_added_data = {
-         'memberName': memberName,
+         'memberName': member_name,
          'memberElement': {'@id': ele._id},
     }
 
