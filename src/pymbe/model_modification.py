@@ -42,6 +42,9 @@ def create_new_relationship(owner: Element,
 
     new_rel_id = str(uuid4())
 
+    owned_related_element = [{'@id': owned_related_element._id}] if isinstance(owned_related_element, Element) else []
+    owning_related_element = {'@id': owning_related_element._id} if isinstance(owning_related_element, Element) else None
+
     rel_data = {
         'elementId': new_rel_id,
          'isImplied': False,
@@ -50,10 +53,10 @@ def create_new_relationship(owner: Element,
          '@type': metatype,
          'ownedRelationship': [],
          'source': [{'@id': source._id}],
-         'ownedRelatedElement': [{'@id': owned_related_element._id}],
+         'ownedRelatedElement': owned_related_element,
          'isImpliedIncluded': False,
          'target': [{'@id': target._id}],
-         'owningRelatedElement': {'@id': owning_related_element._id},
+         'owningRelatedElement': owning_related_element,
          '@id': new_rel_id
     } | added_fields
 
