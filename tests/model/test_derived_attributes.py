@@ -2,6 +2,7 @@ import pytest
 
 from pymbe.model import Element, Model
 
+
 def test_derive_type_attribute(basic_load_files):
 
     level1 = basic_load_files["Level1"]
@@ -13,10 +14,11 @@ def test_derive_type_attribute(basic_load_files):
     bcf = [
         feature
         for feature in list(level1.elements.values())
-            if feature._metatype == "Feature" and feature.declaredName == "Bare Classed Feature"
+        if feature._metatype == "Feature" and feature.declaredName == "Bare Classed Feature"
     ]
 
     assert bcf[0].type[0].declaredName == "My Bare Class"
+
 
 def test_derive_ownedmember(basic_load_files):
 

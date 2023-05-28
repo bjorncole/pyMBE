@@ -164,14 +164,14 @@ def test_memberships_load(basic_load_files):
     ]
 
     assert ("Model Loader Test Level 1", "My Bare Class") in level1_memb_names
-    assert ("Model Loader Test Level 1", "My Class with Two features") in level1_memb_names
+    assert ("Model Loader Test Level 1", "My Class with Two Features") in level1_memb_names
     assert ("Model Loader Test Level 1", "Bare Feature") in level1_memb_names
     assert ("Model Loader Test Level 1", "Bare Classed Feature") in level1_memb_names
     assert ("Model Loader Test Level 1", "Class with Typed Features") in level1_memb_names
     assert ("Model Loader Test Level 1", "Specialized Class") in level1_memb_names
 
-    assert ("My Class with Two features", "Test Feature 1") in level1_memb_names
-    assert ("My Class with Two features", "Test Feature 2") in level1_memb_names
+    assert ("My Class with Two Features", "Test Feature 1") in level1_memb_names
+    assert ("My Class with Two Features", "Test Feature 2") in level1_memb_names
 
     assert ("Class with Typed Features", "Typed Feature 1") in level1_memb_names
     assert ("Class with Typed Features", "Typed Feature 2") in level1_memb_names

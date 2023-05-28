@@ -1,4 +1,4 @@
-from .model import Model, Element, is_id_item
+from .model import Element, Model, is_id_item
 from .widget.client import APIClientWidget
 from .widget.containment import ContainmentTree
 from .widget.diagram import M1Viewer
