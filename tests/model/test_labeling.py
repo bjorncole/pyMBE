@@ -16,9 +16,6 @@ def test_expression_labels(basic_load_files):
         "rect(Register 1, My Adder.Register 2) == 0.0 «Invariant»",
     }
 
-    invariant_labels = {
-        invar.label
-        for invar in level3.ownedMetatype["Invariant"]
-    }
+    invariant_labels = {invar.label for invar in level3.ownedMetatype["Invariant"]}
 
     assert not invariant_labels.symmetric_difference(expected_labels)

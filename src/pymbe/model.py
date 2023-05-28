@@ -297,11 +297,11 @@ class Model:  # pylint: disable=too-many-instance-attributes
 
     def _add_relationships(self):
         """Adds relationships to elements"""
-        
+
         # TODO: make this more elegant...  maybe.
         for relationship in self.all_relationships.values():
             self._add_relationship(relationship)
-            
+
     def _add_relationship(self, relationship):
         relationship_mapper = {
             "through": ("source", "target"),
@@ -310,8 +310,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
 
         endpoints = {
             endpoint_type: [
-                self.get_element(endpoint["@id"])
-                for endpoint in relationship._data[endpoint_type]
+                self.get_element(endpoint["@id"]) for endpoint in relationship._data[endpoint_type]
             ]
             for endpoint_type in ("source", "target")
         }
@@ -322,13 +321,15 @@ class Model:  # pylint: disable=too-many-instance-attributes
                 for endpt2 in endpts2:
                     endpt1._derived[f"{direction}{metatype}"] += [{"@id": endpt2._data["@id"]}]
 
-
     def _load_metahints(self):
         """Load data file to get attribute hints"""
         with lib_resources.open_text("pymbe.static_data", "sysml_ecore_atts.json") as sysml_ecore:
             self._metamodel_hints = json.load(sysml_ecore)
-        with lib_resources.open_text("pymbe.static_data", "sysml_ecore_derived_refs.json") as sysml_ecore:
+        with lib_resources.open_text(
+            "pymbe.static_data", "sysml_ecore_derived_refs.json"
+        ) as sysml_ecore:
             self._metamodel_hints = self._metamodel_hints | json.load(sysml_ecore)
+
 
 @dataclass(repr=False)
 class Element:  # pylint: disable=too-many-instance-attributes
@@ -352,7 +353,7 @@ class Element:  # pylint: disable=too-many-instance-attributes
     # TODO: Add comparison to allow sorting of elements (e.g., by name and then by id)
 
     def __post_init__(self):
-        #if not self._model._initializing:
+        # if not self._model._initializing:
         #    self._model.elements[self._id] = self
         if self._data:
             self.resolve()
@@ -424,11 +425,13 @@ class Element:  # pylint: disable=too-many-instance-attributes
                 item = source[key]
                 break
         if not found:
-            if key in self._metamodel_hints and \
-                self._metamodel_hints[key][1] == "derived" and \
-                self._metamodel_hints[key][3] == "EReference":
-                    found = True
-                    item = derive_attribute(key, self)
+            if (
+                key in self._metamodel_hints
+                and self._metamodel_hints[key][1] == "derived"
+                and self._metamodel_hints[key][3] == "EReference"
+            ):
+                found = True
+                item = derive_attribute(key, self)
 
         if not found:
             raise KeyError(f"No '{key}' in {self}")
@@ -523,28 +526,32 @@ class Element:  # pylint: disable=too-many-instance-attributes
         except KeyError:
             return item
 
+
 # TODO: Send this to a separate file without inducing a circular dependency
 
-def derive_attribute(key : str, ele : Element):
+
+def derive_attribute(key: str, ele: Element):
 
     # entry point for deriving attributes within elements on demand
 
-    if key == 'type':
+    if key == "type":
         return derive_type(ele)
     if "owned" in key and key not in ("ownedMember",):
         return derive_owned_x(ele, key[5:])
     if key == "ownedMember":
         return derive_owned_member(ele)
-    
+
     raise NotImplementedError(f"The method to derive {key} has yet to be developed.")
 
-def derive_type(ele : Element):
+
+def derive_type(ele: Element):
 
     if hasattr(ele, "throughFeatureTyping"):
         return ele.throughFeatureTyping
-    
+
     return []
-    
+
+
 def derive_owned_member(ele: Element):
 
     found_ele = []
@@ -557,8 +564,9 @@ def derive_owned_member(ele: Element):
                 found_ele.append(owned_related_ele)
 
     return found_ele
-    
-def derive_owned_x(ele : Element, owned_kind: str):
+
+
+def derive_owned_x(ele: Element, owned_kind: str):
 
     found_ele = []
 
