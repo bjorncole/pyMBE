@@ -48,6 +48,7 @@ class Naming(Enum):
     LONG = "long"
     QUALIFIED = "qualified"
     SHORT = "short"
+    LABEL = "label"
 
     def get_name(self, element: "Element") -> str:
         naming = self._value_  # pylint: disable=no-member
@@ -57,14 +58,15 @@ class Naming(Enum):
             return f"<{element._metatype}({element.source} ←→ {element.target})>"
 
         data = element._data
-        if naming == Naming.QUALIFIED:
+        if naming == Naming.QUALIFIED.value:
             return f"""<{data["qualifiedName"]}>"""
 
-        if naming == Naming.IDENTIFIER:
+        if naming == Naming.IDENTIFIER.value:
             return f"""<{data["@id"]}>"""
-
-        name = data.get("name") or data["@id"]
-        if naming == Naming.SHORT:
+        if naming == Naming.LABEL.value:
+            return element._derived.get("label")
+        name = data.get("declaredName") or data.get("value") or data["@id"]
+        if naming == Naming.SHORT.value:
             return f"<{name}>"
         return f"""<{name} «{data["@type"]}»>"""
 
@@ -102,7 +104,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
 
     _api: ModelClient = None
     _initializing: bool = True
-    _naming: Naming = Naming.LONG  # The scheme to use for repr'ing the elements
+    _naming: Naming = Naming.LABEL  # The scheme to use for repr'ing the elements
 
     _metamodel_hints: Dict[str, List[List[str]]] = field(
         default_factory=dict
@@ -215,9 +217,6 @@ class Model:  # pylint: disable=too-many-instance-attributes
 
         self.elements[id_] = element
 
-        if not self._initializing:
-            self._add_labels(element)
-
         if element.get_owner() is None:
             if element not in self.ownedElement:
                 self.ownedElement += [element]
@@ -235,6 +234,9 @@ class Model:  # pylint: disable=too-many-instance-attributes
         else:
             if id_ not in self.all_non_relationships:
                 self.all_non_relationships[id_] = element
+
+        if not self._initializing:
+            self._add_labels(element)
         return element
 
     def save_to_file(

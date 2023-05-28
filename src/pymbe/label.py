@@ -9,6 +9,10 @@ DEFAULT_MULTIPLICITY_LIMITS = dict(lower="0", upper="*")
 
 def get_label(element: Element) -> str:
     metatype = element._metatype
+    if metatype.endswith("Expression") :
+        return f"{get_label_for_expression(element)} «{metatype}»"
+    if metatype == "Invariant" and "throughResultExpressionMembership" in element._derived:
+        return f"{get_label_for_expression(element.throughResultExpressionMembership[0])} «{metatype}»"
     model = element._model
     data = element._data
     name = data.get("name") or data.get("effectiveName") or data.get("declaredName")
@@ -23,20 +27,26 @@ def get_label(element: Element) -> str:
     except KeyError:
         type_names = ["Unresolved type"]
     value = element._data.get("value")
+    
     if name:
         if type_names:
             # TODO: look into using other types (if there are any)
             name += f": {type_names[0]}"
-        return name
+        return f"{name} «{metatype}»"
+    if metatype == "Feature" and "memberName" in element.owningRelationship._data and \
+            element.owningRelationship._metatype in ("ParameterMembership", "ReturnParameterMembership"):
+        direction = ''
+        if "direction" in element._data:
+            direction = element.direction + ' '
+        para_string = element.owningRelationship._data["memberName"]
+        return f"{direction}{para_string} «{metatype}»"
+
     if value and metatype.startswith("Literal"):
         metatype = type_names[0] if type_names else metatype.replace("Literal", "Occurred Literal")
         return f"{value} «{metatype}»"
     if metatype == "MultiplicityRange":
         return get_label_for_multiplicity(multiplicity=element)
-    if metatype.endswith("Expression"):
-        return get_label_for_expression(
-            expression=element,
-        )
+    
     if "@id" in data:
         return f"""{data["@id"]} «{metatype}»"""
 
@@ -76,7 +86,8 @@ def get_label_for_expression(expression: Element) -> str:
             .declaredName
         )
         # check if this is a two-item feature chain or n > 2
-        if hasattr(expression, "throughMembership"):
+        if "throughMembership" in expression._derived:
+        #if hasattr(expression, "throughMembership"):
             # this is the n = 2 case
             second_item = expression.throughMembership[0].declaredName
             expression_label += f".{second_item}"
@@ -87,7 +98,8 @@ def get_label_for_expression(expression: Element) -> str:
             expression_label += f".{other_items}"
 
     # covers Literal expression cases
-    elif hasattr(expression, "value"):
+    elif "value" in expression._data:
+    #elif hasattr(expression, "value"):
         expression_label = str(expression.value)
 
     elif expression._metatype == "InvocationExpression":
