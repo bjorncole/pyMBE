@@ -295,25 +295,31 @@ class Model:  # pylint: disable=too-many-instance-attributes
 
     def _add_relationships(self):
         """Adds relationships to elements"""
+        
+        # TODO: make this more elegant...  maybe.
+        for relationship in self.all_relationships.values():
+            self._add_relationship(relationship)
+            
+    def _add_relationship(self, relationship):
         relationship_mapper = {
             "through": ("source", "target"),
             "reverse": ("target", "source"),
         }
-        # TODO: make this more elegant...  maybe.
-        for relationship in self.all_relationships.values():
-            endpoints = {
-                endpoint_type: [
-                    self.get_element(endpoint["@id"])
-                    for endpoint in relationship._data[endpoint_type]
-                ]
-                for endpoint_type in ("source", "target")
-            }
-            metatype = relationship._metatype
-            for direction, (key1, key2) in relationship_mapper.items():
-                endpts1, endpts2 = endpoints[key1], endpoints[key2]
-                for endpt1 in endpts1:
-                    for endpt2 in endpts2:
-                        endpt1._derived[f"{direction}{metatype}"] += [{"@id": endpt2._data["@id"]}]
+
+        endpoints = {
+            endpoint_type: [
+                self.get_element(endpoint["@id"])
+                for endpoint in relationship._data[endpoint_type]
+            ]
+            for endpoint_type in ("source", "target")
+        }
+        metatype = relationship._metatype
+        for direction, (key1, key2) in relationship_mapper.items():
+            endpts1, endpts2 = endpoints[key1], endpoints[key2]
+            for endpt1 in endpts1:
+                for endpt2 in endpts2:
+                    endpt1._derived[f"{direction}{metatype}"] += [{"@id": endpt2._data["@id"]}]
+
 
     def _load_metahints(self):
         """Load data file to get attribute hints"""
