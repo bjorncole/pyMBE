@@ -1,13 +1,33 @@
 from typing import Any, Dict
 from uuid import uuid4
+import copy
 
 from pymbe.model import Element, Model
 
+def create_element_data_dictionary(name: str, metaclass: str, model: Model, specific_fields: dict):
+    """
+    Creates a Python dictionary with data for a new KerML/SysML element based on templates from
+    base Ecore definitions.
+    """
+
+    new_id = str(uuid4())
+
+    new_element_data = copy.deepcopy(model.metamodel.pre_made_dicts[metaclass])
+
+    new_element_data['declaredName'] = name
+    for specific_update in specific_fields.keys():
+        new_element_data[specific_update] = specific_fields[specific_update]
+
+    return new_element_data
+    
 
 def create_new_classifier(owner: Element, name: str, model: Model):
     """
     Creates a new KerML Classifier and sets up relationships to its owner.
     """
+
+    # first validate 
+
     new_id = str(uuid4())
     classifier_data = {
         "elementID": new_id,
@@ -75,6 +95,44 @@ def create_new_relationship(
 
     return new_rel
 
+
+def create_new_feature(owner: Element,
+                       name: str,
+                       model: Model,
+                       added_fields: Dict[str, Any],
+                       metatype: str = "Feature",
+                       member_kind: str = "FeatureMembership"):
+    """
+    Creates a new KerML Feature and sets up relationships to its owner.
+    """
+    new_id = str(uuid4())
+
+    feature_data = {
+        "elementID": new_id,
+        "owningRelationship": None,
+        "aliasIds": [],
+        "@type": metatype,
+        "ownedRelationship": [],
+        "declaredName": name,
+        "isUnique": True,
+        "isPortion": False,
+        "isAbstract": False,
+        "isEnd": False,
+        "isImpliedIncluded": False,
+        "isComposite": False,
+        "isReadOnly": False,
+        "isSufficient": False,
+        "isOrdered": False,
+        "direction": "in",
+        "@id": new_id,
+    } | added_fields
+
+    new_ele = Element.new(data=feature_data, model=model)
+
+    # TODO: Fix this to FeatureMembership
+    own_new_element(owner=owner, ele=new_ele, model=model, member_kind=member_kind)
+
+    return new_ele
 
 def own_new_element(owner: Element, ele: Element, model: Model):
     """
