@@ -93,81 +93,6 @@ def build_from_binary_relationship_pattern(
     return new_rel
 
 
-# def create_new_classifier(owner: Element, name: str, model: Model, metatype: str, added_fields: Dict[str, Any]):
-#     """
-#     Creates a new KerML Classifier and sets up relationships to its owner.
-#     """
-
-#     # first validate 
-
-#     new_id = str(uuid4())
-#     classifier_data = {
-#         "elementID": new_id,
-#         "owningRelationship": None,
-#         "aliasIds": [],
-#         "@type": metatype,
-#         "ownedRelationship": [],
-#         "declaredName": name,
-#         "isSufficient": False,
-#         "isAbstract": False,
-#         "isImpliedIncluded": False,
-#         "@id": new_id,
-#     } | added_fields
-
-#     new_ele = Element.new(data=classifier_data, model=model)
-
-#     new_element_ownership_pattern(owner=owner, ele=new_ele, model=model)
-
-#     return new_ele
-
-
-# def create_new_relationship(
-#     owner: Element,
-#     source: Element,
-#     target: Element,
-#     model: Model,
-#     metatype: str,
-#     owned_related_element: Element,
-#     owning_related_element: Element,
-#     added_fields: Dict[str, Any],
-# ):
-#     """
-#     Create generic KerML/SysML v2 relationship of a given metatype
-#     """
-
-#     new_rel_id = str(uuid4())
-
-#     owned_related_element = (
-#         [{"@id": owned_related_element._id}] if isinstance(owned_related_element, Element) else []
-#     )
-#     owning_related_element = (
-#         {"@id": owning_related_element._id}
-#         if isinstance(owning_related_element, Element)
-#         else None
-#     )
-
-#     rel_data = {
-#         "elementId": new_rel_id,
-#         "isImplied": False,
-#         "aliasIds": [],
-#         "visibility": "public",
-#         "@type": metatype,
-#         "ownedRelationship": [],
-#         "source": [{"@id": source._id}],
-#         "ownedRelatedElement": owned_related_element,
-#         "isImpliedIncluded": False,
-#         "target": [{"@id": target._id}],
-#         "owningRelatedElement": owning_related_element,
-#         "@id": new_rel_id,
-#     } | added_fields
-
-#     new_rel = Element.new(data=rel_data, model=model)
-
-#     model._add_relationship(new_rel)
-
-#     return new_rel
-
-
 def build_from_feature_pattern(
     owner: Element,
     name: str,
@@ -175,7 +100,8 @@ def build_from_feature_pattern(
     specific_fields: Dict[str, Any],
     feature_type: Element,
     direction: str = "",
-    metatype: str = "Feature"
+    metatype: str = "Feature",
+    connector_end: bool = False
 ):
     
     """
@@ -185,8 +111,8 @@ def build_from_feature_pattern(
     - The Feature may have a type
     """
 
-    typing_snippet = None
-    direction_snippet = None
+    typing_snippet = {}
+    direction_snippet = {}
     member_kind = ""
 
     if feature_type is not None:
@@ -207,86 +133,108 @@ def build_from_feature_pattern(
 
     # TODO: Add more cases here
     if metatype == "Feature":
-        member_kind = "FeatureMembership"
+        if connector_end:
+            member_kind = "EndFeatureMembership"
+        else:
+            member_kind = "FeatureMembership"
 
     new_element_ownership_pattern(owner=owner, ele=new_ele, model=model, member_kind=member_kind)
 
-# def create_new_feature(owner: Element,
-#                        name: str,
-#                        model: Model,
-#                        added_fields: Dict[str, Any],
-#                        metatype: str = "Feature",
-#                        member_kind: str = "FeatureMembership"):
-#     """
-#     Creates a new KerML Feature and sets up relationships to its owner.
-#     """
-#     new_id = str(uuid4())
+    if feature_type is not None:
+        new_ft = build_from_binary_relationship_pattern(
+            source=new_ele,
+            target=feature_type,
+            model=model,
+            metatype="FeatureTyping",
+            owned_by_source=True,
+            owns_target=False,
+            alternative_owner=None,
+            specific_fields={}
+        )
 
-#     feature_data = {
-#         "elementID": new_id,
-#         "owningRelationship": None,
-#         "aliasIds": [],
-#         "@type": metatype,
-#         "ownedRelationship": [],
-#         "declaredName": name,
-#         "isUnique": True,
-#         "isPortion": False,
-#         "isAbstract": False,
-#         "isEnd": False,
-#         "isImpliedIncluded": False,
-#         "isComposite": False,
-#         "isReadOnly": False,
-#         "isSufficient": False,
-#         "isOrdered": False,
-#         "direction": "in",
-#         "@id": new_id,
-#     } | added_fields
-
-#     new_ele = Element.new(data=feature_data, model=model)
-
-#     # TODO: Fix this to FeatureMembership
-#     new_element_ownership_pattern(owner=owner, ele=new_ele, model=model, member_kind=member_kind)
-
-#     return new_ele
+    return new_ele
 
 
-# def create_new_feature(owner: Element,
-#                        name: str,
-#                        model: Model,
-#                        added_fields: Dict[str, Any],
-#                        metatype: str = "Feature",
-#                        member_kind: str = "FeatureMembership"):
-#     """
-#     Creates a new KerML Feature and sets up relationships to its owner.
-#     """
-#     new_id = str(uuid4())
+def build_from_binary_connector_pattern(
+    name: str,
+    source_role_name: str,
+    target_role_name: str,
+    source: Element,
+    target: Element,
+    model: Model,
+    metatype: str,
+    owner: Element,
+    specific_fields: Dict[str, Any]
+):
+    
+    """
+    Creates a series of new elements using a connector-style pattern that assumes:
+    - The connector is binary (only one source, one target)
+    - The connector is owned by some non-connected element such as a Package or a Type
+    - Connector has two end features that point to the source and the target
+    """
+    
+    connector_dict = {
+        "source": [{"@id": source._id}],
+        "target": [{"@id": target._id}]
+    }
 
-#     feature_data = {
-#         "elementID": new_id,
-#         "owningRelationship": None,
-#         "aliasIds": [],
-#         "@type": metatype,
-#         "ownedRelationship": [],
-#         "declaredName": name,
-#         "isUnique": True,
-#         "isPortion": False,
-#         "isAbstract": False,
-#         "isEnd": False,
-#         "isImpliedIncluded": False,
-#         "isComposite": False,
-#         "isReadOnly": False,
-#         "isSufficient": False,
-#         "isOrdered": False,
-#         "direction": "in",
-#         "@id": new_id,
-#     } | added_fields
+    conn_fields = specific_fields | connector_dict
 
-#     new_ele = Element.new(data=feature_data, model=model)
+    new_ele = build_from_classifier_pattern(
+        owner=owner,
+        name=name,
+        model=model,
+        metatype=metatype,
+        specific_fields=conn_fields
+    )
 
-#     # TODO: Fix this to FeatureMembership
-#     new_element_ownership_pattern(owner=owner, ele=new_ele, model=model, member_kind=member_kind)
+    source_end = build_from_feature_pattern(
+        owner=new_ele,
+        name=source_role_name,
+        model=model,
+        specific_fields={},
+        feature_type=None,
+        direction="",
+        metatype="Feature",
+        connector_end=True
+    )
 
-#     return new_ele
+    target_end = build_from_feature_pattern(
+        owner=new_ele,
+        name=target_role_name,
+        model=model,
+        specific_fields={},
+        feature_type=None,
+        direction="",
+        metatype="Feature",
+        connector_end=True
+    )
+
+    source_ref = build_from_binary_relationship_pattern(
+        source=source_end,
+        target=source,
+        model=model,
+        metatype="ReferenceSubsetting",
+        owned_by_source=True,
+        owns_target=False,
+        alternative_owner=None,
+        specific_fields={}
+    )
+
+    target_ref = build_from_binary_relationship_pattern(
+        source=target_end,
+        target=target,
+        model=model,
+        metatype="ReferenceSubsetting",
+        owned_by_source=True,
+        owns_target=False,
+        alternative_owner=None,
+        specific_fields={}
+    )
+
+    return new_ele
+
 
 def new_element_ownership_pattern(owner: Element, ele: Element, model: Model, member_kind: str = "OwningMembership"):
     """
@@ -324,7 +272,7 @@ def new_element_ownership_pattern(owner: Element, ele: Element, model: Model, me
     return new_om
 
 # TODO: Move to dedicated reasoning file under interpretation area
-def build_superset_classifier(classes : List[Element],
+def build_unioning_superset_classifier(classes : List[Element],
                             super_name: str,
                             owner: Element,
                             model: Model,
@@ -332,8 +280,9 @@ def build_superset_classifier(classes : List[Element],
                             unioned: bool = False
                             ):
     '''
-    Take in a list of classifiers and generate a larger set from them. Idea is to have this work with
-    individuals and classifiers of multiplicity of 1.
+    Take in a list of classifiers and generate a larger set from them. The larger set will have some properties:
+    - All classes will have Subclassification relationship to the larger class
+    - The larger class will be derived as a union of the given list of classes
     '''
     new_super = build_from_classifier_pattern(
         owner=owner,
@@ -375,3 +324,70 @@ def build_superset_classifier(classes : List[Element],
             )
         
     return new_super
+
+
+def apply_covered_feature_pattern(
+    one_member_classifiers: List[Element],
+    feature_to_cover: Element,
+    type_to_apply_pattern_on: Element,
+    model: Model,
+    new_types_owner: Element,
+    covering_classifier_prefix: str = 'Class to Cover ',
+    covering_classifier_suffix: str = '',
+    redefining_feature_prefix: str = '',
+    redefining_feature_suffix: str = ' (Closed)'
+):
+    """
+    Execute a pattern described in KerML Appendix A to capture a list of specific results for a given
+    generated model instance (or trace):
+    - A series of classifiers with multiplicity 1 (given by user)
+    - A superset classifier to represent all of these classifiers at once
+    - Redefining the covered feature with a feature that uses the superset as the type, multiplicity set to number
+    -   of identified specific classifiers
+    """
+
+    covering_type = None
+    redefined_feature = None
+
+    if len(one_member_classifiers) > 1:
+        covering_type = build_unioning_superset_classifier(
+            classes=one_member_classifiers,
+            super_name=covering_classifier_prefix + feature_to_cover.declaredName + covering_classifier_suffix,
+            owner=new_types_owner,
+            model=model,
+            added_fields={},
+            unioned=True
+        )
+
+        redefined_feature = build_from_feature_pattern(
+            owner=type_to_apply_pattern_on,
+            name=redefining_feature_prefix + feature_to_cover.declaredName + redefining_feature_suffix,
+            model=model,
+            specific_fields={},
+            feature_type=covering_type,
+            connector_end=False,
+            metatype="Feature"
+        )
+
+    elif len(one_member_classifiers) == 1:
+        redefined_feature = build_from_feature_pattern(
+            owner=type_to_apply_pattern_on,
+            name=redefining_feature_prefix + feature_to_cover.declaredName + redefining_feature_suffix,
+            model=model,
+            specific_fields={},
+            feature_type=one_member_classifiers[0],
+            connector_end=False,
+            metatype="Feature"
+        )
+
+    return redefined_feature
+
+
+def build_covering_classifier_for_connector():
+
+    pass
+
+def build_snapshot_for_classifier():
+
+    pass
+
