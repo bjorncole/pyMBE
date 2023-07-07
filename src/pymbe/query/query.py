@@ -9,6 +9,10 @@ from ..graph.lpg import SysML2LabeledPropertyGraph
 from ..label import get_label
 from ..model import Element
 
+def feature_multiplicity():
+    # stubbing as obsolete method from metamodel_navigator that needs replacement
+    pass
+
 def roll_up_lower_multiplicity(
     lpg: SysML2LabeledPropertyGraph,
     feature: Element,

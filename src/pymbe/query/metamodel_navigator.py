@@ -16,9 +16,9 @@ def is_multiplicity_one(type_ele):
     literal_value = [li.value for li in multiplicity_range.throughOwningMembership if li['@type'] == 'LiteralInteger']
     if len(literal_value) == 0:
         return False
-    elif len(literal_value) == 1:
+    if len(literal_value) == 1:
         return literal_value[0] == 1
-    elif len(literal_value) == 2:
+    if len(literal_value) == 2:
         return literal_value[0] == 1 and literal_value[1] == 1
     
 
@@ -29,9 +29,9 @@ def is_multiplicity_specific_finite(type_ele):
     literal_value = [li.value for li in multiplicity_range.throughOwningMembership if li['@type'] == 'LiteralInteger']
     if len(literal_value) == 0:
         return False
-    elif len(literal_value) == 1:
+    if len(literal_value) == 1:
         return literal_value[0] > 1
-    elif len(literal_value) == 2:
+    if len(literal_value) == 2:
         return literal_value[0] > 1 and literal_value[0] == literal_value[1]
     
 
