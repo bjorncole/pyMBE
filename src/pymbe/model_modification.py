@@ -4,7 +4,7 @@ import copy
 
 from pymbe.model import Element, Model
 
-def create_element_data_dictionary(name: str, metaclass: str, model: Model, specific_fields: dict):
+def create_element_data_dictionary(name: str, metaclass: str, model: Model, specific_fields: Dict[str, Any]):
     """
     Creates a Python dictionary with data for a new KerML/SysML element based on templates from
     base Ecore definitions.
@@ -39,7 +39,12 @@ def build_from_classifier_pattern(
     - There are no end features to consider
     """
 
-    classifier_dict = create_element_data_dictionary(name=name, metaclass=metatype, model=model, specific_fields=specific_fields)
+    classifier_dict = create_element_data_dictionary(
+        name=name,
+        metaclass=metatype,
+        model=model,
+        specific_fields=specific_fields
+        )
 
     new_ele = Element.new(data=classifier_dict, model=model)
 
@@ -141,7 +146,7 @@ def build_from_feature_pattern(
     new_element_ownership_pattern(owner=owner, ele=new_ele, model=model, member_kind=member_kind)
 
     if feature_type is not None:
-        new_ft = build_from_binary_relationship_pattern(
+        build_from_binary_relationship_pattern(
             source=new_ele,
             target=feature_type,
             model=model,
@@ -262,7 +267,7 @@ def build_from_binary_connector_pattern(
         connector_end=True
     )
 
-    source_ref = build_from_binary_relationship_pattern(
+    build_from_binary_relationship_pattern(
         source=source_end,
         target=source,
         model=model,
@@ -273,7 +278,7 @@ def build_from_binary_connector_pattern(
         specific_fields={}
     )
 
-    target_ref = build_from_binary_relationship_pattern(
+    build_from_binary_relationship_pattern(
         source=target_end,
         target=target,
         model=model,
@@ -351,7 +356,7 @@ def build_unioning_superset_classifier(classes : List[Element],
              'superclassifier': {'@id': new_super._id}
         }
 
-        new_sc = build_from_binary_relationship_pattern(
+        build_from_binary_relationship_pattern(
             source=clz,
             target=new_super,
             model=model,
@@ -363,7 +368,7 @@ def build_unioning_superset_classifier(classes : List[Element],
         )
 
         if unioned:
-            new_unioning = build_from_binary_relationship_pattern(
+            build_from_binary_relationship_pattern(
                 source=new_super,
                 target=clz,
                 model=model,

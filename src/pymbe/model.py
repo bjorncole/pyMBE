@@ -3,7 +3,6 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
 from functools import lru_cache
-from importlib import resources as lib_resources
 from pathlib import Path
 from typing import Any, Collection, Dict, List, Tuple, Union
 from uuid import uuid4

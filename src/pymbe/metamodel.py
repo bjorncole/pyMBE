@@ -1,7 +1,7 @@
 import json
 
-from dataclasses import dataclass, field
-from typing import Any, Collection, Dict, List, Tuple, Union
+from dataclasses import field
+from typing import Any, Dict, List
 from importlib import resources as lib_resources
 
 
@@ -49,8 +49,10 @@ class MetaModel():
         for hint in local_hints:
             starter_field = None
             if hint[2] == 'primary':
-                # TODO: Figure out why some boolean and string attributes have 0 to -1 rather than 1 to 1 multiplicity
-                if int(hint[6]) > 1 or int(hint[6]) == -1 and not(hint[3] == 'Boolean' or hint[3] == 'String'):
+                # TODO: Figure out why some boolean and string attributes have 0 to -1
+                # rather than 1 to 1 multiplicity
+                if int(hint[6]) > 1 or int(hint[6]) == -1 and \
+                    not(hint[3] == 'Boolean' or hint[3] == 'String'):
                     starter_field = []
                 else:
                     # TODO: One other janky override

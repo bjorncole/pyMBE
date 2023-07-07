@@ -8,8 +8,6 @@ import networkx as nx
 from ..graph.lpg import SysML2LabeledPropertyGraph
 from ..label import get_label
 from ..model import Element
-from .metamodel_navigator import feature_multiplicity
-
 
 def roll_up_lower_multiplicity(
     lpg: SysML2LabeledPropertyGraph,
