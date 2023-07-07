@@ -155,6 +155,57 @@ def build_from_feature_pattern(
     return new_ele
 
 
+def build_from_binary_assoc_pattern(
+    name: str,
+    source_role_name: str,
+    target_role_name: str,
+    source_type: Element,
+    target_type: Element,
+    model: Model,
+    metatype: str,
+    owner: Element,
+    specific_fields: Dict[str, Any]
+):
+    
+    """
+    Creates a series of new elements using an association-style pattern that assumes:
+    - The association is binary (only one source, one target)
+    - The association is owned by some non-connected element such as a Package or a Type
+    - Association has two end features that each have a type
+    """
+
+    new_ele = build_from_classifier_pattern(
+        owner=owner,
+        name=name,
+        model=model,
+        metatype=metatype,
+        specific_fields=specific_fields
+    )
+
+    build_from_feature_pattern(
+        owner=new_ele,
+        name=source_role_name,
+        model=model,
+        specific_fields={},
+        feature_type=source_type,
+        direction="",
+        metatype="Feature",
+        connector_end=True
+    )
+
+    build_from_feature_pattern(
+        owner=new_ele,
+        name=target_role_name,
+        model=model,
+        specific_fields={},
+        feature_type=target_type,
+        direction="",
+        metatype="Feature",
+        connector_end=True
+    )
+
+    return new_ele
+
 def build_from_binary_connector_pattern(
     name: str,
     source_role_name: str,
