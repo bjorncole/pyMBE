@@ -17,9 +17,13 @@ def is_multiplicity_one(type_ele):
     if len(literal_value) == 0:
         return False
     if len(literal_value) == 1:
-        return literal_value[0] == 1
+        if literal_value[0] == 1:
+            return True
+        return False
     if len(literal_value) == 2:
-        return literal_value[0] == 1 and literal_value[1] == 1
+        if literal_value[0] == 1 and literal_value[1] == 1:
+            return True
+        return False
     
 
 def is_multiplicity_specific_finite(type_ele):
@@ -30,9 +34,13 @@ def is_multiplicity_specific_finite(type_ele):
     if len(literal_value) == 0:
         return False
     if len(literal_value) == 1:
-        return literal_value[0] > 1
+        if literal_value[0] > 1:
+            return True
+        return False
     if len(literal_value) == 2:
-        return literal_value[0] > 1 and literal_value[0] == literal_value[1]
+        if literal_value[0] > 1 and literal_value[0] == literal_value[1]:
+            return True
+        return False
     
 
 def get_finite_multiplicity_types(model):
