@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Collection, Dict, List, Tuple, Union
 from uuid import uuid4
 from warnings import warn
+
 from pymbe.metamodel import MetaModel, derive_attribute
 
 OWNER_KEYS = ("owner", "owningRelatedElement", "owningRelationship")
@@ -520,4 +521,3 @@ class Element:  # pylint: disable=too-many-instance-attributes
             return self._model.get_element(item)
         except KeyError:
             return item
-
