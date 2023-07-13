@@ -176,7 +176,7 @@ class APIClientWidget(APIClient, ipyw.GridspecLayout):
         button.on_click(self._download_model)
         return button
 
-    #pylint: disable=no-self-use
+    # pylint: disable=no-self-use
     @trt.default("progress_bar")
     def _make_progress_bar(self) -> ipyw.IntProgress:
         progress_bar = ipyw.IntProgress(
