@@ -3,11 +3,12 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
 from functools import lru_cache
-from importlib import resources as lib_resources
 from pathlib import Path
 from typing import Any, Collection, Dict, List, Tuple, Union
 from uuid import uuid4
 from warnings import warn
+
+from pymbe.metamodel import MetaModel, derive_attribute
 
 OWNER_KEYS = ("owner", "owningRelatedElement", "owningRelationship")
 VALUE_METATYPES = ("AttributeDefinition", "AttributeUsage", "DataType")
@@ -106,13 +107,17 @@ class Model:  # pylint: disable=too-many-instance-attributes
     _initializing: bool = True
     _naming: Naming = Naming.LABEL  # The scheme to use for repr'ing the elements
 
+    metamodel: MetaModel = None
+
     _metamodel_hints: Dict[str, List[List[str]]] = field(
         default_factory=dict
     )  # hints about attribute primary v derived, expected value type, etc.
 
     def __post_init__(self):
 
-        self._load_metahints()
+        self.metamodel = MetaModel()
+
+        self._metamodel_hints = self.metamodel.metamodel_hints
 
         self.elements = {
             id_: Element(
@@ -321,15 +326,6 @@ class Model:  # pylint: disable=too-many-instance-attributes
                 for endpt2 in endpts2:
                     endpt1._derived[f"{direction}{metatype}"] += [{"@id": endpt2._data["@id"]}]
 
-    def _load_metahints(self):
-        """Load data file to get attribute hints"""
-        with lib_resources.open_text("pymbe.static_data", "sysml_ecore_atts.json") as sysml_ecore:
-            self._metamodel_hints = json.load(sysml_ecore)
-        with lib_resources.open_text(
-            "pymbe.static_data", "sysml_ecore_derived_refs.json"
-        ) as sysml_ecore:
-            self._metamodel_hints = self._metamodel_hints | json.load(sysml_ecore)
-
 
 @dataclass(repr=False)
 class Element:  # pylint: disable=too-many-instance-attributes
@@ -525,54 +521,3 @@ class Element:  # pylint: disable=too-many-instance-attributes
             return self._model.get_element(item)
         except KeyError:
             return item
-
-
-# TODO: Send this to a separate file without inducing a circular dependency
-
-
-def derive_attribute(key: str, ele: Element):
-
-    # entry point for deriving attributes within elements on demand
-
-    if key == "type":
-        return derive_type(ele)
-    if "owned" in key and key not in ("ownedMember",):
-        return derive_owned_x(ele, key[5:])
-    if key == "ownedMember":
-        return derive_owned_member(ele)
-
-    raise NotImplementedError(f"The method to derive {key} has yet to be developed.")
-
-
-def derive_type(ele: Element):
-
-    if hasattr(ele, "throughFeatureTyping"):
-        return ele.throughFeatureTyping
-
-    return []
-
-
-def derive_owned_member(ele: Element):
-
-    found_ele = []
-
-    for owned_rel in ele.ownedRelationship:
-        if owned_rel._metatype == "OwningMembership":
-            # TODO: Make this work with generalization of metatypes
-
-            for owned_related_ele in owned_rel.ownedRelatedElement:
-                found_ele.append(owned_related_ele)
-
-    return found_ele
-
-
-def derive_owned_x(ele: Element, owned_kind: str):
-
-    found_ele = []
-
-    for owned_rel in ele.ownedRelationship:
-        for owned_related_ele in owned_rel.ownedRelatedElement:
-            if owned_related_ele._metatype == owned_kind:
-                found_ele.append(owned_related_ele)
-
-    return found_ele
