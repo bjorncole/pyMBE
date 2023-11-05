@@ -18,6 +18,7 @@ def create_element_data_dictionary(
     new_element_data = copy.deepcopy(model.metamodel.pre_made_dicts[metaclass])
 
     new_element_data["declaredName"] = name
+    new_element_data["name"] = name
     for specific_update in specific_fields.keys():
         new_element_data[specific_update] = specific_fields[specific_update]
 
@@ -28,7 +29,12 @@ def create_element_data_dictionary(
 
 
 def build_from_classifier_pattern(
-    owner: Element, name: str, model: Model, metatype: str, specific_fields: Dict[str, Any]
+    owner: Element,
+    name: str,
+    model: Model,
+    metatype: str,
+    superclasses: [],
+    specific_fields: Dict[str, Any]
 ):
 
     """
@@ -47,6 +53,17 @@ def build_from_classifier_pattern(
     new_element_ownership_pattern(
         owner=owner, ele=new_ele, model=model, member_kind="OwningMembership"
     )
+
+    for supr in superclasses:
+        if supr is not None:
+            build_from_binary_relationship_pattern(source=new_ele,
+                                                target=supr,
+                                                model=model,
+                                                metatype="Subclassification",
+                                                owned_by_source=True,
+                                                owns_target=False,
+                                                alternative_owner=None,
+                                                specific_fields=specific_fields)
 
     return new_ele
 
@@ -177,8 +194,10 @@ def build_from_binary_assoc_pattern(
     - Association has two end features that each have a type
     """
 
+    specific_fields = {"source": [source_type._id], "target": [target_type._id]} | specific_fields
+
     new_ele = build_from_classifier_pattern(
-        owner=owner, name=name, model=model, metatype=metatype, specific_fields=specific_fields
+        owner=owner, name=name, model=model, metatype=metatype, specific_fields=specific_fields, superclasses=[]
     )
 
     build_from_feature_pattern(
@@ -307,8 +326,6 @@ def new_element_ownership_pattern(
         specific_fields=om_added_data,
     )
 
-    model._add_relationship(new_om)
-
     # should make this more automatic in core code, but add new_om to owner's ownedRelationship
     # a lot of these entailments will be a pain and need to manage them actively
 
@@ -339,6 +356,7 @@ def build_unioning_superset_classifier(
         model=model,
         specific_fields=added_fields,
         metatype=classes[0]._metatype,
+        superclasses=[]
     )
 
     for clz in classes:

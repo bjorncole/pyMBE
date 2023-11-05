@@ -87,7 +87,8 @@ def get_lower_multiplicty(type_ele):
             if li["@type"] == "LiteralInteger"
         ]
 
-    lower_mult = int(literal_value[0])
+    if len(literal_value) > 0:
+        lower_mult = int(literal_value[0])
 
     return lower_mult
 

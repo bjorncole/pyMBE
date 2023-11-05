@@ -21,8 +21,9 @@ commands:
     unix: |
       git submodule update --init
       pip install -e . --no-dependencies
+      pip install pyecore
     windows: |
-      git submodule update --init & pip install -e . --no-dependencies
+      git submodule update --init & pip install pyecore & pip install -e . --no-dependencies
   lint:
     description: lint the code
     env_spec: developer
