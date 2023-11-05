@@ -152,7 +152,7 @@ def build_from_feature_pattern(
     new_ele = Element.new(data=feature_dict, model=model)
 
     # TODO: Add more cases here
-    if metatype == "Feature":
+    if metatype == "Feature" or "Usage" in metatype:
         if connector_end:
             member_kind = "EndFeatureMembership"
         else:
