@@ -132,3 +132,43 @@ def identify_connectors_one_side(connectors):
                         one_sided.append(connector)
 
     return one_sided
+
+def does_behavior_have_write_features(behavior):
+
+    if hasattr(behavior, "throughFeatureMembership"):
+
+        candidate_features = behavior.throughFeatureMembership
+
+        for cf in candidate_features:
+
+            if cf._metatype == 'Step':
+                step = cf
+
+                if hasattr(step, "throughFeatureTyping"):
+                    candidate_types = step.throughFeatureTyping
+                    for ct in candidate_types:
+                        if ct.declaredName == 'FeatureWritePerformance':
+                            return True
+
+    return False
+
+def has_type_named(feature, type_name):
+    if hasattr(feature, "throughFeatureTyping"):
+        for ft in feature.throughFeatureTyping:
+            if ft.declaredName == type_name:
+                return True
+    return False
+
+def get_most_specific_feature_type(feature):
+
+    if hasattr(feature, "throughFeatureTyping"):
+        if len(feature.throughFeatureTyping) == 1:
+            return feature.throughFeatureTyping[0]
+
+    if hasattr(feature, "throughRedefinition"):
+        if len(feature.throughRedefinition) == 1:
+            redef_feature = feature.throughRedefinition[0]
+
+            if hasattr(redef_feature, "throughFeatureTyping"):
+                if len(redef_feature.throughFeatureTyping) == 1:
+                    return redef_feature.throughFeatureTyping[0]

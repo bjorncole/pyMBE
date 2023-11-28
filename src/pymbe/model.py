@@ -406,6 +406,7 @@ class Element:  # pylint: disable=too-many-instance-attributes
         #     return tuple(sorted(self._data.items())) == tuple(sorted(other.items()))
         return self is other
 
+    # TODO: Make this safe for through and reverse by return empty collection is no key found
     def __getattr__(self, key: str):
         try:
             return self[key]

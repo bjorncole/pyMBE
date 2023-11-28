@@ -36,6 +36,8 @@ def get_label(element: Element) -> str:  # pylint: disable=too-many-return-state
         return f"{name} «{metatype}»"
     if (
         metatype == "Feature"
+        and hasattr(element, "owningRelationship")
+        and element.owningRelationship is not None
         and "memberName" in element.owningRelationship._data
         and element.owningRelationship._metatype
         in ("ParameterMembership", "ReturnParameterMembership")

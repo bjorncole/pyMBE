@@ -39,6 +39,10 @@ commands:
     env_spec: developer
     unix: python setup.py sdist bdist_wheel
     windows: python setup.py sdist bdist_wheel
+  package:conda:
+    description: make a Conda package
+    env_spec: developer
+    windows: conda-build pymbe
   test:
     description: run the tests
     env_spec: developer
@@ -122,6 +126,7 @@ env_specs:
     - user
     packages:
     - black
+    - conda-build
     - coverage
     - flake8
     - git
