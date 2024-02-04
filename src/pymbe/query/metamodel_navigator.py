@@ -1,8 +1,7 @@
 # a collection of convenience methods to navigate the metamodel when inspecting user models
-from pymbe.model import Element
 
 
-def is_type_undefined_mult(type_ele: Element):
+def is_type_undefined_mult(type_ele):
     if "throughOwningMembership" not in type_ele._derived:
         return True
     mult_range = [
@@ -172,3 +171,18 @@ def get_most_specific_feature_type(feature):
             if hasattr(redef_feature, "throughFeatureTyping"):
                 if len(redef_feature.throughFeatureTyping) == 1:
                     return redef_feature.throughFeatureTyping[0]
+                
+def get_all_more_general_types(typ):
+    """
+    Recursively navigate along Specialization relationships to find all the more general
+    types of the given type
+    """
+
+    local_more_general =  typ.throughFeatureTyping + \
+                            typ.reverseSubclassification + \
+                            typ.throughRedefinition
+    
+    total_general = local_more_general + \
+        [item for local_general in local_more_general for item in get_all_more_general_types(local_general)]
+    
+    return total_general

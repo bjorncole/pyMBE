@@ -8,7 +8,7 @@ from typing import Any, Collection, Dict, List, Tuple, Union
 from uuid import uuid4
 from warnings import warn
 
-from pymbe.metamodel import MetaModel, derive_attribute
+from pymbe.metamodel import MetaModel, list_relationship_metaclasses, derive_attribute
 
 OWNER_KEYS = ("owner", "owningRelatedElement", "owningRelationship")
 VALUE_METATYPES = ("AttributeDefinition", "AttributeUsage", "DataType")
@@ -123,7 +123,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
             id_: Element(
                 _data=data,
                 _model=self,
-                _metamodel_hints={att[0]: att[1:] for att in self._metamodel_hints[data["@type"]]},
+                _metamodel_hints={att[0]: att[1:] for att in self._metamodel_hints[data["@type"]]}
             )
             for id_, data in self.elements.items()
             if isinstance(data, dict)
@@ -421,6 +421,9 @@ class Element:  # pylint: disable=too-many-instance-attributes
                 found = True
                 item = source[key]
                 break
+            elif key[7:] in list_relationship_metaclasses():
+                found = True
+                item = []
         if not found:
             if (
                 key in self._metamodel_hints
