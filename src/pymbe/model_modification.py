@@ -33,7 +33,7 @@ def build_from_classifier_pattern(
     name: str,
     model: Model,
     metatype: str,
-    superclasses: [],
+    superclasses: List[Element],
     specific_fields: Dict[str, Any]
 ):
 
@@ -184,6 +184,7 @@ def build_from_binary_assoc_pattern(
     model: Model,
     metatype: str,
     owner: Element,
+    superclasses: List[Element],
     specific_fields: Dict[str, Any],
 ):
 
@@ -194,13 +195,13 @@ def build_from_binary_assoc_pattern(
     - Association has two end features that each have a type
     """
 
-    specific_fields = {"source": [source_type._id], "target": [target_type._id]} | specific_fields
+    specific_fields = {"source": [{'@id': source_type._id}], "target": [{'@id': target_type._id}]} | specific_fields
 
     new_ele = build_from_classifier_pattern(
         owner=owner, name=name, model=model, metatype=metatype, specific_fields=specific_fields, superclasses=[]
     )
 
-    build_from_feature_pattern(
+    source_feat_ele = build_from_feature_pattern(
         owner=new_ele,
         name=source_role_name,
         model=model,
@@ -211,7 +212,7 @@ def build_from_binary_assoc_pattern(
         connector_end=True,
     )
 
-    build_from_feature_pattern(
+    target_feat_ele = build_from_feature_pattern(
         owner=new_ele,
         name=target_role_name,
         model=model,
@@ -221,6 +222,54 @@ def build_from_binary_assoc_pattern(
         metatype="Feature",
         connector_end=True,
     )
+
+    for supr in superclasses:
+        if supr is not None:
+
+            # fix this later to become end feature memberships
+
+            try:
+                source_redefined = supr.throughEndFeatureMembership[0]
+            except AttributeError:
+                 source_redefined = supr.throughFeatureMembership[0]
+
+            try:
+                target_redefined = supr.throughEndFeatureMembership[1]
+            except AttributeError:
+                 target_redefined = supr.throughFeatureMembership[1]
+
+            build_from_binary_relationship_pattern(source=new_ele,
+                                                target=supr,
+                                                model=model,
+                                                metatype="Subclassification",
+                                                owned_by_source=True,
+                                                owns_target=False,
+                                                alternative_owner=None,
+                                                specific_fields={})
+            
+            build_from_binary_relationship_pattern(
+                source=source_feat_ele,
+                target=source_redefined,
+                model=model,
+                metatype="Redefinition",
+                owned_by_source=True,
+                owns_target=False,
+                alternative_owner=None,
+                specific_fields={},
+            )
+
+            build_from_binary_relationship_pattern(
+                source=target_feat_ele,
+                target=target_redefined,
+                model=model,
+                metatype="Redefinition",
+                owned_by_source=True,
+                owns_target=False,
+                alternative_owner=None,
+                specific_fields={},
+            )
+
+
 
     return new_ele
 

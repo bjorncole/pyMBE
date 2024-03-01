@@ -2,7 +2,7 @@ import json
 from dataclasses import field
 from importlib import resources as lib_resources
 from typing import Any, Dict, List
-from pymbe.query.metamodel_navigator import get_all_more_general_types
+from pymbe.query.metamodel_navigator import get_more_general_types
 
 # TODO: Is there a way to restore type hints for Element without inducing a circular dependency?
 
@@ -83,7 +83,8 @@ def list_relationship_metaclasses():
             'Conjugation',
             'Subclassification',
             'Subsetting',
-            'Redefinition'
+            'Redefinition',
+            'FeatureValue'
         ]
 
 
@@ -144,10 +145,13 @@ def derive_inherited_featurememberships(ele: "Element"):
     derived union for the memberships of the Type
     """
 
-    more_general = get_all_more_general_types(ele)
+    more_general = get_more_general_types(ele, 0, 100)
 
-    return [inherited_fm for general_type in more_general for inherited_fm in general_type.ownedRelationship if 
-            inherited_fm._metatype == 'FeatureMembership']
+    try:
+        return [inherited_fm for general_type in more_general for inherited_fm in general_type.ownedRelationship if 
+                inherited_fm._metatype == 'FeatureMembership']
+    except AttributeError:
+        return []
 
 
 def derive_features(ele: "Element"):
@@ -157,6 +161,7 @@ def derive_features(ele: "Element"):
     The ownedMemberFeatures of the featureMemberships of this Type.
     """
 
-    return [feature_membership.target[0] for feature_membership in derive_inherited_featurememberships(ele)]
+    return [feature_membership.target[0] for feature_membership in derive_inherited_featurememberships(ele)] + \
+        ele.throughFeatureMembership
 
     #return [inherited_fm for general_type in more_general for inherited_fm in general_type.throughFeatureMembership]

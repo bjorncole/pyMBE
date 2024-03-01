@@ -418,9 +418,16 @@ class Element:  # pylint: disable=too-many-instance-attributes
         for source in ("_data", "_derived"):
             source = self.__getattribute__(source)
             if key in source:
-                found = True
-                item = source[key]
-                break
+                if key in self._metamodel_hints and self._metamodel_hints[key][1] == "primary":
+                    found = True
+                    item = source[key]
+                    break
+                else:
+                    if key in self._metamodel_hints and self._metamodel_hints[key][1] == "derived":
+                        break
+                    found = True
+                    item = source[key]
+                    break
             elif key[7:] in list_relationship_metaclasses():
                 found = True
                 item = []
@@ -457,6 +464,10 @@ class Element:  # pylint: disable=too-many-instance-attributes
 
     def __repr__(self):
         return self._model._naming.get_name(element=self)
+    
+    @property
+    def basic_name(self) -> str:
+        return self._data.get("declaredName") or self._data.get("name") or self._data.get("effectiveName") or ""
 
     @property
     def label(self) -> str:
