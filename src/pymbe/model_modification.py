@@ -597,6 +597,8 @@ def build_from_portion_pattern(
     name_extension: str,
     model: Model,
     classifier_to_be_portioned: None,
+    feature_to_be_set: List[Element],
+    feature_values: List[Any],
     specific_fields: Dict[str, Any]
 ):
 
@@ -618,22 +620,45 @@ def build_from_portion_pattern(
     )
 
     if hasattr(classifier_to_be_portioned, "throughFeatureMembership"):
-        for feat in classifier_to_be_portioned.throughFeatureMembership:
+        if len(feature_to_be_set) == 0:
+            for feat in classifier_to_be_portioned.throughFeatureMembership:
 
+                redefed_feature = build_from_feature_pattern(
+                    owner=new_ele,
+                    name=feat.declaredName,
+                    model=model,
+                    specific_fields={},
+                    feature_type=feat.throughFeatureTyping[0] if hasattr(feat, "throughFeatureTyping") else None,
+                    direction="",
+                    metatype=feat._metatype,
+                    connector_end=False,
+                )
+
+                build_from_binary_relationship_pattern(
+                    source=redefed_feature,
+                    target=feat,
+                    model=model,
+                    metatype="Redefinition",
+                    owned_by_source=True,
+                    owns_target=False,
+                    alternative_owner=None,
+                    specific_fields={},
+                )
+        for feat_set, feat_val in zip(feature_to_be_set, feature_values):
             redefed_feature = build_from_feature_pattern(
-                owner=new_ele,
-                name=feat.declaredName,
-                model=model,
-                specific_fields={},
-                feature_type=feat.throughFeatureTyping[0] if hasattr(feat, "throughFeatureTyping") else None,
-                direction="",
-                metatype=feat._metatype,
-                connector_end=False,
-            )
+                    owner=new_ele,
+                    name=feat_set.declaredName,
+                    model=model,
+                    specific_fields={},
+                    feature_type=feat_set.throughFeatureTyping[0] if hasattr(feat_set, "throughFeatureTyping") else None,
+                    direction="",
+                    metatype=feat_set._metatype,
+                    connector_end=False,
+                )
 
             build_from_binary_relationship_pattern(
                 source=redefed_feature,
-                target=feat,
+                target=feat_set,
                 model=model,
                 metatype="Redefinition",
                 owned_by_source=True,

@@ -218,6 +218,8 @@ def get_most_specific_feature_type(feature):
                 if len(redef_feature.throughFeatureTyping) == 1:
                     return redef_feature.throughFeatureTyping[0]
                 
+    return None
+                
 def get_more_general_types(typ, recurse_counter, max_counter):
     """
     Recursively navigate along Specialization relationships to find all the more general
@@ -236,3 +238,12 @@ def get_more_general_types(typ, recurse_counter, max_counter):
                 for item in get_more_general_types(local_general, recurse_counter + 1, max_counter)]
     
     return total_general
+
+def get_feature_bound_values(feat):
+    for bound_val in feat.throughFeatureValue:
+        if bound_val._metatype == 'FeatureReferenceExpression':
+            referred_item = bound_val.throughMembership[0]
+
+            return [referred_item]
+        
+    return []
