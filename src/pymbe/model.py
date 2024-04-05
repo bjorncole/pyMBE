@@ -121,7 +121,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
 
         self.elements = {
             id_: Element(
-                _data=data,
+                _data={**data, "@id": id_},
                 _model=self,
                 _metamodel_hints={att[0]: att[1:] for att in self._metamodel_hints[data["@type"]]}
             )
@@ -147,7 +147,10 @@ class Model:  # pylint: disable=too-many-instance-attributes
     ) -> "Model":
         """Make a Model from an iterable container of elements"""
         return Model(
-            elements={element["@id"]: element for element in elements},
+            elements={
+                element.get("identity", element).get("@id"): element.get("payload", element)
+                for element in elements
+            },
             **kwargs,
         )
 
@@ -192,7 +195,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
         )
 
     @property
-    def packages(self) -> Tuple["Element"]:
+    def packages(self) -> Tuple["Element", ...]:
         return tuple(
             element for element in self.elements.values() if element._metatype == "Package"
         )

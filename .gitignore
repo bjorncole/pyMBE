@@ -77,6 +77,7 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+Untitled*.ipynb
 scratchpad/
 
 # IPython
@@ -156,3 +157,7 @@ envs/
 api/
 db/
 downloads/
+
+# OpenMDAO
+*.out
+connections.html
