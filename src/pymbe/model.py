@@ -466,7 +466,11 @@ class Element:  # pylint: disable=too-many-instance-attributes
         return self._id < other._id
 
     def __repr__(self):
-        return self._model._naming.get_name(element=self)
+        self_str = self._model._naming.get_name(element=self)
+        if self_str == None:
+            return "No Name"
+        else:
+            return self_str
     
     @property
     def basic_name(self) -> str:

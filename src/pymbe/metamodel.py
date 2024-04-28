@@ -77,6 +77,7 @@ def list_relationship_metaclasses():
     """
     return [
             'FeatureTyping',
+            'Membership',
             'OwningMembership',
             'FeatureMembership',
             'Specialization',
