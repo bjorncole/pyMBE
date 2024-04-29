@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Collection, Dict, List, Tuple, Union
+from typing import Any, Collection, Dict, List, Tuple, Union, Set
 from uuid import uuid4
 from warnings import warn
 
@@ -108,6 +108,10 @@ class Model:  # pylint: disable=too-many-instance-attributes
     _naming: Naming = Naming.LABEL  # The scheme to use for repr'ing the elements
 
     metamodel: MetaModel = None
+
+    _referenced_models: List["Model"] = field(  # pylint: disable=invalid-name
+        default_factory=list,
+    )
 
     _metamodel_hints: Dict[str, List[List[str]]] = field(
         default_factory=dict
@@ -329,6 +333,10 @@ class Model:  # pylint: disable=too-many-instance-attributes
                 for endpt2 in endpts2:
                     endpt1._derived[f"{direction}{metatype}"] += [{"@id": endpt2._data["@id"]}]
 
+    def reference_other_model(self, ref_model: "Model"):
+        if ref_model not in self._referenced_models:
+            self._referenced_models.append(ref_model)
+
 
 @dataclass(repr=False)
 class Element:  # pylint: disable=too-many-instance-attributes
@@ -525,7 +533,18 @@ class Element:  # pylint: disable=too-many-instance-attributes
                 break
         if owner_id is None:
             return None
-        return self._model.get_element(owner_id)
+        try:
+            return self._model.get_element(owner_id)
+        except KeyError:
+            if str(self) != "No Name":
+                raise KeyError(f"Failed to find element with id {owner_id} while " +
+                           f"looking for owner of {self}")
+            else:
+                playback_name = str(self)
+                if "declaredName" in data.keys():
+                    playback_name = data["declaredName"]
+                raise KeyError(f"Failed to find element with id {owner_id} while " +
+                           f"looking for owner of {playback_name}")
 
     @staticmethod
     def new(data: dict, model: Model) -> "Element":

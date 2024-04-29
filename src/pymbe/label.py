@@ -83,26 +83,32 @@ def get_label_for_expression(expression: Element) -> str:
 
     elif meta == "FeatureReferenceExpression":
         # case for FeatureReferenceExpression - terminal case #1
-        expression_label = expression.throughMembership[0].declaredName
+        try:
+            expression_label = expression.throughMembership[0].basic_name
+        except IndexError:
+            expression_label = "Empty FRE"
     elif meta == "FeatureChainExpression":
-        # first item will be FRE to another feature
-        expression_label = (
-            expression.throughParameterMembership[0]
-            .throughFeatureValue[0]
-            .throughMembership[0]
-            .declaredName
-        )
-        # check if this is a two-item feature chain or n > 2
-        if "throughMembership" in expression._derived:
-            # if hasattr(expression, "throughMembership"):
-            # this is the n = 2 case
-            second_item = expression.throughMembership[0].declaredName
-            expression_label += f".{second_item}"
-        else:
-            # this is the n > 2 case
-            chains = expression.throughOwningMembership[0].throughFeatureChaining
-            other_items = ".".join([chain.declaredName for chain in chains])
-            expression_label += f".{other_items}"
+        try:
+            # first item will be FRE to another feature
+            expression_label = (
+                expression.throughParameterMembership[0]
+                .throughFeatureValue[0]
+                .throughMembership[0]
+                .basic_name
+            )
+            # check if this is a two-item feature chain or n > 2
+            if "throughMembership" in expression._derived:
+                # if hasattr(expression, "throughMembership"):
+                # this is the n = 2 case
+                second_item = expression.throughMembership[0].basic_name
+                expression_label += f".{second_item}"
+            else:
+                # this is the n > 2 case
+                chains = expression.throughOwningMembership[0].throughFeatureChaining
+                other_items = ".".join([chain.basic_name for chain in chains])
+                expression_label += f".{other_items}"
+        except IndexError:
+            expression_label = "Empty FCE"
 
     # covers Literal expression cases
     elif "value" in expression._data:
@@ -110,8 +116,11 @@ def get_label_for_expression(expression: Element) -> str:
         expression_label = str(expression.value)
 
     elif expression._metatype == "InvocationExpression":
-        body = ", ".join(map(get_label_for_expression, expression.throughParameterMembership))
-        expression_label = f"{expression.throughFeatureTyping[0].declaredName}({body})"
+        try:
+            body = ", ".join(map(get_label_for_expression, expression.throughParameterMembership))
+            expression_label = f"{expression.throughFeatureTyping[0].declaredName}({body})"
+        except AttributeError:
+            expression_label = "Empty InvocationExpression"
 
     else:
         warn(f"Cannot process {expression._metatype} elements yet!")

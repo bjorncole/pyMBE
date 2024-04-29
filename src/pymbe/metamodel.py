@@ -149,8 +149,13 @@ def derive_inherited_featurememberships(ele: "Element"):
     more_general = get_more_general_types(ele, 0, 100)
 
     try:
-        return [inherited_fm for general_type in more_general for inherited_fm in general_type.ownedRelationship if 
-                inherited_fm._metatype == 'FeatureMembership']
+        fms_to_return = []
+        for general_type in more_general:
+            if hasattr(general_type, "ownedRelationship"):
+                for inherited_fm in general_type.ownedRelationship:
+                    if inherited_fm._metatype == 'FeatureMembership':
+                        fms_to_return.append(inherited_fm)
+        return fms_to_return
     except AttributeError:
         return []
 
@@ -161,6 +166,8 @@ def derive_features(ele: "Element"):
 
     The ownedMemberFeatures of the featureMemberships of this Type.
     """
+
+    # TODO: Add a way to reach back to library for the inherited objects
 
     return [feature_membership.target[0] for feature_membership in derive_inherited_featurememberships(ele)] + \
         ele.throughFeatureMembership

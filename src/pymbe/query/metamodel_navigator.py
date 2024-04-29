@@ -227,8 +227,38 @@ def get_more_general_types(typ, recurse_counter, max_counter):
     """
 
     local_more_general =  typ.throughFeatureTyping + \
-                            typ.reverseSubclassification + \
+                            typ.throughSubclassification + \
                             typ.throughRedefinition
+    
+    print(f"Local more general is {local_more_general}")
+    
+    # check to see if this is a library object
+    # TODO: This is very hacky, need to check on library connections much better
+
+    lib_local = []
+    lib_remove = []
+
+    for lg in local_more_general:
+        if len(typ._model._referenced_models) > 0:
+            if hasattr(lg, "isLibraryElement"):
+                if lg._data["isLibraryElement"]:
+                    trial_element = typ._model._referenced_models[0].get_element(lg._id)
+                    print(f"Trial element {trial_element} found.")
+                    lib_local.append(trial_element)
+                    lib_remove.append(lg)
+            else:
+                try:
+                    trial_element = typ._model._referenced_models[0].get_element(lg._id)
+                    print(f"Trial element {trial_element} found.")
+                    lib_local.append(trial_element)
+                    lib_remove.append(lg)
+                except KeyError:
+                    pass
+    
+    for lr in lib_remove:
+        local_more_general.remove(lg)
+
+    local_more_general = local_more_general + lib_local
 
     if (recurse_counter >= max_counter):
         return local_more_general
