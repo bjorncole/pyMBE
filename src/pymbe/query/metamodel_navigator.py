@@ -73,6 +73,7 @@ def get_lower_multiplicity(type_ele):
     multiplicity_ranges = [
         mr for mr in type_ele.throughOwningMembership if mr["@type"] == "MultiplicityRange"
     ]
+    literal_value = []
     if len(multiplicity_ranges) == 1:
         literal_value = [
             li.value
@@ -99,6 +100,7 @@ def get_upper_multiplicity(type_ele):
     multiplicity_ranges = [
         mr for mr in type_ele.throughOwningMembership if mr["@type"] == "MultiplicityRange"
     ]
+    literal_value = []
     if len(multiplicity_ranges) == 1:
         literal_value = [
             li.value
@@ -144,6 +146,7 @@ def get_effective_lower_multiplicity(type_ele):
     multiplicity_ranges = [
         mr for mr in type_ele.throughOwningMembership if mr["@type"] == "MultiplicityRange"
     ]
+    literal_value = []
     if len(multiplicity_ranges) == 1:
         literal_value = [
             li.value

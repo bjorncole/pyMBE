@@ -99,7 +99,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
         default_factory=list,
     )
 
-    max_multiplicity = 100
+    max_multiplicity = 10
 
     source: Any = None
 
@@ -220,6 +220,13 @@ class Model:  # pylint: disable=too-many-instance-attributes
         if element and resolve and element._is_proxy:
             element.resolve()
         if fail and element is None:
+            # hacky way to use library references, need more scaleable version
+            for rm in self._referenced_models:
+                try:
+                    element = rm.get_element(element_id)
+                    return element
+                except KeyError:
+                    pass
             raise KeyError(f"Could not retrieve '{element_id}' from the API")
         return element
 
