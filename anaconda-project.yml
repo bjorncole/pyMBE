@@ -21,8 +21,9 @@ commands:
     unix: |
       git submodule update --init
       pip install -e . --no-dependencies
+      pip install pyecore
     windows: |
-      git submodule update --init & pip install -e . --no-dependencies
+      git submodule update --init & pip install pyecore & pip install -e . --no-dependencies
   lint:
     description: lint the code
     env_spec: developer
@@ -38,6 +39,10 @@ commands:
     env_spec: developer
     unix: python setup.py sdist bdist_wheel
     windows: python setup.py sdist bdist_wheel
+  package:conda:
+    description: make a Conda package
+    env_spec: developer
+    windows: conda-build pymbe
   test:
     description: run the tests
     env_spec: developer
@@ -121,6 +126,7 @@ env_specs:
     - user
     packages:
     - black
+    - conda-build
     - coverage
     - flake8
     - git
