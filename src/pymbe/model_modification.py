@@ -541,7 +541,7 @@ def apply_covered_connector_pattern(
             build_from_feature_pattern(
                 owner=type_to_apply_pattern_on,
                 name=redefining_feature_prefix
-                + feature_to_cover.declaredName
+                + feature_to_cover.basic_name
                 + redefining_feature_suffix + str(i),
                 model=model,
                 specific_fields={},
@@ -556,7 +556,7 @@ def apply_covered_connector_pattern(
             covering_type = build_unioning_superset_classifier(
                 classes=one_member_classifiers,
                 super_name=covering_classifier_prefix
-                + feature_to_cover.declaredName
+                + feature_to_cover.basic_name
                 + covering_classifier_suffix,
                 owner=new_types_owner,
                 model=model,
@@ -567,7 +567,7 @@ def apply_covered_connector_pattern(
             redefined_feature = build_from_feature_pattern(
                 owner=type_to_apply_pattern_on,
                 name=redefining_feature_prefix
-                + feature_to_cover.declaredName
+                + feature_to_cover.basic_name
                 + redefining_feature_suffix,
                 model=model,
                 specific_fields={},
@@ -580,7 +580,7 @@ def apply_covered_connector_pattern(
             redefined_feature = build_from_feature_pattern(
                 owner=type_to_apply_pattern_on,
                 name=redefining_feature_prefix
-                + feature_to_cover.declaredName
+                + feature_to_cover.basic_name
                 + redefining_feature_suffix,
                 model=model,
                 specific_fields={},
