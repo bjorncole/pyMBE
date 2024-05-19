@@ -2,18 +2,21 @@ import json
 from dataclasses import field
 from importlib import resources as lib_resources
 from typing import Any, Dict, List
+from pymbe.query.metamodel_navigator import get_more_general_types
 
 # TODO: Is there a way to restore type hints for Element without inducing a circular dependency?
 
 
 class MetaModel:
     """
-    A class to hold meta-model information and support model modification actions
+    A class to hold meta-model information and perform property derivation
     """
 
     metamodel_hints: Dict[str, List[List[str]]] = field(default_factory=dict)
 
     pre_made_dicts: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+
+    relationship_metas: List[str]
 
     def __init__(self):
         self.pre_made_dicts = {}
@@ -68,6 +71,24 @@ class MetaModel:
         self.pre_made_dicts.update({metaclass_name: data_template})
 
 
+def list_relationship_metaclasses():
+    """
+    Return a list of relationship metaclass names
+    """
+    return [
+            'FeatureTyping',
+            'Membership',
+            'OwningMembership',
+            'FeatureMembership',
+            'Specialization',
+            'Conjugation',
+            'Subclassification',
+            'Subsetting',
+            'Redefinition',
+            'FeatureValue'
+        ]
+
+
 def derive_attribute(key: str, ele: "Element"):
 
     # entry point for deriving attributes within elements on demand
@@ -78,6 +99,8 @@ def derive_attribute(key: str, ele: "Element"):
         return derive_owned_x(ele, key[5:])
     if key == "ownedMember":
         return derive_owned_member(ele)
+    if key == "feature":
+        return derive_features(ele)
 
     raise NotImplementedError(f"The method to derive {key} has yet to be developed.")
 
@@ -114,3 +137,39 @@ def derive_owned_x(ele: "Element", owned_kind: str):
                 found_ele.append(owned_related_ele)
 
     return found_ele
+
+def derive_inherited_featurememberships(ele: "Element"):
+    """
+    8.3.3.1.10 Type
+
+    All Memberships inherited by this Type via Specialization or Conjugation. These are included in the
+    derived union for the memberships of the Type
+    """
+
+    more_general = get_more_general_types(ele, 0, 100)
+
+    try:
+        fms_to_return = []
+        for general_type in more_general:
+            if hasattr(general_type, "ownedRelationship"):
+                for inherited_fm in general_type.ownedRelationship:
+                    if inherited_fm._metatype == 'FeatureMembership':
+                        fms_to_return.append(inherited_fm)
+        return fms_to_return
+    except AttributeError:
+        return []
+
+
+def derive_features(ele: "Element"):
+    """
+    8.3.3.1.10 Type
+
+    The ownedMemberFeatures of the featureMemberships of this Type.
+    """
+
+    # TODO: Add a way to reach back to library for the inherited objects
+
+    return [feature_membership.target[0] for feature_membership in derive_inherited_featurememberships(ele)] + \
+        ele.throughFeatureMembership
+
+    #return [inherited_fm for general_type in more_general for inherited_fm in general_type.throughFeatureMembership]

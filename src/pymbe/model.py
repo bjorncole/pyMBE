@@ -4,11 +4,11 @@ from dataclasses import dataclass, field
 from enum import Enum
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Collection, Dict, List, Tuple, Union
+from typing import Any, Collection, Dict, List, Tuple, Union, Set
 from uuid import uuid4
 from warnings import warn
 
-from pymbe.metamodel import MetaModel, derive_attribute
+from pymbe.metamodel import MetaModel, list_relationship_metaclasses, derive_attribute
 
 OWNER_KEYS = ("owner", "owningRelatedElement", "owningRelationship")
 VALUE_METATYPES = ("AttributeDefinition", "AttributeUsage", "DataType")
@@ -99,7 +99,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
         default_factory=list,
     )
 
-    max_multiplicity = 100
+    max_multiplicity = 10
 
     source: Any = None
 
@@ -108,6 +108,10 @@ class Model:  # pylint: disable=too-many-instance-attributes
     _naming: Naming = Naming.LABEL  # The scheme to use for repr'ing the elements
 
     metamodel: MetaModel = None
+
+    _referenced_models: List["Model"] = field(  # pylint: disable=invalid-name
+        default_factory=list,
+    )
 
     _metamodel_hints: Dict[str, List[List[str]]] = field(
         default_factory=dict
@@ -121,9 +125,9 @@ class Model:  # pylint: disable=too-many-instance-attributes
 
         self.elements = {
             id_: Element(
-                _data=data,
+                _data={**data, "@id": id_},
                 _model=self,
-                _metamodel_hints={att[0]: att[1:] for att in self._metamodel_hints[data["@type"]]},
+                _metamodel_hints={att[0]: att[1:] for att in self._metamodel_hints[data["@type"]]}
             )
             for id_, data in self.elements.items()
             if isinstance(data, dict)
@@ -147,7 +151,10 @@ class Model:  # pylint: disable=too-many-instance-attributes
     ) -> "Model":
         """Make a Model from an iterable container of elements"""
         return Model(
-            elements={element["@id"]: element for element in elements},
+            elements={
+                element.get("identity", element).get("@id"): element.get("payload", element)
+                for element in elements
+            },
             **kwargs,
         )
 
@@ -192,7 +199,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
         )
 
     @property
-    def packages(self) -> Tuple["Element"]:
+    def packages(self) -> Tuple["Element", ...]:
         return tuple(
             element for element in self.elements.values() if element._metatype == "Package"
         )
@@ -213,6 +220,13 @@ class Model:  # pylint: disable=too-many-instance-attributes
         if element and resolve and element._is_proxy:
             element.resolve()
         if fail and element is None:
+            # hacky way to use library references, need more scaleable version
+            for rm in self._referenced_models:
+                try:
+                    element = rm.get_element(element_id)
+                    return element
+                except KeyError:
+                    pass
             raise KeyError(f"Could not retrieve '{element_id}' from the API")
         return element
 
@@ -326,6 +340,10 @@ class Model:  # pylint: disable=too-many-instance-attributes
                 for endpt2 in endpts2:
                     endpt1._derived[f"{direction}{metatype}"] += [{"@id": endpt2._data["@id"]}]
 
+    def reference_other_model(self, ref_model: "Model"):
+        if ref_model not in self._referenced_models:
+            self._referenced_models.append(ref_model)
+
 
 @dataclass(repr=False)
 class Element:  # pylint: disable=too-many-instance-attributes
@@ -406,6 +424,7 @@ class Element:  # pylint: disable=too-many-instance-attributes
         #     return tuple(sorted(self._data.items())) == tuple(sorted(other.items()))
         return self is other
 
+    # TODO: Make this safe for through and reverse by return empty collection is no key found
     def __getattr__(self, key: str):
         try:
             return self[key]
@@ -417,9 +436,19 @@ class Element:  # pylint: disable=too-many-instance-attributes
         for source in ("_data", "_derived"):
             source = self.__getattribute__(source)
             if key in source:
+                if key in self._metamodel_hints and self._metamodel_hints[key][1] == "primary":
+                    found = True
+                    item = source[key]
+                    break
+                else:
+                    if key in self._metamodel_hints and self._metamodel_hints[key][1] == "derived":
+                        break
+                    found = True
+                    item = source[key]
+                    break
+            elif key[7:] in list_relationship_metaclasses():
                 found = True
-                item = source[key]
-                break
+                item = []
         if not found:
             if (
                 key in self._metamodel_hints
@@ -452,7 +481,15 @@ class Element:  # pylint: disable=too-many-instance-attributes
         return self._id < other._id
 
     def __repr__(self):
-        return self._model._naming.get_name(element=self)
+        self_str = self._model._naming.get_name(element=self)
+        if self_str == None:
+            return "No Name"
+        else:
+            return self_str
+    
+    @property
+    def basic_name(self) -> str:
+        return self._data.get("declaredName") or self._data.get("name") or self._data.get("effectiveName") or ""
 
     @property
     def label(self) -> str:
@@ -503,7 +540,18 @@ class Element:  # pylint: disable=too-many-instance-attributes
                 break
         if owner_id is None:
             return None
-        return self._model.get_element(owner_id)
+        try:
+            return self._model.get_element(owner_id)
+        except KeyError:
+            if str(self) != "No Name":
+                raise KeyError(f"Failed to find element with id {owner_id} while " +
+                           f"looking for owner of {self}")
+            else:
+                playback_name = str(self)
+                if "declaredName" in data.keys():
+                    playback_name = data["declaredName"]
+                raise KeyError(f"Failed to find element with id {owner_id} while " +
+                           f"looking for owner of {playback_name}")
 
     @staticmethod
     def new(data: dict, model: Model) -> "Element":
