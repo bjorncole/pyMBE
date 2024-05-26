@@ -25,6 +25,10 @@ def get_model_from_payload_form(filename: str) -> pm.Model:
 
 @pytest.fixture
 def load_library() -> pm.Model:
+    """
+    Load a digest of the KerML Library. Expectation is that the model will load with a series of Namespaces
+    representing the specific libraries within the KerML library.
+    """
     
     library_model = None
 

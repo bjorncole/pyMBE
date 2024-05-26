@@ -114,7 +114,7 @@ def get_upper_multiplicity(type_ele):
             if li["@type"] == "LiteralInteger"
         ]
 
-    upper_mult = int(literal_value[0])
+    upper_mult = int(literal_value[1])
 
     return upper_mult
 
@@ -164,6 +164,52 @@ def get_effective_lower_multiplicity(type_ele):
         lower_mult = int(literal_value[0])
 
     return lower_mult
+
+def get_effective_upper_multiplicity(type_ele):
+
+    """
+    Get upper multiplicity on feature even if this type is redefined.
+    """
+
+    upper_mult = -1
+    if "throughOwningMembership" not in type_ele._derived:
+        local_general = get_more_general_types(type_ele, 1, 1)
+
+        # if the most local general types have a finite lower multiplicity, use the most restrictive
+
+        ugm = max([get_upper_multiplicity(lg) for lg in local_general if get_upper_multiplicity(lg) > -1], default=-1)
+        
+        if ugm > -1:
+            return ugm
+        
+        # if we still have no multiplicity, try to recurse
+
+        upper_mult = max([get_effective_upper_multiplicity(lg) for lg in local_general if get_upper_multiplicity(lg) > -1], default=-1)
+
+        # will either return with a lower multiplicity or if we still don't find a defined lower multiplicity
+
+        return upper_mult
+    multiplicity_ranges = [
+        mr for mr in type_ele.throughOwningMembership if mr["@type"] == "MultiplicityRange"
+    ]
+    literal_value = []
+    if len(multiplicity_ranges) == 1:
+        literal_value = [
+            li.value
+            for li in multiplicity_ranges[0].throughOwningMembership
+            if li["@type"] == "LiteralInteger"
+        ]
+    elif len(multiplicity_ranges) > 1:
+        literal_value = [
+            li.value
+            for li in multiplicity_ranges[1].throughOwningMembership
+            if li["@type"] == "LiteralInteger"
+        ]
+
+    if len(literal_value) > 0:
+        upper_mult = int(literal_value[1])
+
+    return upper_mult
 
 
 def identify_connectors_one_side(connectors):
@@ -220,6 +266,8 @@ def get_most_specific_feature_type(feature):
             if hasattr(redef_feature, "throughFeatureTyping"):
                 if len(redef_feature.throughFeatureTyping) == 1:
                     return redef_feature.throughFeatureTyping[0]
+                
+            return get_most_specific_feature_type(redef_feature)
                 
     return None
                 
@@ -280,3 +328,33 @@ def get_feature_bound_values(feat):
             return [referred_item]
         
     return []
+
+def get_effective_basic_name(type_ele):
+
+    """
+    Get a name for the feature even if this type is redefined.
+    """
+
+    name = ""
+    if "throughRedefinition" in type_ele._derived:
+        local_general = type_ele.throughRedefinition
+
+        # if the most local general types have a name, check for conflicts
+
+        for lg in local_general:
+            if lg.basic_name != "":
+                name = lg.basic_name
+        
+        # if we still have no name, try to recurse
+
+        if name == "":
+            for lg in local_general:
+                trial_name = get_effective_basic_name(lg)
+                if trial_name != "":
+                    name = trial_name
+
+        # will either return with a lower multiplicity or if we still don't find a defined lower multiplicity
+
+        return name
+    
+    return type_ele.basic_name

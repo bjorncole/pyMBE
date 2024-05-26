@@ -6,290 +6,156 @@ import pytest
 from pymbe.model import Element, Model
 
 
-def test_classifier_load(basic_load_files):
+def test_namespaces_load(load_library):
     """
-    Test that the file loaders can get KerML Classifiers and identify them by name and metatype
-    """
-
-    level1 = basic_load_files["Level1"]
-    level2 = basic_load_files["Level2"]
-    level3 = basic_load_files["Level3"]
-
-    level1_classes = [
-        classifier
-        for classifier in list(level1.elements.values())
-        if classifier._metatype == "Classifier"
-    ]
-
-    # Level 1 check
-    # find My Bare Class
-    # find My Class with Two features
-    # find Class with Typed Features
-    # find Specialized Class
-
-    assert "My Bare Class" in [classifier.declaredName for classifier in level1_classes]
-
-    # Level 2 check
-    # find Context
-
-    level2_classes = [
-        classifier
-        for classifier in list(level2.elements.values())
-        if classifier._metatype == "Classifier"
-    ]
-
-    assert "Context" in [classifier.declaredName for classifier in level2_classes]
-
-    # Level 3 check
-    # find Adding Machine
-
-    level3_classes = [
-        classifier
-        for classifier in list(level3.elements.values())
-        if classifier._metatype == "Classifier"
-    ]
-
-    assert "Adding Machine" in [classifier.declaredName for classifier in level3_classes]
-
-
-def test_feature_load(basic_load_files):
-
-    """
-    Test that the file loaders can get KerML Features and identify them by name and metatype
+    Check that the expected namespaces from the KerML library are indeed loaded.
     """
 
-    level1 = basic_load_files["Level1"]
-    level2 = basic_load_files["Level2"]
-    level3 = basic_load_files["Level3"]
+    found_names = [library_model_ns.throughOwningMembership[0].declaredName
+                    for library_model_ns in load_library.ownedElement]
 
-    # Level 1 check
-
-    level1_features = [
-        feature for feature in list(level1.elements.values()) if feature._metatype == "Feature"
-    ]
-
-    # find Test Feature 1
-    assert "Test Feature 1" in [
-        feature.declaredName for feature in level1_features if hasattr(feature, "declaredName")
-    ]
-    # find Test Feature 2
-    assert "Test Feature 2" in [
-        feature.declaredName for feature in level1_features if hasattr(feature, "declaredName")
-    ]
-    # find Bare Feature
-    assert "Bare Feature" in [
-        feature.declaredName for feature in level1_features if hasattr(feature, "declaredName")
-    ]
-    # find Bare Classed Feature
-    assert "Bare Classed Feature" in [
-        feature.declaredName for feature in level1_features if hasattr(feature, "declaredName")
-    ]
-    # find Typed Feature 1
-    assert "Typed Feature 1" in [
-        feature.declaredName for feature in level1_features if hasattr(feature, "declaredName")
-    ]
-    # find Typed Feature 2
-    assert "Typed Feature 2" in [
-        feature.declaredName for feature in level1_features if hasattr(feature, "declaredName")
-    ]
-
-    # Level 2 check
-    level2_features = [
-        feature for feature in list(level2.elements.values()) if feature._metatype == "Feature"
-    ]
-    # find Side 1
-    assert "Side 1" in [
-        feature.declaredName for feature in level2_features if hasattr(feature, "declaredName")
-    ]
-    # find two 'Value' features
-    assert "Value" in [
-        feature.declaredName for feature in level2_features if hasattr(feature, "declaredName")
-    ]
-    assert (
-        len(
-            [
-                feature
-                for feature in level2_features
-                if hasattr(feature, "declaredName") and feature.declaredName == "Value"
-            ]
-        )
-        == 2
-    )
-    # find Side 2
-    assert "Side 2" in [
-        feature.declaredName for feature in level2_features if hasattr(feature, "declaredName")
+    expected_names = [
+        'Transfers',
+        'CollectionFunctions',
+        'BaseFunctions',
+        'IntegerFunctions',
+        'SequenceFunctions',
+        'StringFunctions',
+        'VectorValues',
+        'TrigFunctions',
+        'ScalarFunctions',
+        'VectorFunctions',
+        'ControlFunctions',
+        'Base',
+        'Observation',
+        'RationalFunctions',
+        'Links',
+        'Performances',
+        'NumericalFunctions',
+        'DataFunctions',
+        'ControlPerformances',
+        'ComplexFunctions',
+        'Metaobjects',
+        'ScalarValues',
+        'StatePerformances',
+        'TransitionPerformances',
+        'RealFunctions',
+        'NaturalFunctions',
+        'Objects',
+        'Triggers',
+        'FeatureReferencingPerformances',
+        'Collections',
+        'BooleanFunctions',
+        'Occurrences',
+        'SpatialFrames',
+        'Clocks',
+        'OccurrenceFunctions',
+        'KerML'
     ]
 
-    # Level 3 check
-    level3_features = [
-        feature for feature in list(level3.elements.values()) if feature._metatype == "Feature"
-    ]
-    # find Register 1
-    assert "Register 1" in [
-        feature.declaredName for feature in level3_features if hasattr(feature, "declaredName")
-    ]
-    # find Register 2
-    assert "Register 2" in [
-        feature.declaredName for feature in level3_features if hasattr(feature, "declaredName")
-    ]
-    # find Register 3
-    assert "Register 3" in [
-        feature.declaredName for feature in level3_features if hasattr(feature, "declaredName")
-    ]
+    # check on equality regardless of order
+    for fn in found_names:
+        assert fn in expected_names
 
+    for en in expected_names:
+        assert en in found_names
 
-def test_memberships_load(basic_load_files):
+    return True
+
+def test_base_classifiers(load_library):
 
     """
-    Test that the file loaders can get KerML Memberships (owning and feature) and identify them by metatype and names of ends
+    Check that the base classifiers have loaded and the expected names are all there.
     """
 
-    level1 = basic_load_files["Level1"]
+    base_ns = [library_model_ns
+               for library_model_ns in load_library.ownedElement
+               if library_model_ns.throughOwningMembership[0].declaredName == 'Base'][0]
+    
+    # there are only DataValue and Anything in the base library
 
-    # Level 1 check
+    base_root_eles = base_ns.throughOwningMembership[0].throughOwningMembership
 
-    level1_membs = [
-        memb
-        for memb in list(level1.elements.values())
-        if memb._metatype == "OwningMembership" or memb._metatype == "FeatureMembership"
-    ]
+    base_classifiers = []
 
-    level1_membs_single = [memb for memb in level1_membs if len(memb.ownedRelatedElement) == 1]
+    for base_ele in base_root_eles:
+        if base_ele._metatype in ('Classifier', 'DataType'):
+            assert hasattr(base_ele, "declaredName")
+            base_classifiers.append(base_ele)
+    
+    assert len(base_classifiers) == 2
 
-    level1_memb_names = [
-        (memb.owningRelatedElement.declaredName, memb.ownedRelatedElement[0].declaredName)
-        for memb in level1_membs_single
-        if hasattr(memb.ownedRelatedElement[0], "declaredName")
-        and hasattr(memb.owningRelatedElement, "declaredName")
-    ]
+    base_classifier_names = [bc.declaredName for bc in base_classifiers]
 
-    assert ("Model Loader Test Level 1", "My Bare Class") in level1_memb_names
-    assert ("Model Loader Test Level 1", "My Class with Two Features") in level1_memb_names
-    assert ("Model Loader Test Level 1", "Bare Feature") in level1_memb_names
-    assert ("Model Loader Test Level 1", "Bare Classed Feature") in level1_memb_names
-    assert ("Model Loader Test Level 1", "Class with Typed Features") in level1_memb_names
-    assert ("Model Loader Test Level 1", "Specialized Class") in level1_memb_names
+    assert "DataValue" in base_classifier_names
+    assert "Anything" in base_classifier_names
 
-    assert ("My Class with Two Features", "Test Feature 1") in level1_memb_names
-    assert ("My Class with Two Features", "Test Feature 2") in level1_memb_names
-
-    assert ("Class with Typed Features", "Typed Feature 1") in level1_memb_names
-    assert ("Class with Typed Features", "Typed Feature 2") in level1_memb_names
-
-    # Level 3 check on invariant
-
-
-def test_invariant_load(basic_load_files):
+def test_base_features(load_library):
 
     """
-    Test proper loading of a simple expression tree
+    Check that the base features have loaded and the expected names are all there.
     """
-    level3 = basic_load_files["Level3"]
 
-    key_invar = [
-        invariant
-        for invariant in list(level3.elements.values())
-        if invariant._metatype == "Invariant"
-    ][0]
+    base_ns = [library_model_ns
+               for library_model_ns in load_library.ownedElement
+               if library_model_ns.throughOwningMembership[0].declaredName == 'Base'][0]
+    
+    base_root_eles = base_ns.throughOwningMembership[0].throughOwningMembership
 
-    # invariant of interest in model is 'inv {'Register 1' == 'Register 2' + 'Register 3'}'
+    base_features = []
 
-    # Expression tree to pull apart is
+    for base_ele in base_root_eles:
+        if base_ele._metatype in ('Feature'):
+            assert hasattr(base_ele, "declaredName")
+            base_features.append(base_ele)
 
-    #               inv {'Register 1' == 'Register 2' + 'Register 3'}  (OperatorExpression with op '==')
-    #                          /                                            \
-    #                         (x)                                             (y)
-    #                         /
-    #                "Register 1" (via                                         \
-    #        Feature-FeatureValue-FeatureReferenceExpression-                  +
-    #          Membership-Feature)                                          /       \
-    #
+    assert len(base_features) == 3
 
-    assert hasattr(key_invar, "ownedRelationship")
+    base_feature_names = [bc.declaredName for bc in base_features]
 
-    assert len(key_invar.ownedRelationship) == 2
-    assert key_invar.ownedRelationship[0]._metatype == "ResultExpressionMembership"
-    assert key_invar.ownedRelationship[1]._metatype == "ReturnParameterMembership"
+    assert "dataValues" in base_feature_names
+    assert "things" in base_feature_names
+    assert "naturals" in base_feature_names
 
-    assert key_invar.ownedRelationship[0].ownedRelatedElement[0].operator == "=="
+def test_base_multiplicity(load_library):
 
-    assert (
-        key_invar.ownedRelationship[0]
-        .ownedRelatedElement[0]
-        .ownedRelationship[0]
-        .ownedRelatedElement[0]
-        .ownedRelationship[0]
-        ._metatype
-        == "FeatureValue"
-    )
+    """
+    Check that the multiplicity ranges with names in Base library are structured as expected
+    """
 
-    assert (
-        key_invar.ownedRelationship[0]
-        .ownedRelatedElement[0]
-        .ownedRelationship[0]
-        .ownedRelatedElement[0]
-        .ownedRelationship[0]
-        .ownedRelatedElement[0]
-        .ownedRelationship[0]
-        .memberElement.declaredName
-        == "Register 1"
-    )
+    base_ns = [library_model_ns
+               for library_model_ns in load_library.ownedElement
+               if library_model_ns.throughOwningMembership[0].declaredName == 'Base'][0]
+    
+    base_root_eles = base_ns.throughOwningMembership[0].throughOwningMembership
 
-    assert (
-        key_invar.ownedRelationship[0]
-        .ownedRelatedElement[0]
-        .ownedRelationship[1]
-        .ownedRelatedElement[0]
-        .ownedRelationship[0]
-        .ownedRelatedElement[0]
-        .operator
-        == "+"
-    )
+    zero_or_one = None
 
-    assert (
-        key_invar.ownedRelationship[0]
-        .ownedRelatedElement[0]
-        .ownedRelationship[1]
-        .ownedRelatedElement[0]
-        .ownedRelationship[0]
-        .ownedRelatedElement[0]
-        .ownedRelationship[0]
-        .ownedRelatedElement[0]
-        .ownedRelationship[0]
-        .ownedRelatedElement[0]
-        .ownedRelationship[0]
-        .memberElement.declaredName
-        == "Register 2"
-    )
+    for base_ele in base_root_eles:
+        if base_ele._metatype in ('MultiplicityRange'):
+            if hasattr(base_ele, "declaredName"):
+                if base_ele.declaredName == 'zeroOrOne':
+                    zero_or_one = base_ele
 
-    assert (
-        key_invar.ownedRelationship[0]
-        .ownedRelatedElement[0]
-        .ownedRelationship[1]
-        .ownedRelatedElement[0]
-        .ownedRelationship[0]
-        .ownedRelatedElement[0]
-        .ownedRelationship[1]
-        .ownedRelatedElement[0]
-        .ownedRelationship[0]
-        .ownedRelatedElement[0]
-        .ownedRelationship[0]
-        .memberElement.declaredName
-        == "Register 3"
-    )
+    # we expect that the multiplicity range has two owned literal integers for the 0 and 1
 
-    # check that path with relationship-specific names also work
+    assert zero_or_one is not None
 
-    assert (
-        key_invar.ownedRelationship[0]
-        .ownedRelatedElement[0]
-        .ownedRelationship[1]
-        .memberElement.ownedRelationship[0]
-        .target[0]
-        .ownedRelationship[1]
-        .memberElement.ownedRelationship[0]
-        .target[0]
-        .ownedRelationship[0]
-        .memberElement.declaredName
-        == "Register 3"
-    )
+    zero_or_one_literals = [owned for owned in zero_or_one.throughOwningMembership if owned._metatype =='LiteralInteger']
+
+    zero_or_one_values = [literal.value for literal in zero_or_one_literals]
+
+    assert 0 in zero_or_one_values
+    assert 1 in zero_or_one_values
+
+    assert len(zero_or_one_literals[0].throughReturnParameterMembership) == 1
+
+    # for the literal integers, look at the membership for a name, parameter feature for a direction
+
+    assert hasattr(zero_or_one_literals[0].ownedRelationship[0], "memberName")
+
+    assert zero_or_one_literals[0].ownedRelationship[0].memberName == 'result'
+
+    assert hasattr(zero_or_one_literals[0].throughReturnParameterMembership[0], "direction")
+
+    assert zero_or_one_literals[0].throughReturnParameterMembership[0].direction == 'out'
