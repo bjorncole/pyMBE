@@ -3,6 +3,7 @@
 from warnings import warn
 
 from .model import Element, Model
+from .query.metamodel_navigator import get_effective_basic_name
 
 DEFAULT_MULTIPLICITY_LIMITS = dict(lower="0", upper="*")
 
@@ -54,6 +55,7 @@ def get_label(element: Element) -> str:  # pylint: disable=too-many-return-state
         if "direction" in element._data:
             direction = element.direction + " "
         para_string = element.owningRelationship._data["memberName"]
+
         return f"{direction}{para_string} «{metatype}»"
 
     if value and metatype.startswith("Literal"):
@@ -61,6 +63,9 @@ def get_label(element: Element) -> str:  # pylint: disable=too-many-return-state
         return f"{value} «{metatype}»"
     if metatype == "MultiplicityRange":
         return get_label_for_multiplicity(multiplicity=element)
+    
+    if not name and element._metatype == 'Feature':
+        return f":>>{get_effective_basic_name(element)} «{metatype}»"
 
     if "@id" in data:
         return f"""{data["@id"]} «{metatype}»"""
@@ -94,7 +99,9 @@ def get_label_for_expression(expression: Element) -> str:
         try:
             expression_label = expression.throughMembership[0].basic_name
         except IndexError:
-            expression_label = "Empty FRE"
+            # if there is no direct reference, need to recurse on parameters
+            expression_label = get_label_for_expression(expression.throughFeatureMembership[0])
+            #expression_label = "Empty FRE"
     elif meta == "FeatureChainExpression":
         try:
             # first item will be FRE to another feature
@@ -130,6 +137,8 @@ def get_label_for_expression(expression: Element) -> str:
         except AttributeError:
             expression_label = "Empty InvocationExpression"
 
+    elif expression._metatype == "NullExpression":
+        expression_label = "null"
     else:
         warn(f"Cannot process {expression._metatype} elements yet!")
     return expression_label

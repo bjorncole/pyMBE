@@ -336,6 +336,10 @@ def get_effective_basic_name(type_ele):
     """
 
     name = ""
+
+    if type_ele.basic_name != "":
+        return type_ele.basic_name
+
     if "throughRedefinition" in type_ele._derived:
         local_general = type_ele.throughRedefinition
 
@@ -357,4 +361,4 @@ def get_effective_basic_name(type_ele):
 
         return name
     
-    return type_ele.basic_name
+    return ""

@@ -9,6 +9,7 @@ from uuid import uuid4
 from warnings import warn
 
 from pymbe.metamodel import MetaModel, list_relationship_metaclasses, derive_attribute
+from pymbe.query.metamodel_navigator import get_effective_basic_name
 
 OWNER_KEYS = ("owner", "owningRelatedElement", "owningRelationship")
 VALUE_METATYPES = ("AttributeDefinition", "AttributeUsage", "DataType")
@@ -50,13 +51,15 @@ class Naming(Enum):
     QUALIFIED = "qualified"
     SHORT = "short"
     LABEL = "label"
+    BASIC = "basic"
 
     def get_name(self, element: "Element") -> str:
         naming = self._value_  # pylint: disable=no-member
 
         # TODO: Check with Bjorn, he wanted: (a)-[r:RELTYPE {name: a.name + '<->' + b.name}]->(b)
         if element._is_relationship:
-            return f"<{element._metatype}({element.source} ←→ {element.target})>"
+            name_and_meta =  " ".join((get_effective_basic_name(element), f"«{element._metatype}»")).strip()
+            return f"{name_and_meta} ({element.source} ←→ {element.target})"
 
         data = element._data
         if naming == Naming.QUALIFIED.value:
@@ -69,6 +72,9 @@ class Naming(Enum):
         name = data.get("declaredName") or data.get("value") or data["@id"]
         if naming == Naming.SHORT.value:
             return f"<{name}>"
+        
+        # TODO: Bring basic naming over here (and include member name from owning memberships)
+
         return f"""<{name} «{data["@type"]}»>"""
 
 
@@ -105,7 +111,8 @@ class Model:  # pylint: disable=too-many-instance-attributes
 
     _api: ModelClient = None
     _initializing: bool = True
-    _naming: Naming = Naming.LABEL  # The scheme to use for repr'ing the elements
+    _naming: Naming = Naming.LABEL  # The scheme to use for retrieving element names
+    _labeling: Naming = Naming.LABEL  # The scheme to use for repr'ing the elements
 
     metamodel: MetaModel = None
 
@@ -481,7 +488,7 @@ class Element:  # pylint: disable=too-many-instance-attributes
         return self._id < other._id
 
     def __repr__(self):
-        self_str = self._model._naming.get_name(element=self)
+        self_str = self._model._labeling.get_name(element=self)
         if self_str == None:
             return "No Name"
         else:
@@ -489,6 +496,7 @@ class Element:  # pylint: disable=too-many-instance-attributes
     
     @property
     def basic_name(self) -> str:
+        # TODO: Move this over to the naming class and get result back
         return self._data.get("declaredName") or self._data.get("name") or self._data.get("effectiveName") or ""
 
     @property
