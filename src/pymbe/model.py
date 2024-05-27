@@ -491,10 +491,10 @@ class Element:  # pylint: disable=too-many-instance-attributes
 
     def __repr__(self):
         self_str = self._model._labeling.get_name(element=self)
-        if self_str == None:
+        if self_str is None:
             return "No Name"
-        else:
-            return self_str
+
+        return self_str
 
     @property
     def basic_name(self) -> str:

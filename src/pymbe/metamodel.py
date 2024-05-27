@@ -90,8 +90,7 @@ def list_relationship_metaclasses():
     ]
 
 
-# pylint: disable=F821
-def derive_attribute(key: str, ele: "Element"):
+def derive_attribute(key: str, ele: "Element"):  # noqa: F821
 
     # entry point for deriving attributes within elements on demand
 
@@ -107,8 +106,7 @@ def derive_attribute(key: str, ele: "Element"):
     raise NotImplementedError(f"The method to derive {key} has yet to be developed.")
 
 
-# pylint: disable=F821
-def derive_type(ele: "Element"):
+def derive_type(ele: "Element"):  # noqa: F821
 
     if hasattr(ele, "throughFeatureTyping"):
         return ele.throughFeatureTyping
@@ -116,8 +114,7 @@ def derive_type(ele: "Element"):
     return []
 
 
-# pylint: disable=F821
-def derive_owned_member(ele: "Element"):
+def derive_owned_member(ele: "Element"):  # noqa: F821
 
     found_ele = []
 
@@ -131,8 +128,7 @@ def derive_owned_member(ele: "Element"):
     return found_ele
 
 
-# pylint: disable=F821
-def derive_owned_x(ele: "Element", owned_kind: str):
+def derive_owned_x(ele: "Element", owned_kind: str):  # noqa: F821
 
     found_ele = []
 
@@ -144,13 +140,12 @@ def derive_owned_x(ele: "Element", owned_kind: str):
     return found_ele
 
 
-# pylint: disable=F821
-def derive_inherited_featurememberships(ele: "Element"):
+def derive_inherited_featurememberships(ele: "Element"):  # noqa: F821
     """
     8.3.3.1.10 Type
 
-    All Memberships inherited by this Type via Specialization or Conjugation. These are included in the
-    derived union for the memberships of the Type
+    All Memberships inherited by this Type via Specialization or Conjugation.
+    These are included in the derived union for the memberships of the Type
     """
 
     more_general = get_more_general_types(ele, 0, 100)
@@ -167,8 +162,7 @@ def derive_inherited_featurememberships(ele: "Element"):
         return []
 
 
-# pylint: disable=undefined-name
-def derive_features(ele: "Element"):
+def derive_features(ele: "Element"):  # noqa: F821
     """
     8.3.3.1.10 Type
 
@@ -181,5 +175,3 @@ def derive_features(ele: "Element"):
         feature_membership.target[0]
         for feature_membership in derive_inherited_featurememberships(ele)
     ] + ele.throughFeatureMembership
-
-    # return [inherited_fm for general_type in more_general for inherited_fm in general_type.throughFeatureMembership]

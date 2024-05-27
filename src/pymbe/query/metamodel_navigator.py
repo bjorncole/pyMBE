@@ -129,7 +129,8 @@ def get_effective_lower_multiplicity(type_ele):
     if "throughOwningMembership" not in type_ele._derived:
         local_general = get_more_general_types(type_ele, 1, 1)
 
-        # if the most local general types have a finite lower multiplicity, use the most restrictive
+        # if the most local general types have a finite lower multiplicity,
+        # use the most restrictive
 
         lgm = max(
             [
@@ -154,7 +155,8 @@ def get_effective_lower_multiplicity(type_ele):
             default=-1,
         )
 
-        # will either return with a lower multiplicity or if we still don't find a defined lower multiplicity
+        # will either return with a lower multiplicity or if we
+        # still don't find a defined lower multiplicity
 
         return lower_mult
     multiplicity_ranges = [
@@ -190,7 +192,8 @@ def get_effective_upper_multiplicity(type_ele):
     if "throughOwningMembership" not in type_ele._derived:
         local_general = get_more_general_types(type_ele, 1, 1)
 
-        # if the most local general types have a finite lower multiplicity, use the most restrictive
+        # if the most local general types have a finite lower multiplicity,
+        # use the most restrictive
 
         ugm = max(
             [
@@ -215,7 +218,8 @@ def get_effective_upper_multiplicity(type_ele):
             default=-1,
         )
 
-        # will either return with a lower multiplicity or if we still don't find a defined lower multiplicity
+        # will either return with a lower multiplicity or if we still
+        # don't find a defined lower multiplicity
 
         return upper_mult
     multiplicity_ranges = [
