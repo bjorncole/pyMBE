@@ -2,6 +2,7 @@ import json
 from dataclasses import field
 from importlib import resources as lib_resources
 from typing import Any, Dict, List
+
 from pymbe.query.metamodel_navigator import get_more_general_types
 
 # TODO: Is there a way to restore type hints for Element without inducing a circular dependency?
@@ -76,19 +77,20 @@ def list_relationship_metaclasses():
     Return a list of relationship metaclass names
     """
     return [
-            'FeatureTyping',
-            'Membership',
-            'OwningMembership',
-            'FeatureMembership',
-            'Specialization',
-            'Conjugation',
-            'Subclassification',
-            'Subsetting',
-            'Redefinition',
-            'FeatureValue'
-        ]
+        "FeatureTyping",
+        "Membership",
+        "OwningMembership",
+        "FeatureMembership",
+        "Specialization",
+        "Conjugation",
+        "Subclassification",
+        "Subsetting",
+        "Redefinition",
+        "FeatureValue",
+    ]
 
 
+# pylint: disable=F821
 def derive_attribute(key: str, ele: "Element"):
 
     # entry point for deriving attributes within elements on demand
@@ -105,6 +107,7 @@ def derive_attribute(key: str, ele: "Element"):
     raise NotImplementedError(f"The method to derive {key} has yet to be developed.")
 
 
+# pylint: disable=F821
 def derive_type(ele: "Element"):
 
     if hasattr(ele, "throughFeatureTyping"):
@@ -113,6 +116,7 @@ def derive_type(ele: "Element"):
     return []
 
 
+# pylint: disable=F821
 def derive_owned_member(ele: "Element"):
 
     found_ele = []
@@ -127,6 +131,7 @@ def derive_owned_member(ele: "Element"):
     return found_ele
 
 
+# pylint: disable=F821
 def derive_owned_x(ele: "Element", owned_kind: str):
 
     found_ele = []
@@ -138,6 +143,8 @@ def derive_owned_x(ele: "Element", owned_kind: str):
 
     return found_ele
 
+
+# pylint: disable=F821
 def derive_inherited_featurememberships(ele: "Element"):
     """
     8.3.3.1.10 Type
@@ -153,13 +160,14 @@ def derive_inherited_featurememberships(ele: "Element"):
         for general_type in more_general:
             if hasattr(general_type, "ownedRelationship"):
                 for inherited_fm in general_type.ownedRelationship:
-                    if inherited_fm._metatype == 'FeatureMembership':
+                    if inherited_fm._metatype == "FeatureMembership":
                         fms_to_return.append(inherited_fm)
         return fms_to_return
     except AttributeError:
         return []
 
 
+# pylint: disable=undefined-name
 def derive_features(ele: "Element"):
     """
     8.3.3.1.10 Type
@@ -169,7 +177,9 @@ def derive_features(ele: "Element"):
 
     # TODO: Add a way to reach back to library for the inherited objects
 
-    return [feature_membership.target[0] for feature_membership in derive_inherited_featurememberships(ele)] + \
-        ele.throughFeatureMembership
+    return [
+        feature_membership.target[0]
+        for feature_membership in derive_inherited_featurememberships(ele)
+    ] + ele.throughFeatureMembership
 
-    #return [inherited_fm for general_type in more_general for inherited_fm in general_type.throughFeatureMembership]
+    # return [inherited_fm for general_type in more_general for inherited_fm in general_type.throughFeatureMembership]

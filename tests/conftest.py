@@ -1,7 +1,7 @@
 import json
+from importlib import resources as lib_resources
 from pathlib import Path
 from typing import Dict, List
-from importlib import resources as lib_resources
 
 import pytest
 
@@ -29,7 +29,7 @@ def load_library() -> pm.Model:
     Load a digest of the KerML Library. Expectation is that the model will load with a series of Namespaces
     representing the specific libraries within the KerML library.
     """
-    
+
     library_model = None
 
     with lib_resources.path("pymbe.static_data", "KernelLibrary.json") as lib_data:

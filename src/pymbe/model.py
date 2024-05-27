@@ -4,11 +4,11 @@ from dataclasses import dataclass, field
 from enum import Enum
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Collection, Dict, List, Tuple, Union, Set
+from typing import Any, Collection, Dict, List, Set, Tuple, Union
 from uuid import uuid4
 from warnings import warn
 
-from pymbe.metamodel import MetaModel, list_relationship_metaclasses, derive_attribute
+from pymbe.metamodel import MetaModel, derive_attribute, list_relationship_metaclasses
 from pymbe.query.metamodel_navigator import get_effective_basic_name
 
 OWNER_KEYS = ("owner", "owningRelatedElement", "owningRelationship")
@@ -58,7 +58,9 @@ class Naming(Enum):
 
         # TODO: Check with Bjorn, he wanted: (a)-[r:RELTYPE {name: a.name + '<->' + b.name}]->(b)
         if element._is_relationship:
-            name_and_meta =  " ".join((get_effective_basic_name(element), f"«{element._metatype}»")).strip()
+            name_and_meta = " ".join(
+                (get_effective_basic_name(element), f"«{element._metatype}»")
+            ).strip()
             return f"{name_and_meta} ({element.source} ←→ {element.target})"
 
         data = element._data
@@ -72,7 +74,7 @@ class Naming(Enum):
         name = data.get("declaredName") or data.get("value") or data["@id"]
         if naming == Naming.SHORT.value:
             return f"<{name}>"
-        
+
         # TODO: Bring basic naming over here (and include member name from owning memberships)
 
         return f"""<{name} «{data["@type"]}»>"""
@@ -134,7 +136,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
             id_: Element(
                 _data={**data, "@id": id_},
                 _model=self,
-                _metamodel_hints={att[0]: att[1:] for att in self._metamodel_hints[data["@type"]]}
+                _metamodel_hints={att[0]: att[1:] for att in self._metamodel_hints[data["@type"]]},
             )
             for id_, data in self.elements.items()
             if isinstance(data, dict)
@@ -493,11 +495,16 @@ class Element:  # pylint: disable=too-many-instance-attributes
             return "No Name"
         else:
             return self_str
-    
+
     @property
     def basic_name(self) -> str:
         # TODO: Move this over to the naming class and get result back
-        return self._data.get("declaredName") or self._data.get("name") or self._data.get("effectiveName") or ""
+        return (
+            self._data.get("declaredName")
+            or self._data.get("name")
+            or self._data.get("effectiveName")
+            or ""
+        )
 
     @property
     def label(self) -> str:
@@ -552,14 +559,18 @@ class Element:  # pylint: disable=too-many-instance-attributes
             return self._model.get_element(owner_id)
         except KeyError:
             if str(self) != "No Name":
-                raise KeyError(f"Failed to find element with id {owner_id} while " +
-                           f"looking for owner of {self}")
+                raise KeyError(
+                    f"Failed to find element with id {owner_id} while "
+                    + f"looking for owner of {self}"
+                )
             else:
                 playback_name = str(self)
                 if "declaredName" in data.keys():
                     playback_name = data["declaredName"]
-                raise KeyError(f"Failed to find element with id {owner_id} while " +
-                           f"looking for owner of {playback_name}")
+                raise KeyError(
+                    f"Failed to find element with id {owner_id} while "
+                    + f"looking for owner of {playback_name}"
+                )
 
     @staticmethod
     def new(data: dict, model: Model) -> "Element":

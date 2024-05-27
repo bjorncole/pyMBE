@@ -12,11 +12,12 @@ def get_label(element: Element) -> str:  # pylint: disable=too-many-return-state
 
     """
     Get a label for the element.
-    The difference between a label and a name is that the name is meant to provide something by which
-    to refer to the element in code or informally while processing a model. A label is meant to be
-    part of the display of the element either in a representation (repr) or view of the model.
+    The difference between a label and a name is that the name is meant to provide something by
+    which to refer to the element in code or informally while processing a model. A label is
+    meant to be part of the display of the element either in a representation (repr) or view
+    of the model.
     """
-    
+
     metatype = element._metatype
     if metatype.endswith("Expression"):
         return f"{get_label_for_expression(element)} «{metatype}»"
@@ -63,8 +64,8 @@ def get_label(element: Element) -> str:  # pylint: disable=too-many-return-state
         return f"{value} «{metatype}»"
     if metatype == "MultiplicityRange":
         return get_label_for_multiplicity(multiplicity=element)
-    
-    if not name and element._metatype == 'Feature':
+
+    if not name and element._metatype == "Feature":
         return f":>>{get_effective_basic_name(element)} «{metatype}»"
 
     if "@id" in data:
@@ -101,7 +102,7 @@ def get_label_for_expression(expression: Element) -> str:
         except IndexError:
             # if there is no direct reference, need to recurse on parameters
             expression_label = get_label_for_expression(expression.throughFeatureMembership[0])
-            #expression_label = "Empty FRE"
+            # expression_label = "Empty FRE"
     elif meta == "FeatureChainExpression":
         try:
             # first item will be FRE to another feature

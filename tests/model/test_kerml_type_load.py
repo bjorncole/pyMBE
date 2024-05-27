@@ -11,46 +11,48 @@ def test_namespaces_load(load_library):
     Check that the expected namespaces from the KerML library are indeed loaded.
     """
 
-    found_names = [library_model_ns.throughOwningMembership[0].declaredName
-                    for library_model_ns in load_library.ownedElement]
+    found_names = [
+        library_model_ns.throughOwningMembership[0].declaredName
+        for library_model_ns in load_library.ownedElement
+    ]
 
     expected_names = [
-        'Transfers',
-        'CollectionFunctions',
-        'BaseFunctions',
-        'IntegerFunctions',
-        'SequenceFunctions',
-        'StringFunctions',
-        'VectorValues',
-        'TrigFunctions',
-        'ScalarFunctions',
-        'VectorFunctions',
-        'ControlFunctions',
-        'Base',
-        'Observation',
-        'RationalFunctions',
-        'Links',
-        'Performances',
-        'NumericalFunctions',
-        'DataFunctions',
-        'ControlPerformances',
-        'ComplexFunctions',
-        'Metaobjects',
-        'ScalarValues',
-        'StatePerformances',
-        'TransitionPerformances',
-        'RealFunctions',
-        'NaturalFunctions',
-        'Objects',
-        'Triggers',
-        'FeatureReferencingPerformances',
-        'Collections',
-        'BooleanFunctions',
-        'Occurrences',
-        'SpatialFrames',
-        'Clocks',
-        'OccurrenceFunctions',
-        'KerML'
+        "Transfers",
+        "CollectionFunctions",
+        "BaseFunctions",
+        "IntegerFunctions",
+        "SequenceFunctions",
+        "StringFunctions",
+        "VectorValues",
+        "TrigFunctions",
+        "ScalarFunctions",
+        "VectorFunctions",
+        "ControlFunctions",
+        "Base",
+        "Observation",
+        "RationalFunctions",
+        "Links",
+        "Performances",
+        "NumericalFunctions",
+        "DataFunctions",
+        "ControlPerformances",
+        "ComplexFunctions",
+        "Metaobjects",
+        "ScalarValues",
+        "StatePerformances",
+        "TransitionPerformances",
+        "RealFunctions",
+        "NaturalFunctions",
+        "Objects",
+        "Triggers",
+        "FeatureReferencingPerformances",
+        "Collections",
+        "BooleanFunctions",
+        "Occurrences",
+        "SpatialFrames",
+        "Clocks",
+        "OccurrenceFunctions",
+        "KerML",
     ]
 
     # check on equality regardless of order
@@ -62,16 +64,19 @@ def test_namespaces_load(load_library):
 
     return True
 
+
 def test_base_classifiers(load_library):
 
     """
     Check that the base classifiers have loaded and the expected names are all there.
     """
 
-    base_ns = [library_model_ns
-               for library_model_ns in load_library.ownedElement
-               if library_model_ns.throughOwningMembership[0].declaredName == 'Base'][0]
-    
+    base_ns = [
+        library_model_ns
+        for library_model_ns in load_library.ownedElement
+        if library_model_ns.throughOwningMembership[0].declaredName == "Base"
+    ][0]
+
     # there are only DataValue and Anything in the base library
 
     base_root_eles = base_ns.throughOwningMembership[0].throughOwningMembership
@@ -79,10 +84,10 @@ def test_base_classifiers(load_library):
     base_classifiers = []
 
     for base_ele in base_root_eles:
-        if base_ele._metatype in ('Classifier', 'DataType'):
+        if base_ele._metatype in ("Classifier", "DataType"):
             assert hasattr(base_ele, "declaredName")
             base_classifiers.append(base_ele)
-    
+
     assert len(base_classifiers) == 2
 
     base_classifier_names = [bc.declaredName for bc in base_classifiers]
@@ -90,22 +95,25 @@ def test_base_classifiers(load_library):
     assert "DataValue" in base_classifier_names
     assert "Anything" in base_classifier_names
 
+
 def test_base_features(load_library):
 
     """
     Check that the base features have loaded and the expected names are all there.
     """
 
-    base_ns = [library_model_ns
-               for library_model_ns in load_library.ownedElement
-               if library_model_ns.throughOwningMembership[0].declaredName == 'Base'][0]
-    
+    base_ns = [
+        library_model_ns
+        for library_model_ns in load_library.ownedElement
+        if library_model_ns.throughOwningMembership[0].declaredName == "Base"
+    ][0]
+
     base_root_eles = base_ns.throughOwningMembership[0].throughOwningMembership
 
     base_features = []
 
     for base_ele in base_root_eles:
-        if base_ele._metatype in ('Feature'):
+        if base_ele._metatype in ("Feature"):
             assert hasattr(base_ele, "declaredName")
             base_features.append(base_ele)
 
@@ -117,31 +125,38 @@ def test_base_features(load_library):
     assert "things" in base_feature_names
     assert "naturals" in base_feature_names
 
+
 def test_base_multiplicity(load_library):
 
     """
     Check that the multiplicity ranges with names in Base library are structured as expected
     """
 
-    base_ns = [library_model_ns
-               for library_model_ns in load_library.ownedElement
-               if library_model_ns.throughOwningMembership[0].declaredName == 'Base'][0]
-    
+    base_ns = [
+        library_model_ns
+        for library_model_ns in load_library.ownedElement
+        if library_model_ns.throughOwningMembership[0].declaredName == "Base"
+    ][0]
+
     base_root_eles = base_ns.throughOwningMembership[0].throughOwningMembership
 
     zero_or_one = None
 
     for base_ele in base_root_eles:
-        if base_ele._metatype in ('MultiplicityRange'):
+        if base_ele._metatype in ("MultiplicityRange"):
             if hasattr(base_ele, "declaredName"):
-                if base_ele.declaredName == 'zeroOrOne':
+                if base_ele.declaredName == "zeroOrOne":
                     zero_or_one = base_ele
 
     # we expect that the multiplicity range has two owned literal integers for the 0 and 1
 
     assert zero_or_one is not None
 
-    zero_or_one_literals = [owned for owned in zero_or_one.throughOwningMembership if owned._metatype =='LiteralInteger']
+    zero_or_one_literals = [
+        owned
+        for owned in zero_or_one.throughOwningMembership
+        if owned._metatype == "LiteralInteger"
+    ]
 
     zero_or_one_values = [literal.value for literal in zero_or_one_literals]
 
@@ -154,8 +169,8 @@ def test_base_multiplicity(load_library):
 
     assert hasattr(zero_or_one_literals[0].ownedRelationship[0], "memberName")
 
-    assert zero_or_one_literals[0].ownedRelationship[0].memberName == 'result'
+    assert zero_or_one_literals[0].ownedRelationship[0].memberName == "result"
 
     assert hasattr(zero_or_one_literals[0].throughReturnParameterMembership[0], "direction")
 
-    assert zero_or_one_literals[0].throughReturnParameterMembership[0].direction == 'out'
+    assert zero_or_one_literals[0].throughReturnParameterMembership[0].direction == "out"
