@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Collection, Dict, List, Set, Tuple, Union
+from typing import Any, Collection, Dict, List, Tuple, Union
 from uuid import uuid4
 from warnings import warn
 
@@ -230,9 +230,9 @@ class Model:  # pylint: disable=too-many-instance-attributes
             element.resolve()
         if fail and element is None:
             # hacky way to use library references, need more scaleable version
-            for rm in self._referenced_models:
+            for ref_model in self._referenced_models:
                 try:
-                    element = rm.get_element(element_id)
+                    element = ref_model.get_element(element_id)
                     return element
                 except KeyError:
                     pass
@@ -557,12 +557,12 @@ class Element:  # pylint: disable=too-many-instance-attributes
             return None
         try:
             return self._model.get_element(owner_id)
-        except KeyError:
+        except KeyError as no_owner:
             if str(self) != "No Name":
                 raise KeyError(
                     f"Failed to find element with id {owner_id} while "
                     + f"looking for owner of {self}"
-                )
+                ) from no_owner
             else:
                 playback_name = str(self)
                 if "declaredName" in data.keys():
@@ -570,7 +570,7 @@ class Element:  # pylint: disable=too-many-instance-attributes
                 raise KeyError(
                     f"Failed to find element with id {owner_id} while "
                     + f"looking for owner of {playback_name}"
-                )
+                ) from no_owner
 
     @staticmethod
     def new(data: dict, model: Model) -> "Element":

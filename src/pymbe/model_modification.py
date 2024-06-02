@@ -34,7 +34,7 @@ def build_from_classifier_pattern(
     model: Model,
     metatype: str,
     superclasses: List[Element],
-    specific_fields: Dict[str, Any]
+    specific_fields: Dict[str, Any],
 ):
 
     """
@@ -56,14 +56,16 @@ def build_from_classifier_pattern(
 
     for supr in superclasses:
         if supr is not None:
-            build_from_binary_relationship_pattern(source=new_ele,
-                                                target=supr,
-                                                model=model,
-                                                metatype="Subclassification",
-                                                owned_by_source=True,
-                                                owns_target=False,
-                                                alternative_owner=None,
-                                                specific_fields=specific_fields)
+            build_from_binary_relationship_pattern(
+                source=new_ele,
+                target=supr,
+                model=model,
+                metatype="Subclassification",
+                owned_by_source=True,
+                owns_target=False,
+                alternative_owner=None,
+                specific_fields=specific_fields,
+            )
 
     return new_ele
 
@@ -195,10 +197,18 @@ def build_from_binary_assoc_pattern(
     - Association has two end features that each have a type
     """
 
-    specific_fields = {"source": [{'@id': source_type._id}], "target": [{'@id': target_type._id}]} | specific_fields
+    specific_fields = {
+        "source": [{"@id": source_type._id}],
+        "target": [{"@id": target_type._id}],
+    } | specific_fields
 
     new_ele = build_from_classifier_pattern(
-        owner=owner, name=name, model=model, metatype=metatype, specific_fields=specific_fields, superclasses=[]
+        owner=owner,
+        name=name,
+        model=model,
+        metatype=metatype,
+        specific_fields=specific_fields,
+        superclasses=[],
     )
 
     source_feat_ele = build_from_feature_pattern(
@@ -231,22 +241,24 @@ def build_from_binary_assoc_pattern(
             try:
                 source_redefined = supr.throughEndFeatureMembership[0]
             except AttributeError:
-                 source_redefined = supr.throughFeatureMembership[0]
+                source_redefined = supr.throughFeatureMembership[0]
 
             try:
                 target_redefined = supr.throughEndFeatureMembership[1]
             except AttributeError:
-                 target_redefined = supr.throughFeatureMembership[1]
+                target_redefined = supr.throughFeatureMembership[1]
 
-            build_from_binary_relationship_pattern(source=new_ele,
-                                                target=supr,
-                                                model=model,
-                                                metatype="Subclassification",
-                                                owned_by_source=True,
-                                                owns_target=False,
-                                                alternative_owner=None,
-                                                specific_fields={})
-            
+            build_from_binary_relationship_pattern(
+                source=new_ele,
+                target=supr,
+                model=model,
+                metatype="Subclassification",
+                owned_by_source=True,
+                owns_target=False,
+                alternative_owner=None,
+                specific_fields={},
+            )
+
             build_from_binary_relationship_pattern(
                 source=source_feat_ele,
                 target=source_redefined,
@@ -268,8 +280,6 @@ def build_from_binary_assoc_pattern(
                 alternative_owner=None,
                 specific_fields={},
             )
-
-
 
     return new_ele
 
@@ -405,7 +415,7 @@ def build_unioning_superset_classifier(
         model=model,
         specific_fields=added_fields,
         metatype=classes[0]._metatype,
-        superclasses=[]
+        superclasses=[],
     )
 
     for clz in classes:
@@ -428,7 +438,7 @@ def build_unioning_superset_classifier(
                 alternative_owner=None,
                 specific_fields={"unioningType": {"@id": clz._id}},
             )
-        
+
         else:
             build_from_binary_relationship_pattern(
                 source=clz,
@@ -467,9 +477,11 @@ def apply_covered_feature_pattern(
     covering_type = None
     redefined_feature = None
 
-    feature_to_cover_name = feature_to_cover._data.get("name") or \
-                            feature_to_cover._data.get("effectiveName") or \
-                            feature_to_cover._data.get("declaredName")
+    feature_to_cover_name = (
+        feature_to_cover._data.get("name")
+        or feature_to_cover._data.get("effectiveName")
+        or feature_to_cover._data.get("declaredName")
+    )
 
     if len(one_member_classifiers) > 1:
         covering_type = build_unioning_superset_classifier(
@@ -485,9 +497,7 @@ def apply_covered_feature_pattern(
 
         redefined_feature = build_from_feature_pattern(
             owner=type_to_apply_pattern_on,
-            name=redefining_feature_prefix
-            + feature_to_cover_name
-            + redefining_feature_suffix,
+            name=redefining_feature_prefix + feature_to_cover_name + redefining_feature_suffix,
             model=model,
             specific_fields={},
             feature_type=covering_type,
@@ -498,9 +508,7 @@ def apply_covered_feature_pattern(
     elif len(one_member_classifiers) == 1:
         redefined_feature = build_from_feature_pattern(
             owner=type_to_apply_pattern_on,
-            name=redefining_feature_prefix
-            + feature_to_cover_name
-            + redefining_feature_suffix,
+            name=redefining_feature_prefix + feature_to_cover_name + redefining_feature_suffix,
             model=model,
             specific_fields={},
             feature_type=one_member_classifiers[0],
@@ -522,7 +530,7 @@ def apply_covered_connector_pattern(
     redefining_feature_prefix: str = "",
     redefining_feature_suffix: str = " (Closed)",
     metatype: str = "Connector",
-    separate_connectors: bool = False
+    separate_connectors: bool = False,
 ):
     """
     Execute a pattern described in KerML Appendix A to capture a list of specific results
@@ -542,7 +550,8 @@ def apply_covered_connector_pattern(
                 owner=type_to_apply_pattern_on,
                 name=redefining_feature_prefix
                 + feature_to_cover.basic_name
-                + redefining_feature_suffix + str(i),
+                + redefining_feature_suffix
+                + str(i),
                 model=model,
                 specific_fields={},
                 feature_type=omc,
@@ -599,7 +608,7 @@ def build_from_portion_pattern(
     classifier_to_be_portioned: None,
     feature_to_be_set: List[Element],
     feature_values: List[Any],
-    specific_fields: Dict[str, Any]
+    specific_fields: Dict[str, Any],
 ):
 
     """
@@ -610,7 +619,10 @@ def build_from_portion_pattern(
     metatype = classifier_to_be_portioned._metatype
 
     classifier_dict = create_element_data_dictionary(
-        name=classifier_to_be_portioned.declaredName + name_extension, metaclass=metatype, model=model, specific_fields=specific_fields
+        name=classifier_to_be_portioned.declaredName + name_extension,
+        metaclass=metatype,
+        model=model,
+        specific_fields=specific_fields,
     )
 
     new_ele = Element.new(data=classifier_dict, model=model)
@@ -628,7 +640,9 @@ def build_from_portion_pattern(
                     name=feat.declaredName,
                     model=model,
                     specific_fields={},
-                    feature_type=feat.throughFeatureTyping[0] if hasattr(feat, "throughFeatureTyping") else None,
+                    feature_type=feat.throughFeatureTyping[0]
+                    if hasattr(feat, "throughFeatureTyping")
+                    else None,
                     direction="",
                     metatype=feat._metatype,
                     connector_end=False,
@@ -646,15 +660,17 @@ def build_from_portion_pattern(
                 )
         for feat_set, feat_val in zip(feature_to_be_set, feature_values):
             redefed_feature = build_from_feature_pattern(
-                    owner=new_ele,
-                    name=feat_set.declaredName,
-                    model=model,
-                    specific_fields={},
-                    feature_type=feat_set.throughFeatureTyping[0] if hasattr(feat_set, "throughFeatureTyping") else None,
-                    direction="",
-                    metatype=feat_set._metatype,
-                    connector_end=False,
-                )
+                owner=new_ele,
+                name=feat_set.declaredName,
+                model=model,
+                specific_fields={},
+                feature_type=feat_set.throughFeatureTyping[0]
+                if hasattr(feat_set, "throughFeatureTyping")
+                else None,
+                direction="",
+                metatype=feat_set._metatype,
+                connector_end=False,
+            )
 
             build_from_binary_relationship_pattern(
                 source=redefed_feature,

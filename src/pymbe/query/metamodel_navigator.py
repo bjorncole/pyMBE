@@ -267,15 +267,15 @@ def does_behavior_have_write_features(behavior):
 
         candidate_features = behavior.throughFeatureMembership
 
-        for cf in candidate_features:
+        for candidate_feature in candidate_features:
 
-            if cf._metatype == "Step":
-                step = cf
+            if candidate_feature._metatype == "Step":
+                step = candidate_feature
 
                 if hasattr(step, "throughFeatureTyping"):
                     candidate_types = step.throughFeatureTyping
-                    for ct in candidate_types:
-                        if ct.declaredName == "FeatureWritePerformance":
+                    for candidate_type in candidate_types:
+                        if candidate_type.declaredName == "FeatureWritePerformance":
                             return True
 
     return False
@@ -283,8 +283,8 @@ def does_behavior_have_write_features(behavior):
 
 def has_type_named(feature, type_name):
     if hasattr(feature, "throughFeatureTyping"):
-        for ft in feature.throughFeatureTyping:
-            if ft.basic_name == type_name:
+        for feature_type in feature.throughFeatureTyping:
+            if feature_type.basic_name == type_name:
                 return True
     return False
 
@@ -326,25 +326,25 @@ def get_more_general_types(typ, recurse_counter, max_counter):
     lib_local = []
     lib_remove = []
 
-    for lg in local_more_general:
+    for local_general in local_more_general:
         if len(typ._model._referenced_models) > 0:
-            if hasattr(lg, "isLibraryElement"):
-                if lg._data["isLibraryElement"]:
-                    trial_element = typ._model._referenced_models[0].get_element(lg._id)
+            if hasattr(local_general, "isLibraryElement"):
+                if local_general._data["isLibraryElement"]:
+                    trial_element = typ._model._referenced_models[0].get_element(local_general._id)
                     print(f"Trial element {trial_element} found.")
                     lib_local.append(trial_element)
-                    lib_remove.append(lg)
+                    lib_remove.append(local_general)
             else:
                 try:
-                    trial_element = typ._model._referenced_models[0].get_element(lg._id)
+                    trial_element = typ._model._referenced_models[0].get_element(local_general._id)
                     print(f"Trial element {trial_element} found.")
                     lib_local.append(trial_element)
-                    lib_remove.append(lg)
+                    lib_remove.append(local_general)
                 except KeyError:
                     pass
 
-    for lr in lib_remove:
-        local_more_general.remove(lg)
+    for to_remove in lib_remove:
+        local_more_general.remove(to_remove)
 
     local_more_general = local_more_general + lib_local
 
@@ -398,7 +398,8 @@ def get_effective_basic_name(type_ele):
                 if trial_name != "":
                     name = trial_name
 
-        # will either return with a lower multiplicity or if we still don't find a defined lower multiplicity
+        # will either return with a lower multiplicity or if we
+        # still don't find a defined lower multiplicity
 
         return name
 
