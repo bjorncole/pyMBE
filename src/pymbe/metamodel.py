@@ -37,37 +37,47 @@ class MetaModel:
         ) as sysml_ecore_refs:
             ecore_refs = json.load(sysml_ecore_refs)
 
+        hints_build = {}
+
+        for att_key in ecore_atts.keys():
+            inner_build = {}
+            for ecore_att in ecore_atts[att_key]:
+                inner_build.update({ecore_att[0]: ecore_att[1:]})
+            for ecore_ref in ecore_refs[att_key]:
+                inner_build.update({ecore_ref[0]: ecore_ref[1:]})
+            hints_build.update({att_key: inner_build})
+
         # keys should be the same since they are all identified metaelements from ecore
-        self.metamodel_hints = {k: ecore_atts[k] + ecore_refs[k] for k in ecore_atts.keys()}
+        self.metamodel_hints = hints_build
 
     def _load_template_data(self, metaclass_name: str):
         local_hints = self.metamodel_hints[metaclass_name]
 
         data_template = {}
 
-        for hint in local_hints:
+        for hint_key, hint_vals in local_hints.items():
             starter_field = None
-            if hint[2] == "primary":
+            if hint_vals[1] == "primary":
                 # TODO: Figure out why some boolean and string attributes have 0 to -1
                 # rather than 1 to 1 multiplicity
                 if (
-                    int(hint[6]) > 1
-                    or int(hint[6]) == -1
-                    and not (hint[3] == "Boolean" or hint[3] == "String")
+                    int(hint_vals[5]) > 1
+                    or int(hint_vals[5]) == -1
+                    and not (hint_vals[2] == "Boolean" or hint_vals[2] == "String")
                 ):
                     starter_field = []
                 else:
                     # TODO: One other janky override
-                    if hint[0] == "aliasIds":
+                    if hint_key == "aliasIds":
                         starter_field = []
-                    elif hint[3] == "Boolean":
+                    elif hint_vals[2] == "Boolean":
                         starter_field = False
-                    elif hint[3] == "String":
+                    elif hint_vals[2] == "String":
                         starter_field = ""
-                    elif hint[3] == "Integer":
+                    elif hint_vals[2] == "Integer":
                         starter_field = 0
 
-            data_template.update({hint[0]: starter_field})
+            data_template.update({hint_key: starter_field})
 
         self.pre_made_dicts.update({metaclass_name: data_template})
 
@@ -101,6 +111,7 @@ def derive_attribute(key: str, ele: "Element"):  # noqa: F821
     if key == "ownedMember":
         return derive_owned_member(ele)
     if key == "feature":
+        print(f"Trying to derive features for {ele}")
         return derive_features(ele)
 
     raise NotImplementedError(f"The method to derive {key} has yet to be developed.")
@@ -159,6 +170,7 @@ def derive_inherited_featurememberships(ele: "Element"):  # noqa: F821
                         fms_to_return.append(inherited_fm)
         return fms_to_return
     except AttributeError:
+        raise AttributeError("Attribute error of metatype or ownedRelationship for type")
         return []
 
 

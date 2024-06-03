@@ -136,7 +136,8 @@ class Model:  # pylint: disable=too-many-instance-attributes
             id_: Element(
                 _data={**data, "@id": id_},
                 _model=self,
-                _metamodel_hints={att[0]: att[1:] for att in self._metamodel_hints[data["@type"]]},
+                _metamodel_hints={att_key: att_data for att_key, att_data
+                                  in self._metamodel_hints[data["@type"]].items()},
             )
             for id_, data in self.elements.items()
             if isinstance(data, dict)
