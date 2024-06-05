@@ -8,7 +8,8 @@ from typing import Any, Collection, Dict, List, Tuple, Union
 from uuid import uuid4
 from warnings import warn
 
-from pymbe.metamodel import MetaModel, derive_attribute
+from pymbe.metamodel import MetaModel, derive_attribute, list_relationship_metaclasses
+from pymbe.query.metamodel_navigator import get_effective_basic_name
 
 OWNER_KEYS = ("owner", "owningRelatedElement", "owningRelationship")
 VALUE_METATYPES = ("AttributeDefinition", "AttributeUsage", "DataType")
@@ -50,13 +51,17 @@ class Naming(Enum):
     QUALIFIED = "qualified"
     SHORT = "short"
     LABEL = "label"
+    BASIC = "basic"
 
     def get_name(self, element: "Element") -> str:
         naming = self._value_  # pylint: disable=no-member
 
         # TODO: Check with Bjorn, he wanted: (a)-[r:RELTYPE {name: a.name + '<->' + b.name}]->(b)
         if element._is_relationship:
-            return f"<{element._metatype}({element.source} ←→ {element.target})>"
+            name_and_meta = " ".join(
+                (get_effective_basic_name(element), f"«{element._metatype}»")
+            ).strip()
+            return f"{name_and_meta} ({element.source} ←→ {element.target})"
 
         data = element._data
         if naming == Naming.QUALIFIED.value:
@@ -69,6 +74,9 @@ class Naming(Enum):
         name = data.get("declaredName") or data.get("value") or data["@id"]
         if naming == Naming.SHORT.value:
             return f"<{name}>"
+
+        # TODO: Bring basic naming over here (and include member name from owning memberships)
+
         return f"""<{name} «{data["@type"]}»>"""
 
 
@@ -99,15 +107,20 @@ class Model:  # pylint: disable=too-many-instance-attributes
         default_factory=list,
     )
 
-    max_multiplicity = 100
+    max_multiplicity = 10
 
     source: Any = None
 
     _api: ModelClient = None
     _initializing: bool = True
-    _naming: Naming = Naming.LABEL  # The scheme to use for repr'ing the elements
+    _naming: Naming = Naming.LABEL  # The scheme to use for retrieving element names
+    _labeling: Naming = Naming.LABEL  # The scheme to use for repr'ing the elements
 
     metamodel: MetaModel = None
+
+    _referenced_models: List["Model"] = field(  # pylint: disable=invalid-name
+        default_factory=list,
+    )
 
     _metamodel_hints: Dict[str, List[List[str]]] = field(
         default_factory=dict
@@ -119,11 +132,24 @@ class Model:  # pylint: disable=too-many-instance-attributes
 
         self._metamodel_hints = self.metamodel.metamodel_hints
 
+        # self.elements = {
+        #     id_: Element(
+        #         _data={**data, "@id": id_},
+        #         _model=self,
+        #         _metamodel_hints={
+        #             att_key: att_data
+        #             for att_key, att_data in self._metamodel_hints[data["@type"]].items()
+        #         },
+        #     )
+        #     for id_, data in self.elements.items()
+        #     if isinstance(data, dict)
+        # }
+
         self.elements = {
             id_: Element(
-                _data=data,
+                _data={**data, "@id": id_},
                 _model=self,
-                _metamodel_hints={att[0]: att[1:] for att in self._metamodel_hints[data["@type"]]},
+                _metamodel_hints=self._metamodel_hints[data["@type"]],
             )
             for id_, data in self.elements.items()
             if isinstance(data, dict)
@@ -147,7 +173,10 @@ class Model:  # pylint: disable=too-many-instance-attributes
     ) -> "Model":
         """Make a Model from an iterable container of elements"""
         return Model(
-            elements={element["@id"]: element for element in elements},
+            elements={
+                element.get("identity", element).get("@id"): element.get("payload", element)
+                for element in elements
+            },
             **kwargs,
         )
 
@@ -192,7 +221,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
         )
 
     @property
-    def packages(self) -> Tuple["Element"]:
+    def packages(self) -> Tuple["Element", ...]:
         return tuple(
             element for element in self.elements.values() if element._metatype == "Package"
         )
@@ -213,6 +242,13 @@ class Model:  # pylint: disable=too-many-instance-attributes
         if element and resolve and element._is_proxy:
             element.resolve()
         if fail and element is None:
+            # hacky way to use library references, need more scaleable version
+            for ref_model in self._referenced_models:
+                try:
+                    element = ref_model.get_element(element_id)
+                    return element
+                except KeyError:
+                    pass
             raise KeyError(f"Could not retrieve '{element_id}' from the API")
         return element
 
@@ -326,6 +362,10 @@ class Model:  # pylint: disable=too-many-instance-attributes
                 for endpt2 in endpts2:
                     endpt1._derived[f"{direction}{metatype}"] += [{"@id": endpt2._data["@id"]}]
 
+    def reference_other_model(self, ref_model: "Model"):
+        if ref_model not in self._referenced_models:
+            self._referenced_models.append(ref_model)
+
 
 @dataclass(repr=False)
 class Element:  # pylint: disable=too-many-instance-attributes
@@ -406,6 +446,7 @@ class Element:  # pylint: disable=too-many-instance-attributes
         #     return tuple(sorted(self._data.items())) == tuple(sorted(other.items()))
         return self is other
 
+    # TODO: Make this safe for through and reverse by return empty collection is no key found
     def __getattr__(self, key: str):
         try:
             return self[key]
@@ -417,9 +458,19 @@ class Element:  # pylint: disable=too-many-instance-attributes
         for source in ("_data", "_derived"):
             source = self.__getattribute__(source)
             if key in source:
+                if key in self._metamodel_hints and self._metamodel_hints[key][1] == "primary":
+                    found = True
+                    item = source[key]
+                    break
+
+                if key in self._metamodel_hints and self._metamodel_hints[key][1] == "derived":
+                    break
                 found = True
                 item = source[key]
                 break
+            if key[7:] in list_relationship_metaclasses():
+                found = True
+                item = []
         if not found:
             if (
                 key in self._metamodel_hints
@@ -452,7 +503,21 @@ class Element:  # pylint: disable=too-many-instance-attributes
         return self._id < other._id
 
     def __repr__(self):
-        return self._model._naming.get_name(element=self)
+        self_str = self._model._labeling.get_name(element=self)
+        if self_str is None:
+            return "No Name"
+
+        return self_str
+
+    @property
+    def basic_name(self) -> str:
+        # TODO: Move this over to the naming class and get result back
+        return (
+            self._data.get("declaredName")
+            or self._data.get("name")
+            or self._data.get("effectiveName")
+            or ""
+        )
 
     @property
     def label(self) -> str:
@@ -503,7 +568,22 @@ class Element:  # pylint: disable=too-many-instance-attributes
                 break
         if owner_id is None:
             return None
-        return self._model.get_element(owner_id)
+        try:
+            return self._model.get_element(owner_id)
+        except KeyError as no_owner:
+            if str(self) != "No Name":
+                raise KeyError(
+                    f"Failed to find element with id {owner_id} while "
+                    + f"looking for owner of {self}"
+                ) from no_owner
+
+            playback_name = str(self)
+            if "declaredName" in data.keys():
+                playback_name = data["declaredName"]
+            raise KeyError(
+                f"Failed to find element with id {owner_id} while "
+                + f"looking for owner of {playback_name}"
+            ) from no_owner
 
     @staticmethod
     def new(data: dict, model: Model) -> "Element":
