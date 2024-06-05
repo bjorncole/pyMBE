@@ -22,7 +22,7 @@ class MetaModel:
     def __init__(self):
         self.pre_made_dicts = {}
         self._load_metahints()
-        for metaclass in self.metamodel_hints.keys():
+        for metaclass in self.metamodel_hints:
             self._load_template_data(metaclass_name=metaclass)
 
     def _load_metahints(self):
@@ -111,7 +111,6 @@ def derive_attribute(key: str, ele: "Element"):  # noqa: F821
     if key == "ownedMember":
         return derive_owned_member(ele)
     if key == "feature":
-        print(f"Trying to derive features for {ele}")
         return derive_features(ele)
 
     raise NotImplementedError(f"The method to derive {key} has yet to be developed.")
@@ -170,7 +169,6 @@ def derive_inherited_featurememberships(ele: "Element"):  # noqa: F821
                         fms_to_return.append(inherited_fm)
         return fms_to_return
     except AttributeError:
-        raise AttributeError("Attribute error of metatype or ownedRelationship for type")
         return []
 
 

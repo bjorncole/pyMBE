@@ -308,7 +308,12 @@ def build_from_binary_connector_pattern(
     conn_fields = specific_fields | connector_dict
 
     new_ele = build_from_classifier_pattern(
-        owner=owner, name=name, model=model, metatype=metatype, specific_fields=conn_fields
+        owner=owner,
+        name=name,
+        model=model,
+        metatype=metatype,
+        specific_fields=conn_fields,
+        superclasses=[],
     )
 
     source_end = build_from_feature_pattern(
@@ -658,7 +663,7 @@ def build_from_portion_pattern(
                     alternative_owner=None,
                     specific_fields={},
                 )
-        for feat_set, feat_val in zip(feature_to_be_set, feature_values):
+        for feat_set in feature_to_be_set:
             redefed_feature = build_from_feature_pattern(
                 owner=new_ele,
                 name=feat_set.declaredName,

@@ -132,12 +132,24 @@ class Model:  # pylint: disable=too-many-instance-attributes
 
         self._metamodel_hints = self.metamodel.metamodel_hints
 
+        # self.elements = {
+        #     id_: Element(
+        #         _data={**data, "@id": id_},
+        #         _model=self,
+        #         _metamodel_hints={
+        #             att_key: att_data
+        #             for att_key, att_data in self._metamodel_hints[data["@type"]].items()
+        #         },
+        #     )
+        #     for id_, data in self.elements.items()
+        #     if isinstance(data, dict)
+        # }
+
         self.elements = {
             id_: Element(
                 _data={**data, "@id": id_},
                 _model=self,
-                _metamodel_hints={att_key: att_data for att_key, att_data
-                                  in self._metamodel_hints[data["@type"]].items()},
+                _metamodel_hints=self._metamodel_hints[data["@type"]],
             )
             for id_, data in self.elements.items()
             if isinstance(data, dict)
@@ -450,13 +462,13 @@ class Element:  # pylint: disable=too-many-instance-attributes
                     found = True
                     item = source[key]
                     break
-                else:
-                    if key in self._metamodel_hints and self._metamodel_hints[key][1] == "derived":
-                        break
-                    found = True
-                    item = source[key]
+
+                if key in self._metamodel_hints and self._metamodel_hints[key][1] == "derived":
                     break
-            elif key[7:] in list_relationship_metaclasses():
+                found = True
+                item = source[key]
+                break
+            if key[7:] in list_relationship_metaclasses():
                 found = True
                 item = []
         if not found:
@@ -564,14 +576,14 @@ class Element:  # pylint: disable=too-many-instance-attributes
                     f"Failed to find element with id {owner_id} while "
                     + f"looking for owner of {self}"
                 ) from no_owner
-            else:
-                playback_name = str(self)
-                if "declaredName" in data.keys():
-                    playback_name = data["declaredName"]
-                raise KeyError(
-                    f"Failed to find element with id {owner_id} while "
-                    + f"looking for owner of {playback_name}"
-                ) from no_owner
+
+            playback_name = str(self)
+            if "declaredName" in data.keys():
+                playback_name = data["declaredName"]
+            raise KeyError(
+                f"Failed to find element with id {owner_id} while "
+                + f"looking for owner of {playback_name}"
+            ) from no_owner
 
     @staticmethod
     def new(data: dict, model: Model) -> "Element":

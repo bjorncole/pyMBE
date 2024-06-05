@@ -318,8 +318,6 @@ def get_more_general_types(typ, recurse_counter, max_counter):
         typ.throughFeatureTyping + typ.throughSubclassification + typ.throughRedefinition
     )
 
-    print(f"Local more general is {local_more_general}")
-
     # check to see if this is a library object
     # TODO: This is very hacky, need to check on library connections much better
 
@@ -331,13 +329,11 @@ def get_more_general_types(typ, recurse_counter, max_counter):
             if hasattr(local_general, "isLibraryElement"):
                 if local_general._data["isLibraryElement"]:
                     trial_element = typ._model._referenced_models[0].get_element(local_general._id)
-                    print(f"Trial element {trial_element} found.")
                     lib_local.append(trial_element)
                     lib_remove.append(local_general)
             else:
                 try:
                     trial_element = typ._model._referenced_models[0].get_element(local_general._id)
-                    print(f"Trial element {trial_element} found.")
                     lib_local.append(trial_element)
                     lib_remove.append(local_general)
                 except KeyError:
@@ -350,12 +346,12 @@ def get_more_general_types(typ, recurse_counter, max_counter):
 
     if recurse_counter >= max_counter:
         return local_more_general
-    else:
-        total_general = local_more_general + [
-            item
-            for local_general in local_more_general
-            for item in get_more_general_types(local_general, recurse_counter + 1, max_counter)
-        ]
+
+    total_general = local_more_general + [
+        item
+        for local_general in local_more_general
+        for item in get_more_general_types(local_general, recurse_counter + 1, max_counter)
+    ]
 
     return total_general
 
@@ -386,15 +382,15 @@ def get_effective_basic_name(type_ele):
 
         # if the most local general types have a name, check for conflicts
 
-        for lg in local_general:
-            if lg.basic_name != "":
-                name = lg.basic_name
+        for one_general in local_general:
+            if one_general.basic_name != "":
+                name = one_general.basic_name
 
         # if we still have no name, try to recurse
 
         if name == "":
-            for lg in local_general:
-                trial_name = get_effective_basic_name(lg)
+            for one_general in local_general:
+                trial_name = get_effective_basic_name(one_general)
                 if trial_name != "":
                     name = trial_name
 
