@@ -100,6 +100,23 @@ def list_relationship_metaclasses():
     ]
 
 
+
+def classifier_metas():
+    return {'Classifier', 'Behavior', 'Structure'}
+
+def assoc_metas():
+    return {'Association'}
+
+def connector_metas():
+    return {'Connector', 'Succession'}
+
+def datatype_metas():
+    return {'DataType'}
+
+def feature_metas():
+    return {'Feature', 'Step'}
+
+
 def derive_attribute(key: str, ele: "Element"):  # noqa: F821
 
     # entry point for deriving attributes within elements on demand
