@@ -128,42 +128,14 @@ class KermlForwardExecutor():
         
             for cf in candidate_features:
                 
-                if has_type_named(cf, "FeatureWritePerformance") and not pass_kind == 'FeatureWritePerformances':
+                eval_feature, lower_mult, values_set_in_model = self._common_preprocess(
+                    pass_kind=pass_kind,
+                    type_instance=new_classifier,
+                    candidate_feature=cf
+                )
+
+                if not eval_feature:
                     continue
-                if cf._metatype not in connector_metas() and not pass_kind == 'Non-connector Features':
-                    if not has_type_named(cf, "FeatureWritePerformance"):
-                        continue
-                if cf._metatype in connector_metas() and not pass_kind == 'Connector Features':
-                    continue
-                
-                # common pre-processing steps
-                
-                cf_name = get_effective_basic_name(cf)
-                
-                lm = get_effective_lower_multiplicity(cf)
-                
-                if lm > -1:
-                    # need to test multiplicity
-                    print(f"...Found effective lower multiplicity of {cf_name} ({cf._id}) as {lm}.")
-                elif cf._metatype not in connector_metas():
-                    print(f"...{cf_name} ({cf._id}) has unbounded multiplicity. Skipping.")
-                    continue
-                
-                redefining_features = set(cf.reverseRedefinition)
-                cf_redefined = False
-                
-                for rf in redefining_features:
-                    print(f"...Discovered that {cf} ({cf._id}) is redefined by {rf} ({rf._id})! Skipping.")
-                    cf_redefined = True
-                    
-                if cf_redefined:
-                    continue
-                
-                # Step 2 - find Features with lower multiplicity > 0 that are not connectors
-                
-                # Look for existing values for the feature or previous atom assignment
-                
-                values_set_in_model = self._find_model_existing_values_for_feature(new_classifier, [cf])
                 
                 # Pass-specific core steps
                 
@@ -171,33 +143,16 @@ class KermlForwardExecutor():
                     pass # refer to create_feature_write_performance_atoms
                 
                 elif cf._metatype not in connector_metas() and pass_kind == 'Non-connector Features':
-                    
-                    handled_as_self_reference = is_feature_involving_self(cf)
-                    
-                    if len(values_set_in_model) == 0 and handled_as_self_reference == False:
-                        # Step 3 - create new Atoms to go with the Features
-                        
-                        used_typ = get_most_specific_feature_type(cf)
-                        
-                        if used_typ._metatype in datatype_metas():
-                            print(f"Executing step 2. Identified {cf_name} ({cf._id}) as a non-connector Feature. No existing values found. " + \
-                                f"This is a datatype. Skipping generation of values.")
-                            continue
-                        else:
-                            print(f"Executing step 2. Identified {cf_name} ({cf._id}) as a non-connector Feature. No existing values found. " + \
-                                f"Generating {lm} new values specializing type {used_typ}.")
-                        
-                        for i in range(0, lm):
-                            self._inspect_feature_for_values(input_model,
-                                package_to_populate,
-                                new_classifier,
-                                i,
-                                cf
-                                )
-                                    
+
+                    self._process_nonconnector_features(
+                        type_instance=new_classifier,
+                        candidate_feature=cf,
+                        feature_multiplicity=lower_mult,
+                        values_set_in_model=values_set_in_model,
+                    )
+
                 if cf._metatype in connector_metas() and pass_kind == 'Connector Features':
                     pass # refer to _process_connector_features
-                            
             
         if type_to_value._metatype in datatype_metas():
             print(f"Classifier {type_to_value.basic_name} is a datatype. Bypassing further elaboration.")
@@ -217,17 +172,98 @@ class KermlForwardExecutor():
         
         return None
     
-    def _common_preprocess():
+    def _common_preprocess(
+            self,
+            pass_kind:str,
+            type_instance:Element,
+            candidate_feature:Element
+        ):
 
-        pass
+        if has_type_named(candidate_feature, "FeatureWritePerformance") and not pass_kind == 'FeatureWritePerformances':
+            return (False, None, None)
+        if candidate_feature._metatype not in connector_metas() and not pass_kind == 'Non-connector Features':
+            if not has_type_named(candidate_feature, "FeatureWritePerformance"):
+                return (False, None, None)
+        if candidate_feature._metatype in connector_metas() and not pass_kind == 'Connector Features':
+            return (False, None, None)
+        if get_effective_basic_name(candidate_feature) == "self":
+            print(f"Adding value for self to featuring type {type_instance}")
+            self._working_map._add_atom_value_to_feature(type_instance,
+                                                        [candidate_feature],
+                                                        type_instance)
+        
+        # common pre-processing steps
+        
+        cf_name = get_effective_basic_name(candidate_feature)
+        
+        lower_mult = get_effective_lower_multiplicity(candidate_feature)
+        
+        if lower_mult > -1:
+            # need to test multiplicity
+            print(f"...Found effective lower multiplicity of {cf_name} ({candidate_feature._id}) as {lower_mult}.")
+        elif candidate_feature._metatype not in connector_metas():
+            print(f"...{cf_name} ({candidate_feature._id}) has unbounded multiplicity. Skipping.")
+            return (False, None, None)
+        
+        redefining_features = set(candidate_feature.reverseRedefinition)
+        cf_redefined = False
+        
+        for rf in redefining_features:
+            print(f"...Discovered that {candidate_feature} ({candidate_feature._id}) is redefined by {rf} ({rf._id})! Skipping.")
+            cf_redefined = True
+            
+        if cf_redefined:
+            return (False, None, None)
+        
+        # Step 2 - find Features with lower multiplicity > 0 that are not connectors
+        
+        # Look for existing values for the feature or previous atom assignment
+        
+        values_set_in_model = self._find_model_existing_values_for_feature(type_instance, [candidate_feature])
+
+        # return True for having a Feature to further interpret
+        return (True, lower_mult, values_set_in_model)
+        
 
     def _process_feature_write_performances():
 
         pass
 
-    def _process_nonconnector_features():
+    def _process_nonconnector_features(
+                self,
+                type_instance:Element,
+                candidate_feature:Element,
+                feature_multiplicity:int,
+                values_set_in_model:List[Element]
+            ):
 
-        pass
+        handled_as_self_reference = is_feature_involving_self(candidate_feature)
+
+        cf_name = get_effective_basic_name(candidate_feature)
+                    
+        if len(values_set_in_model) == 0 and handled_as_self_reference == False:
+            # Step 3 - create new Atoms to go with the Features
+            
+            used_typ = get_most_specific_feature_type(candidate_feature)
+            
+            if used_typ._metatype in datatype_metas():
+                print(f"Executing step 2. Identified {cf_name} ({candidate_feature._id}) " + \
+                      f"as a non-connector Feature. No existing values found. " + \
+                        f"This is a datatype. Skipping generation of values.")
+                return None
+            else:
+                print(f"Executing step 2. Identified {cf_name} ({candidate_feature._id}) as a non-connector Feature. No existing values found. " + \
+                    f"Generating {feature_multiplicity} new values specializing type {used_typ}.")
+            
+            for i in range(0, feature_multiplicity):
+                self._inspect_feature_for_values(self._working_map._model,
+                        self._working_package,
+                        type_instance,
+                        i,
+                        candidate_feature
+                    )
+                
+        return None
 
     def _process_connector_features():
 
