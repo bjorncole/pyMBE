@@ -87,7 +87,7 @@ class FeatureTypeWorkingMap:
         try:
             return self._working_dict[type_instance._id][id_path]
         except KeyError:
-            raise KeyError(f"Found no references to {feature_nesting} under {type_instance}")
+            raise []
         
     def __repr__(self):
 

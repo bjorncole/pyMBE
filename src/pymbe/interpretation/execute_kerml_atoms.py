@@ -152,6 +152,14 @@ class KermlForwardExecutor():
                     )
 
                 if cf._metatype in connector_metas() and pass_kind == 'Connector Features':
+
+                    self._process_connector_features(
+                        type_instance=new_classifier,
+                        candidate_feature=cf,
+                        feature_multiplicity=lower_mult,
+                        values_set_in_model=values_set_in_model
+                    )
+
                     pass # refer to _process_connector_features
             
         if type_to_value._metatype in datatype_metas():
@@ -265,9 +273,205 @@ class KermlForwardExecutor():
                 
         return None
 
-    def _process_connector_features():
+    def _process_connector_features(
+            self,
+            type_instance:Element,
+            candidate_feature:Element,
+            feature_multiplicity:int,
+            values_set_in_model:List[Element]
+        ):
 
-        pass
+        print(f"Executing step 4. Identified {get_effective_basic_name(candidate_feature)} as a Connector")
+
+        # check the feature ends of the connector
+        
+        used_typ = get_most_specific_feature_type(candidate_feature)
+        
+        connector_atoms = []
+
+        connector_ends = candidate_feature.throughEndFeatureMembership
+
+        lm_end1 = get_effective_lower_multiplicity(connector_ends[0])
+        lm_end2 = get_effective_lower_multiplicity(connector_ends[1])
+
+        if lm_end1 == 1 and lm_end2 == 1:
+            print(f"Executing step 5. Identified {candidate_feature} as a Connector with 1-to-1 ends")
+            
+            end_connected_mults = [get_effective_lower_multiplicity(connector_ends[i].throughReferenceSubsetting[0]) for i in range(0,2)]
+            
+            # get the multiplicity of the ends
+            #end1_connected_mult = get_effective_lower_multiplicity(connector_ends[0].throughReferenceSubsetting[0])
+            #end2_connected_mult = get_effective_lower_multiplicity(connector_ends[1].throughReferenceSubsetting[0])
+            
+            for i, end_connected_mult in enumerate(end_connected_mults):
+            
+                print(f"...Effective lower multiplicity of {connector_ends[i].throughReferenceSubsetting[0]}, bound to assoc feature {connector_ends[i]}, " + \
+                        f"is {end_connected_mult}")
+
+            # check to see if the already built instances have a finite value
+            
+            print(f"...Looking for connected end feature values filled in during execution.")
+            
+            found_values = []
+            
+            ends_to_process = []
+            
+            # look for feature ends by the "isEnd" attribute of a feature
+            for cf_ele in candidate_feature.throughFeatureMembership:
+                if cf_ele.isEnd:
+                    ends_to_process.append(cf_ele)
+            if used_typ is not None:
+                for cf_ele in used_typ.throughFeatureMembership:
+                    if cf_ele.isEnd:
+                        ends_to_process.append(cf_ele)
+            
+            for con_end in ends_to_process:
+                bound_feature = con_end.throughReferenceSubsetting[0]
+                bound_feature_values = self._working_map._get_atom_values_for_feature(
+                    type_instance=type_instance,
+                    feature_nesting=[bound_feature]
+                    )
+
+                if len(bound_feature_values) > 0:
+                    print(f"...Found connected end feature values filled in during execution {bound_feature_values}!")
+                    found_values.append(len(bound_feature_values))
+                                                    
+            number_to_make = max(end_connected_mults + found_values)
+            
+            print(f"...Found that number of atoms to make for {candidate_feature} is {number_to_make}")
+
+            feature_value_atoms = []
+
+            used_typ = None
+
+            for i in range(0, number_to_make):
+                print(f"Executing step 5b. Creating atom #{i + 1} to be value for {candidate_feature}")
+
+                typ = []
+                used_typ = None
+                used_name = candidate_feature.basic_name
+                used_metatype = "Association"
+                
+                elaboration_end = False
+
+                if hasattr(candidate_feature, "throughFeatureTyping"):
+                    typ = candidate_feature.throughFeatureTyping
+
+                if len(typ) > 0:
+                    used_typ = typ[0]
+                    used_name = used_typ.basic_name
+                    used_metatype = used_typ._metatype
+
+                #feature_value_atoms.append(new_ft_classifier)
+
+                # need to do this for Association types and also nested end features
+
+                #ends_to_process = []
+
+                #if hasattr(cf, "throughEndFeatureMembership"):
+                #    for cf_ele in cf.throughEndFeatureMembership:
+                #        ends_to_process.append(cf_ele)
+                #if used_typ is not None and hasattr(used_typ, "throughEndFeatureMembership"):
+                #    for cf_ele in used_typ.throughEndFeatureMembership:
+                #        ends_to_process.append(cf_ele)
+
+                for con_end in ends_to_process:
+                    print(f"...Inspecting {con_end} for connected features.")
+                    if len(con_end.throughReferenceSubsetting) > 0:
+                        bound_feature = con_end.throughReferenceSubsetting[0]
+                        bound_feature_type = bound_feature.throughFeatureTyping
+
+                        print(f"...Found connected feature {bound_feature}.")
+
+                        if len(bound_feature_type) > 0:
+                            feature_used_type = bound_feature_type[0]
+
+                            if bound_feature._id in bound_features_to_atom_values_dict:
+                                # if not enough atoms exist, make some more
+                                if (i + 1) > len(bound_features_to_atom_values_dict[bound_feature._id]):
+                                    print(f"Executing step 5b (1-to-1 variant). Creating atom #{i + 1} to " + \
+                                        f"be value for {con_end} and also {bound_feature} to fill in rest of values.")
+                                    
+                                    inspect_type_for_atom_rev_2(input_model,
+                                                                package_to_execute,
+                                                                package_to_populate,
+                                                                i,
+                                                                bound_feature,
+                                                                feature_used_type,
+                                                                bound_features_to_atom_values_dict
+                                                                )
+                                    
+                            else:
+                                print(f"Executing step 5b (1-to-1 variant). Creating atom #{i + 1} to " + \
+                                    f"be value for {con_end} and also {bound_feature}")
+                                
+                                if has_type_named(bound_feature, "FeatureWritePerformance"):
+                                    create_feature_write_performance_atoms(
+                                        input_model,
+                                        bound_features_to_atom_values_dict,
+                                        bound_feature,
+                                        package_to_populate
+                                    )
+                                
+                                else:
+                                    inspect_type_for_atom_rev_2(input_model,
+                                                                package_to_execute,
+                                                                package_to_populate,
+                                                                i,
+                                                                bound_feature,
+                                                                feature_used_type,
+                                                                bound_features_to_atom_values_dict            
+                                                                )
+                                
+
+                if len(ends_to_process) == 2:
+                    source_end = ends_to_process[0]
+                    target_end = ends_to_process[1]
+
+                    source_bound_feature = source_end.throughReferenceSubsetting[0]
+                    target_bound_feature = target_end.throughReferenceSubsetting[0]
+                    
+                    try:
+                        source_atom = bound_features_to_atom_values_dict[source_bound_feature._id][i]
+                    except KeyError:
+                        raise KeyError(f"...Failed to find atoms for {source_bound_feature} and connector {cf}." + \
+                                        f"{bound_features_to_atom_values_dict}")
+                    
+                    try:
+                        target_atom = bound_features_to_atom_values_dict[target_bound_feature._id][i]
+                    except KeyError:
+                        raise KeyError(f"...Failed to find atoms for {target_bound_feature} and connector {cf}." + \
+                                        f"{bound_features_to_atom_values_dict}")
+
+                    print(f"...Typing atom association ends from {source_atom} to {target_atom} under " + 
+                            f"{used_name}{i + 1} to specialize {[ft.basic_name for ft in cf.throughFeatureTyping]}")
+                    
+                    # check for typing
+                    
+                    cn_types = candidate_feature.throughFeatureTyping
+                    
+                    if len(candidate_feature.throughFeatureTyping) == 0:
+                        pass
+
+                    new_cn_classifier = build_from_binary_assoc_pattern(
+                        name=f"{used_name}{i + 1}",
+                        source_role_name=connector_ends[0].basic_name,
+                        target_role_name=connector_ends[1].basic_name,
+                        source_type=source_atom,
+                        target_type=target_atom,
+                        model=input_model,
+                        metatype=used_metatype,
+                        owner=package_to_populate,
+                        superclasses=cf.throughFeatureTyping,
+                        specific_fields={}
+                    )
+                    
+                    if candidate_feature._id in bound_features_to_atom_values_dict:
+                        bound_features_to_atom_values_dict[cf._id].append(new_cn_classifier)
+                    else:
+                        bound_features_to_atom_values_dict.update({candidate_feature._id: [new_cn_classifier]})
+                    
+                    connector_atoms.append(new_cn_classifier)
 
     def _common_postprocess():
 
