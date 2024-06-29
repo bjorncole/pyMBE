@@ -59,6 +59,9 @@ def get_label(element: Element) -> str:  # pylint: disable=too-many-return-state
 
         return f"{direction}{para_string} «{metatype}»"
 
+    if metatype == "LiteralBoolean":
+        metatype = type_names[0] if type_names else metatype.replace("Literal", "Occurred Literal")
+        return f"{value} «{metatype}»"
     if value and metatype.startswith("Literal"):
         metatype = type_names[0] if type_names else metatype.replace("Literal", "Occurred Literal")
         return f"{value} «{metatype}»"
@@ -113,7 +116,7 @@ def get_label_for_expression(expression: Element) -> str:
                 .basic_name
             )
             # check if this is a two-item feature chain or n > 2
-            if "throughMembership" in expression._derived:
+            if "throughMembership" in expression._derived and len(expression.throughMembership) > 0:
                 # if hasattr(expression, "throughMembership"):
                 # this is the n = 2 case
                 second_item = expression.throughMembership[0].basic_name
@@ -123,7 +126,7 @@ def get_label_for_expression(expression: Element) -> str:
                 chains = expression.throughOwningMembership[0].throughFeatureChaining
                 other_items = ".".join([chain.basic_name for chain in chains])
                 expression_label += f".{other_items}"
-        except IndexError:
+        except IndexError as failed_link:
             expression_label = "Empty FCE"
 
     # covers Literal expression cases

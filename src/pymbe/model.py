@@ -588,8 +588,8 @@ class Element:  # pylint: disable=too-many-instance-attributes
     @staticmethod
     def new(data: dict, model: Model) -> "Element":
         return Element(
-            _data=data, _model=model, _metamodel_hints=model._metamodel_hints[data["@type"]]
-        )
+                _data=data, _model=model, _metamodel_hints=model._metamodel_hints[data["@type"]]
+            )
 
     def __safe_dereference(self, item):
         """If given a reference to another element, try to get that element"""

@@ -91,12 +91,14 @@ def list_relationship_metaclasses():
         "Membership",
         "OwningMembership",
         "FeatureMembership",
+        "EndFeatureMembership",
         "Specialization",
         "Conjugation",
         "Subclassification",
         "Subsetting",
         "Redefinition",
         "FeatureValue",
+        "ReferenceSubsetting"
     ]
 
 
