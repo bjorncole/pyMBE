@@ -116,7 +116,10 @@ def get_label_for_expression(expression: Element) -> str:
                 .basic_name
             )
             # check if this is a two-item feature chain or n > 2
-            if "throughMembership" in expression._derived and len(expression.throughMembership) > 0:
+            if (
+                "throughMembership" in expression._derived
+                and len(expression.throughMembership) > 0
+            ):
                 # if hasattr(expression, "throughMembership"):
                 # this is the n = 2 case
                 second_item = expression.throughMembership[0].basic_name

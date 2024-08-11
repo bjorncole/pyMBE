@@ -98,25 +98,28 @@ def list_relationship_metaclasses():
         "Subsetting",
         "Redefinition",
         "FeatureValue",
-        "ReferenceSubsetting"
+        "ReferenceSubsetting",
     ]
 
 
-
 def classifier_metas():
-    return {'Classifier', 'Behavior', 'Structure'}
+    return {"Classifier", "Behavior", "Structure"}
+
 
 def assoc_metas():
-    return {'Association'}
+    return {"Association"}
+
 
 def connector_metas():
-    return {'Connector', 'Succession'}
+    return {"Connector", "Succession"}
+
 
 def datatype_metas():
-    return {'DataType'}
+    return {"DataType"}
+
 
 def feature_metas():
-    return {'Feature', 'Step'}
+    return {"Feature", "Step"}
 
 
 def derive_attribute(key: str, ele: "Element"):  # noqa: F821

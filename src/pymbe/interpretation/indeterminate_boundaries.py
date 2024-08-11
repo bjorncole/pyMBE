@@ -1,16 +1,17 @@
-from uuid import uuid5
-from uuid import NAMESPACE_URL
+from uuid import NAMESPACE_URL, uuid5
 
-from pymbe.model import (Model, Element)
-
+from pymbe.model import Element, Model
 from pymbe.model_modification import build_from_classifier_pattern
 
-def id_for_quantity(name:str):
+
+def id_for_quantity(name: str):
     url = "https://www.dumbdata.org/" + name
     return uuid5(NAMESPACE_URL, url)
 
 
-def build_indefinite_boundaries(library_model: Model, target_package: Element, active_model: Model):
+def build_indefinite_boundaries(
+    library_model: Model, target_package: Element, active_model: Model
+):
 
     # find Occurrence in libraries
 
@@ -73,6 +74,6 @@ def build_indefinite_boundaries(library_model: Model, target_package: Element, a
         specific_fields={"ownedRelationship": []},
     )
 
-    #print(f"Created indefinite time {indefinite_time} and indefinite space {indefinite_space}")
+    # print(f"Created indefinite time {indefinite_time} and indefinite space {indefinite_space}")
 
     return (indefinite_time, indefinite_space, indefinite_life)

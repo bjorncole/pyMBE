@@ -3,8 +3,10 @@ from typing import Any, Dict, List
 from uuid import uuid4
 
 from pymbe.model import Element, Model
-
-from pymbe.query.metamodel_navigator import get_effective_basic_name, get_most_specific_feature_type
+from pymbe.query.metamodel_navigator import (
+    get_effective_basic_name,
+    get_most_specific_feature_type,
+)
 
 
 def create_element_data_dictionary(
@@ -178,6 +180,7 @@ def build_from_feature_pattern(
 
     return new_ele
 
+
 def build_from_parameter_pattern(
     name: str,
     model: Model,
@@ -185,7 +188,7 @@ def build_from_parameter_pattern(
     feature_type: Element,
     direction: str = "",
     metatype: str = "Feature",
-    returning_parameter: bool = False
+    returning_parameter: bool = False,
 ):
 
     """
@@ -219,7 +222,7 @@ def build_from_parameter_pattern(
     else:
         member_kind = "ParameterMembership"
 
-    #new_element_ownership_pattern(owner=owner, ele=new_ele, model=model, member_kind=member_kind)
+    # new_element_ownership_pattern(owner=owner, ele=new_ele, model=model, member_kind=member_kind)
 
     if feature_type is not None:
         build_from_binary_relationship_pattern(
@@ -612,9 +615,11 @@ def apply_covered_connector_pattern(
 
     if separate_connectors:
         if connector_covering_name == "":
-            connector_covering_name = f"Connector between " + \
-                            f"{get_effective_basic_name(feature_to_cover.source[0])} and " + \
-                                f"{get_effective_basic_name(feature_to_cover.target[0])}"
+            connector_covering_name = (
+                f"Connector between "
+                + f"{get_effective_basic_name(feature_to_cover.source[0])} and "
+                + f"{get_effective_basic_name(feature_to_cover.target[0])}"
+            )
 
         for i, omc in enumerate(one_member_classifiers):
             build_from_feature_pattern(
@@ -622,7 +627,8 @@ def apply_covered_connector_pattern(
                 name=redefining_feature_prefix
                 + connector_covering_name
                 + redefining_feature_suffix
-                + " " + str(i),
+                + " "
+                + str(i),
                 model=model,
                 specific_fields={},
                 feature_type=omc,
@@ -756,6 +762,7 @@ def build_from_portion_pattern(
 
     return new_ele
 
+
 def apply_chained_feature_assignment_pattern(
     feature_path_to_chain: List[Element],
     type_to_apply_pattern_on: Element,
@@ -764,7 +771,7 @@ def apply_chained_feature_assignment_pattern(
     chained_feature_suffix: str = " (Closed)",
 ):
     """
-    Execute a pattern that will create a feature that is linked to a 
+    Execute a pattern that will create a feature that is linked to a
     feature chain that can been used to set values on deeply nested features
     """
 
@@ -773,16 +780,16 @@ def apply_chained_feature_assignment_pattern(
     feature_to_chain_name = get_effective_basic_name(feature_path_to_chain[-1])
 
     new_feature_for_chain = build_from_feature_pattern(
-                    owner=type_to_apply_pattern_on,
-                    name=feature_to_chain_name,
-                    model=model,
-                    specific_fields={},
-                    feature_type=get_most_specific_feature_type(feature_path_to_chain[-1]),
-                    direction="",
-                    metatype=feature_path_to_chain[-1]._metatype,
-                    connector_end=False,
-                )
-    
+        owner=type_to_apply_pattern_on,
+        name=feature_to_chain_name,
+        model=model,
+        specific_fields={},
+        feature_type=get_most_specific_feature_type(feature_path_to_chain[-1]),
+        direction="",
+        metatype=feature_path_to_chain[-1]._metatype,
+        connector_end=False,
+    )
+
     # create the parameters
 
     new_in_para_1 = build_from_parameter_pattern(
@@ -792,7 +799,7 @@ def apply_chained_feature_assignment_pattern(
         feature_type=None,
         direction="in",
         metatype="Feature",
-        returning_parameter=False
+        returning_parameter=False,
     )
 
     new_result_para_1 = build_from_parameter_pattern(
@@ -802,7 +809,7 @@ def apply_chained_feature_assignment_pattern(
         feature_type=None,
         direction="out",
         metatype="Feature",
-        returning_parameter=True
+        returning_parameter=True,
     )
 
     # create the feature chain expression
@@ -813,9 +820,9 @@ def apply_chained_feature_assignment_pattern(
         specific_fields={},
         metatype="FeatureChainExpression",
         in_paras=[new_in_para_1],
-        return_para=new_result_para_1
+        return_para=new_result_para_1,
     )
-    
+
     # start the feature chain
     build_from_binary_relationship_pattern(
         source=new_feature_for_chain,
@@ -837,7 +844,7 @@ def apply_chained_feature_assignment_pattern(
         feature_type=None,
         direction="in",
         metatype="Feature",
-        returning_parameter=False
+        returning_parameter=False,
     )
 
     new_fre_result_para_1 = build_from_parameter_pattern(
@@ -847,7 +854,7 @@ def apply_chained_feature_assignment_pattern(
         feature_type=None,
         direction="out",
         metatype="Feature",
-        returning_parameter=True
+        returning_parameter=True,
     )
 
     # need reference to the first element in the path
@@ -858,7 +865,7 @@ def apply_chained_feature_assignment_pattern(
         metatype="FeatureReferenceExpression",
         in_paras=[new_fre_in_para_1],
         return_para=new_fre_result_para_1,
-        referred_feature=feature_path_to_chain[0]
+        referred_feature=feature_path_to_chain[0],
     )
 
     build_from_binary_relationship_pattern(
@@ -881,7 +888,9 @@ def apply_chained_feature_assignment_pattern(
 
         new_fce_feat = Element.new(data=feature_dict, model=model)
 
-        new_element_ownership_pattern(owner=new_fce, ele=new_fce_feat, model=model, member_kind="OwningMembership")
+        new_element_ownership_pattern(
+            owner=new_fce, ele=new_fce_feat, model=model, member_kind="OwningMembership"
+        )
 
         for path_ele in feature_path_to_chain[1:]:
             build_from_binary_relationship_pattern(
@@ -899,15 +908,16 @@ def apply_chained_feature_assignment_pattern(
 
     return new_feature_for_chain
 
+
 def build_from_expression_pattern(
-        owner:Element,
-        model:Model,
-        specific_fields:dict,
-        metatype:str = "Expression",
-        in_paras:List[Element]=[],
-        return_para:Element=None
+    owner: Element,
+    model: Model,
+    specific_fields: dict,
+    metatype: str = "Expression",
+    in_paras: List[Element] = [],
+    return_para: Element = None,
 ):
-    
+
     typing_snippet = {}
     direction_snippet = {}
 
@@ -925,12 +935,16 @@ def build_from_expression_pattern(
     new_ele = Element.new(data=feature_dict, model=model)
 
     model._add_element(new_ele)
-    
-    new_rpm = new_element_ownership_pattern(owner=new_ele, ele=return_para, model=model, member_kind="ReturnParameterMembership")
+
+    new_rpm = new_element_ownership_pattern(
+        owner=new_ele, ele=return_para, model=model, member_kind="ReturnParameterMembership"
+    )
     new_pms = []
 
     for in_para in in_paras:
-        new_pm = new_element_ownership_pattern(owner=new_ele, ele=in_para, model=model, member_kind="ParameterMembership")
+        new_pm = new_element_ownership_pattern(
+            owner=new_ele, ele=in_para, model=model, member_kind="ParameterMembership"
+        )
         new_pms.append(new_pm)
 
     model._initializing = False
@@ -950,16 +964,17 @@ def build_from_expression_pattern(
 
     return new_ele
 
+
 def build_from_feature_ref_expression_pattern(
-        owner:Element,
-        model:Model,
-        specific_fields:dict,
-        metatype:str = "FeatureReferenceExpression",
-        in_paras:List[Element]=[],
-        return_para:Element=None,
-        referred_feature:Element=None
+    owner: Element,
+    model: Model,
+    specific_fields: dict,
+    metatype: str = "FeatureReferenceExpression",
+    in_paras: List[Element] = [],
+    return_para: Element = None,
+    referred_feature: Element = None,
 ):
-    
+
     typing_snippet = {}
     direction_snippet = {}
 
@@ -977,12 +992,16 @@ def build_from_feature_ref_expression_pattern(
     new_ele = Element.new(data=feature_dict, model=model)
 
     model._add_element(new_ele)
-    
-    new_rpm = new_element_ownership_pattern(owner=new_ele, ele=return_para, model=model, member_kind="ReturnParameterMembership")
+
+    new_rpm = new_element_ownership_pattern(
+        owner=new_ele, ele=return_para, model=model, member_kind="ReturnParameterMembership"
+    )
     new_pms = []
 
     for in_para in in_paras:
-        new_pm = new_element_ownership_pattern(owner=new_ele, ele=in_para, model=model, member_kind="ParameterMembership")
+        new_pm = new_element_ownership_pattern(
+            owner=new_ele, ele=in_para, model=model, member_kind="ParameterMembership"
+        )
         new_pms.append(new_pm)
 
     new_membership = build_from_binary_relationship_pattern(
@@ -1016,10 +1035,9 @@ def build_from_feature_ref_expression_pattern(
 
     return new_ele
 
+
 def assign_value_by_literal_expression(
-        target_feature:Element,
-        value_to_assign:Any,
-        model:Model
+    target_feature: Element, value_to_assign: Any, model: Model
 ):
 
     """
@@ -1036,7 +1054,7 @@ def assign_value_by_literal_expression(
         feature_type=None,
         direction="in",
         metatype="Feature",
-        returning_parameter=False
+        returning_parameter=False,
     )
 
     new_result_para_1 = build_from_parameter_pattern(
@@ -1046,7 +1064,7 @@ def assign_value_by_literal_expression(
         feature_type=None,
         direction="out",
         metatype="Feature",
-        returning_parameter=True
+        returning_parameter=True,
     )
 
     # create the literal expression
@@ -1067,7 +1085,7 @@ def assign_value_by_literal_expression(
         specific_fields={"value": value_to_assign},
         metatype=le_meta,
         in_paras=[new_in_para_1],
-        return_para=new_result_para_1
+        return_para=new_result_para_1,
     )
 
     new_valuing = build_from_binary_relationship_pattern(

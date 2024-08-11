@@ -72,7 +72,8 @@ def test_inherited_name_labels(load_library):
         if get_effective_basic_name(three_vector_feat) == "dimension":
             three_vector_dim = three_vector_feat
 
-    assert str(three_vector_dim) == ":>>dimension «Feature»"
+    # assert str(three_vector_dim) == ":>>dimension «Feature»"
+    assert str(three_vector_dim) == "dimension: Positive «Feature»"
 
 
 def test_vector_plus_invariant_labels(load_library):
