@@ -91,13 +91,35 @@ def list_relationship_metaclasses():
         "Membership",
         "OwningMembership",
         "FeatureMembership",
+        "EndFeatureMembership",
         "Specialization",
         "Conjugation",
         "Subclassification",
         "Subsetting",
         "Redefinition",
         "FeatureValue",
+        "ReferenceSubsetting",
     ]
+
+
+def classifier_metas():
+    return {"Classifier", "Behavior", "Structure"}
+
+
+def assoc_metas():
+    return {"Association"}
+
+
+def connector_metas():
+    return {"Connector", "Succession"}
+
+
+def datatype_metas():
+    return {"DataType"}
+
+
+def feature_metas():
+    return {"Feature", "Step"}
 
 
 def derive_attribute(key: str, ele: "Element"):  # noqa: F821
