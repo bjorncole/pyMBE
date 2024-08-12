@@ -219,6 +219,33 @@ class Model:  # pylint: disable=too-many-instance-attributes
             name=filepath.name,
             source=filepath.resolve(),
         )
+    
+    @staticmethod
+    def load_from_mult_post_files(filepath_list: List, encoding: str = "utf-8") -> "Model":
+        """Make a model from multiple JSON files formatted to POST to v2 API (includes payload fields)"""
+        factored_data = []
+
+        for filepath in filepath_list:
+            if isinstance(filepath, str):
+                filepath = Path(filepath)
+
+            if not filepath.is_file():
+                raise ValueError(f"'{filepath}' does not exist!")
+
+            with open(filepath, "r", encoding="UTF-8") as raw_post_fp:
+                element_raw_post_data = json.load(raw_post_fp)
+
+                for raw_post in element_raw_post_data:
+                    factored_data_element = dict(raw_post["payload"].items()) | {
+                        "@id": raw_post["identity"]["@id"]
+                    }
+                    factored_data.append(factored_data_element)
+
+        return Model.load(
+            elements=factored_data,
+            name=filepath.name,
+            source=filepath_list[0].resolve(),
+        )
 
     @property
     def packages(self) -> Tuple["Element", ...]:
@@ -349,12 +376,42 @@ class Model:  # pylint: disable=too-many-instance-attributes
             "reverse": ("target", "source"),
         }
 
-        endpoints = {
-            endpoint_type: [
-                self.get_element(endpoint["@id"]) for endpoint in relationship._data[endpoint_type]
-            ]
-            for endpoint_type in ("source", "target")
-        }
+        try:
+            endpoints = {
+                endpoint_type: [
+                    self.get_element(endpoint["@id"]) for endpoint in relationship._data[endpoint_type]
+                ]
+                for endpoint_type in ("source", "target")
+            }
+        except KeyError as likley_id_error:
+            warn(str(likley_id_error) + f" call was from a relation of type {relationship._metatype}.")
+            return
+            
+        except TypeError:
+            # may be malformed with just one source and target - this compensates for that case
+            endpoints = {}
+            source_value = relationship._data["source"]
+            target_value = relationship._data["target"]
+
+            if isinstance(source_value, dict):
+                endpoints.update({"source": [self.get_element(relationship._data["source"]["@id"])]
+                                  })
+            else:
+                endpoints.update({"source": [
+                    self.get_element(endpoint["@id"]) for endpoint in relationship._data["source"]
+                ]}
+                )
+
+            if isinstance(target_value, dict):
+                endpoints.update({"target": [self.get_element(relationship._data["target"]["@id"])]
+                                  })
+            else:
+                endpoints.update({"target": [
+                    self.get_element(endpoint["@id"]) for endpoint in relationship._data["target"]
+                ]}
+                )
+            return
+            
         metatype = relationship._metatype
         for direction, (key1, key2) in relationship_mapper.items():
             endpts1, endpts2 = endpoints[key1], endpoints[key2]
