@@ -39,10 +39,13 @@ from pymbe.query.metamodel_navigator import (
 
 class KermlForwardExecutor:
     """
-    An execution class that applies the methods from the draft KerML Annex A for execution.
+    An execution class that applies the methods from the draft KerML Annex A for execution. This class has a goal of examining a 
+    model and assigning values to the Features that are encountered as it traversals the model.
     """
 
+    # The map that will record feature value assignments as the executor progresses.
     _working_map = None
+    # The package where new elements will be created
     _working_package = None
 
     _indefinite_time_type = None
@@ -65,6 +68,9 @@ class KermlForwardExecutor:
     def execute_from_classifier(self, classifier: Element):
         """
         Run the executor on the classifier provided as an argument
+
+        :param classifier: The classifier to act as the top-level context of the
+            execution.
         """
 
         self._generate_values_for_features_in_type(
@@ -93,9 +99,19 @@ class KermlForwardExecutor:
     ):
 
         """
-        Inspect the type and determine what values should be applied to its Features.0
+        Inspect the type and determine what values should be applied to its Features. This is a procedure
+        that will be executed in nested Features, so information about the traversal path to reach the
+        current Type under consideration is needed.
 
-        param passed_this - element to become the scope for this (passing down for suboccurrences)
+        :param input_model: The model from which to fetch additional information as needed during execution
+        :param package_to_populate: The Package in which to add any generated new model elements
+        :param type_to_value: The Type that will have the algorithm applied to it
+        :param atom_index: Which of the parallel elements in a Type will be
+            generated (e.g., wheel #1 or #2 for a bike's two wheels)
+        :param passed_featuring_type: The type under which this solution will be considered
+        :param passed_feature_path: How far into the nested path the current Type is
+        :param passed_this: element to become the scope for this (passing down for suboccurrences)
+        :param path_from_this: The full path of traversal from this to the current type_to_value
         """
 
         print(f"Applying Annex A atom algorithm to {str(type_to_value)}")
@@ -108,13 +124,11 @@ class KermlForwardExecutor:
 
         working_path = []
 
-        # TODO: Create map from new_classifier to the features discovered under this type rather than having the dictionary key to features globally
-
         if type_to_value._metatype in classifier_metas() and not has_type_named(
             type_to_value, "FeatureWritePerformance"
         ):
 
-            # Step 1 - create new atom from the classifier
+            # Annex A Step 1 - create new atom from the classifier
             base_name = type_to_value.basic_name
             new_classifier_instance = build_from_classifier_pattern(
                 owner=package_to_populate,
@@ -136,8 +150,10 @@ class KermlForwardExecutor:
             if top_portion is None:
                 top_portion = new_classifier_instance
 
-        # use derived property 'feature' to get all features including the inherited ones
+        # Use derived property 'feature' to get all features including the inherited ones
         candidate_features = type_to_value.feature
+
+        # If the type to value is a Feature, need to get a Classifier to be its Featuring Type by convention
 
         if new_classifier_instance is None:
             featuring_type = passed_featuring_type
@@ -159,10 +175,8 @@ class KermlForwardExecutor:
             f"...Found features {candidate_features} under the type to value {str(type_to_value)}."
         )
 
-        # set up for multiple passes on the feature list, will test per pass to determine whether to handle it
-
-        # TODO: Instead of this testing approach, gather all features and allocated into sub-collections that
-        # handle these passes
+        # Assure that there are specific evaluation passes in a given order on the list of Features underneath
+        # the type to value
 
         passes = ["Non-connector Features", "FeatureWritePerformances", "Connector Features"]
 
@@ -174,7 +188,7 @@ class KermlForwardExecutor:
 
             for cf in candidate_features:
 
-                eval_feature, lower_mult, values_set_in_model = self._common_preprocess(
+                eval_feature, lower_mult, values_set_in_model = self._common_features_preprocess(
                     pass_kind=pass_kind,
                     type_instance=featuring_type,
                     candidate_feature=working_path + [cf],
@@ -247,7 +261,7 @@ class KermlForwardExecutor:
 
         return None
 
-    def _common_preprocess(
+    def _common_features_preprocess(
         self,
         pass_kind: str,
         type_instance: Element,
@@ -255,6 +269,16 @@ class KermlForwardExecutor:
         top_portion: Element,
     ):
 
+        """
+        The common preprocess step focuses on common steps such as checking whether or not a given Feature has been
+        declared to have a finite multiplicity, is redefined, or has values bound to it already.
+
+        :param pass_kind: What the current evaluation pass is looking for (e.g., non-connectors or connectors)
+        :param type_instance: the current type instance under which to place feature values
+        :param candidate_feature: the feature being evaluated
+        :param top_portion: the instance current considered for the "this" feature in the nested traversal
+        return eval_feature, lower_mult, values_set_in_model
+        """
         if (
             has_type_named(candidate_feature[-1], "FeatureWritePerformance")
             and not pass_kind == "FeatureWritePerformances"
@@ -348,6 +372,12 @@ class KermlForwardExecutor:
         top_portion: Element,
         path_from_this: List[Element],
     ):
+        """
+        Runs the execution rules specific to Features that are non-connectors. This will check to see if there are
+        already values created for the feature. If not, it will call for n, where n = lower multiplicity of the Feature,
+        values to be created and initiate depth-first search on further nested Features for execution.
+
+        """
 
         handled_as_self_reference = is_feature_involving_self(candidate_feature[-1])
 
@@ -387,7 +417,7 @@ class KermlForwardExecutor:
                 )
 
             for i in range(0, feature_multiplicity):
-                self._inspect_feature_for_values(
+                self._inspect_feature_type_for_values(
                     input_model=self._working_map._model,
                     package_to_populate=self._working_package,
                     featuring_type=type_instance,
@@ -409,6 +439,16 @@ class KermlForwardExecutor:
         passed_this: Element,
         path_from_this: List[Element],
     ):
+        
+        """
+        Execute on connector Features. This requires the inspection of ends to see if there
+        are bound Features with values already. The multiplicity of the ends of the connector will also
+        determine how to generate values for the connector.
+
+        1-to-1 connectors with one finite end and one infinite end will have the infinite end multiplicity
+        constrained by that of the finite end. Also, even if both ends are infinite but a bound Feature has
+        values, this will determine the number of values of the other end.
+        """
 
         print(
             f"Executing step 4. Identified {get_effective_basic_name(candidate_feature[-1])} as a Connector"
@@ -430,14 +470,11 @@ class KermlForwardExecutor:
                 f"Executing step 5. Identified {candidate_feature} as a Connector with 1-to-1 ends"
             )
 
+            # Get the lower multiplicity of the Features the connector is bound to
             end_connected_mults = [
                 get_effective_lower_multiplicity(connector_ends[i].throughReferenceSubsetting[0])
                 for i in range(0, 2)
             ]
-
-            # get the multiplicity of the ends
-            # end1_connected_mult = get_effective_lower_multiplicity(connector_ends[0].throughReferenceSubsetting[0])
-            # end2_connected_mult = get_effective_lower_multiplicity(connector_ends[1].throughReferenceSubsetting[0])
 
             for i, end_connected_mult in enumerate(end_connected_mults):
 
@@ -446,7 +483,7 @@ class KermlForwardExecutor:
                     + f"is {end_connected_mult}"
                 )
 
-            # check to see if the already built instances have a finite value
+            # Check to see if the already built instances have a finite value
 
             print(f"...Looking for connected end feature values filled in during execution.")
 
@@ -454,8 +491,8 @@ class KermlForwardExecutor:
 
             ends_to_process = []
 
-            # look for feature ends by the "isEnd" attribute of a feature
-            for cf_ele in candidate_feature[-1].throughEndFeatureMembership:
+            # Look to the declared ends of the connector or its type
+            for cf_ele in connector_ends:
                 # if cf_ele.isEnd:
                 ends_to_process.append(cf_ele)
             if used_typ is not None:
@@ -525,6 +562,7 @@ class KermlForwardExecutor:
                                     + f"be value for {con_end} and also {bound_feature} to fill in rest of values."
                                 )
 
+                                # Case where the bound end is connected to a Write Performance
                                 if has_type_named(bound_feature, "FeatureWritePerformance"):
                                     self._process_feature_write_features(
                                         type_instance=type_instance,
@@ -533,9 +571,10 @@ class KermlForwardExecutor:
                                         path_to_this=path_from_this + [bound_feature],
                                     )
 
+                                # Traverse on the bound feature (which should be compatible with the end feature)
+                                # to generate values
                                 else:
-
-                                    self._inspect_feature_for_values(
+                                    self._inspect_feature_type_for_values(
                                         self._working_map._model,
                                         self._working_package,
                                         type_instance,
@@ -545,6 +584,7 @@ class KermlForwardExecutor:
                                         path_from_this + [bound_feature],
                                     )
 
+                # Currently can only handle the binary connector case robustly
                 if len(ends_to_process) == 2:
                     source_end = ends_to_process[0]
                     target_end = ends_to_process[1]
@@ -618,7 +658,10 @@ class KermlForwardExecutor:
     ):
 
         """
-        Create FeatureWritePerformance atoms and the associated timeslices
+        Executing FeatureWritePerformances leads to the creation of new TimeSlices for the 
+        occurrence that is having its Feature written to. The timeslices allow for discontinuities 
+        in the value to be described in the executed model. The process will examine the FWP for 
+        occurrence to slice, find the accessed feature, and find the desired value to be written.
         """
 
         # find onOccurrence in feature list
@@ -797,6 +840,10 @@ class KermlForwardExecutor:
         passed_this: Element,
         passed_path_to_this: List[Element],
     ):
+        
+        """
+        Determine of what Life the occurrence value to be generated will be a portion.
+        """
 
         # TODO: Be sure this only applies to the top level of a decomposition of occurrences
 
@@ -891,7 +938,7 @@ class KermlForwardExecutor:
                                     atom_value=sub_perf,
                                 )
 
-    def _inspect_feature_for_values(
+    def _inspect_feature_type_for_values(
         self,
         input_model: Model,
         package_to_populate: Element,
@@ -901,6 +948,20 @@ class KermlForwardExecutor:
         top_portion: Element,
         path_from_this: List[Element],
     ):
+        
+        """
+        Look at the type of the Feature (currently expected to be a Classifier) to generate a new 
+        atom for the covering values and also decide whether or not to traverse into further nested
+        Features (inherited or owned) if they existing.
+
+        :param input_model: 
+        :param package_to_populate:
+        :param featuring_type:
+        :param atom_index:
+        :param cf:
+        :param top_portion:
+        :parm path_from_this:
+        """
 
         considered_type = get_most_specific_feature_type(cf[-1])
 

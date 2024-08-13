@@ -19,17 +19,37 @@ from pymbe.query.metamodel_navigator import (
 
 class FeatureTypeWorkingMap:
     """
-    This is a map to hold solutions in work by the interpreter that map a
-    (nested) Feature to a Type under construction. This allows the solution in
-    progress to be incrementally developed before commiting to creating new
-    model objects to represent the solution.
+    This is a map to hold solutions in work by an interpreter, simulation, or executor that map a
+    (nested) Feature to the values that are discovered for it. This allows the solution in
+    progress to be incrementally developed before commiting to creating new model objects to
+    represent the solution.
+
+    The definition of feature value is taken from the KerML specification in Section 7.4.11:
+    
+    A feature value is a membership relationship (see 7.2.5) between an owning feature and a
+    value expression, whose result provides values for the feature. The feature value relationship
+    is specified as either bound or initial, and as either fixed or a default. A feature can have
+    at most one feature value relationship.
+
+    An alternative way of encoding the above is to assign a Feature a type that is a Classifier
+    that is the unioning of a specific number of disjoint Classifiers of multiplicity one. This
+    Classifier "covers" the Feature (in the way that sets can be covered) in such a way that its
+    set of disjoint Classifiers are in fact the only values the Feature could possibly have.
     """
 
     # The working dictionary for atoms to atoms (objects)
     _working_dict: Dict[str, Dict[str, List[Element]]] = field(default_factory=dict)
     # The working dictionary for atoms to values (objects to values)
     _working_dict_data_values: Dict[str, Dict[str, List[Element]]] = field(default_factory=dict)
+    # Reference back to the model for which this map is being created
     _model: Model
+
+    # How to generate model elements as describe above for values.
+    # Covering is the approach of making a classifier that unions disjoint classifiers
+    # ValueExpression is the approach of making a value expression and binding it
+
+    # TODO: Reduce the hard-wiring of this currently in the KermlFeedForwardExecutor
+    _feature_value_style = "Covering"
 
     def __init__(self, model):
         self._working_dict = {}
