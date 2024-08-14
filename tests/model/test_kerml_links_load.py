@@ -6,7 +6,7 @@ import pytest
 from pymbe.model import Element, Model
 
 
-def test_links_associations(load_library):
+def test_links_associations(load_kerml_library):
 
     """
     Check that the main links in Links library have loaded and the expected names are all there.
@@ -14,7 +14,7 @@ def test_links_associations(load_library):
 
     links_ns = [
         library_model_ns
-        for library_model_ns in load_library.ownedElement
+        for library_model_ns in load_kerml_library.ownedElement
         if library_model_ns.throughOwningMembership[0].declaredName == "Links"
     ][0]
 
@@ -38,7 +38,7 @@ def test_links_associations(load_library):
     return None
 
 
-def test_binarylink_has_features(load_library):
+def test_binarylink_has_features(load_kerml_library):
 
     """
     Check that the features participant, source, and target are loaded under BinaryLink
@@ -46,7 +46,7 @@ def test_binarylink_has_features(load_library):
 
     links_ns = [
         library_model_ns
-        for library_model_ns in load_library.ownedElement
+        for library_model_ns in load_kerml_library.ownedElement
         if library_model_ns.throughOwningMembership[0].declaredName == "Links"
     ][0]
 
@@ -65,7 +65,7 @@ def test_binarylink_has_features(load_library):
     return None
 
 
-def test_binarylink_feature_details(load_library):
+def test_binarylink_feature_details(load_kerml_library):
 
     """
     Check that the features participant, source, and target have appropriate subsetting, redefinition,
@@ -74,7 +74,7 @@ def test_binarylink_feature_details(load_library):
 
     links_ns = [
         library_model_ns
-        for library_model_ns in load_library.ownedElement
+        for library_model_ns in load_kerml_library.ownedElement
         if library_model_ns.throughOwningMembership[0].declaredName == "Links"
     ][0]
 
