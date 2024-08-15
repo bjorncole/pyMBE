@@ -1084,17 +1084,14 @@ class KermlForwardExecutor:
 
     def _common_postprocess(self, featuring_type: Element, candidate_features: List[Element]):
 
-        # this looks like a good candidate for common post-processing
+        # Apply common steps for additional value assignments after the other approaches are 
+        # applied to generate model values
         for candidate_feature in candidate_features:
             if candidate_feature._metatype == "Step":
                 temp_subperformances = self._working_map._get_atom_values_for_feature(
                     type_instance=featuring_type, feature_nesting=[candidate_feature]
                 )
 
-                #print(
-                #    f"Returning from dive on feature {candidate_feature}. This is a step and values that need to be added "
-                #    + f"to subperformances list. Values are {temp_subperformances}"
-                #)
                 self._builder_log[self._current_loc].append(
                     f"Returning from dive on feature {candidate_feature}. This is a step and values that need to be added "
                     + f"to subperformances list. Values are {temp_subperformances}"
@@ -1299,39 +1296,5 @@ class KermlForwardExecutor:
                         )
             except KeyError:
                 pass
-
-            # # apply this to the redefined properties also
-
-            # for redef in feat.throughRedefinition:
-            #     #print(f"Found redefined feature for {feat}.")
-            #     self._builder_log[self._current_loc].append(
-            #         f"Found redefined feature for {feat}."
-            #     )
-            #     try:
-            #         values_in_dict2 = self._working_map._get_atom_values_for_feature(
-            #             type_instance, [referred_item]
-            #         )
-            #         if len(values_in_dict2) > 0:
-            #             values_in_local_dict = self._working_map._get_atom_values_for_feature(
-            #                 type_instance, [redef]
-            #             )
-            #             #print(
-            #             #    f"...Found values {values_in_dict} to match to values set for {feat} ({feat._id})"
-            #             #)
-            #             self._builder_log[self._current_loc].append(
-            #                 f"...Found values {values_in_dict2} to match to values set for {feat} ({feat._id})"
-            #             )
-            #             try:
-            #                 self._working_map._add_atom_value_to_feature(
-            #                     type_instance=type_instance,
-            #                     feature_nesting=[redef],
-            #                     atom_value=values_in_local_dict + values_in_dict2,
-            #                 )
-            #             except KeyError:
-            #                 pass
-            #     except KeyError:
-            #         pass
-
-            # also apply the value to redefined properties
 
         return values_in_dict
