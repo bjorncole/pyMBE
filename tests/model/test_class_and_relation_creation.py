@@ -16,7 +16,7 @@ from pymbe.query.metamodel_navigator import (
 )
 
 
-def test_create_classifier_against_library(load_library):
+def test_create_classifier_against_library(load_kerml_library):
 
     """
     Try the creation of new classifiers that specialize library elements.
@@ -27,7 +27,7 @@ def test_create_classifier_against_library(load_library):
 
     peform_ns = [
         library_model_ns
-        for library_model_ns in load_library.ownedElement
+        for library_model_ns in load_kerml_library.ownedElement
         if library_model_ns.throughOwningMembership[0].declaredName == "Performances"
     ][0]
 
@@ -66,7 +66,7 @@ def test_create_classifier_against_library(load_library):
 
     new_package = Element.new(data=package_model_data, model=empty_model)
 
-    empty_model.reference_other_model(load_library)
+    empty_model.reference_other_model(load_kerml_library)
 
     new_performance = build_from_classifier_pattern(
         owner=new_package,
@@ -90,7 +90,7 @@ def test_create_classifier_against_library(load_library):
     assert new_performance.declaredName == "New Process"
 
 
-def test_create_disjoint_objects(load_library):
+def test_create_disjoint_objects(load_kerml_library):
 
     """
     Try the creation of new classifiers that specialize library elements.
@@ -101,7 +101,7 @@ def test_create_disjoint_objects(load_library):
 
     object_ns = [
         library_model_ns
-        for library_model_ns in load_library.ownedElement
+        for library_model_ns in load_kerml_library.ownedElement
         if library_model_ns.throughOwningMembership[0].declaredName == "Objects"
     ][0]
 
@@ -140,7 +140,7 @@ def test_create_disjoint_objects(load_library):
 
     new_package = Element.new(data=package_model_data, model=empty_model)
 
-    empty_model.reference_other_model(load_library)
+    empty_model.reference_other_model(load_kerml_library)
 
     new_object_1 = build_from_classifier_pattern(
         owner=new_package,

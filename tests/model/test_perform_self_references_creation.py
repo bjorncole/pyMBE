@@ -19,7 +19,7 @@ from pymbe.query.metamodel_navigator import (
 )
 
 
-def test_fill_self_references(load_library):
+def test_fill_self_references(load_kerml_library):
 
     """
     Test creation of performances and also fill in and cover library features like portionOf.
@@ -29,7 +29,7 @@ def test_fill_self_references(load_library):
 
     peform_ns = [
         library_model_ns
-        for library_model_ns in load_library.ownedElement
+        for library_model_ns in load_kerml_library.ownedElement
         if library_model_ns.throughOwningMembership[0].declaredName == "Performances"
     ][0]
 
@@ -81,7 +81,7 @@ def test_fill_self_references(load_library):
 
     exec_package = Element.new(data=exec_package_model_data, model=empty_model)
 
-    empty_model.reference_other_model(load_library)
+    empty_model.reference_other_model(load_kerml_library)
 
     new_performance = build_from_classifier_pattern(
         owner=new_package,

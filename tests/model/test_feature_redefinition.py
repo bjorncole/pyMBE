@@ -9,7 +9,7 @@ from pymbe.query.metamodel_navigator import (
 )
 
 
-def test_find_redefined_name(load_library):
+def test_find_redefined_name(load_kerml_library):
 
     """
     Test that codebase can find names for features that use the modeling pattern of
@@ -22,7 +22,7 @@ def test_find_redefined_name(load_library):
     """
     peform_ns = [
         library_model_ns
-        for library_model_ns in load_library.ownedElement
+        for library_model_ns in load_kerml_library.ownedElement
         if library_model_ns.throughOwningMembership[0].declaredName == "Performances"
     ][0]
 
@@ -46,7 +46,7 @@ def test_find_redefined_name(load_library):
     assert found_dispatch
 
 
-def test_find_redefined_multiplicity(load_library):
+def test_find_redefined_multiplicity(load_kerml_library):
 
     """
     Test that codebase can find multiplicities for features that use the modeling pattern of
@@ -63,7 +63,7 @@ def test_find_redefined_multiplicity(load_library):
 
     vvals_ns = [
         library_model_ns
-        for library_model_ns in load_library.ownedElement
+        for library_model_ns in load_kerml_library.ownedElement
         if library_model_ns.throughOwningMembership[0].declaredName == "VectorValues"
     ][0]
 
@@ -88,7 +88,7 @@ def test_find_redefined_multiplicity(load_library):
     assert get_effective_upper_multiplicity(three_vector_dim) == 1
 
 
-def test_find_redefined_typing(load_library):
+def test_find_redefined_typing(load_kerml_library):
 
     """
     Test that codebase can find types for features that use the modeling pattern of
@@ -102,7 +102,7 @@ def test_find_redefined_typing(load_library):
 
     vvals_ns = [
         library_model_ns
-        for library_model_ns in load_library.ownedElement
+        for library_model_ns in load_kerml_library.ownedElement
         if library_model_ns.throughOwningMembership[0].declaredName == "VectorValues"
     ][0]
 

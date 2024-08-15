@@ -7,7 +7,7 @@ from pymbe.model import Element, Model
 from pymbe.query.metamodel_navigator import get_effective_basic_name
 
 
-def test_association_labels(load_library):
+def test_association_labels(load_kerml_library):
 
     """
     Test how labels present for Associations from the links library
@@ -15,7 +15,7 @@ def test_association_labels(load_library):
 
     links_ns = [
         library_model_ns
-        for library_model_ns in load_library.ownedElement
+        for library_model_ns in load_kerml_library.ownedElement
         if library_model_ns.throughOwningMembership[0].declaredName == "Links"
     ][0]
 
@@ -43,7 +43,7 @@ def test_association_labels(load_library):
     )
 
 
-def test_inherited_name_labels(load_library):
+def test_inherited_name_labels(load_kerml_library):
 
     """
     Test that labels for Features include implied names
@@ -51,7 +51,7 @@ def test_inherited_name_labels(load_library):
 
     vvals_ns = [
         library_model_ns
-        for library_model_ns in load_library.ownedElement
+        for library_model_ns in load_kerml_library.ownedElement
         if library_model_ns.throughOwningMembership[0].declaredName == "VectorValues"
     ][0]
 
@@ -72,11 +72,10 @@ def test_inherited_name_labels(load_library):
         if get_effective_basic_name(three_vector_feat) == "dimension":
             three_vector_dim = three_vector_feat
 
-    # assert str(three_vector_dim) == ":>>dimension «Feature»"
-    assert str(three_vector_dim) == "dimension: Positive «Feature»"
+    assert str(three_vector_dim) == ":>>dimension «Feature»"
 
 
-def test_vector_plus_invariant_labels(load_library):
+def test_vector_plus_invariant_labels(load_kerml_library):
 
     """
     Test labels for the Vector addition invariants
@@ -84,7 +83,7 @@ def test_vector_plus_invariant_labels(load_library):
 
     vfunc_ns = [
         library_model_ns
-        for library_model_ns in load_library.ownedElement
+        for library_model_ns in load_kerml_library.ownedElement
         if library_model_ns.throughOwningMembership[0].declaredName == "VectorFunctions"
     ][0]
 
