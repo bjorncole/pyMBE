@@ -46,16 +46,19 @@ class MetaModel:
         defaults_by_type = {"Boolean": False, "String": "", "Integer": 0}
 
         for att_name, att_fields in local_hints.items():
-            starter_field = None
+            if att_fields['derived']:
+                # we don't want derived fields in the dictionary, those are calculated as needed
+                continue
+        
+            # TODO: Figure out why some boolean and string attributes have 0 to -1
+            # rather than 1 to 1 multiplicity
+            if att_name == 'aliasIds' or att_fields['upper_bound'] > 1 or att_fields['upper_bound'] == -1:
+                starter_field = []
             
-            if not att_fields['derived']:
-                # TODO: Figure out why some boolean and string attributes have 0 to -1
-                # rather than 1 to 1 multiplicity
-                if att_name == 'aliasIds' or att_fields['upper_bound'] > 1 or att_fields['upper_bound'] == -1:
-                    starter_field = []
-                
-                elif att_fields['kind'] in defaults_by_type:
-                    starter_field = defaults_by_type[att_fields['kind']]
+            elif att_fields['kind'] in defaults_by_type:
+                starter_field = defaults_by_type[att_fields['kind']]
+            else:
+                starter_field = None
 
             data_template.update({att_name: starter_field})
 
