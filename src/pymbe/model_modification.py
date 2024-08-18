@@ -1036,6 +1036,65 @@ def build_from_feature_ref_expression_pattern(
     return new_ele
 
 
+def build_from_operator_expression_pattern(
+    owner: Element,
+    model: Model,
+    specific_fields: dict,
+    metatype: str = "Expression",
+    in_paras: List[Element] = [],
+    return_para: Element = None,
+    operator: Element = None,
+    operands: List[Element] = [],
+    list_tree: bool = False,
+):
+
+    typing_snippet = {}
+    direction_snippet = {}
+
+    member_kind = "FeatureMembership"
+
+    specific_fields = typing_snippet | direction_snippet | specific_fields
+
+    feature_dict = create_element_data_dictionary(
+        name="", metaclass=metatype, model=model, specific_fields=specific_fields
+    )
+
+    # hacking to keep label from crashing before the expression has parameters
+    model._initializing = True
+
+    new_ele = Element.new(data=feature_dict, model=model)
+
+    model._add_element(new_ele)
+
+    new_rpm = new_element_ownership_pattern(
+        owner=new_ele, ele=return_para, model=model, member_kind="ReturnParameterMembership"
+    )
+    new_pms = []
+
+    for in_para in in_paras:
+        new_pm = new_element_ownership_pattern(
+            owner=new_ele, ele=in_para, model=model, member_kind="ParameterMembership"
+        )
+        new_pms.append(new_pm)
+    
+    model._initializing = False
+
+    new_ele.resolve()
+
+    model._add_labels(new_ele)
+
+    for new_pm in new_pms:
+        new_pm.resolve()
+        model._add_labels(new_pm)
+    new_rpm.resolve()
+    model._add_labels(new_rpm)
+
+    # ownership of expression
+    new_element_ownership_pattern(owner=owner, ele=new_ele, model=model, member_kind=member_kind)
+
+    return new_ele
+
+
 def assign_value_by_literal_expression(
     target_feature: Element, value_to_assign: Any, model: Model
 ):
@@ -1075,7 +1134,7 @@ def assign_value_by_literal_expression(
     elif isinstance(value_to_assign, int):
         le_meta = "LiteralInteger"
     elif isinstance(value_to_assign, float):
-        le_meta = "LiteralReal"
+        le_meta = "LiteralRational"
     else:
         le_meta = "LiteralString"
 
@@ -1110,3 +1169,74 @@ def assign_value_by_fre():
     """
 
     pass
+
+
+def assign_multiple_values_with_fre(
+    type_to_apply_pattern_on: Element,
+    model: Model,
+    features_to_reference: List[Element],
+    seperator_function: Element
+):
+
+    """
+    Generate Feature Value and use appropriate base functions to assign multiple values
+    to a given feature.
+    """
+
+    #TODO: Make a proper reference to the separator function rather than passing it in
+
+    new_in_seq_1 = build_from_parameter_pattern(
+        name="seq1",
+        model=model,
+        specific_fields={},
+        feature_type=None,
+        direction="in",
+        metatype="Feature",
+        returning_parameter=False,
+    )
+
+    new_in_seq_2 = build_from_parameter_pattern(
+        name="seq2",
+        model=model,
+        specific_fields={},
+        feature_type=None,
+        direction="in",
+        metatype="Feature",
+        returning_parameter=False,
+    )
+
+    new_result_para_1 = build_from_parameter_pattern(
+        name="result",
+        model=model,
+        specific_fields={},
+        feature_type=None,
+        direction="out",
+        metatype="Feature",
+        returning_parameter
+        
+        =True,
+    )
+
+    # need reference to the first element in the path
+    new_oe = build_from_operator_expression_pattern(
+        owner=type_to_apply_pattern_on,
+        model=model,
+        specific_fields={},
+        metatype="OperatorExpression",
+        in_paras=[new_in_seq_1, new_in_seq_2],
+        return_para=new_result_para_1,
+        operator=seperator_function
+    )
+
+    new_valuing = build_from_binary_relationship_pattern(
+        source=type_to_apply_pattern_on,
+        target=new_oe,
+        model=model,
+        metatype="FeatureValue",
+        owned_by_source=True,
+        owns_target=False,
+        alternative_owner=None,
+        specific_fields={},
+    )
+
+

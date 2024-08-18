@@ -474,8 +474,8 @@ class Element:  # pylint: disable=too-many-instance-attributes
             # add Pythonic property to Element object based on metamodel for primary data values
             elif (
                 key in self._metamodel_hints
-                and self._metamodel_hints[key][1] == "primary"
-                and self._metamodel_hints[key][3] != "EReference"
+                and not self._metamodel_hints[key]['derived']
+                and not self._metamodel_hints[key]['is_reference']
             ):
                 setattr(self, key, items)
         if not model._initializing:
@@ -515,12 +515,12 @@ class Element:  # pylint: disable=too-many-instance-attributes
         for source in ("_data", "_derived"):
             source = self.__getattribute__(source)
             if key in source:
-                if key in self._metamodel_hints and self._metamodel_hints[key][1] == "primary":
+                if key in self._metamodel_hints and not self._metamodel_hints[key]['derived']:
                     found = True
                     item = source[key]
                     break
 
-                if key in self._metamodel_hints and self._metamodel_hints[key][1] == "derived":
+                if key in self._metamodel_hints and self._metamodel_hints[key]['derived']:
                     break
                 found = True
                 item = source[key]
@@ -531,8 +531,8 @@ class Element:  # pylint: disable=too-many-instance-attributes
         if not found:
             if (
                 key in self._metamodel_hints
-                and self._metamodel_hints[key][1] == "derived"
-                and self._metamodel_hints[key][3] == "EReference"
+                and self._metamodel_hints[key]['derived']
+                and self._metamodel_hints[key]['is_reference']
             ):
                 found = True
                 item = derive_attribute(key, self)
