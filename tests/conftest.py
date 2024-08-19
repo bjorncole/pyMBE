@@ -36,4 +36,3 @@ def load_kerml_library() -> pm.Model:
         library_model = pm.Model.load_from_post_file(lib_data)
 
     return library_model
-

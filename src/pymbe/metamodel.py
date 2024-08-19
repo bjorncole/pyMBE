@@ -28,13 +28,14 @@ class MetaModel:
     def _load_metahints(self):
         """Load data file to get attribute hints"""
 
-        with lib_resources.open_text("pymbe.static_data", "attribute_metadata.json") as sysml_ecore:
+        with lib_resources.open_text(
+            "pymbe.static_data", "attribute_metadata.json"
+        ) as sysml_ecore:
             self.metamodel_hints = json.load(sysml_ecore)
-
 
     def _load_template_data(self, metaclass_name: str):
         """
-        Generate empty data dictionaries per metatype to be used when new elements are 
+        Generate empty data dictionaries per metatype to be used when new elements are
         created by model modification functions. These templates resemble the raw JSON data
         pulled from the SysML v2 standard REST API.
         """
@@ -46,17 +47,21 @@ class MetaModel:
         defaults_by_type = {"Boolean": False, "String": "", "Integer": 0}
 
         for att_name, att_fields in local_hints.items():
-            if att_fields['derived']:
+            if att_fields["derived"]:
                 # we don't want derived fields in the dictionary, those are calculated as needed
                 continue
-        
+
             # TODO: Figure out why some boolean and string attributes have 0 to -1
             # rather than 1 to 1 multiplicity
-            if att_name == 'aliasIds' or att_fields['upper_bound'] > 1 or att_fields['upper_bound'] == -1:
+            if (
+                att_name == "aliasIds"
+                or att_fields["upper_bound"] > 1
+                or att_fields["upper_bound"] == -1
+            ):
                 starter_field = []
-            
-            elif att_fields['kind'] in defaults_by_type:
-                starter_field = defaults_by_type[att_fields['kind']]
+
+            elif att_fields["kind"] in defaults_by_type:
+                starter_field = defaults_by_type[att_fields["kind"]]
             else:
                 starter_field = None
 
