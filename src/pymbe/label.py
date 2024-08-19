@@ -20,7 +20,7 @@ def get_label(element: Element) -> str:  # pylint: disable=too-many-return-state
 
     metatype = element._metatype
     if metatype.endswith("Expression"):
-        return f"{get_label_for_expression(element)} «{metatype}»"
+        return f"{get_label_for_expression(element)}" + f" «{metatype}»"
     if metatype == "Invariant" and "throughResultExpressionMembership" in element._derived:
         invar_expression = element.throughResultExpressionMembership[0]
         return f"{get_label_for_expression(invar_expression)} «{metatype}»"
@@ -90,7 +90,7 @@ def get_label_for_expression(expression: Element) -> str:
     if meta == "OperatorExpression":
         # case for OperatorExpression - recurse on the parameters
 
-        expression_label = f" {expression.operator} ".join(
+        expression_label = f" {get_effective_basic_name(expression.operator)} ".join(
             map(get_label_for_expression, expression.throughParameterMembership)
         )
 
@@ -139,7 +139,8 @@ def get_label_for_expression(expression: Element) -> str:
 
     elif expression._metatype == "InvocationExpression":
         try:
-            body = ", ".join(map(get_label_for_expression, expression.throughParameterMembership))
+            body = ", ".join(map(get_label_for_expression,
+                                 expression.throughParameterMembership))
             expression_label = f"{expression.throughFeatureTyping[0].declaredName}({body})"
         except AttributeError:
             expression_label = "Empty InvocationExpression"

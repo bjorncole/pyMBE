@@ -70,7 +70,11 @@ class Naming(Enum):
         if naming == Naming.IDENTIFIER.value:
             return f"""<{data["@id"]}>"""
         if naming == Naming.LABEL.value:
-            return element._derived.get("label")
+            if hasattr(element, "_derived") and "label" in element._derived:
+                return element._derived.get("label")
+            else:
+                element._model._add_labels(element)
+                return element._derived.get("label")
         name = data.get("declaredName") or data.get("value") or data["@id"]
         if naming == Naming.SHORT.value:
             return f"<{name}>"
@@ -159,7 +163,8 @@ class Model:  # pylint: disable=too-many-instance-attributes
 
         # Modify and add derived data to the elements
         self._add_relationships()
-        self._add_labels()
+
+        #self._add_labels()
         self._initializing = False
 
     def __repr__(self) -> str:
@@ -303,8 +308,8 @@ class Model:  # pylint: disable=too-many-instance-attributes
             if id_ not in self.all_non_relationships:
                 self.all_non_relationships[id_] = element
 
-        if not self._initializing:
-            self._add_labels(element)
+        #if not self._initializing:
+        #    self._add_labels(element)
         return element
 
     def save_to_file(

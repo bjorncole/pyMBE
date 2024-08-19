@@ -910,7 +910,7 @@ def apply_chained_feature_assignment_pattern(
 
 
 def build_from_expression_pattern(
-    owner: Element,
+    #owner: Element,
     model: Model,
     specific_fields: dict,
     metatype: str = "Expression",
@@ -923,14 +923,11 @@ def build_from_expression_pattern(
 
     member_kind = "FeatureMembership"
 
-    specific_fields = typing_snippet | direction_snippet | specific_fields
+    specific_fields = specific_fields
 
     feature_dict = create_element_data_dictionary(
         name="", metaclass=metatype, model=model, specific_fields=specific_fields
     )
-
-    # hacking to keep label from crashing before the expression has parameters
-    model._initializing = True
 
     new_ele = Element.new(data=feature_dict, model=model)
 
@@ -946,21 +943,6 @@ def build_from_expression_pattern(
             owner=new_ele, ele=in_para, model=model, member_kind="ParameterMembership"
         )
         new_pms.append(new_pm)
-
-    model._initializing = False
-
-    new_ele.resolve()
-
-    model._add_labels(new_ele)
-
-    for new_pm in new_pms:
-        new_pm.resolve()
-        model._add_labels(new_pm)
-    new_rpm.resolve()
-    model._add_labels(new_rpm)
-
-    # ownership of expression
-    new_element_ownership_pattern(owner=owner, ele=new_ele, model=model, member_kind=member_kind)
 
     return new_ele
 
@@ -1095,6 +1077,31 @@ def build_from_operator_expression_pattern(
     return new_ele
 
 
+def assign_feature_value_to_expression(
+    target_feature: Element,
+    expr: Element,
+    model: Model
+):
+    
+    """
+    Add a feature value relationship from a parameter to an expression and 
+    then also make the Feature the owner of the expression
+    """
+
+    new_valuing = build_from_binary_relationship_pattern(
+        source=target_feature,
+        target=expr,
+        model=model,
+        metatype="FeatureValue",
+        owned_by_source=True,
+        owns_target=False,
+        alternative_owner=None,
+        specific_fields={},
+    )
+
+    new_element_ownership_pattern(owner=target_feature, ele=expr, model=model, member_kind="OwningMembership")
+
+
 def assign_value_by_literal_expression(
     target_feature: Element, value_to_assign: Any, model: Model
 ):
@@ -1105,16 +1112,6 @@ def assign_value_by_literal_expression(
     """
 
     # create the parameters
-
-    new_in_para_1 = build_from_parameter_pattern(
-        name="source",
-        model=model,
-        specific_fields={},
-        feature_type=None,
-        direction="in",
-        metatype="Feature",
-        returning_parameter=False,
-    )
 
     new_result_para_1 = build_from_parameter_pattern(
         name="result",
@@ -1139,24 +1136,14 @@ def assign_value_by_literal_expression(
         le_meta = "LiteralString"
 
     new_le = build_from_expression_pattern(
-        owner=target_feature,
         model=model,
         specific_fields={"value": value_to_assign},
         metatype=le_meta,
-        in_paras=[new_in_para_1],
+        in_paras=[],
         return_para=new_result_para_1,
     )
 
-    new_valuing = build_from_binary_relationship_pattern(
-        source=target_feature,
-        target=new_le,
-        model=model,
-        metatype="FeatureValue",
-        owned_by_source=True,
-        owns_target=False,
-        alternative_owner=None,
-        specific_fields={},
-    )
+    assign_feature_value_to_expression(target_feature, new_le, model)
 
     return new_le
 
@@ -1183,60 +1170,122 @@ def assign_multiple_values_with_fre(
     to a given feature.
     """
 
+    # Nested sequences will require 2 + 2*(n-2) parameters, or 1 + (n-2) sequence
+    # OperatorExpressions
+
     #TODO: Make a proper reference to the separator function rather than passing it in
 
-    new_in_seq_1 = build_from_parameter_pattern(
-        name="seq1",
-        model=model,
-        specific_fields={},
-        feature_type=None,
-        direction="in",
-        metatype="Feature",
-        returning_parameter=False,
+    separators = []
+    parameters = []
+    fres = []
+
+    for i in range(len(features_to_reference)-1):
+
+        new_in_seq_1 = build_from_parameter_pattern(
+            name="seq1",
+            model=model,
+            specific_fields={},
+            feature_type=None,
+            direction="in",
+            metatype="Feature",
+            returning_parameter=False,
+        )
+
+        new_in_seq_2 = build_from_parameter_pattern(
+            name="seq2",
+            model=model,
+            specific_fields={},
+            feature_type=None,
+            direction="in",
+            metatype="Feature",
+            returning_parameter=False,
+        )
+
+        new_result_para_1 = build_from_parameter_pattern(
+            name="result",
+            model=model,
+            specific_fields={},
+            feature_type=None,
+            direction="out",
+            metatype="Feature",
+            returning_parameter=True,
+        )
+
+        separator_n = build_from_expression_pattern(
+            model=model,
+            specific_fields={"operator": seperator_function},
+            metatype="OperatorExpression",
+            in_paras=[new_in_seq_1, new_in_seq_2],
+            return_para=new_result_para_1
+        )
+
+        parameters.append(new_in_seq_1)
+        parameters.append(new_in_seq_2)
+        separators.append(separator_n)
+
+    for feat in features_to_reference:
+
+        new_result_para_1 = build_from_parameter_pattern(
+            name="result",
+            model=model,
+            specific_fields={},
+            feature_type=None,
+            direction="out",
+            metatype="Feature",
+            returning_parameter=True,
+        )
+
+        new_fre = build_from_expression_pattern(
+            model=model,
+            specific_fields={},
+            metatype="FeatureReferenceExpression",
+            in_paras=[],
+            return_para=new_result_para_1
+        )
+
+        new_membership = build_from_binary_relationship_pattern(
+            source=new_fre,
+            target=feat,
+            model=model,
+            metatype="Membership",
+            owned_by_source=True,
+            owns_target=False,
+            alternative_owner=None,
+            specific_fields={},
+        )
+
+        fres.append(new_fre)
+
+    # Last two features are valued to seq1 and seq2 parameters of the last separator function
+
+    assign_feature_value_to_expression(
+        target_feature=parameters[-2],
+        expr=fres[-2],
+        model=model
     )
 
-    new_in_seq_2 = build_from_parameter_pattern(
-        name="seq2",
-        model=model,
-        specific_fields={},
-        feature_type=None,
-        direction="in",
-        metatype="Feature",
-        returning_parameter=False,
+    assign_feature_value_to_expression(
+        target_feature=parameters[-1],
+        expr=fres[-1],
+        model=model
     )
 
-    new_result_para_1 = build_from_parameter_pattern(
-        name="result",
-        model=model,
-        specific_fields={},
-        feature_type=None,
-        direction="out",
-        metatype="Feature",
-        returning_parameter
-        
-        =True,
+    # Working left to right, should get the right number of separators
+
+    for fre_index, separate in enumerate(separators[1:]):
+        assign_feature_value_to_expression(
+            target_feature=parameters[2*fre_index],
+            expr=fres[fre_index],
+            model=model
+        )
+        assign_feature_value_to_expression(
+            target_feature=parameters[2*fre_index + 1],
+            expr=separate,
+            model=model
+        )
+
+    assign_feature_value_to_expression(
+        target_feature=type_to_apply_pattern_on,
+        expr=separators[0],
+        model=model
     )
-
-    # need reference to the first element in the path
-    new_oe = build_from_operator_expression_pattern(
-        owner=type_to_apply_pattern_on,
-        model=model,
-        specific_fields={},
-        metatype="OperatorExpression",
-        in_paras=[new_in_seq_1, new_in_seq_2],
-        return_para=new_result_para_1,
-        operator=seperator_function
-    )
-
-    new_valuing = build_from_binary_relationship_pattern(
-        source=type_to_apply_pattern_on,
-        target=new_oe,
-        model=model,
-        metatype="FeatureValue",
-        owned_by_source=True,
-        owns_target=False,
-        alternative_owner=None,
-        specific_fields={},
-    )
-
-
