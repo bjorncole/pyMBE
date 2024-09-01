@@ -4,9 +4,5 @@ channels:
   - https://conda.anaconda.org/conda-forge
 
 dependencies:
-  - conda
-  - git
   - mamba
-  - pip
   - pixi
-  - python
