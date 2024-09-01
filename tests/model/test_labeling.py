@@ -1,5 +1,3 @@
-
-
 from pymbe.query.metamodel_navigator import get_effective_basic_name
 
 

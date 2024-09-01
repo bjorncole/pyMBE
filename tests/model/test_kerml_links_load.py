@@ -1,7 +1,3 @@
-
-
-
-
 def test_links_associations(load_kerml_library):
     """
     Check that the main links in Links library have loaded and the expected names are all there.

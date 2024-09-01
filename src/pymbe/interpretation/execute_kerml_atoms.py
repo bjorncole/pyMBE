@@ -22,6 +22,7 @@ from pymbe.query.metamodel_navigator import (
 
 logger = logging.getLogger(__name__)
 
+
 class KermlForwardExecutor:
     """
     An execution class that applies the methods from the draft KerML Annex A for execution.

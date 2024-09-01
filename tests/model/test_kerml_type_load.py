@@ -1,7 +1,3 @@
-
-
-
-
 def test_namespaces_load(load_kerml_library):
     """
     Check that the expected namespaces from the KerML library are indeed loaded.

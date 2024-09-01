@@ -814,8 +814,6 @@ def build_from_expression_pattern(
     in_paras: List[Element] = [],
     return_para: Element = None,
 ):
-
-
     specific_fields = specific_fields
 
     feature_dict = create_element_data_dictionary(
