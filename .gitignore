@@ -7,25 +7,25 @@ __pycache__/
 *.so
 
 # Distribution / packaging
+.eggs/
+.installed.cfg
 .Python
+*.egg
+*.egg-info/
 build/
 develop-eggs/
 dist/
 downloads/
 eggs/
-.eggs/
 lib/
 lib64/
+MANIFEST
 parts/
+pip-wheel-metadata/
 sdist/
+share/python-wheels/
 var/
 wheels/
-pip-wheel-metadata/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -38,19 +38,19 @@ pip-log.txt
 pip-delete-this-directory.txt
 
 # Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
+.cache
 .coverage
 .coverage.*
-.cache
-nosetests.xml
-coverage.xml
+.hypothesis/
+.nox/
+.pytest_cache/
+.tox/
 *.cover
 *.py,cover
-.hypothesis/
-.pytest_cache/
+coverage.xml
+htmlcov/
 New Kerbal.json
+nosetests.xml
 
 # Translations
 *.mo
@@ -58,9 +58,9 @@ New Kerbal.json
 
 # Django stuff:
 *.log
-local_settings.py
 db.sqlite3
 db.sqlite3-journal
+local_settings.py
 
 # Flask stuff:
 instance/
@@ -110,11 +110,11 @@ celerybeat.pid
 # Environments
 .env
 .venv
-env/
-venv/
-ENV/
 env.bak/
+env/
+ENV/
 venv.bak/
+venv/
 
 # Spyder project settings
 .spyderproject
@@ -133,16 +133,16 @@ venv.bak/
 /site
 
 # mypy
-.mypy_cache/
 .dmypy.json
+.mypy_cache/
 dmypy.json
 
 # Pyre type checker
 .pyre/
 
 # DevOps
+.pixi/
 envs/
-.pixi
 
 #PyCharm
 .idea
@@ -157,3 +157,5 @@ envs/
 api/
 db/
 downloads/
+docs/experimental/SysML2_Schema/*.*
+Untitled*.ipynb

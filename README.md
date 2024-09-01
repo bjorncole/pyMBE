@@ -24,11 +24,11 @@ conda install mamba
 You may need to specify the channel:
 ```conda install -c conda-forge mamba```
 
-If you don't have `anaconda` or `miniconda`, just get [Mambaforge](https://github.com/conda-forge/miniforge/releases/tag/4.9.2-5).
+If you don't have `anaconda` or `miniconda`, just get [Mambaforge](https://github.com/conda-forge/miniforge/releases/).
 
 ## 3. Setup the `base` environment
 
-This will be an environment that has [`anaconda-project`](https://anaconda-project.readthedocs.io) and some other dependencies to run the development commands.
+This will be an environment that has [`pixi`](https://pixi.sh/l) and some other dependencies to run the development commands.
 
 For added consistency, use the provided `.condarc` file:
 
@@ -64,20 +64,12 @@ set CONDA_EXE=mamba    # windows
 
 > Remember to set your `.condarc` path as explained in `Step 3`.
 
-## 5. Setup the Development Environment
-
-> This will install the non-packaged dependencies and `pymbe` in editable mode.
-
-```bash
-anaconda-project run setup
-```
-
 # ... and get going!
 
 You can then get a running instance of JupyterLab by running:
 
 ```bash
-anaconda-project run lab
+pixi run lab
 ```
 
 > Remember if you open a new shell, you will have to activate your base environment as explained in `Step 4`.
