@@ -5,6 +5,7 @@ channels:
 
 dependencies:
   - conda =4.9
+  - git
   - mamba =0.8
   - pip
   - pixi
