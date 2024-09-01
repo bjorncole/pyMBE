@@ -2,7 +2,7 @@ import logging
 from dataclasses import dataclass
 from typing import Collection, Dict
 
-from pymbe import Element, Model
+from pymbe import Element, ListOfNamedItems, Model
 
 
 class InstrumentedElement(Element):
@@ -75,7 +75,6 @@ class InstrumentedModel(Model):
         )
 
         instrumented_data = None
-        instrumented_element = None
         for id_, data in self.elements.items():
             if (
                 "declaredName" in data

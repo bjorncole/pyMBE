@@ -1,3 +1,4 @@
+import logging
 from typing import List
 
 from pymbe.interpretation.indeterminate_boundaries import build_indefinite_boundaries
@@ -19,6 +20,7 @@ from pymbe.query.metamodel_navigator import (
     has_type_named,
 )
 
+logger = logging.getLogger(__name__)
 
 class KermlForwardExecutor:
     """
@@ -179,8 +181,8 @@ class KermlForwardExecutor:
                     + "Bypassing further elaboration."
                 )
                 return None
-        except:
-            pass
+        except Exception as exc:
+            logger.debug(exc)
 
         self._builder_log[self._current_loc].append(
             f"...Found features {candidate_features} under the type to value "
@@ -271,8 +273,8 @@ class KermlForwardExecutor:
                         + "Bypassing further elaboration."
                     )
                     return None
-            except:
-                pass
+            except Exception as exc:
+                logger.debug(exc)
 
         self._common_postprocess(
             featuring_type=featuring_type, candidate_features=candidate_features

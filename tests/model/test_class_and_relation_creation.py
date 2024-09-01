@@ -53,7 +53,7 @@ def test_create_classifier_against_library(load_kerml_library):
         "ownedRelationship": [],
     }
 
-    new_ns = Element.new(data=package_model_namespace_data, model=empty_model)
+    Element.new(data=package_model_namespace_data, model=empty_model)
 
     new_package = Element.new(data=package_model_data, model=empty_model)
 
@@ -126,7 +126,7 @@ def test_create_disjoint_objects(load_kerml_library):
         "ownedRelationship": [],
     }
 
-    new_ns = Element.new(data=package_model_namespace_data, model=empty_model)
+    Element.new(data=package_model_namespace_data, model=empty_model)
 
     new_package = Element.new(data=package_model_data, model=empty_model)
 

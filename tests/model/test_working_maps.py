@@ -39,7 +39,7 @@ def test_create_map():
         "ownedRelationship": [],
     }
 
-    new_ns = Element.new(data=package_model_namespace_data, model=empty_model)
+    Element.new(data=package_model_namespace_data, model=empty_model)
 
     new_package = Element.new(data=package_model_data, model=empty_model)
 

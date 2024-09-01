@@ -201,7 +201,7 @@ def build_from_parameter_pattern(
 
     typing_snippet = {}
     direction_snippet = {}
-    member_kind = ""
+    # member_kind = ""
 
     if feature_type is not None:
         typing_snippet = {"type": {"@id": feature_type}}
@@ -217,11 +217,13 @@ def build_from_parameter_pattern(
 
     new_ele = Element.new(data=feature_dict, model=model)
 
-    # TODO: Add more cases here
+    # TODO: Add more cases here for member_kind
     if returning_parameter:
-        member_kind = "ReturnParameterMembership"
+        # member_kind = "ReturnParameterMembership"
+        pass
     else:
-        member_kind = "ParameterMembership"
+        # member_kind = "ParameterMembership"
+        pass
 
     # new_element_ownership_pattern(owner=owner, ele=new_ele, model=model, member_kind=member_kind)
 
@@ -812,10 +814,7 @@ def build_from_expression_pattern(
     in_paras: List[Element] = [],
     return_para: Element = None,
 ):
-    typing_snippet = {}
-    direction_snippet = {}
 
-    member_kind = "FeatureMembership"
 
     specific_fields = specific_fields
 
@@ -827,7 +826,7 @@ def build_from_expression_pattern(
 
     model._add_element(new_ele)
 
-    new_rpm = new_element_ownership_pattern(
+    new_element_ownership_pattern(
         owner=new_ele,
         ele=return_para,
         model=model,
@@ -990,7 +989,7 @@ def assign_feature_value_to_expression(
     then also make the Feature the owner of the expression
     """
 
-    new_valuing = build_from_binary_relationship_pattern(
+    build_from_binary_relationship_pattern(
         source=target_feature,
         target=expr,
         model=model,
@@ -1142,7 +1141,7 @@ def assign_multiple_values_with_fre(
             return_para=new_result_para_1,
         )
 
-        new_membership = build_from_binary_relationship_pattern(
+        build_from_binary_relationship_pattern(
             source=new_fre,
             target=feat,
             model=model,

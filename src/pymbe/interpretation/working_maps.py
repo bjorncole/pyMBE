@@ -184,7 +184,7 @@ class FeatureTypeWorkingMap:
                             " under " + get_effective_basic_name(type_instance)
                         )
 
-                    redefined_bound_feature = apply_covered_feature_pattern(
+                    apply_covered_feature_pattern(
                         one_member_classifiers=bound_features_to_atom_values_dict[
                             bound_feature_id
                         ],
@@ -205,7 +205,7 @@ class FeatureTypeWorkingMap:
                     )
                     print(f"...Building covered connector under {type_instance}")
 
-                    redefined_bound_feature = apply_covered_connector_pattern(
+                    apply_covered_connector_pattern(
                         one_member_classifiers=bound_features_to_atom_values_dict[
                             bound_feature_id
                         ],

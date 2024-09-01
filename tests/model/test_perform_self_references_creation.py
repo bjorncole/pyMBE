@@ -68,7 +68,7 @@ def test_fill_self_references(load_kerml_library):
         "ownedRelationship": [],
     }
 
-    new_ns = Element.new(data=package_model_namespace_data, model=empty_model)
+    Element.new(data=package_model_namespace_data, model=empty_model)
 
     new_package = Element.new(data=package_model_data, model=empty_model)
 
@@ -120,7 +120,7 @@ def test_fill_self_references(load_kerml_library):
         specific_fields={"ownedRelationship": []},
     )
 
-    new_step_1 = build_from_feature_pattern(
+    build_from_feature_pattern(
         owner=new_performance,
         name="Step 1",
         model=empty_model,
@@ -131,7 +131,7 @@ def test_fill_self_references(load_kerml_library):
         connector_end=False,
     )
 
-    new_step_2 = build_from_feature_pattern(
+    build_from_feature_pattern(
         owner=new_performance,
         name="Step 2",
         model=empty_model,
