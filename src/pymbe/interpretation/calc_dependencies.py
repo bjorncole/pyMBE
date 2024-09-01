@@ -50,7 +50,9 @@ def generate_execution_order(lpg: SysML2LabeledPropertyGraph) -> list:
                     and all_elements[node].get("@type") == "AttributeUsage"
                 ):
                     relevant_edge_types = [
-                        edg[2] for edg in eig.edges if edg[0] == node and edg[1] == node_child
+                        edg[2]
+                        for edg in eig.edges
+                        if edg[0] == node and edg[1] == node_child
                     ]
                     if "Redefinition^-1" in relevant_edge_types:
                         kind = "Redefinition"
@@ -63,9 +65,11 @@ def generate_execution_order(lpg: SysML2LabeledPropertyGraph) -> list:
                     and all_elements[node].get("@type") == "AttributeUsage"
                 ):
                     kind = "ValueBinding"
-                elif (node_child, node, "ReturnParameterMembership") in lpg.edges_by_type[
-                    "ReturnParameterMembership"
-                ]:
+                elif (
+                    node_child,
+                    node,
+                    "ReturnParameterMembership",
+                ) in lpg.edges_by_type["ReturnParameterMembership"]:
                     kind = "Output"
                 elif (node, node_child, "ParameterMembership") in lpg.edges_by_type.get(
                     "ParameterMembership", []
@@ -123,7 +127,9 @@ def generate_parameter_signature_map(
                 right_side = get_label_for_id(pair[1], model)
             if pair[0] in naming_map:
                 new_name = model.elements[pair[0]].effectiveName
-                replacement_log.append(f"Replacing {new_name} with {naming_map[pair[0]]}")
+                replacement_log.append(
+                    f"Replacing {new_name} with {naming_map[pair[0]]}"
+                )
                 new_expr = right_side.replace(new_name, naming_map[pair[0]])
 
                 # new_expr = right_side.replace(

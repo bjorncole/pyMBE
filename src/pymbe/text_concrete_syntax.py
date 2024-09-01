@@ -4,7 +4,6 @@ from pymbe.query.metamodel_navigator import get_effective_basic_name
 
 
 def serialize_kerml_atom(atom_to_print):
-
     atom_string = "#atom\n"
 
     if hasattr(atom_to_print, "throughUnioning"):
@@ -29,7 +28,9 @@ def serialize_kerml_atom(atom_to_print):
         atom_string = (
             atom_string
             + " specializes "
-            + ", ".join([sub.basic_name for sub in atom_to_print.throughSubclassification])
+            + ", ".join(
+                [sub.basic_name for sub in atom_to_print.throughSubclassification]
+            )
         )
 
     if hasattr(atom_to_print, "throughUnioning"):
@@ -69,8 +70,13 @@ def serialize_kerml_atom(atom_to_print):
                 )
 
             if hasattr(feature, "throughFeatureChaining"):
-                atom_string = atom_string + " chains " + '.'.join(map(get_effective_basic_name,
-                                                    feature.throughFeatureChaining))
+                atom_string = (
+                    atom_string
+                    + " chains "
+                    + ".".join(
+                        map(get_effective_basic_name, feature.throughFeatureChaining)
+                    )
+                )
 
             if len(feature.throughFeatureValue) > 0:
                 atom_string = atom_string + " = " + str(feature.throughFeatureValue[0])
@@ -114,7 +120,6 @@ def serialize_kerml_atom(atom_to_print):
 
 
 def serialize_sysml_package(package_to_print: Element, tabs: int = 0):
-
     sysml_string = "\t" * tabs
 
     if package_to_print._metatype == "Package":
@@ -129,8 +134,15 @@ def serialize_sysml_package(package_to_print: Element, tabs: int = 0):
                 sysml_string = sysml_string + serialize_sysml_attribute(
                     attribute_to_print=oe, tabs=tabs + 1
                 )
-            elif oe._metatype in ("ItemUsage", "ItemDefinition", "PartUsage", "PartDefinition"):
-                sysml_string = sysml_string + serialize_sysml_item(item_to_print=oe, tabs=tabs + 1)
+            elif oe._metatype in (
+                "ItemUsage",
+                "ItemDefinition",
+                "PartUsage",
+                "PartDefinition",
+            ):
+                sysml_string = sysml_string + serialize_sysml_item(
+                    item_to_print=oe, tabs=tabs + 1
+                )
         sysml_string = sysml_string + "\t" * tabs + "}\n"
     else:
         sysml_string = sysml_string + ";\n"
@@ -156,7 +168,12 @@ def serialize_sysml_item(item_to_print, tabs: int = 0):
         sysml_string = (
             sysml_string
             + " : "
-            + ",".join([get_effective_basic_name(ft) for ft in item_to_print.throughFeatureTyping])
+            + ",".join(
+                [
+                    get_effective_basic_name(ft)
+                    for ft in item_to_print.throughFeatureTyping
+                ]
+            )
         )
 
     if len(item_to_print.throughFeatureValue) > 0:
@@ -169,8 +186,15 @@ def serialize_sysml_item(item_to_print, tabs: int = 0):
                 sysml_string = sysml_string + serialize_sysml_attribute(
                     attribute_to_print=oe, tabs=tabs + 1
                 )
-            elif oe._metatype in ("ItemUsage", "ItemDefinition", "PartUsage", "PartDefinition"):
-                sysml_string = sysml_string + serialize_sysml_item(item_to_print=oe, tabs=tabs + 1)
+            elif oe._metatype in (
+                "ItemUsage",
+                "ItemDefinition",
+                "PartUsage",
+                "PartDefinition",
+            ):
+                sysml_string = sysml_string + serialize_sysml_item(
+                    item_to_print=oe, tabs=tabs + 1
+                )
 
         sysml_string = sysml_string + "\t" * tabs + "}\n"
     else:
@@ -194,12 +218,17 @@ def serialize_sysml_attribute(attribute_to_print, tabs: int = 0):
             sysml_string
             + " : "
             + ",".join(
-                [get_effective_basic_name(ft) for ft in attribute_to_print.throughFeatureTyping]
+                [
+                    get_effective_basic_name(ft)
+                    for ft in attribute_to_print.throughFeatureTyping
+                ]
             )
         )
 
     if len(attribute_to_print.throughFeatureValue) > 0:
-        sysml_string = sysml_string + " = " + serialize_feature_values(attribute_to_print)
+        sysml_string = (
+            sysml_string + " = " + serialize_feature_values(attribute_to_print)
+        )
 
     sysml_string = sysml_string + ";\n"
 

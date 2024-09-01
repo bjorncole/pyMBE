@@ -56,7 +56,9 @@ class SysmlLoader(ElementLoader):  # pylint: disable=abstract-method
             part_diagram.labels = []
             part_diagram.ports = []
 
-    def load_from_graphs(self, new: nx.Graph, old: nx.Graph = None) -> MarkElementWidget:
+    def load_from_graphs(
+        self, new: nx.Graph, old: nx.Graph = None
+    ) -> MarkElementWidget:
         new = nx.Graph() if new in (None, trt.Undefined) else new
         old = nx.Graph() if old in (None, trt.Undefined) else old
 

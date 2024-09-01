@@ -1,14 +1,9 @@
-from pathlib import Path
-from uuid import uuid4
 
-import pytest
 
-from pymbe.model import Element, Model
 from pymbe.query.metamodel_navigator import get_effective_basic_name
 
 
 def test_association_labels(load_kerml_library):
-
     """
     Test how labels present for Associations from the links library
     """
@@ -44,7 +39,6 @@ def test_association_labels(load_kerml_library):
 
 
 def test_inherited_name_labels(load_kerml_library):
-
     """
     Test that labels for Features include implied names
     """
@@ -76,7 +70,6 @@ def test_inherited_name_labels(load_kerml_library):
 
 
 def test_vector_plus_invariant_labels(load_kerml_library):
-
     """
     Test labels for the Vector addition invariants
     """
@@ -104,5 +97,7 @@ def test_vector_plus_invariant_labels(load_kerml_library):
     for vector_add_feature in vector_add.throughFeatureMembership:
         vector_add_labels.append(str(vector_add_feature))
 
-    assert "w == null or isZeroVector(w) implies u == w «Invariant»" in vector_add_labels
+    assert (
+        "w == null or isZeroVector(w) implies u == w «Invariant»" in vector_add_labels
+    )
     assert "w != null implies u == w + v «Invariant»" in vector_add_labels

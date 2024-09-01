@@ -1,9 +1,5 @@
-from pathlib import Path
-from uuid import uuid4
 
-import pytest
 
-from pymbe.model import Element, Model
 
 
 def test_namespaces_load(load_kerml_library):
@@ -66,7 +62,6 @@ def test_namespaces_load(load_kerml_library):
 
 
 def test_base_classifiers(load_kerml_library):
-
     """
     Check that the base classifiers have loaded and the expected names are all there.
     """
@@ -97,7 +92,6 @@ def test_base_classifiers(load_kerml_library):
 
 
 def test_base_features(load_kerml_library):
-
     """
     Check that the base features have loaded and the expected names are all there.
     """
@@ -127,7 +121,6 @@ def test_base_features(load_kerml_library):
 
 
 def test_base_multiplicity(load_kerml_library):
-
     """
     Check that the multiplicity ranges with names in Base library are structured as expected
     """
@@ -171,6 +164,10 @@ def test_base_multiplicity(load_kerml_library):
 
     assert zero_or_one_literals[0].ownedRelationship[0].memberName == "result"
 
-    assert hasattr(zero_or_one_literals[0].throughReturnParameterMembership[0], "direction")
+    assert hasattr(
+        zero_or_one_literals[0].throughReturnParameterMembership[0], "direction"
+    )
 
-    assert zero_or_one_literals[0].throughReturnParameterMembership[0].direction == "out"
+    assert (
+        zero_or_one_literals[0].throughReturnParameterMembership[0].direction == "out"
+    )

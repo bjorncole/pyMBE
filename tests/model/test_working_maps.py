@@ -1,25 +1,18 @@
 from uuid import uuid4
 
-import pytest
-
 import pymbe.api as pm
 from pymbe.interpretation.working_maps import FeatureTypeWorkingMap
-from pymbe.model import Element, Model
+from pymbe.model import Element
 from pymbe.model_modification import (
-    build_from_binary_relationship_pattern,
     build_from_classifier_pattern,
     build_from_feature_pattern,
 )
 from pymbe.query.metamodel_navigator import (
     get_effective_basic_name,
-    get_effective_lower_multiplicity,
-    get_effective_upper_multiplicity,
-    get_most_specific_feature_type,
 )
 
 
 def test_create_map():
-
     """
     Test the creation of a basic working map.
 
@@ -114,7 +107,9 @@ def test_create_map():
 
     new_map._add_type_instance_to_map(new_type_instance)
     new_map._add_feature_to_type_instance(new_type_instance, [new_feature_1])
-    new_map._add_feature_to_type_instance(new_type_instance, [new_feature_1, new_feature_2])
+    new_map._add_feature_to_type_instance(
+        new_type_instance, [new_feature_1, new_feature_2]
+    )
 
     new_feature_value_1 = build_from_classifier_pattern(
         owner=new_package,
@@ -134,7 +129,9 @@ def test_create_map():
         specific_fields={"ownedRelationship": []},
     )
 
-    new_map._add_atom_value_to_feature(new_type_instance, [new_feature_1], new_feature_value_1)
+    new_map._add_atom_value_to_feature(
+        new_type_instance, [new_feature_1], new_feature_value_1
+    )
     new_map._add_atom_value_to_feature(
         new_type_instance, [new_feature_1, new_feature_2], new_feature_value_2
     )

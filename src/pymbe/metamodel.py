@@ -111,7 +111,6 @@ def feature_metas():
 
 
 def derive_attribute(key: str, ele: "Element"):  # noqa: F821
-
     # entry point for deriving attributes within elements on demand
 
     if key == "type":
@@ -127,7 +126,6 @@ def derive_attribute(key: str, ele: "Element"):  # noqa: F821
 
 
 def derive_type(ele: "Element"):  # noqa: F821
-
     if hasattr(ele, "throughFeatureTyping"):
         return ele.throughFeatureTyping
 
@@ -135,7 +133,6 @@ def derive_type(ele: "Element"):  # noqa: F821
 
 
 def derive_owned_member(ele: "Element"):  # noqa: F821
-
     found_ele = []
 
     for owned_rel in ele.ownedRelationship:
@@ -149,7 +146,6 @@ def derive_owned_member(ele: "Element"):  # noqa: F821
 
 
 def derive_owned_x(ele: "Element", owned_kind: str):  # noqa: F821
-
     found_ele = []
 
     for owned_rel in ele.ownedRelationship:

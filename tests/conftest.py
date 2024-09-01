@@ -1,13 +1,10 @@
-import json
 from importlib import resources as lib_resources
 from pathlib import Path
-from typing import Dict, List
 
 import pytest
 
 import pymbe
 import pymbe.api as pm
-from pymbe.graph import SysML2LabeledPropertyGraph
 
 PYMBE_ROOT = Path(pymbe.__file__).parent
 TESTS_ROOT = Path(__file__).parent

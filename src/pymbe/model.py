@@ -16,7 +16,11 @@ VALUE_METATYPES = ("AttributeDefinition", "AttributeUsage", "DataType")
 
 
 def is_id_item(item):
-    return isinstance(item, dict) and item["@id"] is not None and isinstance(item["@id"], str)
+    return (
+        isinstance(item, dict)
+        and item["@id"] is not None
+        and isinstance(item["@id"], str)
+    )
 
 
 class ListOfNamedItems(list):
@@ -131,7 +135,6 @@ class Model:  # pylint: disable=too-many-instance-attributes
     )  # hints about attribute primary v derived, expected value type, etc.
 
     def __post_init__(self):
-
         self.metamodel = MetaModel()
 
         self._metamodel_hints = self.metamodel.metamodel_hints
@@ -179,7 +182,9 @@ class Model:  # pylint: disable=too-many-instance-attributes
         """Make a Model from an iterable container of elements"""
         return Model(
             elements={
-                element.get("identity", element).get("@id"): element.get("payload", element)
+                element.get("identity", element).get("@id"): element.get(
+                    "payload", element
+                )
                 for element in elements
             },
             **kwargs,
@@ -201,7 +206,9 @@ class Model:  # pylint: disable=too-many-instance-attributes
         )
 
     @staticmethod
-    def load_from_post_file(filepath: Union[Path, str], encoding: str = "utf-8") -> "Model":
+    def load_from_post_file(
+        filepath: Union[Path, str], encoding: str = "utf-8"
+    ) -> "Model":
         """Make a model from a JSON file formatted to POST to v2 API (includes payload fields)"""
         if isinstance(filepath, str):
             filepath = Path(filepath)
@@ -226,7 +233,9 @@ class Model:  # pylint: disable=too-many-instance-attributes
         )
 
     @staticmethod
-    def load_from_mult_post_files(filepath_list: List, encoding: str = "utf-8") -> "Model":
+    def load_from_mult_post_files(
+        filepath_list: List, encoding: str = "utf-8"
+    ) -> "Model":
         """Make a model from multiple JSON files formatted to POST to v2 API (includes payload fields)"""
         factored_data = []
 
@@ -255,10 +264,14 @@ class Model:  # pylint: disable=too-many-instance-attributes
     @property
     def packages(self) -> Tuple["Element", ...]:
         return tuple(
-            element for element in self.elements.values() if element._metatype == "Package"
+            element
+            for element in self.elements.values()
+            if element._metatype == "Package"
         )
 
-    def get_element(self, element_id: str, fail: bool = True, resolve: bool = True) -> "Element":
+    def get_element(
+        self, element_id: str, fail: bool = True, resolve: bool = True
+    ) -> "Element":
         """Get an element, or retrieve it from the API if it is there"""
         element = self.elements.get(element_id)
         if element and not isinstance(element, Element):
@@ -313,7 +326,10 @@ class Model:  # pylint: disable=too-many-instance-attributes
         return element
 
     def save_to_file(
-        self, filepath: Union[Path, str] = None, indent: int = 2, encoding: str = "utf-8"
+        self,
+        filepath: Union[Path, str] = None,
+        indent: int = 2,
+        encoding: str = "utf-8",
     ):
         filepath = filepath or self.name
         if not self.elements:
@@ -348,13 +364,19 @@ class Model:  # pylint: disable=too-many-instance-attributes
         elements = self.elements
 
         self.all_relationships = {
-            id_: element for id_, element in elements.items() if element._is_relationship
+            id_: element
+            for id_, element in elements.items()
+            if element._is_relationship
         }
         self.all_non_relationships = {
-            id_: element for id_, element in elements.items() if not element._is_relationship
+            id_: element
+            for id_, element in elements.items()
+            if not element._is_relationship
         }
 
-        owned = [element for element in elements.values() if element.get_owner() is None]
+        owned = [
+            element for element in elements.values() if element.get_owner() is None
+        ]
         self.ownedElement = ListOfNamedItems(
             element for element in owned if not element._is_relationship
         )
@@ -436,7 +458,9 @@ class Model:  # pylint: disable=too-many-instance-attributes
             endpts1, endpts2 = endpoints[key1], endpoints[key2]
             for endpt1 in endpts1:
                 for endpt2 in endpts2:
-                    endpt1._derived[f"{direction}{metatype}"] += [{"@id": endpt2._data["@id"]}]
+                    endpt1._derived[f"{direction}{metatype}"] += [
+                        {"@id": endpt2._data["@id"]}
+                    ]
 
     def reference_other_model(self, ref_model: "Model"):
         if ref_model not in self._referenced_models:
@@ -534,12 +558,18 @@ class Element:  # pylint: disable=too-many-instance-attributes
         for source in ("_data", "_derived"):
             source = self.__getattribute__(source)
             if key in source:
-                if key in self._metamodel_hints and not self._metamodel_hints[key]["derived"]:
+                if (
+                    key in self._metamodel_hints
+                    and not self._metamodel_hints[key]["derived"]
+                ):
                     found = True
                     item = source[key]
                     break
 
-                if key in self._metamodel_hints and self._metamodel_hints[key]["derived"]:
+                if (
+                    key in self._metamodel_hints
+                    and self._metamodel_hints[key]["derived"]
+                ):
                     break
                 found = True
                 item = source[key]
@@ -664,7 +694,9 @@ class Element:  # pylint: disable=too-many-instance-attributes
     @staticmethod
     def new(data: dict, model: Model) -> "Element":
         return Element(
-            _data=data, _model=model, _metamodel_hints=model._metamodel_hints[data["@type"]]
+            _data=data,
+            _model=model,
+            _metamodel_hints=model._metamodel_hints[data["@type"]],
         )
 
     def __safe_dereference(self, item):

@@ -5,7 +5,9 @@ def is_type_undefined_mult(type_ele):
     if "throughOwningMembership" not in type_ele._derived:
         return True
     mult_range = [
-        mr for mr in type_ele.throughOwningMembership if mr["@type"] == "MultiplicityRange"
+        mr
+        for mr in type_ele.throughOwningMembership
+        if mr["@type"] == "MultiplicityRange"
     ]
     if len(mult_range) == 0:
         return True
@@ -16,7 +18,9 @@ def is_multiplicity_one(type_ele):
     if "throughOwningMembership" not in type_ele._derived:
         return False
     multiplicity_range = [
-        mr for mr in type_ele.throughOwningMembership if mr["@type"] == "MultiplicityRange"
+        mr
+        for mr in type_ele.throughOwningMembership
+        if mr["@type"] == "MultiplicityRange"
     ][0]
     literal_value = [
         li.value
@@ -37,7 +41,9 @@ def is_multiplicity_specific_finite(type_ele):
     if "throughOwningMembership" not in type_ele._derived:
         return False
     multiplicity_range = [
-        mr for mr in type_ele.throughOwningMembership if mr["@type"] == "MultiplicityRange"
+        mr
+        for mr in type_ele.throughOwningMembership
+        if mr["@type"] == "MultiplicityRange"
     ][0]
     literal_value = [
         li.value
@@ -56,13 +62,16 @@ def is_multiplicity_specific_finite(type_ele):
 
 def get_finite_multiplicity_types(model):
     model_types = [
-        ele for ele in model.elements.values() if ele._metatype in ("Feature", "Classifier")
+        ele
+        for ele in model.elements.values()
+        if ele._metatype in ("Feature", "Classifier")
     ]
 
     return [
         finite_type
         for finite_type in model_types
-        if is_multiplicity_one(finite_type) or is_multiplicity_specific_finite(finite_type)
+        if is_multiplicity_one(finite_type)
+        or is_multiplicity_specific_finite(finite_type)
     ]
 
 
@@ -71,7 +80,9 @@ def get_lower_multiplicity(type_ele):
     if "throughOwningMembership" not in type_ele._derived:
         return lower_mult
     multiplicity_ranges = [
-        mr for mr in type_ele.throughOwningMembership if mr["@type"] == "MultiplicityRange"
+        mr
+        for mr in type_ele.throughOwningMembership
+        if mr["@type"] == "MultiplicityRange"
     ]
     literal_value = []
     if len(multiplicity_ranges) == 1:
@@ -98,7 +109,9 @@ def get_upper_multiplicity(type_ele):
     if "throughOwningMembership" not in type_ele._derived:
         return upper_mult
     multiplicity_ranges = [
-        mr for mr in type_ele.throughOwningMembership if mr["@type"] == "MultiplicityRange"
+        mr
+        for mr in type_ele.throughOwningMembership
+        if mr["@type"] == "MultiplicityRange"
     ]
     literal_value = []
     if len(multiplicity_ranges) == 1:
@@ -120,7 +133,6 @@ def get_upper_multiplicity(type_ele):
 
 
 def get_effective_lower_multiplicity(type_ele):
-
     """
     Get lower multiplicity on feature even if this type is redefined.
     """
@@ -160,7 +172,9 @@ def get_effective_lower_multiplicity(type_ele):
 
         return lower_mult
     multiplicity_ranges = [
-        mr for mr in type_ele.throughOwningMembership if mr["@type"] == "MultiplicityRange"
+        mr
+        for mr in type_ele.throughOwningMembership
+        if mr["@type"] == "MultiplicityRange"
     ]
     literal_value = []
     if len(multiplicity_ranges) == 1:
@@ -183,7 +197,6 @@ def get_effective_lower_multiplicity(type_ele):
 
 
 def get_effective_upper_multiplicity(type_ele):
-
     """
     Get upper multiplicity on feature even if this type is redefined.
     """
@@ -223,7 +236,9 @@ def get_effective_upper_multiplicity(type_ele):
 
         return upper_mult
     multiplicity_ranges = [
-        mr for mr in type_ele.throughOwningMembership if mr["@type"] == "MultiplicityRange"
+        mr
+        for mr in type_ele.throughOwningMembership
+        if mr["@type"] == "MultiplicityRange"
     ]
     literal_value = []
     if len(multiplicity_ranges) == 1:
@@ -250,7 +265,6 @@ def identify_connectors_one_side(connectors):
     for connector in connectors:
         if "throughEndFeatureMembership" in connector._derived:
             for end_feature in connector.throughEndFeatureMembership:
-
                 if "throughReferenceSubsetting" in end_feature._derived:
                     if (
                         is_multiplicity_one(end_feature.throughReferenceSubsetting[0])
@@ -262,13 +276,10 @@ def identify_connectors_one_side(connectors):
 
 
 def does_behavior_have_write_features(behavior):
-
     if hasattr(behavior, "throughFeatureMembership"):
-
         candidate_features = behavior.throughFeatureMembership
 
         for candidate_feature in candidate_features:
-
             if candidate_feature._metatype == "Step":
                 step = candidate_feature
 
@@ -290,7 +301,6 @@ def has_type_named(feature, type_name):
 
 
 def get_most_specific_feature_type(feature):
-
     if hasattr(feature, "throughFeatureTyping"):
         if len(feature.throughFeatureTyping) == 1:
             return feature.throughFeatureTyping[0]
@@ -315,7 +325,9 @@ def get_more_general_types(typ, recurse_counter, max_counter):
     """
 
     local_more_general = (
-        typ.throughFeatureTyping + typ.throughSubclassification + typ.throughRedefinition
+        typ.throughFeatureTyping
+        + typ.throughSubclassification
+        + typ.throughRedefinition
     )
 
     # check to see if this is a library object
@@ -328,12 +340,16 @@ def get_more_general_types(typ, recurse_counter, max_counter):
         if len(typ._model._referenced_models) > 0:
             if hasattr(local_general, "isLibraryElement"):
                 if local_general._data["isLibraryElement"]:
-                    trial_element = typ._model._referenced_models[0].get_element(local_general._id)
+                    trial_element = typ._model._referenced_models[0].get_element(
+                        local_general._id
+                    )
                     lib_local.append(trial_element)
                     lib_remove.append(local_general)
             else:
                 try:
-                    trial_element = typ._model._referenced_models[0].get_element(local_general._id)
+                    trial_element = typ._model._referenced_models[0].get_element(
+                        local_general._id
+                    )
                     lib_local.append(trial_element)
                     lib_remove.append(local_general)
                 except KeyError:
@@ -350,7 +366,9 @@ def get_more_general_types(typ, recurse_counter, max_counter):
     total_general = local_more_general + [
         item
         for local_general in local_more_general
-        for item in get_more_general_types(local_general, recurse_counter + 1, max_counter)
+        for item in get_more_general_types(
+            local_general, recurse_counter + 1, max_counter
+        )
     ]
 
     return total_general
@@ -367,7 +385,6 @@ def get_feature_bound_values(feat):
 
 
 def get_effective_basic_name(type_ele):
-
     """
     Get a name for the feature even if this type is redefined.
     """

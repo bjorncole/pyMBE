@@ -1,13 +1,8 @@
-from pathlib import Path
-from uuid import uuid4
 
-import pytest
 
-from pymbe.model import Element, Model
 
 
 def test_links_associations(load_kerml_library):
-
     """
     Check that the main links in Links library have loaded and the expected names are all there.
     """
@@ -39,7 +34,6 @@ def test_links_associations(load_kerml_library):
 
 
 def test_binarylink_has_features(load_kerml_library):
-
     """
     Check that the features participant, source, and target are loaded under BinaryLink
     """
@@ -66,7 +60,6 @@ def test_binarylink_has_features(load_kerml_library):
 
 
 def test_binarylink_feature_details(load_kerml_library):
-
     """
     Check that the features participant, source, and target have appropriate subsetting, redefinition,
     and other metadata

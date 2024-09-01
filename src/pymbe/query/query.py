@@ -42,7 +42,6 @@ def roll_up_multiplicity(
     feature: Element,
     bound: str,
 ) -> int:
-
     max_multiplicity = lpg.model.max_multiplicity
 
     banded_featuring_graph = lpg.get_projection("Expanded Banded")
@@ -153,7 +152,6 @@ def get_features_typed_by_type(
     lpg: SysML2LabeledPropertyGraph,
     type_id: str,
 ) -> list:
-
     ptg = lpg.get_projection("Part Typing")
     rdg = lpg.get_projection("Redefinition and Subsetting")
 
@@ -167,7 +165,11 @@ def get_features_typed_by_type(
     elif type_id in list(rdg.nodes):
         for comp in nx.connected_components(rdg.to_undirected()):
             connected_sub = nx.subgraph(rdg, list(comp))
-            roots = [node for node in connected_sub.nodes if connected_sub.out_degree(node) == 0]
+            roots = [
+                node
+                for node in connected_sub.nodes
+                if connected_sub.out_degree(node) == 0
+            ]
             for root in roots:
                 if root in list(ptg.nodes):
                     for item in list(comp):

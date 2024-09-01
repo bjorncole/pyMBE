@@ -43,10 +43,15 @@ def get_elements_from_lpg_edges(lpg: SysML2LabeledPropertyGraph) -> List[Element
 
 def make_lpg_edges(*edges) -> List[MultiEdge]:
     """Make networkx multiedges compatible with the LPG"""
-    return [make_nx_multi_edge(source, target, metatype) for source, target, metatype in edges]
+    return [
+        make_nx_multi_edge(source, target, metatype)
+        for source, target, metatype in edges
+    ]
 
 
-def get_implied_parameter_feedforward(lpg: SysML2LabeledPropertyGraph) -> List[MultiEdge]:
+def get_implied_parameter_feedforward(
+    lpg: SysML2LabeledPropertyGraph,
+) -> List[MultiEdge]:
     implied_parameter_feedforward_edges = (
         (edge.value.result._id, edge.get_owner()._id, "ImpliedParameterFeedforward")
         for edge in get_elements_from_lpg_edges(lpg)
@@ -99,7 +104,10 @@ def get_implied_feedforward_edges(lpg: SysML2LabeledPropertyGraph) -> List[Multi
             rf_metatype = result_feeder._metatype
 
             # we only want Expressions that have at least one input parameter
-            if "Expression" not in rf_metatype or rf_metatype == "FeatureReferenceExpression":
+            if (
+                "Expression" not in rf_metatype
+                or rf_metatype == "FeatureReferenceExpression"
+            ):
                 if rf_metatype == "FeatureReferenceExpression":
                     implied_edges += [
                         (
@@ -153,7 +161,9 @@ def get_implied_feedforward_edges(lpg: SysML2LabeledPropertyGraph) -> List[Multi
             num_matches = min(num_expr_results, num_para_members)
             implied_edges += [
                 (expr_result, para_member, "ImpliedParameterFeedforward")
-                for expr_result, para_member in list(zip(expr_results, para_members))[:num_matches]
+                for expr_result, para_member in list(zip(expr_results, para_members))[
+                    :num_matches
+                ]
             ]
 
     implied_edges = [

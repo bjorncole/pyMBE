@@ -11,9 +11,6 @@ from pymbe.model_modification import (
 )
 from pymbe.query.metamodel_navigator import (
     get_effective_basic_name,
-    get_effective_lower_multiplicity,
-    get_effective_upper_multiplicity,
-    get_most_specific_feature_type,
 )
 
 
@@ -40,7 +37,9 @@ class FeatureTypeWorkingMap:
     # The working dictionary for atoms to atoms (objects)
     _working_dict: Dict[str, Dict[str, List[Element]]] = field(default_factory=dict)
     # The working dictionary for atoms to values (objects to values)
-    _working_dict_data_values: Dict[str, Dict[str, List[Element]]] = field(default_factory=dict)
+    _working_dict_data_values: Dict[str, Dict[str, List[Element]]] = field(
+        default_factory=dict
+    )
     # Reference back to the model for which this map is being created
     _model: Model
 
@@ -57,7 +56,6 @@ class FeatureTypeWorkingMap:
         self._model = model
 
     def _add_type_instance_to_map(self, type_instance: Element):
-
         """
         Add a new type to the map under which features and their more specific
         values can be mapped.
@@ -69,7 +67,6 @@ class FeatureTypeWorkingMap:
     def _add_feature_to_type_instance(
         self, type_instance: Element, feature_nesting: List[Element]
     ):
-
         """
         Add a feature under a type instance that is being developed
         """
@@ -80,13 +77,13 @@ class FeatureTypeWorkingMap:
             self._working_dict_data_values[type_instance._id].update({id_path: []})
         except KeyError:
             raise KeyError(
-                "Tried to add a feature to an atom" + "that is not in the working dictionary."
+                "Tried to add a feature to an atom"
+                + "that is not in the working dictionary."
             )
 
     def _add_atom_value_to_feature(
         self, type_instance: Element, feature_nesting: List[Element], atom_value: Any
     ):
-
         """
         Add a value to the map to a nested feature under the type instance
         """
@@ -96,7 +93,9 @@ class FeatureTypeWorkingMap:
             if isinstance(atom_value, Element):
                 self._working_dict[type_instance._id][id_path].append(atom_value)
             else:
-                self._working_dict_data_values[type_instance._id][id_path].append(atom_value)
+                self._working_dict_data_values[type_instance._id][id_path].append(
+                    atom_value
+                )
         except KeyError:
             try:
                 self._add_feature_to_type_instance(
@@ -105,7 +104,9 @@ class FeatureTypeWorkingMap:
                 if isinstance(atom_value, Element):
                     self._working_dict[type_instance._id][id_path].append(atom_value)
                 else:
-                    self._working_dict_data_values[type_instance._id][id_path].append(atom_value)
+                    self._working_dict_data_values[type_instance._id][id_path].append(
+                        atom_value
+                    )
             except KeyError:
                 raise KeyError(
                     f"Tried to add a value to a feature {feature_nesting} "
@@ -113,8 +114,9 @@ class FeatureTypeWorkingMap:
                     + "that is not in the working dictionary."
                 )
 
-    def _get_atom_values_for_feature(self, type_instance: Element, feature_nesting: List[Element]):
-
+    def _get_atom_values_for_feature(
+        self, type_instance: Element, feature_nesting: List[Element]
+    ):
         id_path = ".".join([feature._id for feature in feature_nesting])
 
         try:
@@ -123,19 +125,24 @@ class FeatureTypeWorkingMap:
             return []
 
     def __repr__(self):
-
         map_string = ""
 
-        for type_instance_id, bound_features_to_atom_values_dict in self._working_dict.items():
+        for (
+            type_instance_id,
+            bound_features_to_atom_values_dict,
+        ) in self._working_dict.items():
             map_string = (
                 map_string
-                + f"Values mapped under type instance (atom) "
+                + "Values mapped under type instance (atom) "
                 + f"{get_effective_basic_name(self._model.get_element(type_instance_id))}:\n"
             )
             # for feature_path in self._working_dict[type_instance_id]:
             for feature_path in bound_features_to_atom_values_dict.keys():
                 feature_rep = ".".join(
-                    [str(self._model.get_element(item_id)) for item_id in feature_path.split(".")]
+                    [
+                        str(self._model.get_element(item_id))
+                        for item_id in feature_path.split(".")
+                    ]
                 )
 
                 map_string = (
@@ -147,16 +154,19 @@ class FeatureTypeWorkingMap:
         return "Empty" if map_string == "" else map_string
 
     def cover_features_in_new_atoms(self, target_packge):
-
-        for type_instance_id, bound_features_to_atom_values_dict in self._working_dict.items():
-
+        for (
+            type_instance_id,
+            bound_features_to_atom_values_dict,
+        ) in self._working_dict.items():
             type_instance = self._model.get_element(type_instance_id)
             # bound_features_to_atom_values_dict = self._working_dict[type_instance_id]
 
             for bound_feature_id in bound_features_to_atom_values_dict.keys():
                 if len(bound_feature_id.split(".")) > 1:
                     if len(bound_features_to_atom_values_dict[bound_feature_id]) > 0:
-                        raise NotImplementedError("Connect assign values to nested features yet.")
+                        raise NotImplementedError(
+                            "Connect assign values to nested features yet."
+                        )
                     else:
                         continue
                 bound_feature = self._model.get_element(element_id=bound_feature_id)
@@ -170,8 +180,8 @@ class FeatureTypeWorkingMap:
                     covering_classifier_suffix = ""
 
                     if get_effective_basic_name(bound_feature) == "subperformances":
-                        covering_classifier_suffix = " under " + get_effective_basic_name(
-                            type_instance
+                        covering_classifier_suffix = (
+                            " under " + get_effective_basic_name(type_instance)
                         )
 
                     redefined_bound_feature = apply_covered_feature_pattern(
@@ -215,15 +225,17 @@ class FeatureTypeWorkingMap:
             type_instance_id,
             bound_features_to_atom_values_dict,
         ) in self._working_dict_data_values.items():
-
             type_instance = self._model.get_element(type_instance_id)
-            bound_features_to_atom_values_dict = self._working_dict_data_values[type_instance_id]
+            bound_features_to_atom_values_dict = self._working_dict_data_values[
+                type_instance_id
+            ]
 
             for bound_feature_id in bound_features_to_atom_values_dict.keys():
                 # set the value through a feature chain and new feature
                 if len(bound_feature_id.split(".")) > 1:
                     bound_feature_path = [
-                        self._model.get_element(feat_id) for feat_id in bound_feature_id.split(".")
+                        self._model.get_element(feat_id)
+                        for feat_id in bound_feature_id.split(".")
                     ]
                     chained_feature = apply_chained_feature_assignment_pattern(
                         feature_path_to_chain=bound_feature_path,
@@ -239,8 +251,11 @@ class FeatureTypeWorkingMap:
 
                     assign_value_by_literal_expression(
                         target_feature=chained_feature,
-                        value_to_assign=bound_features_to_atom_values_dict[bound_feature_id][0]
-                        if len(bound_features_to_atom_values_dict[bound_feature_id]) == 1
+                        value_to_assign=bound_features_to_atom_values_dict[
+                            bound_feature_id
+                        ][0]
+                        if len(bound_features_to_atom_values_dict[bound_feature_id])
+                        == 1
                         else bound_features_to_atom_values_dict[bound_feature_id],
                         model=self._model,
                     )

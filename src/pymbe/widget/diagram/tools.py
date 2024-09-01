@@ -203,7 +203,9 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):  # pylint: disable=too-m
         ]
         num_matches = len(matches)
         if num_matches > 1:
-            raise ipyelk.exceptions.NotUniqueError(f"Found too many tools with type {tool_type}")
+            raise ipyelk.exceptions.NotUniqueError(
+                f"Found too many tools with type {tool_type}"
+            )
         if num_matches < 1:
             raise ipyelk.exceptions.NotFoundError(f"No tool matching type {tool_type}")
 

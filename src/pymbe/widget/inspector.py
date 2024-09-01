@@ -57,7 +57,8 @@ class ElementInspector(ipyw.Output, BaseWidget):
             if not self.model:
                 return
             self.clean_data = {
-                id_: self.get_clean_data(element) for id_, element in self.model.elements.items()
+                id_: self.get_clean_data(element)
+                for id_, element in self.model.elements.items()
             }
 
     @staticmethod
@@ -69,7 +70,9 @@ class ElementInspector(ipyw.Output, BaseWidget):
         return f"""«{data["@type"]}: {data["@id"]}»"""
 
     def _make_json_output(self) -> list:
-        data = {id_: self.clean_data[id_] for id_ in self.selected if id_ in self.clean_data}
+        data = {
+            id_: self.clean_data[id_] for id_ in self.selected if id_ in self.clean_data
+        }
         names = {id_: self._get_name(data_) for id_, data_ in data.items()}
         return [
             {

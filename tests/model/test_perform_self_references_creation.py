@@ -1,26 +1,19 @@
 from uuid import uuid4
 
-import pytest
-
 import pymbe.api as pm
 from pymbe.interpretation.occurrences_steps import is_feature_involving_self
-from pymbe.model import Element, Model
+from pymbe.model import Element
 from pymbe.model_modification import (
     apply_covered_feature_pattern,
-    build_from_binary_relationship_pattern,
     build_from_classifier_pattern,
     build_from_feature_pattern,
 )
 from pymbe.query.metamodel_navigator import (
     get_effective_basic_name,
-    get_effective_lower_multiplicity,
-    get_effective_upper_multiplicity,
-    get_most_specific_feature_type,
 )
 
 
 def test_fill_self_references(load_kerml_library):
-
     """
     Test creation of performances and also fill in and cover library features like portionOf.
 

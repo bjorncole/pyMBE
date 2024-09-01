@@ -1,5 +1,4 @@
 def is_feature_involving_self(feat):
-
     """
     Look to see if the feature is one of the special performance / occurrence
     features that includes at least the featuring type itself. Examples include:

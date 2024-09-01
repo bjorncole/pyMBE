@@ -40,7 +40,6 @@ def build_from_classifier_pattern(
     superclasses: List[Element],
     specific_fields: Dict[str, Any],
 ):
-
     """
     Creates a new element using a classifier-style pattern that assumes:
     - The new element will need an owner
@@ -84,7 +83,6 @@ def build_from_binary_relationship_pattern(
     alternative_owner: Element,
     specific_fields: Dict[str, Any],
 ):
-
     """
     Creates a new element using a graph relationship-style pattern that assumes:
     - The new element may be owned by its source or some other element
@@ -131,7 +129,6 @@ def build_from_feature_pattern(
     metatype: str = "Feature",
     connector_end: bool = False,
 ):
-
     """
     Creates a new element using a feature-style pattern that assumes:
     - The Feature will have some special kind of membership connecting it to the owner
@@ -158,13 +155,18 @@ def build_from_feature_pattern(
     new_ele = Element.new(data=feature_dict, model=model)
 
     # TODO: Add more cases here
-    if metatype in {"Feature", "Connector", "Succession", "Step"} or "Usage" in metatype:
+    if (
+        metatype in {"Feature", "Connector", "Succession", "Step"}
+        or "Usage" in metatype
+    ):
         if connector_end:
             member_kind = "EndFeatureMembership"
         else:
             member_kind = "FeatureMembership"
 
-    new_element_ownership_pattern(owner=owner, ele=new_ele, model=model, member_kind=member_kind)
+    new_element_ownership_pattern(
+        owner=owner, ele=new_ele, model=model, member_kind=member_kind
+    )
 
     if feature_type is not None:
         build_from_binary_relationship_pattern(
@@ -190,7 +192,6 @@ def build_from_parameter_pattern(
     metatype: str = "Feature",
     returning_parameter: bool = False,
 ):
-
     """
     Creates a new element using a feature-style pattern that assumes:
     - The Feature will have some special kind of membership connecting it to the owner
@@ -251,7 +252,6 @@ def build_from_binary_assoc_pattern(
     superclasses: List[Element],
     specific_fields: Dict[str, Any],
 ):
-
     """
     Creates a series of new elements using an association-style pattern that assumes:
     - The association is binary (only one source, one target)
@@ -297,7 +297,6 @@ def build_from_binary_assoc_pattern(
 
     for supr in superclasses:
         if supr is not None:
-
             # fix this later to become end feature memberships
 
             try:
@@ -361,7 +360,6 @@ def build_from_binary_connector_pattern(
     owner: Element,
     specific_fields: Dict[str, Any],
 ):
-
     """
     Creates a series of new elements using a connector-style pattern that assumes:
     - The connector is binary (only one source, one target)
@@ -490,7 +488,6 @@ def build_unioning_superset_classifier(
     )
 
     for clz in classes:
-
         subclass_added_data = {
             "specific": {"@id": clz._id},
             "general": {"@id": new_super._id},
@@ -564,7 +561,9 @@ def apply_covered_feature_pattern(
 
         redefined_feature = build_from_feature_pattern(
             owner=type_to_apply_pattern_on,
-            name=redefining_feature_prefix + feature_to_cover_name + redefining_feature_suffix,
+            name=redefining_feature_prefix
+            + feature_to_cover_name
+            + redefining_feature_suffix,
             model=model,
             specific_fields={},
             feature_type=covering_type,
@@ -575,7 +574,9 @@ def apply_covered_feature_pattern(
     elif len(one_member_classifiers) == 1:
         redefined_feature = build_from_feature_pattern(
             owner=type_to_apply_pattern_on,
-            name=redefining_feature_prefix + feature_to_cover_name + redefining_feature_suffix,
+            name=redefining_feature_prefix
+            + feature_to_cover_name
+            + redefining_feature_suffix,
             model=model,
             specific_fields={},
             feature_type=one_member_classifiers[0],
@@ -616,7 +617,7 @@ def apply_covered_connector_pattern(
     if separate_connectors:
         if connector_covering_name == "":
             connector_covering_name = (
-                f"Connector between "
+                "Connector between "
                 + f"{get_effective_basic_name(feature_to_cover.source[0])} and "
                 + f"{get_effective_basic_name(feature_to_cover.target[0])}"
             )
@@ -637,7 +638,6 @@ def apply_covered_connector_pattern(
             )
 
     else:
-
         if len(one_member_classifiers) > 1:
             covering_type = build_unioning_superset_classifier(
                 classes=one_member_classifiers,
@@ -687,7 +687,6 @@ def build_from_portion_pattern(
     feature_values: List[Any],
     specific_fields: Dict[str, Any],
 ):
-
     """
     Execute a pattern to create a portion of a classifier
 
@@ -711,7 +710,6 @@ def build_from_portion_pattern(
     if hasattr(classifier_to_be_portioned, "throughFeatureMembership"):
         if len(feature_to_be_set) == 0:
             for feat in classifier_to_be_portioned.throughFeatureMembership:
-
                 redefed_feature = build_from_feature_pattern(
                     owner=new_ele,
                     name=feat.declaredName,
@@ -814,7 +812,6 @@ def build_from_expression_pattern(
     in_paras: List[Element] = [],
     return_para: Element = None,
 ):
-
     typing_snippet = {}
     direction_snippet = {}
 
@@ -831,7 +828,10 @@ def build_from_expression_pattern(
     model._add_element(new_ele)
 
     new_rpm = new_element_ownership_pattern(
-        owner=new_ele, ele=return_para, model=model, member_kind="ReturnParameterMembership"
+        owner=new_ele,
+        ele=return_para,
+        model=model,
+        member_kind="ReturnParameterMembership",
     )
     new_pms = []
 
@@ -853,7 +853,6 @@ def build_from_feature_ref_expression_pattern(
     return_para: Element = None,
     referred_feature: Element = None,
 ):
-
     typing_snippet = {}
     direction_snippet = {}
 
@@ -873,7 +872,10 @@ def build_from_feature_ref_expression_pattern(
     model._add_element(new_ele)
 
     new_rpm = new_element_ownership_pattern(
-        owner=new_ele, ele=return_para, model=model, member_kind="ReturnParameterMembership"
+        owner=new_ele,
+        ele=return_para,
+        model=model,
+        member_kind="ReturnParameterMembership",
     )
     new_pms = []
 
@@ -910,7 +912,9 @@ def build_from_feature_ref_expression_pattern(
     model._add_labels(new_membership)
 
     # ownership of expression
-    new_element_ownership_pattern(owner=owner, ele=new_ele, model=model, member_kind=member_kind)
+    new_element_ownership_pattern(
+        owner=owner, ele=new_ele, model=model, member_kind=member_kind
+    )
 
     return new_ele
 
@@ -926,7 +930,6 @@ def build_from_operator_expression_pattern(
     operands: List[Element] = [],
     list_tree: bool = False,
 ):
-
     typing_snippet = {}
     direction_snippet = {}
 
@@ -946,7 +949,10 @@ def build_from_operator_expression_pattern(
     model._add_element(new_ele)
 
     new_rpm = new_element_ownership_pattern(
-        owner=new_ele, ele=return_para, model=model, member_kind="ReturnParameterMembership"
+        owner=new_ele,
+        ele=return_para,
+        model=model,
+        member_kind="ReturnParameterMembership",
     )
     new_pms = []
 
@@ -969,13 +975,16 @@ def build_from_operator_expression_pattern(
     model._add_labels(new_rpm)
 
     # ownership of expression
-    new_element_ownership_pattern(owner=owner, ele=new_ele, model=model, member_kind=member_kind)
+    new_element_ownership_pattern(
+        owner=owner, ele=new_ele, model=model, member_kind=member_kind
+    )
 
     return new_ele
 
 
-def assign_feature_value_to_expression(target_feature: Element, expr: Element, model: Model):
-
+def assign_feature_value_to_expression(
+    target_feature: Element, expr: Element, model: Model
+):
     """
     Add a feature value relationship from a parameter to an expression and
     then also make the Feature the owner of the expression
@@ -1000,7 +1009,6 @@ def assign_feature_value_to_expression(target_feature: Element, expr: Element, m
 def assign_value_by_literal_expression(
     target_feature: Element, value_to_assign: Any, model: Model
 ):
-
     """
     Generate the binding connector, assign as a Feature Value and create a Literal Expression
     as a way to assign a value to a Feature.
@@ -1044,7 +1052,6 @@ def assign_value_by_literal_expression(
 
 
 def assign_value_by_fre():
-
     """
     Generate the binding connector, assign as a Feature Value and create a
     FeatureReferenceExpression as a way to assign a value to a Feature.
@@ -1059,7 +1066,6 @@ def assign_multiple_values_with_fre(
     features_to_reference: List[Element],
     seperator_function: Element,
 ):
-
     """
     Generate Feature Value and use appropriate base functions to assign multiple values
     to a given feature.
@@ -1075,7 +1081,6 @@ def assign_multiple_values_with_fre(
     fres = []
 
     for i in range(len(features_to_reference) - 1):
-
         new_in_seq_1 = build_from_parameter_pattern(
             name="seq1",
             model=model,
@@ -1119,7 +1124,6 @@ def assign_multiple_values_with_fre(
         separators.append(separator_n)
 
     for feat in features_to_reference:
-
         new_result_para_1 = build_from_parameter_pattern(
             name="result",
             model=model,
@@ -1153,9 +1157,13 @@ def assign_multiple_values_with_fre(
 
     # Last two features are valued to seq1 and seq2 parameters of the last separator function
 
-    assign_feature_value_to_expression(target_feature=parameters[-2], expr=fres[-2], model=model)
+    assign_feature_value_to_expression(
+        target_feature=parameters[-2], expr=fres[-2], model=model
+    )
 
-    assign_feature_value_to_expression(target_feature=parameters[-1], expr=fres[-1], model=model)
+    assign_feature_value_to_expression(
+        target_feature=parameters[-1], expr=fres[-1], model=model
+    )
 
     # Working left to right, should get the right number of separators
 

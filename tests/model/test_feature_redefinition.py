@@ -1,6 +1,4 @@
-import pytest
 
-from pymbe.model import Element, Model
 from pymbe.query.metamodel_navigator import (
     get_effective_basic_name,
     get_effective_lower_multiplicity,
@@ -10,7 +8,6 @@ from pymbe.query.metamodel_navigator import (
 
 
 def test_find_redefined_name(load_kerml_library):
-
     """
     Test that codebase can find names for features that use the modeling pattern of
     redefining a library feature as below:
@@ -47,7 +44,6 @@ def test_find_redefined_name(load_kerml_library):
 
 
 def test_find_redefined_multiplicity(load_kerml_library):
-
     """
     Test that codebase can find multiplicities for features that use the modeling pattern of
     redefining a library feature as below:
@@ -89,7 +85,6 @@ def test_find_redefined_multiplicity(load_kerml_library):
 
 
 def test_find_redefined_typing(load_kerml_library):
-
     """
     Test that codebase can find types for features that use the modeling pattern of
     redefining a library feature as below:

@@ -97,7 +97,9 @@ class APIClient(trt.HasTraits, ModelClient):
             warn(f"Could not retrieve projects from {self.projects_url}.\n{exc}")
             return {}
 
-        results = {project["@id"]: process_project_safely(project) for project in projects}
+        results = {
+            project["@id"]: process_project_safely(project) for project in projects
+        }
 
         return {
             project_id: project_data
@@ -160,8 +162,9 @@ class APIClient(trt.HasTraits, ModelClient):
             urls = self._next_url_regex.findall(link)
             if len(urls) > 1:
                 raise requests.HTTPError(
-                    "Found multiple 'next' pagination urls: "
-                    ", ".join(map(lambda x: f"<{x}>", urls))
+                    "Found multiple 'next' pagination urls: " ", ".join(
+                        map(lambda x: f"<{x}>", urls)
+                    )
                 )
             url = urls[0] if urls else None
         return result
@@ -181,7 +184,9 @@ class APIClient(trt.HasTraits, ModelClient):
                     data[key] = self._parse_timestamp(value)
             return data
 
-        commits = sorted(self._retrieve_data(self.commits_url), key=lambda x: x["created"])
+        commits = sorted(
+            self._retrieve_data(self.commits_url), key=lambda x: x["created"]
+        )
         return {commit["@id"]: clean_fields(commit) for commit in commits}
 
     def get_model(self) -> Optional[Model]:
