@@ -51,19 +51,6 @@ You will have to activate the base environment to make sure you are using the ap
 conda activate envs/pymbe
 ```
 
-### Additional configuration
-
-> If you are going to be changing the `anaconda-project` environments, it is a good idea to make `anaconda-project` use `mamba` instead of `conda` (it is much faster)
-
-> Remember you will have to do this when you start your shell unless you set these environment variables permanently.
-
-```bash
-CONDA_EXE=mamba        # linux
-set CONDA_EXE=mamba    # windows
-```
-
-> Remember to set your `.condarc` path as explained in `Step 3`.
-
 # ... and get going!
 
 You can then get a running instance of JupyterLab by running:
