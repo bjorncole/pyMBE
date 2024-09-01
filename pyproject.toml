@@ -31,6 +31,8 @@ dependencies = [
     "notebook",
     "numpy",
     "openmdao",
+    "pip",
+    "pydantic<2",
     "pyld",
     "rdflib",
     "rdflib-jsonld",
@@ -56,6 +58,7 @@ ansi2html = "*"
 git = "*"
 mypy = "*"
 nbstripout = "*"
+pip = "*"
 pytest = "*"
 pytest-asyncio = "*"
 pytest-cov = "*"
@@ -65,11 +68,11 @@ python-build = "*"
 ruff = "*"
 
 [tool.pixi.environments]
-runtime = { features = [], solve-group = "default" }
-develop = { features = ["develop"], solve-group = "runtime" }
+default = { features = [], solve-group = "default" }
+develop = { features = ["develop"], solve-group = "default" }
 
 [tool.pixi.tasks]
-setup = { cmd = "pip install -e .", inputs=[".pixi/envs/runtime/conda-meta/history"] }
+setup = { cmd = "python -m pip install -e .", inputs=[".pixi/envs/default/conda-meta/history"] }
 lab = { cmd = "jupyter lab --no-browser", depends-on = ["setup"], cwd = "docs" }
 
 [tool.pixi.feature.develop.tasks]
@@ -77,7 +80,7 @@ clean-notebooks = "nbstripout docs/**/*.ipynb"
 fmt = "ruff format src/ tests/"
 lint = "ruff check --fix --no-unsafe-fixes src/ tests/"
 precommit = { depends-on = ["style", "typing", "test", "clean-notebooks"] }
-setup-develop = { cmd = "pip install -e .", inputs=[".pixi/envs/develop/conda-meta/history"] }
+setup-develop = { cmd = "python -m pip install -e .", inputs=[".pixi/envs/develop/conda-meta/history"] }
 setup-mypy = "mypy --install-types"
 style = { depends-on = ["fmt", "lint"] }
 test = { cmd = "pytest -s -n 4 --cov=pymbe --cov-report html:.pytest_coverage", depends-on = ["setup-develop", "update-submodules"] }
