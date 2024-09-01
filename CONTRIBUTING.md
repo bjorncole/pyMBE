@@ -6,9 +6,11 @@ Pull requests are the preferred method of code modification submission.
 
 # Getting Setup
 
-Before contributing code, the `pymbe` maintainers request that you run:
+Before contributing your pull requests, please run:
 
     pixi run precommit
+
+This commit is basically what is run by the CI pipeline, and your PR will not pass CI until you can pass all checks and tests.
 
 This command will run the automatic code formatter, the notebook cleaner, the code linter, the static type checker, and the unit tests.
 
@@ -26,3 +28,5 @@ These commands can be run in isolation.
 | `typing` | Runs `mypy` in the [`./src`](./src) folder | All `*.py` in the [`./src`](./src) folder
 | `update-submodules` | Updates `git` submodules | [`.git/HEAD`](.git/HEAD)
 | `precommit` | Runs the `fmt`, `lint`, `typing`, `test`, and `clean-notebooks` tasks
+| `vscode` | Launched Visual Studio Code from the appropriate environment
+| `package` | Builds a package of `pymbe`
