@@ -28,5 +28,5 @@ These commands can be run in isolation.
 | `typing` | Runs `mypy` in the [`./src`](./src) folder | All `*.py` in the [`./src`](./src) folder
 | `update-submodules` | Updates `git` submodules | [`.git/HEAD`](.git/HEAD)
 | `precommit` | Runs the `fmt`, `lint`, `typing`, `test`, and `clean-notebooks` tasks
+| `package` | Builds an un-built source distribution and a built package for `pymbe`
 | `vscode` | Launched Visual Studio Code from the appropriate environment
-| `package` | Builds a package of `pymbe`
