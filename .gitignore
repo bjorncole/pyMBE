@@ -140,8 +140,9 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# Anaconda Project
+# DevOps
 envs/
+.pixi
 
 #PyCharm
 .idea
