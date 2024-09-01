@@ -6,15 +6,23 @@ Pull requests are the preferred method of code modification submission.
 
 # Getting Setup
 
-Update submodules and install the packages in editable mode by running the setup
- command:
+Before contributing code, the `pymbe` maintainers request that you run:
 
-`anaconda-project run setup`
+    pixi run precommit
 
-# Run the code linters:
+This command will run the automatic code formatter, the notebook cleaner, the code linter, the static type checker, and the unit tests.
 
-`anaconda-project run lint`
+These commands can be run in isolation.
 
-# Run the tests:
-
-`anaconda-project run test`
+| __Task__ | __Description__ | __Re-run Conditions__ |
+|---|---|---|
+| `clean-notebooks` | Strips outputs from all Jupyter notebooks in the [`./docs`](./docs) folder | All `*.ipynb` in [`./docs`](./docs)  folder
+| `fmt` | Automatically formats all `.py` files in the [`./src`](./src) and [`./tests`](./tests) folders | All `*.py` in the [`./src`](./src) and [`./tests`](./tests) folders
+| `lint` | Tries to fix linter issues and checks there are no linter errors in [`./src`](./src) and [`./tests`](./tests) folders | All `*.py` in the [`./src`](./src) and [`./tests`](./tests) folders
+| `setup-develop` | Installs `pymbe` in editable mode into the development environment | `.pixi/envs/develop/conda-meta/history`
+| `setup-mypy` | Installs types for `mypy`
+| `style` | Runs the `fmt` and `lint` tasks | All `*.py` in the [`./src`](./src) and [`./tests`](./tests) folders
+| `test` | Runs tests and creates coverage report | All `*.py` in the [`./src`](./src) and [`./tests`](./tests) folders
+| `typing` | Runs `mypy` in the [`./src`](./src) folder | All `*.py` in the [`./src`](./src) folder
+| `update-submodules` | Updates `git` submodules | [`.git/HEAD`](.git/HEAD)
+| `precommit` | Runs the `fmt`, `lint`, `typing`, `test`, and `clean-notebooks` tasks
