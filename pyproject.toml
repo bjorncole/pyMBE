@@ -81,10 +81,9 @@ fmt = "ruff format src/ tests/"
 lint = "ruff check --fix --no-unsafe-fixes src/ tests/"
 precommit = { depends-on = ["style", "typing", "test", "clean-notebooks"] }
 setup-develop = { cmd = "python -m pip install -e .", inputs=[".pixi/envs/develop/conda-meta/history"] }
-setup-mypy = "mypy --install-types"
 style = { depends-on = ["fmt", "lint"] }
 test = { cmd = "pytest -s -n 4 --cov=pymbe --cov-report html:.pytest_coverage", depends-on = ["setup-develop", "update-submodules"] }
-typing = { cmd = "mypy src/", depends-on = ["setup-mypy"] }
+typing = "mypy src/ --install-types"
 update-submodules = { cmd = "git submodule update --init", inputs=[".git/HEAD"] }
 package = "python -m build"
 vscode = "code ."
