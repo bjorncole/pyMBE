@@ -1,4 +1,3 @@
-import typing as ty
 
 import ipywidgets as ipyw
 import traitlets as trt
@@ -16,7 +15,7 @@ class ElementInspector(ipyw.Output, BaseWidget):
 
     include_empty: bool = trt.Bool(default_value=False)
 
-    clean_data: ty.Dict[str, dict] = trt.Dict(
+    clean_data: dict[str, dict] = trt.Dict(
         key_trait=trt.Unicode(),
         value_trait=trt.Dict(),
     )

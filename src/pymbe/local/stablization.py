@@ -9,7 +9,6 @@ from ..label import get_qualified_label
 def build_stable_id_lookups(lpg: SysML2LabeledPropertyGraph) -> tuple:
     """Builds forward and reverse lookups for stable names :return: dicts of
     stable signature -> unique identifier."""
-
     exec_order = generate_execution_order(lpg)
     sig_map = generate_parameter_signature_map(lpg.model, exec_order)
 

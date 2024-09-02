@@ -1,4 +1,3 @@
-import typing as ty
 
 import ipywidgets as ipyw
 import traitlets as trt
@@ -17,7 +16,7 @@ class BaseWidget(ipyw.DOMWidget):
         Model, allow_none=True, help="The instance of the SysML model."
     )
 
-    selected: ty.Tuple[str] = ipyw.widgets.trait_types.TypedTuple(
+    selected: tuple[str] = ipyw.widgets.trait_types.TypedTuple(
         trait=trt.Unicode(),
     ).tag(sync=True)
 

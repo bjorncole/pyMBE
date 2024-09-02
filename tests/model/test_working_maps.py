@@ -13,11 +13,9 @@ from pymbe.query.metamodel_navigator import (
 
 
 def test_create_map():
-    """
-    Test the creation of a basic working map.
+    """Test the creation of a basic working map.
 
     """
-
     empty_model = pm.Model(elements={})
 
     package_model_namespace_data = {

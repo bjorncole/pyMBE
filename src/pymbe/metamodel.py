@@ -1,7 +1,7 @@
 import json
 from dataclasses import field
 from importlib import resources as lib_resources
-from typing import Any, Dict, List
+from typing import Any
 
 from pymbe.query.metamodel_navigator import get_more_general_types
 
@@ -12,11 +12,11 @@ class MetaModel:
     """A class to hold meta-model information and perform property
     derivation."""
 
-    metamodel_hints: Dict[str, Dict[str, Dict[str, Any]]] = field(default_factory=dict)
+    metamodel_hints: dict[str, dict[str, dict[str, Any]]] = field(default_factory=dict)
 
-    pre_made_dicts: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+    pre_made_dicts: dict[str, dict[str, Any]] = field(default_factory=dict)
 
-    relationship_metas: List[str]
+    relationship_metas: list[str]
 
     def __init__(self):
         self.pre_made_dicts = {}
@@ -26,7 +26,6 @@ class MetaModel:
 
     def _load_metahints(self):
         """Load data file to get attribute hints."""
-
         with lib_resources.open_text(
             "pymbe.static_data", "attribute_metadata.json"
         ) as sysml_ecore:
@@ -39,7 +38,6 @@ class MetaModel:
         These templates resemble the raw JSON data pulled from the SysML
         v2 standard REST API.
         """
-
         local_hints = self.metamodel_hints[metaclass_name]
 
         data_template = {}
@@ -155,13 +153,11 @@ def derive_owned_x(ele: "Element", owned_kind: str):  # noqa: F821
 
 
 def derive_inherited_featurememberships(ele: "Element"):  # noqa: F821
-    """
-    8.3.3.1.10 Type
+    """8.3.3.1.10 Type
 
     All Memberships inherited by this Type via Specialization or Conjugation.
     These are included in the derived union for the memberships of the Type
     """
-
     more_general = get_more_general_types(ele, 0, 100)
 
     try:
@@ -177,12 +173,10 @@ def derive_inherited_featurememberships(ele: "Element"):  # noqa: F821
 
 
 def derive_features(ele: "Element"):  # noqa: F821
-    """
-    8.3.3.1.10 Type
+    """8.3.3.1.10 Type
 
     The ownedMemberFeatures of the featureMemberships of this Type.
     """
-
     # TODO: Add a way to reach back to library for the inherited objects
 
     return [

@@ -195,7 +195,7 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):  # pylint: disable=too-m
             # TODO: fix this so it is 0px when 'hidden'
             self.loader.height = "40px" if change.new == "hidden" else "40px"
 
-    def get_tool(self, tool_type: ty.Type[ipyelk.Tool]) -> ipyelk.Tool:
+    def get_tool(self, tool_type: type[ipyelk.Tool]) -> ipyelk.Tool:
         matches = [
             tool
             for tool in self.tools

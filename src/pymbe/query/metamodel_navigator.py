@@ -134,7 +134,6 @@ def get_upper_multiplicity(type_ele):
 
 def get_effective_lower_multiplicity(type_ele):
     """Get lower multiplicity on feature even if this type is redefined."""
-
     lower_mult = -1
     if "throughOwningMembership" not in type_ele._derived:
         local_general = get_more_general_types(type_ele, 1, 1)
@@ -196,7 +195,6 @@ def get_effective_lower_multiplicity(type_ele):
 
 def get_effective_upper_multiplicity(type_ele):
     """Get upper multiplicity on feature even if this type is redefined."""
-
     upper_mult = -1
     if "throughOwningMembership" not in type_ele._derived:
         local_general = get_more_general_types(type_ele, 1, 1)
@@ -317,7 +315,6 @@ def get_most_specific_feature_type(feature):
 def get_more_general_types(typ, recurse_counter, max_counter):
     """Recursively navigate along Specialization relationships to find all the
     more general types of the given type."""
-
     local_more_general = (
         typ.throughFeatureTyping
         + typ.throughSubclassification
@@ -380,7 +377,6 @@ def get_feature_bound_values(feat):
 
 def get_effective_basic_name(type_ele):
     """Get a name for the feature even if this type is redefined."""
-
     name = ""
 
     if type_ele.basic_name != "":

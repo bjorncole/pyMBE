@@ -1,8 +1,6 @@
 def test_namespaces_load(load_kerml_library):
+    """Check that the expected namespaces from the KerML library are indeed loaded.
     """
-    Check that the expected namespaces from the KerML library are indeed loaded.
-    """
-
     found_names = [
         library_model_ns.throughOwningMembership[0].declaredName
         for library_model_ns in load_kerml_library.ownedElement
@@ -58,10 +56,8 @@ def test_namespaces_load(load_kerml_library):
 
 
 def test_base_classifiers(load_kerml_library):
+    """Check that the base classifiers have loaded and the expected names are all there.
     """
-    Check that the base classifiers have loaded and the expected names are all there.
-    """
-
     base_ns = [
         library_model_ns
         for library_model_ns in load_kerml_library.ownedElement
@@ -88,10 +84,8 @@ def test_base_classifiers(load_kerml_library):
 
 
 def test_base_features(load_kerml_library):
+    """Check that the base features have loaded and the expected names are all there.
     """
-    Check that the base features have loaded and the expected names are all there.
-    """
-
     base_ns = [
         library_model_ns
         for library_model_ns in load_kerml_library.ownedElement
@@ -117,10 +111,8 @@ def test_base_features(load_kerml_library):
 
 
 def test_base_multiplicity(load_kerml_library):
+    """Check that the multiplicity ranges with names in Base library are structured as expected
     """
-    Check that the multiplicity ranges with names in Base library are structured as expected
-    """
-
     base_ns = [
         library_model_ns
         for library_model_ns in load_kerml_library.ownedElement

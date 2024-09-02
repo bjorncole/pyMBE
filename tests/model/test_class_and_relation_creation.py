@@ -9,11 +9,9 @@ from pymbe.model_modification import (
 
 
 def test_create_classifier_against_library(load_kerml_library):
-    """
-    Try the creation of new classifiers that specialize library elements.
+    """Try the creation of new classifiers that specialize library elements.
 
     """
-
     # find Performance in libraries
 
     peform_ns = [
@@ -82,11 +80,9 @@ def test_create_classifier_against_library(load_kerml_library):
 
 
 def test_create_disjoint_objects(load_kerml_library):
-    """
-    Try the creation of new classifiers that specialize library elements.
+    """Try the creation of new classifiers that specialize library elements.
 
     """
-
     # find Object in libraries
 
     object_ns = [

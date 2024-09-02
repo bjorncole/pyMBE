@@ -1,5 +1,5 @@
 from dataclasses import field
-from typing import Any, Dict, List
+from typing import Any
 
 from pymbe.metamodel import connector_metas, feature_metas
 from pymbe.model import Element, Model
@@ -38,9 +38,9 @@ class FeatureTypeWorkingMap:
     """
 
     # The working dictionary for atoms to atoms (objects)
-    _working_dict: Dict[str, Dict[str, List[Element]]] = field(default_factory=dict)
+    _working_dict: dict[str, dict[str, list[Element]]] = field(default_factory=dict)
     # The working dictionary for atoms to values (objects to values)
-    _working_dict_data_values: Dict[str, Dict[str, List[Element]]] = field(
+    _working_dict_data_values: dict[str, dict[str, list[Element]]] = field(
         default_factory=dict
     )
     # Reference back to the model for which this map is being created
@@ -61,15 +61,13 @@ class FeatureTypeWorkingMap:
     def _add_type_instance_to_map(self, type_instance: Element):
         """Add a new type to the map under which features and their more
         specific values can be mapped."""
-
         self._working_dict.update({type_instance._id: {}})
         self._working_dict_data_values.update({type_instance._id: {}})
 
     def _add_feature_to_type_instance(
-        self, type_instance: Element, feature_nesting: List[Element]
+        self, type_instance: Element, feature_nesting: list[Element]
     ):
         """Add a feature under a type instance that is being developed."""
-
         try:
             id_path = ".".join([feature._id for feature in feature_nesting])
             self._working_dict[type_instance._id].update({id_path: []})
@@ -81,11 +79,10 @@ class FeatureTypeWorkingMap:
             )
 
     def _add_atom_value_to_feature(
-        self, type_instance: Element, feature_nesting: List[Element], atom_value: Any
+        self, type_instance: Element, feature_nesting: list[Element], atom_value: Any
     ):
         """Add a value to the map to a nested feature under the type
         instance."""
-
         try:
             id_path = ".".join([feature._id for feature in feature_nesting])
             if isinstance(atom_value, Element):
@@ -113,7 +110,7 @@ class FeatureTypeWorkingMap:
                 )
 
     def _get_atom_values_for_feature(
-        self, type_instance: Element, feature_nesting: List[Element]
+        self, type_instance: Element, feature_nesting: list[Element]
     ):
         id_path = ".".join([feature._id for feature in feature_nesting])
 

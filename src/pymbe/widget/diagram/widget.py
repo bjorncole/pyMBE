@@ -169,7 +169,7 @@ class M1Viewer(ipyw.Box, BaseWidget):  # pylint: disable=too-many-ancestors
             return []
 
         return set(self.lpg.edge_types).difference(
-            (edges[0][2] for edges in included_edges)
+            edges[0][2] for edges in included_edges
         )
 
     @property
@@ -179,7 +179,7 @@ class M1Viewer(ipyw.Box, BaseWidget):  # pylint: disable=too-many-ancestors
             return []
 
         return set(self.lpg.node_types).difference(
-            (self.lpg.graph.nodes[nodes[0]]["@type"] for nodes in included_nodes)
+            self.lpg.graph.nodes[nodes[0]]["@type"] for nodes in included_nodes
         )
 
     @property

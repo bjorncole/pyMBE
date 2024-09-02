@@ -1,13 +1,12 @@
 import logging
+from collections.abc import Collection
 from dataclasses import dataclass
-from typing import Collection, Dict
 
 from pymbe import Element, ListOfNamedItems, Model
 
 
 class InstrumentedElement(Element):
-    """
-    A version of Element that logs its lifecycle to see how a modeling session interacts with it
+    """A version of Element that logs its lifecycle to see how a modeling session interacts with it
     """
 
     def __post_init__(self):
@@ -67,7 +66,6 @@ class InstrumentedModel(Model):
 
     def __post_init__(self):
         """Same as other code but with insertion of instrumented element"""
-
         self._load_metahints()
 
         logging.info(
@@ -116,7 +114,7 @@ class InstrumentedModel(Model):
 
     @staticmethod
     def load(
-        elements: Collection[Dict],
+        elements: Collection[dict],
         **kwargs,
     ) -> "Model":
         """Make a Model from an iterable container of elements"""

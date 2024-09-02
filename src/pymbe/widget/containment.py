@@ -103,7 +103,7 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
         ),
     ).tag(sync=True)
 
-    nodes_by_id: ty.Dict[str, ElementNode] = trt.Dict(
+    nodes_by_id: dict[str, ElementNode] = trt.Dict(
         key_trait=trt.Unicode(),
         value_trait=trt.Instance(ElementNode),
         kw={},
@@ -388,7 +388,7 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
         return node
 
     @staticmethod
-    def sort_nodes(nodes: ty.Union[ty.List, ty.Tuple, ty.Set]) -> tuple:
+    def sort_nodes(nodes: list | tuple | set) -> tuple:
         # Sort nodes with number of subnodes first and then by name
         return tuple(
             sorted(

@@ -1,5 +1,4 @@
 import logging
-from typing import List
 
 from pymbe.interpretation.indeterminate_boundaries import build_indefinite_boundaries
 from pymbe.interpretation.occurrences_steps import is_feature_involving_self
@@ -45,7 +44,7 @@ class KermlForwardExecutor:
     _builder_log = {}
 
     # a log that walks thorugh the steps of traversal between elements
-    _traversal_log: List[str]
+    _traversal_log: list[str]
 
     # a log that records the state of the value assignments at particular points
     _value_map_log = []
@@ -75,7 +74,6 @@ class KermlForwardExecutor:
         :param classifier: The classifier to act as the top-level
             context of the execution.
         """
-
         self._generate_values_for_features_in_type(
             input_model=self._working_map._model,
             package_to_populate=self._working_package,
@@ -96,9 +94,9 @@ class KermlForwardExecutor:
         type_to_value: Element,
         atom_index: int,
         passed_featuring_type: Element,
-        passed_feature_path: List[Element],
+        passed_feature_path: list[Element],
         passed_this: Element,
-        path_from_this: List[Element],
+        path_from_this: list[Element],
     ):
         """Inspect the type and determine what values should be applied to its
         Features. This is a procedure that will be executed in nested Features,
@@ -122,7 +120,6 @@ class KermlForwardExecutor:
         :param path_from_this: The full path of traversal from this to
             the current type_to_value
         """
-
         self._current_loc = str(type_to_value) + "." + str(passed_feature_path)
         self._builder_log.update({self._current_loc: []})
 
@@ -293,7 +290,7 @@ class KermlForwardExecutor:
         self,
         pass_kind: str,
         type_instance: Element,
-        candidate_feature: List[Element],
+        candidate_feature: list[Element],
         top_portion: Element,
     ):
         """The common preprocess step focuses on common steps such as checking
@@ -398,11 +395,11 @@ class KermlForwardExecutor:
     def _process_nonconnector_features(
         self,
         type_instance: Element,
-        candidate_feature: List[Element],
+        candidate_feature: list[Element],
         feature_multiplicity: int,
-        values_set_in_model: List[Element],
+        values_set_in_model: list[Element],
         top_portion: Element,
-        path_from_this: List[Element],
+        path_from_this: list[Element],
     ):
         """Runs the execution rules specific to Features that are non-
         connectors.
@@ -412,7 +409,6 @@ class KermlForwardExecutor:
         multiplicity of the Feature, values to be created and initiate
         depth-first search on further nested Features for execution.
         """
-
         handled_as_self_reference = is_feature_involving_self(candidate_feature[-1])
 
         if handled_as_self_reference:
@@ -470,12 +466,12 @@ class KermlForwardExecutor:
     def _process_connector_features(
         self,
         type_instance: Element,
-        candidate_feature: List[Element],
+        candidate_feature: list[Element],
         feature_multiplicity: int,
-        values_set_in_model: List[Element],
+        values_set_in_model: list[Element],
         top_portion: Element,
         passed_this: Element,
-        path_from_this: List[Element],
+        path_from_this: list[Element],
     ):
         """Execute on connector Features. This requires the inspection of ends
         to see if there are bound Features with values already. The
@@ -488,7 +484,6 @@ class KermlForwardExecutor:
         Feature has values, this will determine the number of values of
         the other end.
         """
-
         self._builder_log[self._current_loc].append(
             f"**KERML ANNEX A Step 4** Identified {candidate_feature[-1]} as a Connector"
         )
@@ -708,9 +703,9 @@ class KermlForwardExecutor:
     def _process_feature_write_features(
         self,
         type_instance: Element,
-        candidate_feature: List[Element],
+        candidate_feature: list[Element],
         passed_this: Element,
-        path_to_this: List[Element],
+        path_to_this: list[Element],
     ):
         """Executing FeatureWritePerformances leads to the creation of new
         TimeSlices for the occurrence that is having its Feature written to.
@@ -720,7 +715,6 @@ class KermlForwardExecutor:
         FWP for occurrence to slice, find the accessed feature, and find
         the desired value to be written.
         """
-
         # find onOccurrence in feature list
 
         features_in_fwp = candidate_feature[-1].throughFeatureMembership
@@ -920,18 +914,16 @@ class KermlForwardExecutor:
             atom_value=new_value,
         )
 
-        return None
 
     def _process_portion_of_life_features(
         self,
         type_instance: Element,
-        candidate_feature: List[Element],
+        candidate_feature: list[Element],
         passed_this: Element,
-        passed_path_to_this: List[Element],
+        passed_path_to_this: list[Element],
     ):
         """Determine of what Life the occurrence value to be generated will be
         a portion."""
-
         # TODO: Be sure this only applies to the top level of a decomposition of occurrences
 
         library_model = self._working_map._model._referenced_models[0]
@@ -1002,10 +994,9 @@ class KermlForwardExecutor:
                         atom_value=found_life[0],
                     )
 
-        return None
 
     def _common_postprocess(
-        self, featuring_type: Element, candidate_features: List[Element]
+        self, featuring_type: Element, candidate_features: list[Element]
     ):
         # Apply common steps for additional value assignments after the other approaches are
         # applied to generate model values
@@ -1045,9 +1036,9 @@ class KermlForwardExecutor:
         package_to_populate: Element,
         featuring_type: Element,
         atom_index: int,
-        cf: List[Element],
+        cf: list[Element],
         top_portion: Element,
-        path_from_this: List[Element],
+        path_from_this: list[Element],
     ):
         """Look at the type of the Feature (currently expected to be a
         Classifier) to generate a new atom for the covering values and also
@@ -1061,7 +1052,6 @@ class KermlForwardExecutor:
         :param cf:
         :param top_portion: :parm path_from_this:
         """
-
         considered_type = get_most_specific_feature_type(cf[-1])
 
         new_ft_classifier = None
@@ -1136,7 +1126,7 @@ class KermlForwardExecutor:
         return None
 
     def _find_model_existing_values_for_feature(
-        self, type_instance: Element, feat_path: List[Element], passed_this: Element
+        self, type_instance: Element, feat_path: list[Element], passed_this: Element
     ):
         self._builder_log[self._current_loc].append(
             f"...Looking to see if {feat_path} is bound to other feature values"

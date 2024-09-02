@@ -14,8 +14,7 @@ from pymbe.query.metamodel_navigator import (
 
 
 def test_fill_self_references(load_kerml_library):
-    """
-    Test creation of performances and also fill in and cover library features like portionOf.
+    """Test creation of performances and also fill in and cover library features like portionOf.
 
     """
     # find Performance in libraries

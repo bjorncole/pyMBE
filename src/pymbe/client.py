@@ -1,7 +1,6 @@
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from functools import lru_cache
-from typing import Dict, List, Optional
 from warnings import warn
 
 import ipywidgets as ipyw
@@ -138,7 +137,7 @@ class APIClient(trt.HasTraits, ModelClient):
         self._retrieve_data.cache_clear()
 
     @lru_cache(maxsize=URL_CACHE_SIZE)
-    def _retrieve_data(self, url: str) -> List[Dict]:
+    def _retrieve_data(self, url: str) -> list[dict]:
         """Retrieve model data from a URL using pagination."""
         result = []
         while url:
@@ -171,7 +170,7 @@ class APIClient(trt.HasTraits, ModelClient):
     def _parse_timestamp(timestamp: str) -> datetime:
         if isinstance(timestamp, datetime):
             return timestamp
-        return parser.parse(timestamp, tzinfos=TIMEZONES).astimezone(timezone.utc)
+        return parser.parse(timestamp, tzinfos=TIMEZONES).astimezone(UTC)
 
     def _get_project_commits(self):
         def clean_fields(data: dict) -> dict:
@@ -187,7 +186,7 @@ class APIClient(trt.HasTraits, ModelClient):
         )
         return {commit["@id"]: clean_fields(commit) for commit in commits}
 
-    def get_model(self) -> Optional[Model]:
+    def get_model(self) -> Model | None:
         """Download a model from the current `elements_url`."""
         if not self.selected_commit:
             return None

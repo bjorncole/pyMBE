@@ -1,5 +1,4 @@
 import traceback
-import typing as ty
 from functools import lru_cache
 from pathlib import Path
 from warnings import warn
@@ -73,21 +72,21 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):  # pylint: disable=too-many-ins
         if not isinstance(model, Model):
             return
 
-        all_relationships: ty.Set[Element] = set(model.all_relationships.values())
+        all_relationships: set[Element] = set(model.all_relationships.values())
 
         # Draw as edges all non-abstract relationships
-        graph_relationships: ty.Set[Element] = {
+        graph_relationships: set[Element] = {
             relationship
             for relationship in all_relationships
             if "isAbstract" not in relationship._data
         }
         # And everything else is a node
-        graph_elements: ty.Set[Element] = set(model.elements.values()).difference(
+        graph_elements: set[Element] = set(model.elements.values()).difference(
             graph_relationships
         )
 
         # Add the abstract_relationships edges we removed from relationships
-        expanded_relationships: ty.Set[Element] = all_relationships.difference(
+        expanded_relationships: set[Element] = all_relationships.difference(
             graph_relationships
         )
         edges_from_abstract_relationships = [
@@ -206,7 +205,7 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):  # pylint: disable=too-many-ins
     def get_projection(
         self,
         projection: str,
-        packages: ty.Optional[ty.Union[ty.List[Element], ty.Tuple[Element]]] = None,
+        packages: list[Element] | tuple[Element] | None = None,
     ) -> nx.Graph:
         if isinstance(packages, Element):
             packages = [packages]
@@ -219,12 +218,12 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):  # pylint: disable=too-many-ins
 
     def adapt(
         self,
-        excluded_node_types: ty.Union[list, set, tuple] = None,
-        excluded_edge_types: ty.Union[list, set, tuple] = None,
-        reversed_edge_types: ty.Union[list, set, tuple] = None,
-        implied_edge_types: ty.Union[list, set, tuple] = None,
-        included_packages: ty.Union[list, set, tuple] = None,
-    ) -> ty.Union[nx.Graph, nx.DiGraph]:
+        excluded_node_types: list | set | tuple = None,
+        excluded_edge_types: list | set | tuple = None,
+        reversed_edge_types: list | set | tuple = None,
+        implied_edge_types: list | set | tuple = None,
+        included_packages: list | set | tuple = None,
+    ) -> nx.Graph | nx.DiGraph:
         """Using the existing graph, filter by node and edge types, and/or
         reverse certain edge types."""
         excluded_edge_types = excluded_edge_types or []
@@ -245,11 +244,11 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):  # pylint: disable=too-many-ins
     @lru_cache(maxsize=1024)
     def _adapt(
         self,
-        excluded_node_types: ty.Union[list, set, tuple] = None,
-        excluded_edge_types: ty.Union[list, set, tuple] = None,
-        reversed_edge_types: ty.Union[list, set, tuple] = None,
-        implied_edge_types: ty.Union[list, set, tuple] = None,
-        included_packages: ty.Union[list, set, tuple] = None,
+        excluded_node_types: list | set | tuple = None,
+        excluded_edge_types: list | set | tuple = None,
+        reversed_edge_types: list | set | tuple = None,
+        implied_edge_types: list | set | tuple = None,
+        included_packages: list | set | tuple = None,
     ) -> nx.Graph:
         graph = self.graph.copy()
         new_edges = self.get_implied_edges(*implied_edge_types)
@@ -346,7 +345,7 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):  # pylint: disable=too-many-ins
     def get_spanning_graph(
         self,
         graph: nx.Graph,
-        seeds: ty.Union[list, set, tuple],
+        seeds: list | set | tuple,
         max_distance: int = 2,
         enforce_directionality: bool = True,
     ):

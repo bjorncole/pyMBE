@@ -1,6 +1,5 @@
 # a set of queries to run on Labeled Property Graphs
 import math
-from typing import List
 from warnings import warn
 
 import networkx as nx
@@ -128,7 +127,7 @@ def roll_up_multiplicity_for_type(
 def get_types_for_feature(
     lpg: SysML2LabeledPropertyGraph,
     feature_id: str,
-) -> List[str]:
+) -> list[str]:
     ptg = lpg.get_projection("Part Typing")
     rdg = lpg.get_projection("Redefinition and Subsetting")
 
@@ -179,7 +178,7 @@ def get_features_typed_by_type(
     return features
 
 
-def build_element_owner_sequence(element: Element, seq: List[Element] = None) -> list:
+def build_element_owner_sequence(element: Element, seq: list[Element] = None) -> list:
     seq = seq or []
     if element.owner is None:
         return seq

@@ -17,7 +17,6 @@ def get_label(element: Element) -> str:  # pylint: disable=too-many-return-state
     the display of the element either in a representation (repr) or view
     of the model.
     """
-
     metatype = element._metatype
     if metatype.endswith("Expression"):
         return f"{get_label_for_expression(element)}" + f" «{metatype}»"

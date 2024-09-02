@@ -23,7 +23,6 @@ def is_feature_involving_self(feat):
     dispatchScope
     thisPerformance
     """
-
     self_referencers = [
         "self",
         "sameLifeOccurrences",
@@ -52,8 +51,7 @@ def is_feature_involving_self(feat):
 
 
 def respect_check_step_subperformance_spec_constraint():
-    """
-    KerML spec 8.4.4.7.2 - Steps
+    """KerML spec 8.4.4.7.2 - Steps
     Further, the checkStepEnclosedPerformanceSpecialization
     and checkStepSubperformanceSpecialization constraints require that a Step whose owningType is a
     Behavior or another Step specialize Performances::Performance::enclosedPerformance or, if it is
@@ -62,5 +60,4 @@ def respect_check_step_subperformance_spec_constraint():
     owningType is a Structure or a Feature typed by a Structure specialize
     Objects::Object::ownedPerformance (see 9.2.5.2.7).
     """
-
     return None

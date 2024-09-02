@@ -1,4 +1,5 @@
-from typing import Dict, Iterator, Tuple, Type, Union
+from collections.abc import Iterator
+from typing import Union
 
 from ipyelk.elements import Partition, Port, SymbolSpec, merge_excluded
 from ipyelk.elements.index import iter_hierarchy
@@ -23,7 +24,7 @@ class PartDiagram(Partition):
         copy_on_model_validation = False
         excluded = merge_excluded(Partition, "symbols", "style")
 
-    default_edge: Type[Relationship] = Field(default=DirectedAssociation)
+    default_edge: type[Relationship] = Field(default=DirectedAssociation)
 
     symbols: SymbolSpec = SymbolSpec().add(
         make_arrow_symbol(identifier="generalization", size=8, closed=True),
@@ -36,7 +37,7 @@ class PartDiagram(Partition):
         make_rhombus_symbol(identifier="aggregation", size=8),
     )
 
-    style: Dict[str, Dict] = {
+    style: dict[str, dict] = {
         # Elk Label styles for Box Titles
         " .elklabel.compartment_title_1": {
             "font-style": "normal",
@@ -70,7 +71,7 @@ class PartDiagram(Partition):
     }
 
     @property
-    def all_parts(self) -> Iterator[Tuple[Part, Relationship]]:
+    def all_parts(self) -> Iterator[tuple[Part, Relationship]]:
         """Iterate over BaseElements that follow the `Part` hierarchy and
         return nodes and their parent."""
         for parent, element in iter_hierarchy(self, types=(Part,)):
@@ -80,7 +81,7 @@ class PartDiagram(Partition):
     @property
     def all_relationships(
         self,
-    ) -> Iterator[Tuple[Union[Part, "PartDiagram"], Relationship]]:
+    ) -> Iterator[tuple[Union[Part, "PartDiagram"], Relationship]]:
         """Iterate over BaseElements that follow the `Part` hierarchy and
         return edges and their parent."""
         for parent, element in iter_hierarchy(self, types=(Relationship,)):
@@ -93,9 +94,9 @@ class PartDiagram(Partition):
 
     def add_relationship(
         self,
-        source: Union[Part, Port],
-        target: Union[Part, Port],
-        cls: Type[Relationship] = Relationship,
+        source: Part | Port,
+        target: Part | Port,
+        cls: type[Relationship] = Relationship,
         data: dict = None,
     ) -> Relationship:
         data = data or {}
