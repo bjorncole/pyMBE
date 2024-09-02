@@ -12,10 +12,8 @@ from pymbe.query.metamodel_navigator import (
 def create_element_data_dictionary(
     name: str, metaclass: str, model: Model, specific_fields: Dict[str, Any]
 ):
-    """
-    Creates a Python dictionary with data for a new KerML/SysML element based on templates from
-    base Ecore definitions.
-    """
+    """Creates a Python dictionary with data for a new KerML/SysML element
+    based on templates from base Ecore definitions."""
 
     new_id = str(uuid4())
 
@@ -432,9 +430,7 @@ def build_from_binary_connector_pattern(
 def new_element_ownership_pattern(
     owner: Element, ele: Element, model: Model, member_kind: str = "OwningMembership"
 ):
-    """
-    Common helper to link new elements to their owners.
-    """
+    """Common helper to link new elements to their owners."""
 
     member_name = ""
     if "declaredName" in ele._data:
@@ -474,8 +470,9 @@ def build_unioning_superset_classifier(
     added_fields: Dict[str, Any],
     unioned: bool = False,
 ):
-    """
-    Take in a list of classifiers and generate a larger set from them. The larger set
+    """Take in a list of classifiers and generate a larger set from them. The
+    larger set.
+
     will have some properties:
     - All classes will have Subclassification relationship to the larger class
     - The larger class will be derived as a union of the given list of classes
@@ -535,8 +532,9 @@ def apply_covered_feature_pattern(
     redefining_feature_prefix: str = "",
     redefining_feature_suffix: str = " (Closed)",
 ):
-    """
-    Execute a pattern described in KerML Appendix A to capture a list of specific results
+    """Execute a pattern described in KerML Appendix A to capture a list of
+    specific results.
+
     for a given generated model instance (or trace):
     - A series of classifiers with multiplicity 1 (given by user)
     - A superset classifier to represent all of these classifiers at once
@@ -602,8 +600,9 @@ def apply_covered_connector_pattern(
     metatype: str = "Connector",
     separate_connectors: bool = False,
 ):
-    """
-    Execute a pattern described in KerML Appendix A to capture a list of specific results
+    """Execute a pattern described in KerML Appendix A to capture a list of
+    specific results.
+
     for a given generated model instance (or trace):
     - A series of classifiers with multiplicity 1 (given by user)
     - A superset classifier to represent all of these classifiers at once
@@ -689,10 +688,7 @@ def build_from_portion_pattern(
     feature_values: List[Any],
     specific_fields: Dict[str, Any],
 ):
-    """
-    Execute a pattern to create a portion of a classifier
-
-    """
+    """Execute a pattern to create a portion of a classifier."""
 
     metatype = classifier_to_be_portioned._metatype
 
@@ -770,10 +766,8 @@ def apply_chained_feature_assignment_pattern(
     chained_feature_prefix: str = "",
     chained_feature_suffix: str = " (Closed)",
 ):
-    """
-    Execute a pattern that will create a feature that is linked to a
-    feature chain that can been used to set values on deeply nested features
-    """
+    """Execute a pattern that will create a feature that is linked to a feature
+    chain that can been used to set values on deeply nested features."""
 
     new_feature_for_chain = None
 
@@ -982,10 +976,8 @@ def build_from_operator_expression_pattern(
 def assign_feature_value_to_expression(
     target_feature: Element, expr: Element, model: Model
 ):
-    """
-    Add a feature value relationship from a parameter to an expression and
-    then also make the Feature the owner of the expression
-    """
+    """Add a feature value relationship from a parameter to an expression and
+    then also make the Feature the owner of the expression."""
 
     build_from_binary_relationship_pattern(
         source=target_feature,
@@ -1006,10 +998,8 @@ def assign_feature_value_to_expression(
 def assign_value_by_literal_expression(
     target_feature: Element, value_to_assign: Any, model: Model
 ):
-    """
-    Generate the binding connector, assign as a Feature Value and create a Literal Expression
-    as a way to assign a value to a Feature.
-    """
+    """Generate the binding connector, assign as a Feature Value and create a
+    Literal Expression as a way to assign a value to a Feature."""
 
     # create the parameters
 
@@ -1049,10 +1039,8 @@ def assign_value_by_literal_expression(
 
 
 def assign_value_by_fre():
-    """
-    Generate the binding connector, assign as a Feature Value and create a
-    FeatureReferenceExpression as a way to assign a value to a Feature.
-    """
+    """Generate the binding connector, assign as a Feature Value and create a
+    FeatureReferenceExpression as a way to assign a value to a Feature."""
 
     pass
 
@@ -1063,10 +1051,8 @@ def assign_multiple_values_with_fre(
     features_to_reference: List[Element],
     seperator_function: Element,
 ):
-    """
-    Generate Feature Value and use appropriate base functions to assign multiple values
-    to a given feature.
-    """
+    """Generate Feature Value and use appropriate base functions to assign
+    multiple values to a given feature."""
 
     # Nested sequences will require 2 + 2*(n-2) parameters, or 1 + (n-2) sequence
     # OperatorExpressions

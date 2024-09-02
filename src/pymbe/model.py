@@ -48,7 +48,7 @@ class ListOfNamedItems(list):
 
 
 class Naming(Enum):
-    """An enumeration for how to repr SysML elements"""
+    """An enumeration for how to repr SysML elements."""
 
     IDENTIFIER = "identifier"
     LONG = "long"
@@ -95,7 +95,7 @@ class ModelClient:
 
 @dataclass(repr=False)
 class Model:  # pylint: disable=too-many-instance-attributes
-    """A SysML v2 Model"""
+    """A SysML v2 Model."""
 
     # TODO: Look into making elements immutable (e.g., frozen dict)
     elements: Dict[str, "Element"]
@@ -179,7 +179,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
         elements: Collection[Dict],
         **kwargs,
     ) -> "Model":
-        """Make a Model from an iterable container of elements"""
+        """Make a Model from an iterable container of elements."""
         return Model(
             elements={
                 element.get("identity", element).get("@id"): element.get(
@@ -192,7 +192,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
 
     @staticmethod
     def load_from_file(filepath: Union[Path, str], encoding: str = "utf-8") -> "Model":
-        """Make a model from a JSON file"""
+        """Make a model from a JSON file."""
         if isinstance(filepath, str):
             filepath = Path(filepath)
 
@@ -209,7 +209,8 @@ class Model:  # pylint: disable=too-many-instance-attributes
     def load_from_post_file(
         filepath: Union[Path, str], encoding: str = "utf-8"
     ) -> "Model":
-        """Make a model from a JSON file formatted to POST to v2 API (includes payload fields)"""
+        """Make a model from a JSON file formatted to POST to v2 API (includes
+        payload fields)"""
         if isinstance(filepath, str):
             filepath = Path(filepath)
 
@@ -236,7 +237,8 @@ class Model:  # pylint: disable=too-many-instance-attributes
     def load_from_mult_post_files(
         filepath_list: List, encoding: str = "utf-8"
     ) -> "Model":
-        """Make a model from multiple JSON files formatted to POST to v2 API (includes payload fields)"""
+        """Make a model from multiple JSON files formatted to POST to v2 API
+        (includes payload fields)"""
         factored_data = []
 
         for filepath in filepath_list:
@@ -272,7 +274,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
     def get_element(
         self, element_id: str, fail: bool = True, resolve: bool = True
     ) -> "Element":
-        """Get an element, or retrieve it from the API if it is there"""
+        """Get an element, or retrieve it from the API if it is there."""
         element = self.elements.get(element_id)
         if element and not isinstance(element, Element):
             return element
@@ -350,7 +352,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
         )
 
     def _add_labels(self, *elements):
-        """Attempts to add a label to the elements"""
+        """Attempts to add a label to the elements."""
         from .label import get_label  # pylint: disable=import-outside-toplevel
 
         elements = elements or self.elements.values()
@@ -360,7 +362,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
                 element._derived["label"] = label
 
     def _add_owned(self):
-        """Adds owned elements, relationships, and metatypes to the model"""
+        """Adds owned elements, relationships, and metatypes to the model."""
         elements = self.elements
 
         self.all_relationships = {
@@ -391,7 +393,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
         self.ownedMetatype = dict(by_metatype)
 
     def _add_relationships(self):
-        """Adds relationships to elements"""
+        """Adds relationships to elements."""
 
         # TODO: make this more elegant...  maybe.
         for relationship in self.all_relationships.values():
@@ -469,7 +471,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
 
 @dataclass(repr=False)
 class Element:  # pylint: disable=too-many-instance-attributes
-    """A SysML v2 Element"""
+    """A SysML v2 Element."""
 
     _data: Dict[str, Any]
     _model: Model
@@ -700,7 +702,7 @@ class Element:  # pylint: disable=too-many-instance-attributes
         )
 
     def __safe_dereference(self, item):
-        """If given a reference to another element, try to get that element"""
+        """If given a reference to another element, try to get that element."""
         try:
             if isinstance(item, dict) and "@id" in item:
                 if len(item) > 1:

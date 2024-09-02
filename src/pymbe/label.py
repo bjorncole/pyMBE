@@ -9,11 +9,12 @@ DEFAULT_MULTIPLICITY_LIMITS = dict(lower="0", upper="*")
 
 
 def get_label(element: Element) -> str:  # pylint: disable=too-many-return-statements
-    """
-    Get a label for the element.
-    The difference between a label and a name is that the name is meant to provide something by
-    which to refer to the element in code or informally while processing a model. A label is
-    meant to be part of the display of the element either in a representation (repr) or view
+    """Get a label for the element.
+
+    The difference between a label and a name is that the name is meant
+    to provide something by which to refer to the element in code or
+    informally while processing a model. A label is meant to be part of
+    the display of the element either in a representation (repr) or view
     of the model.
     """
 

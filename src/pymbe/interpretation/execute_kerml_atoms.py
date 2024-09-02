@@ -24,10 +24,11 @@ logger = logging.getLogger(__name__)
 
 
 class KermlForwardExecutor:
-    """
-    An execution class that applies the methods from the draft KerML Annex A for execution.
-    This class has a goal of examining a model and assigning values to the Features that
-    are encountered as it traversals the model.
+    """An execution class that applies the methods from the draft KerML Annex A
+    for execution.
+
+    This class has a goal of examining a model and assigning values to
+    the Features that are encountered as it traversals the model.
     """
 
     # The map that will record feature value assignments as the executor progresses.
@@ -69,11 +70,10 @@ class KermlForwardExecutor:
         self._builder_log = {}
 
     def execute_from_classifier(self, classifier: Element):
-        """
-        Run the executor on the classifier provided as an argument
+        """Run the executor on the classifier provided as an argument.
 
-        :param classifier: The classifier to act as the top-level context of the
-            execution.
+        :param classifier: The classifier to act as the top-level
+            context of the execution.
         """
 
         self._generate_values_for_features_in_type(
@@ -100,21 +100,27 @@ class KermlForwardExecutor:
         passed_this: Element,
         path_from_this: List[Element],
     ):
-        """
-        Inspect the type and determine what values should be applied to its Features. This is a
-        procedure that will be executed in nested Features, so information about the traversal
-        path to reach the current Type under consideration is needed.
+        """Inspect the type and determine what values should be applied to its
+        Features. This is a procedure that will be executed in nested Features,
+        so information about the traversal path to reach the current Type under
+        consideration is needed.
 
-        :param input_model: The model from which to fetch additional information as needed
-            during execution
-        :param package_to_populate: The Package in which to add any generated new model elements
-        :param type_to_value: The Type that will have the algorithm applied to it
-        :param atom_index: Which of the parallel elements in a Type will be
-            generated (e.g., wheel #1 or #2 for a bike's two wheels)
-        :param passed_featuring_type: The type under which this solution will be considered
-        :param passed_feature_path: How far into the nested path the current Type is
-        :param passed_this: element to become the scope for this (passing down for suboccurrences)
-        :param path_from_this: The full path of traversal from this to the current type_to_value
+        :param input_model: The model from which to fetch additional
+            information as needed during execution
+        :param package_to_populate: The Package in which to add any
+            generated new model elements
+        :param type_to_value: The Type that will have the algorithm
+            applied to it
+        :param atom_index: Which of the parallel elements in a Type will
+            be generated (e.g., wheel #1 or #2 for a bike's two wheels)
+        :param passed_featuring_type: The type under which this solution
+            will be considered
+        :param passed_feature_path: How far into the nested path the
+            current Type is
+        :param passed_this: element to become the scope for this
+            (passing down for suboccurrences)
+        :param path_from_this: The full path of traversal from this to
+            the current type_to_value
         """
 
         self._current_loc = str(type_to_value) + "." + str(passed_feature_path)
@@ -290,18 +296,18 @@ class KermlForwardExecutor:
         candidate_feature: List[Element],
         top_portion: Element,
     ):
-        """
-        The common preprocess step focuses on common steps such as checking whether or not a
-        given Feature has been declared to have a finite multiplicity, is redefined, or has values
-        bound to it already.
+        """The common preprocess step focuses on common steps such as checking
+        whether or not a given Feature has been declared to have a finite
+        multiplicity, is redefined, or has values bound to it already.
 
-        :param pass_kind: What the current evaluation pass is looking for
-            (e.g., non-connectors or connectors)
-        :param type_instance: the current type instance under which to place feature values
+        :param pass_kind: What the current evaluation pass is looking
+            for (e.g., non-connectors or connectors)
+        :param type_instance: the current type instance under which to
+            place feature values
         :param candidate_feature: the feature being evaluated
-        :param top_portion: the instance current considered for the "this" feature
-            in the nested traversal
-        return eval_feature, lower_mult, values_set_in_model
+        :param top_portion: the instance current considered for the
+            "this" feature in the nested traversal return eval_feature,
+            lower_mult, values_set_in_model
         """
         if (
             has_type_named(candidate_feature[-1], "FeatureWritePerformance")
@@ -398,12 +404,13 @@ class KermlForwardExecutor:
         top_portion: Element,
         path_from_this: List[Element],
     ):
-        """
-        Runs the execution rules specific to Features that are non-connectors. This will check
-        to see if there are already values created for the feature. If not, it will call for n,
-        where n = lower multiplicity of the Feature, values to be created and initiate
-        depth-first search on further nested Features for execution.
+        """Runs the execution rules specific to Features that are non-
+        connectors.
 
+        This will check to see if there are already values created for
+        the feature. If not, it will call for n, where n = lower
+        multiplicity of the Feature, values to be created and initiate
+        depth-first search on further nested Features for execution.
         """
 
         handled_as_self_reference = is_feature_involving_self(candidate_feature[-1])
@@ -470,15 +477,16 @@ class KermlForwardExecutor:
         passed_this: Element,
         path_from_this: List[Element],
     ):
-        """
-        Execute on connector Features. This requires the inspection of ends to see if there
-        are bound Features with values already. The multiplicity of the ends of the connector
-        will also determine how to generate values for the connector.
+        """Execute on connector Features. This requires the inspection of ends
+        to see if there are bound Features with values already. The
+        multiplicity of the ends of the connector will also determine how to
+        generate values for the connector.
 
-        1-to-1 connectors with one finite end and one infinite end will have the infinite
-        end multiplicity constrained by that of the finite end. Also, even if both ends are
-        infinite but a bound Feature has values, this will determine the number of values
-        of the other end.
+        1-to-1 connectors with one finite end and one infinite end will
+        have the infinite end multiplicity constrained by that of the
+        finite end. Also, even if both ends are infinite but a bound
+        Feature has values, this will determine the number of values of
+        the other end.
         """
 
         self._builder_log[self._current_loc].append(
@@ -704,11 +712,13 @@ class KermlForwardExecutor:
         passed_this: Element,
         path_to_this: List[Element],
     ):
-        """
-        Executing FeatureWritePerformances leads to the creation of new TimeSlices for the
-        occurrence that is having its Feature written to. The timeslices allow for discontinuities
-        in the value to be described in the executed model. The process will examine the FWP for
-        occurrence to slice, find the accessed feature, and find the desired value to be written.
+        """Executing FeatureWritePerformances leads to the creation of new
+        TimeSlices for the occurrence that is having its Feature written to.
+
+        The timeslices allow for discontinuities in the value to be
+        described in the executed model. The process will examine the
+        FWP for occurrence to slice, find the accessed feature, and find
+        the desired value to be written.
         """
 
         # find onOccurrence in feature list
@@ -919,9 +929,8 @@ class KermlForwardExecutor:
         passed_this: Element,
         passed_path_to_this: List[Element],
     ):
-        """
-        Determine of what Life the occurrence value to be generated will be a portion.
-        """
+        """Determine of what Life the occurrence value to be generated will be
+        a portion."""
 
         # TODO: Be sure this only applies to the top level of a decomposition of occurrences
 
@@ -1040,18 +1049,17 @@ class KermlForwardExecutor:
         top_portion: Element,
         path_from_this: List[Element],
     ):
-        """
-        Look at the type of the Feature (currently expected to be a Classifier) to generate a new
-        atom for the covering values and also decide whether or not to traverse into further
-        nested Features (inherited or owned) if they existing.
+        """Look at the type of the Feature (currently expected to be a
+        Classifier) to generate a new atom for the covering values and also
+        decide whether or not to traverse into further nested Features
+        (inherited or owned) if they existing.
 
         :param input_model:
         :param package_to_populate:
         :param featuring_type:
         :param atom_index:
         :param cf:
-        :param top_portion:
-        :parm path_from_this:
+        :param top_portion: :parm path_from_this:
         """
 
         considered_type = get_most_specific_feature_type(cf[-1])

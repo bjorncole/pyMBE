@@ -15,23 +15,26 @@ from pymbe.query.metamodel_navigator import (
 
 
 class FeatureTypeWorkingMap:
-    """
-    This is a map to hold solutions in work by an interpreter, simulation, or executor that map a
-    (nested) Feature to the values that are discovered for it. This allows the solution in
-    progress to be incrementally developed before commiting to creating new model objects to
-    represent the solution.
+    """This is a map to hold solutions in work by an interpreter, simulation,
+    or executor that map a (nested) Feature to the values that are discovered
+    for it. This allows the solution in progress to be incrementally developed
+    before commiting to creating new model objects to represent the solution.
 
-    The definition of feature value is taken from the KerML specification in Section 7.4.11:
+    The definition of feature value is taken from the KerML
+    specification in Section 7.4.11:
 
-    A feature value is a membership relationship (see 7.2.5) between an owning feature and a
-    value expression, whose result provides values for the feature. The feature value relationship
-    is specified as either bound or initial, and as either fixed or a default. A feature can have
-    at most one feature value relationship.
+    A feature value is a membership relationship (see 7.2.5) between an
+    owning feature and a value expression, whose result provides values
+    for the feature. The feature value relationship is specified as
+    either bound or initial, and as either fixed or a default. A feature
+    can have at most one feature value relationship.
 
-    An alternative way of encoding the above is to assign a Feature a type that is a Classifier
-    that is the unioning of a specific number of disjoint Classifiers of multiplicity one. This
-    Classifier "covers" the Feature (in the way that sets can be covered) in such a way that its
-    set of disjoint Classifiers are in fact the only values the Feature could possibly have.
+    An alternative way of encoding the above is to assign a Feature a
+    type that is a Classifier that is the unioning of a specific number
+    of disjoint Classifiers of multiplicity one. This Classifier
+    "covers" the Feature (in the way that sets can be covered) in such a
+    way that its set of disjoint Classifiers are in fact the only values
+    the Feature could possibly have.
     """
 
     # The working dictionary for atoms to atoms (objects)
@@ -56,10 +59,8 @@ class FeatureTypeWorkingMap:
         self._model = model
 
     def _add_type_instance_to_map(self, type_instance: Element):
-        """
-        Add a new type to the map under which features and their more specific
-        values can be mapped.
-        """
+        """Add a new type to the map under which features and their more
+        specific values can be mapped."""
 
         self._working_dict.update({type_instance._id: {}})
         self._working_dict_data_values.update({type_instance._id: {}})
@@ -67,9 +68,7 @@ class FeatureTypeWorkingMap:
     def _add_feature_to_type_instance(
         self, type_instance: Element, feature_nesting: List[Element]
     ):
-        """
-        Add a feature under a type instance that is being developed
-        """
+        """Add a feature under a type instance that is being developed."""
 
         try:
             id_path = ".".join([feature._id for feature in feature_nesting])
@@ -84,9 +83,8 @@ class FeatureTypeWorkingMap:
     def _add_atom_value_to_feature(
         self, type_instance: Element, feature_nesting: List[Element], atom_value: Any
     ):
-        """
-        Add a value to the map to a nested feature under the type instance
-        """
+        """Add a value to the map to a nested feature under the type
+        instance."""
 
         try:
             id_path = ".".join([feature._id for feature in feature_nesting])

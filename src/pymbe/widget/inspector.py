@@ -9,7 +9,7 @@ from .core import BaseWidget
 
 @ipyw.register
 class ElementInspector(ipyw.Output, BaseWidget):
-    """A widget to inspect a SysML v2 Element"""
+    """A widget to inspect a SysML v2 Element."""
 
     description: str = trt.Unicode("Inspector").tag(sync=True)
     icon_class: str = trt.Unicode("jp-SearchIcon").tag(sync=True)

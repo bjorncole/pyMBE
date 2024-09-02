@@ -71,9 +71,8 @@ class PartDiagram(Partition):
 
     @property
     def all_parts(self) -> Iterator[Tuple[Part, Relationship]]:
-        """Iterate over BaseElements that follow the `Part` hierarchy
-        and return nodes and their parent
-        """
+        """Iterate over BaseElements that follow the `Part` hierarchy and
+        return nodes and their parent."""
         for parent, element in iter_hierarchy(self, types=(Part,)):
             if isinstance(element, Part):
                 yield parent, element
@@ -82,9 +81,8 @@ class PartDiagram(Partition):
     def all_relationships(
         self,
     ) -> Iterator[Tuple[Union[Part, "PartDiagram"], Relationship]]:
-        """Iterate over BaseElements that follow the `Part` hierarchy
-        and return edges and their parent
-        """
+        """Iterate over BaseElements that follow the `Part` hierarchy and
+        return edges and their parent."""
         for parent, element in iter_hierarchy(self, types=(Relationship,)):
             if isinstance(element, Relationship):
                 yield parent, element

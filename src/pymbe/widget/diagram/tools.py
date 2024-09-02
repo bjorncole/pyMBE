@@ -100,7 +100,7 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):  # pylint: disable=too-m
 
     @property
     def refresh_buttons(self):
-        """These are the buttons that refresh the diagram view"""
+        """These are the buttons that refresh the diagram view."""
         return (
             self.refresh_diagram,
             self.filter_to_path,

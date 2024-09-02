@@ -37,12 +37,10 @@ TIMEZONES = {
 
 
 class APIClient(trt.HasTraits, ModelClient):
-    """
-        A traitleted SysML v2 API Client.
+    """A traitleted SysML v2 API Client.
 
     ..todo:
         - Add ability to use element download pagination.
-
     """
 
     host_url = trt.Unicode(
@@ -141,7 +139,7 @@ class APIClient(trt.HasTraits, ModelClient):
 
     @lru_cache(maxsize=URL_CACHE_SIZE)
     def _retrieve_data(self, url: str) -> List[Dict]:
-        """Retrieve model data from a URL using pagination"""
+        """Retrieve model data from a URL using pagination."""
         result = []
         while url:
             response = requests.get(url)

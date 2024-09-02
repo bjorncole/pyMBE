@@ -338,7 +338,7 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
             parent_node.unobserve(self._observe_node_selection)
 
     def select_nodes(self, *nodes: str):
-        """Select a list of nodes"""
+        """Select a list of nodes."""
         for node_id in nodes:
             node = self.nodes_by_id.get(node_id, None)
             if node:

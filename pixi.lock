@@ -5450,7 +5450,7 @@ packages:
   name: pymbe
   version: 0.20.0
   path: .
-  sha256: ea5e76cfc858b893f5edda7bd2d2a8048bcb453ec59eea51b36a7c3ea2f71baf
+  sha256: 094a4ca29b98ad842505f852dd695dec39f081a8838afae4ec7537d09d2382d5
   requires_dist:
   - importnb
   - ipyelk

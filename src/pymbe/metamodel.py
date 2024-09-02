@@ -9,9 +9,8 @@ from pymbe.query.metamodel_navigator import get_more_general_types
 
 
 class MetaModel:
-    """
-    A class to hold meta-model information and perform property derivation
-    """
+    """A class to hold meta-model information and perform property
+    derivation."""
 
     metamodel_hints: Dict[str, Dict[str, Dict[str, Any]]] = field(default_factory=dict)
 
@@ -26,7 +25,7 @@ class MetaModel:
             self._load_template_data(metaclass_name=metaclass)
 
     def _load_metahints(self):
-        """Load data file to get attribute hints"""
+        """Load data file to get attribute hints."""
 
         with lib_resources.open_text(
             "pymbe.static_data", "attribute_metadata.json"
@@ -34,10 +33,11 @@ class MetaModel:
             self.metamodel_hints = json.load(sysml_ecore)
 
     def _load_template_data(self, metaclass_name: str):
-        """
-        Generate empty data dictionaries per metatype to be used when new elements are
-        created by model modification functions. These templates resemble the raw JSON data
-        pulled from the SysML v2 standard REST API.
+        """Generate empty data dictionaries per metatype to be used when new
+        elements are created by model modification functions.
+
+        These templates resemble the raw JSON data pulled from the SysML
+        v2 standard REST API.
         """
 
         local_hints = self.metamodel_hints[metaclass_name]
@@ -71,9 +71,7 @@ class MetaModel:
 
 
 def list_relationship_metaclasses():
-    """
-    Return a list of relationship metaclass names
-    """
+    """Return a list of relationship metaclass names."""
     return [
         "FeatureTyping",
         "Membership",

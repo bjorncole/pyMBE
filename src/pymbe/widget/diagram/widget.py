@@ -17,7 +17,7 @@ from .utils import Mapper
 
 # TODO: Remove this when https://github.com/jupyrdf/ipyelk/pull/98 gets merged
 class Diagram(ipyelk.Diagram):
-    """A slightly modified ipyelk Diagram to avoid issue with observer"""
+    """A slightly modified ipyelk Diagram to avoid issue with observer."""
 
     @trt.observe("tools")
     def _update_tools(self, change=None):
@@ -211,7 +211,7 @@ class M1Viewer(ipyw.Box, BaseWidget):  # pylint: disable=too-many-ancestors
         )
 
     def _on_update_diagram_button_click(self, button: ipyw.Button):
-        """Create asynchronous refresh task"""
+        """Create asynchronous refresh task."""
         if self._task:
             self._task.cancel()
 

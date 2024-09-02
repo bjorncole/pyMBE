@@ -225,10 +225,8 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):  # pylint: disable=too-many-ins
         implied_edge_types: ty.Union[list, set, tuple] = None,
         included_packages: ty.Union[list, set, tuple] = None,
     ) -> ty.Union[nx.Graph, nx.DiGraph]:
-        """
-        Using the existing graph, filter by node and edge types, and/or
-        reverse certain edge types.
-        """
+        """Using the existing graph, filter by node and edge types, and/or
+        reverse certain edge types."""
         excluded_edge_types = excluded_edge_types or []
         excluded_node_types = excluded_node_types or []
         reversed_edge_types = reversed_edge_types or []
@@ -325,7 +323,7 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):  # pylint: disable=too-many-ins
         enforce_directionality: bool = True,
         try_reverse: bool = True,
     ):  # pylint: disable=too-many-arguments
-        """Make a new graph with the shortest paths between two nodes"""
+        """Make a new graph with the shortest paths between two nodes."""
         new_graph = graph if enforce_directionality else self._make_undirected(graph)
         try:
             nodes = set(

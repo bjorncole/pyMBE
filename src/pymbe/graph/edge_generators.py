@@ -30,7 +30,7 @@ def make_nx_multi_edge(source, target, metatype, **data) -> MultiEdge:
 
 
 def get_elements_from_lpg_edges(lpg: SysML2LabeledPropertyGraph) -> List[Element]:
-    """Get the elements based on the edges of a SysML2 LPG"""
+    """Get the elements based on the edges of a SysML2 LPG."""
     elements = lpg.model.elements
 
     return {
@@ -42,7 +42,7 @@ def get_elements_from_lpg_edges(lpg: SysML2LabeledPropertyGraph) -> List[Element
 
 
 def make_lpg_edges(*edges) -> List[MultiEdge]:
-    """Make networkx multiedges compatible with the LPG"""
+    """Make networkx multiedges compatible with the LPG."""
     return [
         make_nx_multi_edge(source, target, metatype)
         for source, target, metatype in edges
@@ -61,10 +61,9 @@ def get_implied_parameter_feedforward(
 
 
 def get_implied_feature_typings(lpg: SysML2LabeledPropertyGraph) -> List[MultiEdge]:
-    """
-    Set up to fill in for cases where typing, definition are in attributes rather than
-    with explicit FeatureTyping edges from the API
-    :param lpg:
+    """Set up to fill in for cases where typing, definition are in attributes
+    rather than with explicit FeatureTyping edges from the API :param lpg:
+
     :return:
     """
     # TODO: Remove this when the API and spec are fixed to have types as multiple
