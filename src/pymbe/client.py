@@ -1,7 +1,6 @@
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from functools import lru_cache
-from typing import Dict, List, Optional
 from warnings import warn
 
 import ipywidgets as ipyw
@@ -37,12 +36,10 @@ TIMEZONES = {
 
 
 class APIClient(trt.HasTraits, ModelClient):
-    """
-        A traitleted SysML v2 API Client.
+    """A traitleted SysML v2 API Client.
 
     ..todo:
         - Add ability to use element download pagination.
-
     """
 
     host_url = trt.Unicode(
@@ -97,7 +94,9 @@ class APIClient(trt.HasTraits, ModelClient):
             warn(f"Could not retrieve projects from {self.projects_url}.\n{exc}")
             return {}
 
-        results = {project["@id"]: process_project_safely(project) for project in projects}
+        results = {
+            project["@id"]: process_project_safely(project) for project in projects
+        }
 
         return {
             project_id: project_data
@@ -138,8 +137,8 @@ class APIClient(trt.HasTraits, ModelClient):
         self._retrieve_data.cache_clear()
 
     @lru_cache(maxsize=URL_CACHE_SIZE)
-    def _retrieve_data(self, url: str) -> List[Dict]:
-        """Retrieve model data from a URL using pagination"""
+    def _retrieve_data(self, url: str) -> list[dict]:
+        """Retrieve model data from a URL using pagination."""
         result = []
         while url:
             response = requests.get(url)
@@ -160,8 +159,9 @@ class APIClient(trt.HasTraits, ModelClient):
             urls = self._next_url_regex.findall(link)
             if len(urls) > 1:
                 raise requests.HTTPError(
-                    "Found multiple 'next' pagination urls: "
-                    ", ".join(map(lambda x: f"<{x}>", urls))
+                    "Found multiple 'next' pagination urls: " ", ".join(
+                        map(lambda x: f"<{x}>", urls)
+                    )
                 )
             url = urls[0] if urls else None
         return result
@@ -170,7 +170,7 @@ class APIClient(trt.HasTraits, ModelClient):
     def _parse_timestamp(timestamp: str) -> datetime:
         if isinstance(timestamp, datetime):
             return timestamp
-        return parser.parse(timestamp, tzinfos=TIMEZONES).astimezone(timezone.utc)
+        return parser.parse(timestamp, tzinfos=TIMEZONES).astimezone(UTC)
 
     def _get_project_commits(self):
         def clean_fields(data: dict) -> dict:
@@ -181,10 +181,12 @@ class APIClient(trt.HasTraits, ModelClient):
                     data[key] = self._parse_timestamp(value)
             return data
 
-        commits = sorted(self._retrieve_data(self.commits_url), key=lambda x: x["created"])
+        commits = sorted(
+            self._retrieve_data(self.commits_url), key=lambda x: x["created"]
+        )
         return {commit["@id"]: clean_fields(commit) for commit in commits}
 
-    def get_model(self) -> Optional[Model]:
+    def get_model(self) -> Model | None:
         """Download a model from the current `elements_url`."""
         if not self.selected_commit:
             return None

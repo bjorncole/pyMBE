@@ -55,7 +55,9 @@ class SysML2RDFGraph(trt.HasTraits):
             warn(f"Deleting old graph: {old_graph}")
             del old_graph
 
-        elements = [self.import_context(element) for element in self.model.elements.values()]
+        elements = [
+            self.import_context(element) for element in self.model.elements.values()
+        ]
         self.graph.parse(
             data=json.dumps(elements),
             format="application/ld+json",

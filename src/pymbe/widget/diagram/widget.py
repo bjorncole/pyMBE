@@ -17,7 +17,7 @@ from .utils import Mapper
 
 # TODO: Remove this when https://github.com/jupyrdf/ipyelk/pull/98 gets merged
 class Diagram(ipyelk.Diagram):
-    """A slightly modified ipyelk Diagram to avoid issue with observer"""
+    """A slightly modified ipyelk Diagram to avoid issue with observer."""
 
     @trt.observe("tools")
     def _update_tools(self, change=None):
@@ -168,7 +168,9 @@ class M1Viewer(ipyw.Box, BaseWidget):  # pylint: disable=too-many-ancestors
         if not included_edges:
             return []
 
-        return set(self.lpg.edge_types).difference((edges[0][2] for edges in included_edges))
+        return set(self.lpg.edge_types).difference(
+            edges[0][2] for edges in included_edges
+        )
 
     @property
     def excluded_node_types(self):
@@ -177,12 +179,14 @@ class M1Viewer(ipyw.Box, BaseWidget):  # pylint: disable=too-many-ancestors
             return []
 
         return set(self.lpg.node_types).difference(
-            (self.lpg.graph.nodes[nodes[0]]["@type"] for nodes in included_nodes)
+            self.lpg.graph.nodes[nodes[0]]["@type"] for nodes in included_nodes
         )
 
     @property
     def selected_by_type_node_ids(self):
-        return tuple(set(sum(map(list, self.elk_diagram.toolbar.node_type_selector.value), [])))
+        return tuple(
+            set(sum(map(list, self.elk_diagram.toolbar.node_type_selector.value), []))
+        )
 
     @property
     def selected_by_type_nodes(self):
@@ -194,7 +198,9 @@ class M1Viewer(ipyw.Box, BaseWidget):  # pylint: disable=too-many-ancestors
 
     @property
     def selected_by_type_edge_ids(self):
-        return tuple(set(sum(map(list, self.elk_diagram.toolbar.edge_type_selector.value), [])))
+        return tuple(
+            set(sum(map(list, self.elk_diagram.toolbar.edge_type_selector.value), []))
+        )
 
     @property
     def selected_by_type_edges(self):
@@ -205,7 +211,7 @@ class M1Viewer(ipyw.Box, BaseWidget):  # pylint: disable=too-many-ancestors
         )
 
     def _on_update_diagram_button_click(self, button: ipyw.Button):
-        """Create asynchronous refresh task"""
+        """Create asynchronous refresh task."""
         if self._task:
             self._task.cancel()
 
@@ -222,7 +228,9 @@ class M1Viewer(ipyw.Box, BaseWidget):  # pylint: disable=too-many-ancestors
                 finally:
                     button.disabled = failed
 
-        self._task = task = asyncio.create_task(self._update_diagram_button_click(button))
+        self._task = task = asyncio.create_task(
+            self._update_diagram_button_click(button)
+        )
         task.add_done_callback(post_run)
 
     async def _update_diagram_button_click(self, button: ipyw.Button) -> asyncio.Task:
@@ -347,7 +355,9 @@ class M1Viewer(ipyw.Box, BaseWidget):  # pylint: disable=too-many-ancestors
             diagram_elements = list(view_selector.get_index().elements.elements)
 
             new_selections = [
-                id_ for id_ in self._map_selections(*self.selected) if id_ in diagram_elements
+                id_
+                for id_ in self._map_selections(*self.selected)
+                if id_ in diagram_elements
             ]
             if set(view_selector.ids).symmetric_difference(new_selections):
                 view_selector.ids = new_selections

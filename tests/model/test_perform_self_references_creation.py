@@ -1,30 +1,20 @@
 from uuid import uuid4
 
-import pytest
-
 import pymbe.api as pm
 from pymbe.interpretation.occurrences_steps import is_feature_involving_self
-from pymbe.model import Element, Model
+from pymbe.model import Element
 from pymbe.model_modification import (
     apply_covered_feature_pattern,
-    build_from_binary_relationship_pattern,
     build_from_classifier_pattern,
     build_from_feature_pattern,
 )
 from pymbe.query.metamodel_navigator import (
     get_effective_basic_name,
-    get_effective_lower_multiplicity,
-    get_effective_upper_multiplicity,
-    get_most_specific_feature_type,
 )
 
 
 def test_fill_self_references(load_kerml_library):
-
-    """
-    Test creation of performances and also fill in and cover library features like portionOf.
-
-    """
+    """Test creation of performances and also fill in and cover library features like portionOf."""
     # find Performance in libraries
 
     peform_ns = [
@@ -75,7 +65,7 @@ def test_fill_self_references(load_kerml_library):
         "ownedRelationship": [],
     }
 
-    new_ns = Element.new(data=package_model_namespace_data, model=empty_model)
+    Element.new(data=package_model_namespace_data, model=empty_model)
 
     new_package = Element.new(data=package_model_data, model=empty_model)
 
@@ -127,7 +117,7 @@ def test_fill_self_references(load_kerml_library):
         specific_fields={"ownedRelationship": []},
     )
 
-    new_step_1 = build_from_feature_pattern(
+    build_from_feature_pattern(
         owner=new_performance,
         name="Step 1",
         model=empty_model,
@@ -138,7 +128,7 @@ def test_fill_self_references(load_kerml_library):
         connector_end=False,
     )
 
-    new_step_2 = build_from_feature_pattern(
+    build_from_feature_pattern(
         owner=new_performance,
         name="Step 2",
         model=empty_model,

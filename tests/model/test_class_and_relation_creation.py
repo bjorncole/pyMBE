@@ -1,7 +1,7 @@
 from uuid import uuid4
 
 import pymbe.api as pm
-from pymbe.model import Element, Model
+from pymbe.model import Element
 from pymbe.model_modification import (
     build_from_binary_relationship_pattern,
     build_from_classifier_pattern,
@@ -9,12 +9,7 @@ from pymbe.model_modification import (
 
 
 def test_create_classifier_against_library(load_kerml_library):
-
-    """
-    Try the creation of new classifiers that specialize library elements.
-
-    """
-
+    """Try the creation of new classifiers that specialize library elements."""
     # find Performance in libraries
 
     peform_ns = [
@@ -54,7 +49,7 @@ def test_create_classifier_against_library(load_kerml_library):
         "ownedRelationship": [],
     }
 
-    new_ns = Element.new(data=package_model_namespace_data, model=empty_model)
+    Element.new(data=package_model_namespace_data, model=empty_model)
 
     new_package = Element.new(data=package_model_data, model=empty_model)
 
@@ -83,12 +78,7 @@ def test_create_classifier_against_library(load_kerml_library):
 
 
 def test_create_disjoint_objects(load_kerml_library):
-
-    """
-    Try the creation of new classifiers that specialize library elements.
-
-    """
-
+    """Try the creation of new classifiers that specialize library elements."""
     # find Object in libraries
 
     object_ns = [
@@ -128,7 +118,7 @@ def test_create_disjoint_objects(load_kerml_library):
         "ownedRelationship": [],
     }
 
-    new_ns = Element.new(data=package_model_namespace_data, model=empty_model)
+    Element.new(data=package_model_namespace_data, model=empty_model)
 
     new_package = Element.new(data=package_model_data, model=empty_model)
 

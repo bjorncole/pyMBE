@@ -9,19 +9,21 @@ DEFAULT_MULTIPLICITY_LIMITS = dict(lower="0", upper="*")
 
 
 def get_label(element: Element) -> str:  # pylint: disable=too-many-return-statements
+    """Get a label for the element.
 
-    """
-    Get a label for the element.
-    The difference between a label and a name is that the name is meant to provide something by
-    which to refer to the element in code or informally while processing a model. A label is
-    meant to be part of the display of the element either in a representation (repr) or view
+    The difference between a label and a name is that the name is meant
+    to provide something by which to refer to the element in code or
+    informally while processing a model. A label is meant to be part of
+    the display of the element either in a representation (repr) or view
     of the model.
     """
-
     metatype = element._metatype
     if metatype.endswith("Expression"):
         return f"{get_label_for_expression(element)}" + f" «{metatype}»"
-    if metatype == "Invariant" and "throughResultExpressionMembership" in element._derived:
+    if (
+        metatype == "Invariant"
+        and "throughResultExpressionMembership" in element._derived
+    ):
         invar_expression = element.throughResultExpressionMembership[0]
         return f"{get_label_for_expression(invar_expression)} «{metatype}»"
     model = element._model
@@ -60,10 +62,18 @@ def get_label(element: Element) -> str:  # pylint: disable=too-many-return-state
         return f"{direction}{para_string} «{metatype}»"
 
     if metatype == "LiteralBoolean":
-        metatype = type_names[0] if type_names else metatype.replace("Literal", "Occurred Literal")
+        metatype = (
+            type_names[0]
+            if type_names
+            else metatype.replace("Literal", "Occurred Literal")
+        )
         return f"{value} «{metatype}»"
     if value and metatype.startswith("Literal"):
-        metatype = type_names[0] if type_names else metatype.replace("Literal", "Occurred Literal")
+        metatype = (
+            type_names[0]
+            if type_names
+            else metatype.replace("Literal", "Occurred Literal")
+        )
         return f"{value} «{metatype}»"
     if metatype == "MultiplicityRange":
         return get_label_for_multiplicity(multiplicity=element)
@@ -82,7 +92,6 @@ def get_label_for_id(element_id: str, model: Model) -> str:
 
 
 def get_label_for_expression(expression: Element) -> str:
-
     meta = expression._metatype
 
     expression_label = f"<<{meta} {expression._id}>>"
@@ -104,7 +113,9 @@ def get_label_for_expression(expression: Element) -> str:
             expression_label = expression.throughMembership[0].basic_name
         except IndexError:
             # if there is no direct reference, need to recurse on parameters
-            expression_label = get_label_for_expression(expression.throughFeatureMembership[0])
+            expression_label = get_label_for_expression(
+                expression.throughFeatureMembership[0]
+            )
             # expression_label = "Empty FRE"
     elif meta == "FeatureChainExpression":
         try:
@@ -129,7 +140,7 @@ def get_label_for_expression(expression: Element) -> str:
                 chains = expression.throughOwningMembership[0].throughFeatureChaining
                 other_items = ".".join([chain.basic_name for chain in chains])
                 expression_label += f".{other_items}"
-        except IndexError as failed_link:
+        except IndexError:
             expression_label = "Empty FCE"
 
     # covers Literal expression cases
@@ -139,8 +150,12 @@ def get_label_for_expression(expression: Element) -> str:
 
     elif expression._metatype == "InvocationExpression":
         try:
-            body = ", ".join(map(get_label_for_expression, expression.throughParameterMembership))
-            expression_label = f"{expression.throughFeatureTyping[0].declaredName}({body})"
+            body = ", ".join(
+                map(get_label_for_expression, expression.throughParameterMembership)
+            )
+            expression_label = (
+                f"{expression.throughFeatureTyping[0].declaredName}({body})"
+            )
         except AttributeError:
             expression_label = "Empty InvocationExpression"
 

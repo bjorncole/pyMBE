@@ -9,7 +9,7 @@ from .inspector import ElementInspector
 
 @ipyw.register
 class UI(DockBox):
-    """A user interface for the integrated widget"""
+    """A user interface for the integrated widget."""
 
     # widgets
     tree: ContainmentTree = trt.Instance(ContainmentTree, args=())
@@ -88,7 +88,7 @@ class UI(DockBox):
         dock_pop = DockPop([sysml_ui], description="SysML Model")
 
         def _add(widget: ipyw.DOMWidget, mode="split-right"):
-            """Add the example preview in a new JupyterLab DockPanel tab"""
+            """Add the example preview in a new JupyterLab DockPanel tab."""
             dock_pop.mode = mode
             dock_pop.children += (widget,)
 

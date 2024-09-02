@@ -1,5 +1,3 @@
-import typing as ty
-
 import networkx as nx
 import traitlets as trt
 from ipyelk import ElementLoader, MarkElementWidget
@@ -13,12 +11,12 @@ from .relationships import Relationship
 class SysmlLoader(ElementLoader):  # pylint: disable=abstract-method
     """A customized loader for SysML LPGs."""
 
-    all_parts: ty.Dict[str, Part] = trt.Dict(
+    all_parts: dict[str, Part] = trt.Dict(
         key_trait=trt.Unicode(),
         value_trait=trt.Instance(Part),
         help="A store of all the parts, i.e., nodes, that have been displayed.",
     )
-    all_relationships: ty.Dict[str, Relationship] = trt.Dict(
+    all_relationships: dict[str, Relationship] = trt.Dict(
         key_trait=trt.Unicode(),
         value_trait=trt.Instance(Relationship),
         help="A store of all the relationships, i.e., edges, that have been displayed.",
@@ -56,7 +54,9 @@ class SysmlLoader(ElementLoader):  # pylint: disable=abstract-method
             part_diagram.labels = []
             part_diagram.ports = []
 
-    def load_from_graphs(self, new: nx.Graph, old: nx.Graph = None) -> MarkElementWidget:
+    def load_from_graphs(
+        self, new: nx.Graph, old: nx.Graph = None
+    ) -> MarkElementWidget:
         new = nx.Graph() if new in (None, trt.Undefined) else new
         old = nx.Graph() if old in (None, trt.Undefined) else old
 
