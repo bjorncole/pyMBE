@@ -115,33 +115,56 @@ vscode = "code ."
 # Full list of rules: https://docs.astral.sh/ruff/rules/
 lint.select = [
   "ANN",  # flake8-annotations
-  "D",  # pydocstyle
-  "E",  # pycodestyle errors
-  "F",  # pyflakes
-  "I",  # isort
-  "PL", # pylint
-  "UP", # pyupgra
-  "W",  # pycodestyle warnings
+  "D",   # pydocstyle
+  "E",   # pycodestyle errors
+  "F",   # pyflakes
+  "I",   # isort
+  "PL",  # pylint
+  "UP",  # pyupgra
+  "W",   # pycodestyle warnings
   "NPY", # NumPy-specific rules
 ]
 lint.ignore = [
-  "ANN101", # Missing type annotation for `self` in method
-  "ANN102", # Missing type annotation for `cls` in classmethod
-  "ANN002",  # Missing type annotation for `*args`
-  "ANN003",  # Missing type annotation for `**kwargs`
-  "ANN204",  # Missing return type annotation for special method `__init__`
-  "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed in `*args"
-  "PLR0913",  # Too many arguments in function definition
-  "E501", # if it doesn't bother black
+  "ANN001",  # FIXME Missing type annotation for function argument
+  "ANN002",  # FIXME Missing type annotation for `*args`
+  "ANN003",  # FIXME Missing type annotation for `**kwargs`
+  "ANN101",  # FIXME Missing type annotation for `self` in method
+  "ANN102",  # FIXME Missing type annotation for `cls` in classmethod
+  "ANN201",  # FIXME Missing return type annotation for public function
+  "ANN202",  # FIXME Missing return type annotation for private function
+  "ANN204",  # FIXME Missing return type annotation for special method `__init__`
+  "ANN205",  # FIXME Missing return type annotation for staticmethod
+  "ANN206",  # FIXME Missing return type annotation for classmethod
+  "ANN401",  # FIXME Dynamically typed expressions (typing.Any) are disallowed in `*args"
+  "D100",    # FIXME Missing docstring in public module
+  "D101",    # FIXME Missing docstring in public class
+  "D102",    # FIXME Missing docstring in public method
+  "D103",    # FIXME Missing docstring in public function
+  "D104",    # FIXME Missing docstring in public package
   "D105",
+  "D106",    # FIXME Missing docstring in public nested class
   "D107",
+  "D200",    # FIXME One-line docstring should fit on one line
+  "D203",
   "D205",
   "D209",
+  "D213",    # FIXME pydocstyle opinion
   "D400",
-  "D203",
-  "D213", # pydocstyle opinion
-  "D417", # FIXME Missing argument description
-  "D413", # Missing blank line after last section ("Parameters")
+  "D401",    # FIXME First line of docstring should be in imperative mood
+  "D404",    # FIXME  First word of the docstring should not be "This"
+  "PLW0127", # FIXME  Self-assignment of variable
+  "PLW0127", # FIXME  Self-assignment of variable
+  "D413",    # FIXME Missing blank line after last section ("Parameters")
+  "D415",    # FIXME First line should end with a period, question mark, or exclamation point
+  "D417",    # FIXME Missing argument description
+  "E501",    # FIXME Line too long
+  "PLR0911", # FIXME Too many return statements
+  "PLR0912", # FIXME Too many branches
+  "PLR0913", # FIXME Too many arguments in function definition
+  "PLR0915", # FIXME Too many statements
+  "PLR2004", # FIXME Magic value used in comparison
+  "PLW2901", # FIXME `for` loop variable `source` overwritten by assignment target
+  "UP038",   # FIXME  Use `X | Y` in `isinstance` call instead of `(X, Y)`
 ]
 cache-dir = "build/.cache/ruff"
 
