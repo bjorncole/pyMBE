@@ -314,7 +314,8 @@ def get_most_specific_feature_type(feature):
 
 def get_more_general_types(typ, recurse_counter, max_counter):
     """Recursively navigate along Specialization relationships to find all the
-    more general types of the given type."""
+    more general types of the given type.
+    """
     local_more_general = (
         typ.throughFeatureTyping
         + typ.throughSubclassification

@@ -60,7 +60,8 @@ class FeatureTypeWorkingMap:
 
     def _add_type_instance_to_map(self, type_instance: Element):
         """Add a new type to the map under which features and their more
-        specific values can be mapped."""
+        specific values can be mapped.
+        """
         self._working_dict.update({type_instance._id: {}})
         self._working_dict_data_values.update({type_instance._id: {}})
 
@@ -82,7 +83,8 @@ class FeatureTypeWorkingMap:
         self, type_instance: Element, feature_nesting: list[Element], atom_value: Any
     ):
         """Add a value to the map to a nested feature under the type
-        instance."""
+        instance.
+        """
         try:
             id_path = ".".join([feature._id for feature in feature_nesting])
             if isinstance(atom_value, Element):

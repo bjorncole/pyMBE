@@ -923,7 +923,8 @@ class KermlForwardExecutor:
         passed_path_to_this: list[Element],
     ):
         """Determine of what Life the occurrence value to be generated will be
-        a portion."""
+        a portion.
+        """
         # TODO: Be sure this only applies to the top level of a decomposition of occurrences
 
         library_model = self._working_map._model._referenced_models[0]

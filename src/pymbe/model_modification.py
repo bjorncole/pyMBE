@@ -13,7 +13,8 @@ def create_element_data_dictionary(
     name: str, metaclass: str, model: Model, specific_fields: dict[str, Any]
 ):
     """Creates a Python dictionary with data for a new KerML/SysML element
-    based on templates from base Ecore definitions."""
+    based on templates from base Ecore definitions.
+    """
     new_id = str(uuid4())
 
     new_element_data = copy.deepcopy(model.metamodel.pre_made_dicts[metaclass])
@@ -749,7 +750,8 @@ def apply_chained_feature_assignment_pattern(
     chained_feature_suffix: str = " (Closed)",
 ):
     """Execute a pattern that will create a feature that is linked to a feature
-    chain that can been used to set values on deeply nested features."""
+    chain that can been used to set values on deeply nested features.
+    """
     new_feature_for_chain = None
 
     feature_to_chain_name = get_effective_basic_name(feature_path_to_chain[-1])
@@ -958,7 +960,8 @@ def assign_feature_value_to_expression(
     target_feature: Element, expr: Element, model: Model
 ):
     """Add a feature value relationship from a parameter to an expression and
-    then also make the Feature the owner of the expression."""
+    then also make the Feature the owner of the expression.
+    """
     build_from_binary_relationship_pattern(
         source=target_feature,
         target=expr,
@@ -979,7 +982,8 @@ def assign_value_by_literal_expression(
     target_feature: Element, value_to_assign: Any, model: Model
 ):
     """Generate the binding connector, assign as a Feature Value and create a
-    Literal Expression as a way to assign a value to a Feature."""
+    Literal Expression as a way to assign a value to a Feature.
+    """
     # create the parameters
 
     new_result_para_1 = build_from_parameter_pattern(
@@ -1019,7 +1023,8 @@ def assign_value_by_literal_expression(
 
 def assign_value_by_fre():
     """Generate the binding connector, assign as a Feature Value and create a
-    FeatureReferenceExpression as a way to assign a value to a Feature."""
+    FeatureReferenceExpression as a way to assign a value to a Feature.
+    """
     pass
 
 
@@ -1030,7 +1035,8 @@ def assign_multiple_values_with_fre(
     seperator_function: Element,
 ):
     """Generate Feature Value and use appropriate base functions to assign
-    multiple values to a given feature."""
+    multiple values to a given feature.
+    """
     # Nested sequences will require 2 + 2*(n-2) parameters, or 1 + (n-2) sequence
     # OperatorExpressions
 

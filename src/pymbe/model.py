@@ -211,7 +211,8 @@ class Model:  # pylint: disable=too-many-instance-attributes
         filepath: Path | str, encoding: str = "utf-8"
     ) -> "Model":
         """Make a model from a JSON file formatted to POST to v2 API (includes
-        payload fields)"""
+        payload fields)
+        """
         if isinstance(filepath, str):
             filepath = Path(filepath)
 
@@ -239,7 +240,8 @@ class Model:  # pylint: disable=too-many-instance-attributes
         filepath_list: list, encoding: str = "utf-8"
     ) -> "Model":
         """Make a model from multiple JSON files formatted to POST to v2 API
-        (includes payload fields)"""
+        (includes payload fields)
+        """
         factored_data = []
 
         for filepath in filepath_list:

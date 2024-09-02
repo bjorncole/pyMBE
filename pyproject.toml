@@ -141,15 +141,14 @@ lint.ignore = [
   "D102",    # FIXME Missing docstring in public method
   "D103",    # FIXME Missing docstring in public function
   "D104",    # FIXME Missing docstring in public package
-  "D105",
+  "D105",    # FIXME Missing docstring in magic method
   "D106",    # FIXME Missing docstring in public nested class
-  "D107",
+  "D107",    # Missing docstring in `__init__`
   "D200",    # FIXME One-line docstring should fit on one line
-  "D203",
-  "D205",
-  "D209",
+  "D203",    # one-blank-line-before-class
+  "D205",    # FIXME 1 blank line required between summary line and description
   "D213",    # FIXME pydocstyle opinion
-  "D400",
+  "D400",    # FIXME First line should end with a period
   "D401",    # FIXME First line of docstring should be in imperative mood
   "D404",    # FIXME First word of the docstring should not be "This"
   "PLW0127", # FIXME Self-assignment of variable

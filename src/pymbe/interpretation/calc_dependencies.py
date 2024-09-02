@@ -7,7 +7,8 @@ from ..model import Model
 
 def generate_execution_order(lpg: SysML2LabeledPropertyGraph) -> list:
     """Generate an ordered list that relies the structure of computations to be
-    applied to the M0 instance of the model when it is instantiated :return:"""
+    applied to the M0 instance of the model when it is instantiated :return:
+    """
     all_elements = lpg.model.elements
     eig = lpg.get_projection("Expression Inferred")
 
