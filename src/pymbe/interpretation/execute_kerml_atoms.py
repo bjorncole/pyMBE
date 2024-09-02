@@ -914,7 +914,6 @@ class KermlForwardExecutor:
             atom_value=new_value,
         )
 
-
     def _process_portion_of_life_features(
         self,
         type_instance: Element,
@@ -923,8 +922,7 @@ class KermlForwardExecutor:
         passed_path_to_this: list[Element],
     ):
         """Determine of what Life the occurrence value to be generated will be
-        a portion.
-        """
+        a portion."""
         # TODO: Be sure this only applies to the top level of a decomposition of occurrences
 
         library_model = self._working_map._model._referenced_models[0]
@@ -994,7 +992,6 @@ class KermlForwardExecutor:
                         feature_nesting=candidate_feature,
                         atom_value=found_life[0],
                     )
-
 
     def _common_postprocess(
         self, featuring_type: Element, candidate_features: list[Element]

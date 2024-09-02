@@ -1,4 +1,3 @@
-
 import ipywidgets as ipyw
 import traitlets as trt
 

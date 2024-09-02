@@ -1,6 +1,5 @@
 def test_links_associations(load_kerml_library):
-    """Check that the main links in Links library have loaded and the expected names are all there.
-    """
+    """Check that the main links in Links library have loaded and the expected names are all there."""
     links_ns = [
         library_model_ns
         for library_model_ns in load_kerml_library.ownedElement
@@ -25,10 +24,8 @@ def test_links_associations(load_kerml_library):
     assert "SelfLink" in link_assoc_names
 
 
-
 def test_binarylink_has_features(load_kerml_library):
-    """Check that the features participant, source, and target are loaded under BinaryLink
-    """
+    """Check that the features participant, source, and target are loaded under BinaryLink"""
     links_ns = [
         library_model_ns
         for library_model_ns in load_kerml_library.ownedElement
@@ -46,7 +43,6 @@ def test_binarylink_has_features(load_kerml_library):
                     binarylink_assoc = link_ele
 
     assert len(binarylink_assoc.throughFeatureMembership) == 3
-
 
 
 def test_binarylink_feature_details(load_kerml_library):
@@ -119,4 +115,3 @@ def test_binarylink_feature_details(load_kerml_library):
     assert len(participant_feature.reverseSubsetting) == 2
 
     assert source_feature in participant_feature.reverseSubsetting
-

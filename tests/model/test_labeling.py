@@ -2,8 +2,7 @@ from pymbe.query.metamodel_navigator import get_effective_basic_name
 
 
 def test_association_labels(load_kerml_library):
-    """Test how labels present for Associations from the links library
-    """
+    """Test how labels present for Associations from the links library"""
     links_ns = [
         library_model_ns
         for library_model_ns in load_kerml_library.ownedElement
@@ -35,8 +34,7 @@ def test_association_labels(load_kerml_library):
 
 
 def test_inherited_name_labels(load_kerml_library):
-    """Test that labels for Features include implied names
-    """
+    """Test that labels for Features include implied names"""
     vvals_ns = [
         library_model_ns
         for library_model_ns in load_kerml_library.ownedElement
@@ -64,8 +62,7 @@ def test_inherited_name_labels(load_kerml_library):
 
 
 def test_vector_plus_invariant_labels(load_kerml_library):
-    """Test labels for the Vector addition invariants
-    """
+    """Test labels for the Vector addition invariants"""
     vfunc_ns = [
         library_model_ns
         for library_model_ns in load_kerml_library.ownedElement

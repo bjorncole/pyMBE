@@ -6,8 +6,7 @@ from pymbe import Element, ListOfNamedItems, Model
 
 
 class InstrumentedElement(Element):
-    """A version of Element that logs its lifecycle to see how a modeling session interacts with it
-    """
+    """A version of Element that logs its lifecycle to see how a modeling session interacts with it"""
 
     def __post_init__(self):
         logging.info("[Element] entering post initialization.")

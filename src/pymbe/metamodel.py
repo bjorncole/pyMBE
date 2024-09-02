@@ -10,8 +10,7 @@ from pymbe.query.metamodel_navigator import get_more_general_types
 
 class MetaModel:
     """A class to hold meta-model information and perform property
-    derivation.
-    """
+    derivation."""
 
     metamodel_hints: dict[str, dict[str, dict[str, Any]]] = field(default_factory=dict)
 

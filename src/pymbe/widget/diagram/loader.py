@@ -1,4 +1,3 @@
-
 import networkx as nx
 import traitlets as trt
 from ipyelk import ElementLoader, MarkElementWidget
