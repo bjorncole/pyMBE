@@ -30,7 +30,6 @@ dependencies = [
     "networkx",
     "notebook",
     "numpy",
-    "openmdao",
     "pip",
     "pydantic<2",
     "pyld",
@@ -53,10 +52,15 @@ source = "https://github.com/bjorncole/pymbe"
 channels = ["conda-forge"]
 platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
 
+[tool.pixi.pypi-dependencies]
+pymbe = { path = ".", editable = true }
+
 [tool.pixi.feature.develop.dependencies]
 ansi2html = "*"
+docformatter = "*"
 git = "*"
 mypy = "*"
+nbmake = "*"
 nbstripout = "*"
 pip = "*"
 pytest = "*"
@@ -72,42 +76,92 @@ default = { features = [], solve-group = "default" }
 develop = { features = ["develop"], solve-group = "default" }
 
 [tool.pixi.tasks]
-setup = { cmd = "python -m pip install -e .", inputs=[".pixi/envs/default/conda-meta/history"] }
-lab = { cmd = "jupyter lab --no-browser", depends-on = ["setup"], cwd = "docs" }
+lab = { cmd = "jupyter lab --no-browser", cwd = "docs" }
 
 [tool.pixi.feature.develop.tasks]
 clean-notebooks = "nbstripout docs/**/*.ipynb"
-fmt = "ruff format src/ tests/"
+fmt = { depends-on = ["fmt-py", "fmt-docs"] }
+fmt-py = "ruff format src/ tests/"
+fmt-docs = { cmd = "docformatter --in-place src/**/*.py", inputs = ["src/**/*.py"] }
 lint = "ruff check --fix --no-unsafe-fixes src/ tests/"
 precommit = { depends-on = ["style", "typing", "test", "clean-notebooks"] }
-setup-develop = { cmd = "python -m pip install -e .", inputs=[".pixi/envs/develop/conda-meta/history"] }
-setup-mypy = "mypy --install-types"
 style = { depends-on = ["fmt", "lint"] }
-test = { cmd = "pytest -s -n 4 --cov=pymbe --cov-report html:.pytest_coverage", depends-on = ["setup-develop", "update-submodules"] }
-typing = { cmd = "mypy src/", depends-on = ["setup-mypy"] }
+test = { depends-on = ["test-py"] }
+test-nb = { cmd = "pytest --nbmake  --nbmake-timeout=3000 docs/**/*.ipynb", inputs = ["src/**/*.py", "docs/**/*.ipynb"] }
+test-py = { cmd = """
+pytest
+-vv
+--ff
+--capture=no
+-n 4
+--cov-context=test 
+--cov-report html:build/htmlcov
+--cov-report term-missing:skip-covered
+--cov-report xml:build/cov.xml
+--html build/pytest.html
+--junitxml build/pytest.xunit.xml
+--self-contained-html
+-o=junit_family=xunit2 
+--junitxml=build/reports/pytest/junit.xml 
+""", depends-on = ["update-submodules"] }
+typing = "mypy --install-types --html-report=build/reports/mypy src/"
 update-submodules = { cmd = "git submodule update --init", inputs=[".git/HEAD"] }  # TODO: make this more robust to branch changes
-package = "python -m build"
+build =  { depends-on = ["build-dist", "build-docs"] }
+build-dist = "python -m build --outdir build/dist"
+build-docs = { cmd = "sphinx-build -b html docs/source build/docs/html", inputs = ["src/**/*.py", "docs/**/*.py", "docs/**/*.rst"] }
 vscode = "code ."
 
-[tool.ruff.lint]
-extend-select = ["I"]
+[tool.ruff]
+# Full list of rules: https://docs.astral.sh/ruff/rules/
+lint.select = [
+  "ANN",  # flake8-annotations
+  "D",  # pydocstyle
+  "E",  # pycodestyle errors
+  "F",  # pyflakes
+  "I",  # isort
+  "PL", # pylint
+  "UP", # pyupgra
+  "W",  # pycodestyle warnings
+  "NPY", # NumPy-specific rules
+]
+lint.ignore = [
+  "ANN101", # Missing type annotation for `self` in method
+  "ANN102", # Missing type annotation for `cls` in classmethod
+  "ANN002",  # Missing type annotation for `*args`
+  "ANN003",  # Missing type annotation for `**kwargs`
+  "ANN204",  # Missing return type annotation for special method `__init__`
+  "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed in `*args"
+  "PLR0913",  # Too many arguments in function definition
+  "E501", # if it doesn't bother black
+  "D105",
+  "D107",
+  "D205",
+  "D209",
+  "D400",
+  "D203",
+  "D213", # pydocstyle opinion
+  "D417", # FIXME Missing argument description
+  "D413", # Missing blank line after last section ("Parameters")
+]
+cache-dir = "build/.cache/ruff"
 
 [tool.mypy]
+cache_dir = "build/.cache/mypy"
+sqlite_cache = true
+allow_redefinition = true
+check_untyped_defs = true
+disallow_untyped_defs = true
 ignore_missing_imports = true
+no_implicit_optional = true
+show_error_codes = true
+show_error_context = true
+warn_return_any = false
+warn_unused_ignores = true
 
-[tool.pytest]
-log_cli = false
-log_cli_level = "DEBUG"
-junit_family = "xunit2"
-addopts = [
-    "-vv",
-    "--ff",
-    "--pyargs pymbe",
-    "--cov pymbe",
-    "--cov-report term-missing:skip-covered",
-    "--cov-report html:build/htmlcov",
-    "--cov-report xml:build/cov.xml",
-    "--html build/pytest.html",
-    "--self-contained-html",
-    "--junitxml build/pytest.xunit.xml",
+[[tool.mypy.overrides]]
+module = [
+    "traitlets",
+    "traittypes",
 ]
+ignore_missing_imports = true
+allow_redefinition = true
