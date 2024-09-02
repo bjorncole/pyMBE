@@ -1,11 +1,10 @@
-from typing import List, Tuple
 from uuid import uuid4
 from warnings import warn
 
 from ..model import Element
 from .lpg import SysML2LabeledPropertyGraph
 
-MultiEdge = Tuple[str, str, str, dict]
+MultiEdge = tuple[str, str, str, dict]
 
 
 def make_nx_multi_edge(source, target, metatype, **data) -> MultiEdge:
@@ -29,8 +28,8 @@ def make_nx_multi_edge(source, target, metatype, **data) -> MultiEdge:
     )
 
 
-def get_elements_from_lpg_edges(lpg: SysML2LabeledPropertyGraph) -> List[Element]:
-    """Get the elements based on the edges of a SysML2 LPG"""
+def get_elements_from_lpg_edges(lpg: SysML2LabeledPropertyGraph) -> list[Element]:
+    """Get the elements based on the edges of a SysML2 LPG."""
     elements = lpg.model.elements
 
     return {
@@ -41,12 +40,17 @@ def get_elements_from_lpg_edges(lpg: SysML2LabeledPropertyGraph) -> List[Element
     }
 
 
-def make_lpg_edges(*edges) -> List[MultiEdge]:
-    """Make networkx multiedges compatible with the LPG"""
-    return [make_nx_multi_edge(source, target, metatype) for source, target, metatype in edges]
+def make_lpg_edges(*edges) -> list[MultiEdge]:
+    """Make networkx multiedges compatible with the LPG."""
+    return [
+        make_nx_multi_edge(source, target, metatype)
+        for source, target, metatype in edges
+    ]
 
 
-def get_implied_parameter_feedforward(lpg: SysML2LabeledPropertyGraph) -> List[MultiEdge]:
+def get_implied_parameter_feedforward(
+    lpg: SysML2LabeledPropertyGraph,
+) -> list[MultiEdge]:
     implied_parameter_feedforward_edges = (
         (edge.value.result._id, edge.get_owner()._id, "ImpliedParameterFeedforward")
         for edge in get_elements_from_lpg_edges(lpg)
@@ -55,16 +59,15 @@ def get_implied_parameter_feedforward(lpg: SysML2LabeledPropertyGraph) -> List[M
     return make_lpg_edges(*implied_parameter_feedforward_edges)
 
 
-def get_implied_feature_typings(lpg: SysML2LabeledPropertyGraph) -> List[MultiEdge]:
-    """
-    Set up to fill in for cases where typing, definition are in attributes rather than
-    with explicit FeatureTyping edges from the API
-    :param lpg:
+def get_implied_feature_typings(lpg: SysML2LabeledPropertyGraph) -> list[MultiEdge]:
+    """Set up to fill in for cases where typing, definition are in attributes
+    rather than with explicit FeatureTyping edges from the API :param lpg:
+
     :return:
     """
     # TODO: Remove this when the API and spec are fixed to have types as multiple
 
-    def get_types(element: Element) -> List[Element]:
+    def get_types(element: Element) -> list[Element]:
         types = getattr(element, "type", None) or []
         if isinstance(types, Element):
             types = [types]
@@ -81,7 +84,7 @@ def get_implied_feature_typings(lpg: SysML2LabeledPropertyGraph) -> List[MultiEd
     return make_lpg_edges(*implied_typing_edges)
 
 
-def get_implied_feedforward_edges(lpg: SysML2LabeledPropertyGraph) -> List[MultiEdge]:
+def get_implied_feedforward_edges(lpg: SysML2LabeledPropertyGraph) -> list[MultiEdge]:
     elements = lpg.model.elements
 
     return_parameter_memberships = {
@@ -99,7 +102,10 @@ def get_implied_feedforward_edges(lpg: SysML2LabeledPropertyGraph) -> List[Multi
             rf_metatype = result_feeder._metatype
 
             # we only want Expressions that have at least one input parameter
-            if "Expression" not in rf_metatype or rf_metatype == "FeatureReferenceExpression":
+            if (
+                "Expression" not in rf_metatype
+                or rf_metatype == "FeatureReferenceExpression"
+            ):
                 if rf_metatype == "FeatureReferenceExpression":
                     implied_edges += [
                         (
@@ -153,7 +159,9 @@ def get_implied_feedforward_edges(lpg: SysML2LabeledPropertyGraph) -> List[Multi
             num_matches = min(num_expr_results, num_para_members)
             implied_edges += [
                 (expr_result, para_member, "ImpliedParameterFeedforward")
-                for expr_result, para_member in list(zip(expr_results, para_members))[:num_matches]
+                for expr_result, para_member in list(zip(expr_results, para_members))[
+                    :num_matches
+                ]
             ]
 
     implied_edges = [

@@ -34,7 +34,7 @@ jobs:
         with:
           path: ~/conda_pkgs_dir
           key:
-            ${{ runner.os }}-conda-${{ hashFiles('.github/environment.yml', 'anaconda-project-lock.yml') }}
+            ${{ runner.os }}-conda-${{ hashFiles('.github/environment.yml', 'pixi.lock') }}
           restore-keys: |
             ${{ runner.os }}-conda-
 
@@ -47,7 +47,7 @@ jobs:
       - name: build
         shell: bash -l {0}
         run: |
-          anaconda-project run package || exit 1
+          pixi run build-dist || exit 1
 
       - name: publish dists
         uses: actions/upload-artifact@v2
@@ -84,8 +84,7 @@ jobs:
       - name: lint
         shell: bash -l {0}
         run: |
-          anaconda-project run setup
-          anaconda-project run lint
+          pixi run style
 
   test:
     runs-on: ${{ matrix.vm }}
@@ -130,15 +129,13 @@ jobs:
         if: ${{ contains(matrix.os, 'ubuntu') }}
         shell: bash -l {0}
         run: |
-          anaconda-project run setup
-          anaconda-project run test
+          pixi run test
 
       - name: test (macos)
         if: ${{ contains(matrix.os, 'macos') }}
         shell: bash -l {0}
         run: |
-          anaconda-project run setup
-          anaconda-project run test
+          pixi run test
 
       - name: test (windows)
         if: ${{ contains(matrix.os, 'windows') }}
@@ -147,8 +144,7 @@ jobs:
           ATEST_PROCESSES: 1
           WIN_CI: 1
         run: |
-          anaconda-project run setup
-          anaconda-project run test
+          pixi run test
 
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v1

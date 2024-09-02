@@ -1,7 +1,7 @@
 import json
 from dataclasses import field
 from importlib import resources as lib_resources
-from typing import Any, Dict, List
+from typing import Any
 
 from pymbe.query.metamodel_navigator import get_more_general_types
 
@@ -9,15 +9,14 @@ from pymbe.query.metamodel_navigator import get_more_general_types
 
 
 class MetaModel:
-    """
-    A class to hold meta-model information and perform property derivation
-    """
+    """A class to hold meta-model information and perform property
+    derivation."""
 
-    metamodel_hints: Dict[str, Dict[str, Dict[str, Any]]] = field(default_factory=dict)
+    metamodel_hints: dict[str, dict[str, dict[str, Any]]] = field(default_factory=dict)
 
-    pre_made_dicts: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+    pre_made_dicts: dict[str, dict[str, Any]] = field(default_factory=dict)
 
-    relationship_metas: List[str]
+    relationship_metas: list[str]
 
     def __init__(self):
         self.pre_made_dicts = {}
@@ -26,20 +25,19 @@ class MetaModel:
             self._load_template_data(metaclass_name=metaclass)
 
     def _load_metahints(self):
-        """Load data file to get attribute hints"""
-
+        """Load data file to get attribute hints."""
         with lib_resources.open_text(
             "pymbe.static_data", "attribute_metadata.json"
         ) as sysml_ecore:
             self.metamodel_hints = json.load(sysml_ecore)
 
     def _load_template_data(self, metaclass_name: str):
-        """
-        Generate empty data dictionaries per metatype to be used when new elements are
-        created by model modification functions. These templates resemble the raw JSON data
-        pulled from the SysML v2 standard REST API.
-        """
+        """Generate empty data dictionaries per metatype to be used when new
+        elements are created by model modification functions.
 
+        These templates resemble the raw JSON data pulled from the SysML
+        v2 standard REST API.
+        """
         local_hints = self.metamodel_hints[metaclass_name]
 
         data_template = {}
@@ -71,9 +69,7 @@ class MetaModel:
 
 
 def list_relationship_metaclasses():
-    """
-    Return a list of relationship metaclass names
-    """
+    """Return a list of relationship metaclass names."""
     return [
         "FeatureTyping",
         "Membership",
@@ -111,7 +107,6 @@ def feature_metas():
 
 
 def derive_attribute(key: str, ele: "Element"):  # noqa: F821
-
     # entry point for deriving attributes within elements on demand
 
     if key == "type":
@@ -127,7 +122,6 @@ def derive_attribute(key: str, ele: "Element"):  # noqa: F821
 
 
 def derive_type(ele: "Element"):  # noqa: F821
-
     if hasattr(ele, "throughFeatureTyping"):
         return ele.throughFeatureTyping
 
@@ -135,7 +129,6 @@ def derive_type(ele: "Element"):  # noqa: F821
 
 
 def derive_owned_member(ele: "Element"):  # noqa: F821
-
     found_ele = []
 
     for owned_rel in ele.ownedRelationship:
@@ -149,7 +142,6 @@ def derive_owned_member(ele: "Element"):  # noqa: F821
 
 
 def derive_owned_x(ele: "Element", owned_kind: str):  # noqa: F821
-
     found_ele = []
 
     for owned_rel in ele.ownedRelationship:
@@ -161,13 +153,11 @@ def derive_owned_x(ele: "Element", owned_kind: str):  # noqa: F821
 
 
 def derive_inherited_featurememberships(ele: "Element"):  # noqa: F821
-    """
-    8.3.3.1.10 Type
+    """8.3.3.1.10 Type
 
     All Memberships inherited by this Type via Specialization or Conjugation.
     These are included in the derived union for the memberships of the Type
     """
-
     more_general = get_more_general_types(ele, 0, 100)
 
     try:
@@ -183,12 +173,10 @@ def derive_inherited_featurememberships(ele: "Element"):  # noqa: F821
 
 
 def derive_features(ele: "Element"):  # noqa: F821
-    """
-    8.3.3.1.10 Type
+    """8.3.3.1.10 Type
 
     The ownedMemberFeatures of the featureMemberships of this Type.
     """
-
     # TODO: Add a way to reach back to library for the inherited objects
 
     return [

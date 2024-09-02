@@ -1,15 +1,12 @@
 import logging
-from dataclasses import dataclass, field
-from typing import Any, Collection, Dict, List, Set, Tuple, Union
+from collections.abc import Collection
+from dataclasses import dataclass
 
-import pymbe.api as pm
-from pymbe import Element, Model
+from pymbe import Element, ListOfNamedItems, Model
 
 
 class InstrumentedElement(Element):
-    """
-    A version of Element that logs its lifecycle to see how a modeling session interacts with it
-    """
+    """A version of Element that logs its lifecycle to see how a modeling session interacts with it"""
 
     def __post_init__(self):
         logging.info("[Element] entering post initialization.")
@@ -30,7 +27,9 @@ class InstrumentedElement(Element):
             logging.info("[Element] element is not proxy.")
             return
 
-        logging.info("[Element] element is still in proxy mode - resolving internal data")
+        logging.info(
+            "[Element] element is still in proxy mode - resolving internal data"
+        )
 
         model = self._model
         if not self._data:
@@ -61,13 +60,11 @@ class InstrumentedElement(Element):
 
 @dataclass(repr=False)
 class InstrumentedModel(Model):
-
     instrumented_name: str = "Bare Classed Feature"
     instrumented_element: InstrumentedElement = None
 
     def __post_init__(self):
         """Same as other code but with insertion of instrumented element"""
-
         self._load_metahints()
 
         logging.info(
@@ -75,9 +72,11 @@ class InstrumentedModel(Model):
         )
 
         instrumented_data = None
-        instrumented_element = None
         for id_, data in self.elements.items():
-            if "declaredName" in data and data["declaredName"] == self.instrumented_name:
+            if (
+                "declaredName" in data
+                and data["declaredName"] == self.instrumented_name
+            ):
                 instrumented_data = (id_, data)
 
         logging.info(f"[Model] Model data is '{instrumented_data[1]}'")
@@ -86,7 +85,9 @@ class InstrumentedModel(Model):
             id_: Element(
                 _data=data,
                 _model=self,
-                _metamodel_hints={att[0]: att[1:] for att in self._metamodel_hints[data["@type"]]},
+                _metamodel_hints={
+                    att[0]: att[1:] for att in self._metamodel_hints[data["@type"]]
+                },
             )
             for id_, data in self.elements.items()
             if isinstance(data, dict)
@@ -96,7 +97,8 @@ class InstrumentedModel(Model):
             _data=instrumented_data[1],
             _model=self,
             _metamodel_hints={
-                att[0]: att[1:] for att in self._metamodel_hints[instrumented_data[1]["@type"]]
+                att[0]: att[1:]
+                for att in self._metamodel_hints[instrumented_data[1]["@type"]]
             },
         )
 
@@ -111,7 +113,7 @@ class InstrumentedModel(Model):
 
     @staticmethod
     def load(
-        elements: Collection[Dict],
+        elements: Collection[dict],
         **kwargs,
     ) -> "Model":
         """Make a Model from an iterable container of elements"""
@@ -140,7 +142,9 @@ class InstrumentedModel(Model):
                 endpts1, endpts2 = endpoints[key1], endpoints[key2]
                 for endpt1 in endpts1:
                     for endpt2 in endpts2:
-                        endpt1._derived[f"{direction}{metatype}"] += [{"@id": endpt2._data["@id"]}]
+                        endpt1._derived[f"{direction}{metatype}"] += [
+                            {"@id": endpt2._data["@id"]}
+                        ]
                         if endpt1 == self.instrumented_element:
                             logging.info(
                                 f"[Model] updating derived field of instrument element for {direction}{metatype}"

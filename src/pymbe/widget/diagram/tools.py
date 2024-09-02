@@ -100,7 +100,7 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):  # pylint: disable=too-m
 
     @property
     def refresh_buttons(self):
-        """These are the buttons that refresh the diagram view"""
+        """These are the buttons that refresh the diagram view."""
         return (
             self.refresh_diagram,
             self.filter_to_path,
@@ -195,7 +195,7 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):  # pylint: disable=too-m
             # TODO: fix this so it is 0px when 'hidden'
             self.loader.height = "40px" if change.new == "hidden" else "40px"
 
-    def get_tool(self, tool_type: ty.Type[ipyelk.Tool]) -> ipyelk.Tool:
+    def get_tool(self, tool_type: type[ipyelk.Tool]) -> ipyelk.Tool:
         matches = [
             tool
             for tool in self.tools
@@ -203,7 +203,9 @@ class Toolbar(ipyw.VBox, ipyelk.tools.toolbar.Toolbar):  # pylint: disable=too-m
         ]
         num_matches = len(matches)
         if num_matches > 1:
-            raise ipyelk.exceptions.NotUniqueError(f"Found too many tools with type {tool_type}")
+            raise ipyelk.exceptions.NotUniqueError(
+                f"Found too many tools with type {tool_type}"
+            )
         if num_matches < 1:
             raise ipyelk.exceptions.NotFoundError(f"No tool matching type {tool_type}")
 

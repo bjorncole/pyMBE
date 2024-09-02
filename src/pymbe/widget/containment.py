@@ -103,7 +103,7 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
         ),
     ).tag(sync=True)
 
-    nodes_by_id: ty.Dict[str, ElementNode] = trt.Dict(
+    nodes_by_id: dict[str, ElementNode] = trt.Dict(
         key_trait=trt.Unicode(),
         value_trait=trt.Instance(ElementNode),
         kw={},
@@ -210,7 +210,9 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
             return
 
         for element in reversed(lineage):
-            nodes_by_id[element._id] = node = self._make_node(element=element, opened=True)
+            nodes_by_id[element._id] = node = self._make_node(
+                element=element, opened=True
+            )
             parent = nodes_by_id[element.owner._id]
             parent.add_node(node)
             parent.opened = True
@@ -231,7 +233,9 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
                         self._add_selected_node_lineage(element_id)
 
                 nodes_to_deselect = [
-                    node for node in self.selected_nodes if node._identifier not in self.selected
+                    node
+                    for node in self.selected_nodes
+                    if node._identifier not in self.selected
                 ]
                 if nodes_to_deselect:
                     self.deselect_nodes(*nodes_to_deselect)
@@ -309,7 +313,6 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
 
     def _observe_node_selection(self, change: trt.Bunch = None):
         with self.log_out:
-
             parent_node: ElementNode = change.owner
             selected: bool = change.new
 
@@ -317,7 +320,9 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
                 return
 
             if parent_node.icon == self.indeterminate_icon:
-                parent_node.icon = self.icons_by_type.get(parent_node._metatype, self.default_icon)
+                parent_node.icon = self.icons_by_type.get(
+                    parent_node._metatype, self.default_icon
+                )
             else:
                 parent_node.unobserve(self._observe_node_selection)
 
@@ -333,7 +338,7 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
             parent_node.unobserve(self._observe_node_selection)
 
     def select_nodes(self, *nodes: str):
-        """Select a list of nodes"""
+        """Select a list of nodes."""
         for node_id in nodes:
             node = self.nodes_by_id.get(node_id, None)
             if node:
@@ -383,11 +388,14 @@ class ContainmentTree(ipyw.VBox, BaseWidget):
         return node
 
     @staticmethod
-    def sort_nodes(nodes: ty.Union[ty.List, ty.Tuple, ty.Set]) -> tuple:
+    def sort_nodes(nodes: list | tuple | set) -> tuple:
         # Sort nodes with number of subnodes first and then by name
         return tuple(
             sorted(
                 nodes,
-                key=lambda n: (-len((n._element or {}).get("ownedElement", [])), n.name),
+                key=lambda n: (
+                    -len((n._element or {}).get("ownedElement", [])),
+                    n.name,
+                ),
             )
         )

@@ -161,7 +161,9 @@ class APIClientWidget(APIClient, ipyw.GridspecLayout):
     def _make_commit_selector(self) -> ipyw.Dropdown:
         selector = ipyw.Dropdown(
             description="Commit:",
-            options=self._get_commit_selector_options() if self.project_selector.options else {},
+            options=self._get_commit_selector_options()
+            if self.project_selector.options
+            else {},
         )
         trt.link((selector, "value"), (self, "selected_commit"))
         return selector
@@ -222,7 +224,9 @@ class APIClientWidget(APIClient, ipyw.GridspecLayout):
         progress.layout.visibility = "hidden"
 
     def _get_project_options(self):
-        project_name_instances = Counter(project["name"] for project in self.projects.values())
+        project_name_instances = Counter(
+            project["name"] for project in self.projects.values()
+        )
 
         return {
             data["name"]

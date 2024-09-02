@@ -6,15 +6,31 @@ Pull requests are the preferred method of code modification submission.
 
 # Getting Setup
 
-Update submodules and install the packages in editable mode by running the setup
- command:
+Before contributing your pull requests, please run:
 
-`anaconda-project run setup`
+    pixi run precommit
 
-# Run the code linters:
+This commit is basically what is run by the CI pipeline, and your PR will not pass CI until you can pass all checks and tests.
 
-`anaconda-project run lint`
+This command will run the automatic code formatter, the notebook cleaner, the code linter, the static type checker, and the unit tests.
 
-# Run the tests:
+These commands can be run in isolation.
 
-`anaconda-project run test`
+| __Task__ | __Description__ | __Re-run Conditions__ |
+|---|---|---|
+| `build-dist` | Packages an un-built source distribution (`sdist`) and a built package (`wheel`) for `pymbe` |
+| `build-docs` | Builds the documentation for `pymbe` (Future Work) | All `.py` files in `src/` and `docs/` and `.rst` files in `docs/`
+| `build` | Packages and Builds the python package (`build-dist`) and the documentation (`build-docs`) |
+| `clean-notebooks` | Strips outputs from all Jupyter notebooks in the [`./docs`](./docs) folder | All `*.ipynb` in [`./docs`](./docs)  folder
+| `fmt-docs` | Automatically formats all DOCSTRINGS in `.py` files in the [`./src`](./src) and [`./tests`](./tests) folders | All `*.py` in the [`./src`](./src) and [`./tests`](./tests) folders
+| `fmt-py` | Automatically formats all python code in `.py` files in the [`./src`](./src) and [`./tests`](./tests) folders | All `*.py` in the [`./src`](./src) and [`./tests`](./tests) folders
+| `fmt` | Automatically formats all `.py` files in the [`./src`](./src) and [`./tests`](./tests) folders | All `*.py` in the [`./src`](./src) and [`./tests`](./tests) folders
+| `lint` | Tries to fix linter issues and checks there are no linter errors in [`./src`](./src) and [`./tests`](./tests) folders | All `*.py` in the [`./src`](./src) and [`./tests`](./tests) folders
+| `precommit` | Runs the `fmt`, `lint`, `typing`, `test`, and `clean-notebooks` tasks
+| `style` | Runs the `fmt` and `lint` tasks | All `*.py` in the [`./src`](./src) and [`./tests`](./tests) folders
+| `test-nb` | Runs notebooks in [`.docs/`](./docs) folder | All `*.py` in the [`./src`](./src) and `*.ipynb` in the [`./docs`](./docs) folders
+| `test-py` | Runs tests and creates coverage report | All `*.py` in the [`./src`](./src) and [`./tests`](./tests) folders
+| `test` | Runs the python (`test-py`) tests (in the future, this should also run the notebooks `test-nb`) |
+| `typing` | Runs `mypy` in the [`./src`](./src) folder | All `*.py` in the [`./src`](./src) folder
+| `update-submodules` | Updates `git` submodules | [`.git/HEAD`](.git/HEAD)
+| `vscode` | Launched Visual Studio Code from the appropriate environment

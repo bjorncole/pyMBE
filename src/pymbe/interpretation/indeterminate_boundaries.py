@@ -12,7 +12,6 @@ def id_for_quantity(name: str):
 def build_indefinite_boundaries(
     library_model: Model, target_package: Element, active_model: Model
 ):
-
     # find Occurrence in libraries
 
     occurrence_ns = [

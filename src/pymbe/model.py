@@ -1,10 +1,11 @@
 import json
 from collections import defaultdict
+from collections.abc import Collection
 from dataclasses import dataclass, field
 from enum import Enum
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Collection, Dict, List, Tuple, Union
+from typing import Any
 from uuid import uuid4
 from warnings import warn
 
@@ -16,7 +17,11 @@ VALUE_METATYPES = ("AttributeDefinition", "AttributeUsage", "DataType")
 
 
 def is_id_item(item):
-    return isinstance(item, dict) and item["@id"] is not None and isinstance(item["@id"], str)
+    return (
+        isinstance(item, dict)
+        and item["@id"] is not None
+        and isinstance(item["@id"], str)
+    )
 
 
 class ListOfNamedItems(list):
@@ -44,7 +49,7 @@ class ListOfNamedItems(list):
 
 
 class Naming(Enum):
-    """An enumeration for how to repr SysML elements"""
+    """An enumeration for how to repr SysML elements."""
 
     IDENTIFIER = "identifier"
     LONG = "long"
@@ -91,23 +96,23 @@ class ModelClient:
 
 @dataclass(repr=False)
 class Model:  # pylint: disable=too-many-instance-attributes
-    """A SysML v2 Model"""
+    """A SysML v2 Model."""
 
     # TODO: Look into making elements immutable (e.g., frozen dict)
-    elements: Dict[str, "Element"]
+    elements: dict[str, "Element"]
 
     name: str = "SysML v2 Model"
 
-    all_relationships: Dict[str, "Element"] = field(default_factory=dict)
-    all_non_relationships: Dict[str, "Element"] = field(default_factory=dict)
+    all_relationships: dict[str, "Element"] = field(default_factory=dict)
+    all_non_relationships: dict[str, "Element"] = field(default_factory=dict)
 
     ownedElement: ListOfNamedItems = field(  # pylint: disable=invalid-name
         default_factory=ListOfNamedItems,
     )
-    ownedMetatype: Dict[str, List["Element"]] = field(  # pylint: disable=invalid-name
+    ownedMetatype: dict[str, list["Element"]] = field(  # pylint: disable=invalid-name
         default_factory=dict,
     )
-    ownedRelationship: List["Element"] = field(  # pylint: disable=invalid-name
+    ownedRelationship: list["Element"] = field(  # pylint: disable=invalid-name
         default_factory=list,
     )
 
@@ -122,16 +127,15 @@ class Model:  # pylint: disable=too-many-instance-attributes
 
     metamodel: MetaModel = None
 
-    _referenced_models: List["Model"] = field(  # pylint: disable=invalid-name
+    _referenced_models: list["Model"] = field(  # pylint: disable=invalid-name
         default_factory=list,
     )
 
-    _metamodel_hints: Dict[str, List[List[str]]] = field(
+    _metamodel_hints: dict[str, list[list[str]]] = field(
         default_factory=dict
     )  # hints about attribute primary v derived, expected value type, etc.
 
     def __post_init__(self):
-
         self.metamodel = MetaModel()
 
         self._metamodel_hints = self.metamodel.metamodel_hints
@@ -173,21 +177,23 @@ class Model:  # pylint: disable=too-many-instance-attributes
 
     @staticmethod
     def load(
-        elements: Collection[Dict],
+        elements: Collection[dict],
         **kwargs,
     ) -> "Model":
-        """Make a Model from an iterable container of elements"""
+        """Make a Model from an iterable container of elements."""
         return Model(
             elements={
-                element.get("identity", element).get("@id"): element.get("payload", element)
+                element.get("identity", element).get("@id"): element.get(
+                    "payload", element
+                )
                 for element in elements
             },
             **kwargs,
         )
 
     @staticmethod
-    def load_from_file(filepath: Union[Path, str], encoding: str = "utf-8") -> "Model":
-        """Make a model from a JSON file"""
+    def load_from_file(filepath: Path | str, encoding: str = "utf-8") -> "Model":
+        """Make a model from a JSON file."""
         if isinstance(filepath, str):
             filepath = Path(filepath)
 
@@ -201,15 +207,16 @@ class Model:  # pylint: disable=too-many-instance-attributes
         )
 
     @staticmethod
-    def load_from_post_file(filepath: Union[Path, str], encoding: str = "utf-8") -> "Model":
-        """Make a model from a JSON file formatted to POST to v2 API (includes payload fields)"""
+    def load_from_post_file(filepath: Path | str, encoding: str = "utf-8") -> "Model":
+        """Make a model from a JSON file formatted to POST to v2 API (includes
+        payload fields)"""
         if isinstance(filepath, str):
             filepath = Path(filepath)
 
         if not filepath.is_file():
             raise ValueError(f"'{filepath}' does not exist!")
 
-        with open(filepath, "r", encoding="UTF-8") as raw_post_fp:
+        with open(filepath, encoding="UTF-8") as raw_post_fp:
             element_raw_post_data = json.load(raw_post_fp)
 
             factored_data = []
@@ -226,8 +233,11 @@ class Model:  # pylint: disable=too-many-instance-attributes
         )
 
     @staticmethod
-    def load_from_mult_post_files(filepath_list: List, encoding: str = "utf-8") -> "Model":
-        """Make a model from multiple JSON files formatted to POST to v2 API (includes payload fields)"""
+    def load_from_mult_post_files(
+        filepath_list: list, encoding: str = "utf-8"
+    ) -> "Model":
+        """Make a model from multiple JSON files formatted to POST to v2 API
+        (includes payload fields)"""
         factored_data = []
 
         for filepath in filepath_list:
@@ -237,7 +247,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
             if not filepath.is_file():
                 raise ValueError(f"'{filepath}' does not exist!")
 
-            with open(filepath, "r", encoding="UTF-8") as raw_post_fp:
+            with open(filepath, encoding="UTF-8") as raw_post_fp:
                 element_raw_post_data = json.load(raw_post_fp)
 
                 for raw_post in element_raw_post_data:
@@ -253,13 +263,17 @@ class Model:  # pylint: disable=too-many-instance-attributes
         )
 
     @property
-    def packages(self) -> Tuple["Element", ...]:
+    def packages(self) -> tuple["Element", ...]:
         return tuple(
-            element for element in self.elements.values() if element._metatype == "Package"
+            element
+            for element in self.elements.values()
+            if element._metatype == "Package"
         )
 
-    def get_element(self, element_id: str, fail: bool = True, resolve: bool = True) -> "Element":
-        """Get an element, or retrieve it from the API if it is there"""
+    def get_element(
+        self, element_id: str, fail: bool = True, resolve: bool = True
+    ) -> "Element":
+        """Get an element, or retrieve it from the API if it is there."""
         element = self.elements.get(element_id)
         if element and not isinstance(element, Element):
             return element
@@ -304,16 +318,18 @@ class Model:  # pylint: disable=too-many-instance-attributes
                 self.ownedRelationship += [element]
             if id_ not in self.all_relationships:
                 self.all_relationships[id_] = element
-        else:
-            if id_ not in self.all_non_relationships:
-                self.all_non_relationships[id_] = element
+        elif id_ not in self.all_non_relationships:
+            self.all_non_relationships[id_] = element
 
         # if not self._initializing:
         #    self._add_labels(element)
         return element
 
     def save_to_file(
-        self, filepath: Union[Path, str] = None, indent: int = 2, encoding: str = "utf-8"
+        self,
+        filepath: Path | str = None,
+        indent: int = 2,
+        encoding: str = "utf-8",
     ):
         filepath = filepath or self.name
         if not self.elements:
@@ -334,7 +350,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
         )
 
     def _add_labels(self, *elements):
-        """Attempts to add a label to the elements"""
+        """Attempts to add a label to the elements."""
         from .label import get_label  # pylint: disable=import-outside-toplevel
 
         elements = elements or self.elements.values()
@@ -344,17 +360,23 @@ class Model:  # pylint: disable=too-many-instance-attributes
                 element._derived["label"] = label
 
     def _add_owned(self):
-        """Adds owned elements, relationships, and metatypes to the model"""
+        """Adds owned elements, relationships, and metatypes to the model."""
         elements = self.elements
 
         self.all_relationships = {
-            id_: element for id_, element in elements.items() if element._is_relationship
+            id_: element
+            for id_, element in elements.items()
+            if element._is_relationship
         }
         self.all_non_relationships = {
-            id_: element for id_, element in elements.items() if not element._is_relationship
+            id_: element
+            for id_, element in elements.items()
+            if not element._is_relationship
         }
 
-        owned = [element for element in elements.values() if element.get_owner() is None]
+        owned = [
+            element for element in elements.values() if element.get_owner() is None
+        ]
         self.ownedElement = ListOfNamedItems(
             element for element in owned if not element._is_relationship
         )
@@ -369,8 +391,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
         self.ownedMetatype = dict(by_metatype)
 
     def _add_relationships(self):
-        """Adds relationships to elements"""
-
+        """Adds relationships to elements."""
         # TODO: make this more elegant...  maybe.
         for relationship in self.all_relationships.values():
             self._add_relationship(relationship)
@@ -436,7 +457,9 @@ class Model:  # pylint: disable=too-many-instance-attributes
             endpts1, endpts2 = endpoints[key1], endpoints[key2]
             for endpt1 in endpts1:
                 for endpt2 in endpts2:
-                    endpt1._derived[f"{direction}{metatype}"] += [{"@id": endpt2._data["@id"]}]
+                    endpt1._derived[f"{direction}{metatype}"] += [
+                        {"@id": endpt2._data["@id"]}
+                    ]
 
     def reference_other_model(self, ref_model: "Model"):
         if ref_model not in self._referenced_models:
@@ -445,16 +468,16 @@ class Model:  # pylint: disable=too-many-instance-attributes
 
 @dataclass(repr=False)
 class Element:  # pylint: disable=too-many-instance-attributes
-    """A SysML v2 Element"""
+    """A SysML v2 Element."""
 
-    _data: Dict[str, Any]
+    _data: dict[str, Any]
     _model: Model
 
-    _metamodel_hints: Dict[str, List[str]]
+    _metamodel_hints: dict[str, list[str]]
 
     _id: str = field(default_factory=lambda: str(uuid4()))
     _metatype: str = "Element"
-    _derived: Dict[str, List] = field(default_factory=lambda: defaultdict(list))
+    _derived: dict[str, list] = field(default_factory=lambda: defaultdict(list))
     # TODO: replace this with instances sequences
     # _instances: List["Instance"] = field(default_factory=list)
     _is_abstract: bool = False
@@ -534,12 +557,18 @@ class Element:  # pylint: disable=too-many-instance-attributes
         for source in ("_data", "_derived"):
             source = self.__getattribute__(source)
             if key in source:
-                if key in self._metamodel_hints and not self._metamodel_hints[key]["derived"]:
+                if (
+                    key in self._metamodel_hints
+                    and not self._metamodel_hints[key]["derived"]
+                ):
                     found = True
                     item = source[key]
                     break
 
-                if key in self._metamodel_hints and self._metamodel_hints[key]["derived"]:
+                if (
+                    key in self._metamodel_hints
+                    and self._metamodel_hints[key]["derived"]
+                ):
                     break
                 found = True
                 item = source[key]
@@ -600,7 +629,7 @@ class Element:  # pylint: disable=too-many-instance-attributes
         return self._derived.get("label")
 
     @property
-    def relationships(self) -> Dict[str, Any]:
+    def relationships(self) -> dict[str, Any]:
         return {
             key: self[key]
             for key in self._derived
@@ -664,11 +693,13 @@ class Element:  # pylint: disable=too-many-instance-attributes
     @staticmethod
     def new(data: dict, model: Model) -> "Element":
         return Element(
-            _data=data, _model=model, _metamodel_hints=model._metamodel_hints[data["@type"]]
+            _data=data,
+            _model=model,
+            _metamodel_hints=model._metamodel_hints[data["@type"]],
         )
 
     def __safe_dereference(self, item):
-        """If given a reference to another element, try to get that element"""
+        """If given a reference to another element, try to get that element."""
         try:
             if isinstance(item, dict) and "@id" in item:
                 if len(item) > 1:
