@@ -85,7 +85,7 @@ setup-mypy = "mypy --install-types"
 style = { depends-on = ["fmt", "lint"] }
 test = { cmd = "pytest -s -n 4 --cov=pymbe --cov-report html:.pytest_coverage", depends-on = ["setup-develop", "update-submodules"] }
 typing = { cmd = "mypy src/", depends-on = ["setup-mypy"] }
-update-submodules = { cmd = "git submodule update --init", inputs=[".git/HEAD"] }
+update-submodules = { cmd = "git submodule update --init", inputs=[".git/HEAD"] }  # TODO: make this more robust to branch changes
 package = "python -m build"
 vscode = "code ."
 
