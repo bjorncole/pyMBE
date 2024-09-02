@@ -1,0 +1,167 @@
+[project]
+name = "pymbe"
+requires-python = ">=3.11"
+description = "A pythonic Model-based Engineering framework based on SysML v2"
+version = "0.20.0"
+license = { file = "LICENSE" }
+keywords = ["Model-based", "SysML", "Engineering"]
+authors = [
+  { name = "Bjorn Cole", email = "bjorn.cole@gmail.com" },
+  { name = "Santiago Balestrini-Robinson", email = "sanbales@gmail.com" },
+]
+maintainers = [
+  { name = "Bjorn Cole", email = "bjorn.cole@gmail.com" },
+  { name = "Santiago Balestrini-Robinson", email = "sanbales@gmail.com" },
+]
+classifiers = [
+    "Development Status :: 1 - Planning",
+    "Framework :: Jupyter",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3) ",
+    "Programming Language :: Python",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = [
+    "importnb",
+    "ipyelk",
+    "ipytree",
+    "jupyterlab",
+    "matplotlib",
+    "networkx",
+    "notebook",
+    "numpy",
+    "pip",
+    "pydantic<2",
+    "pyld",
+    "rdflib",
+    "rdflib-jsonld",
+    "ruamel.yaml",
+    "tabulate",
+    "wxyz_html",
+    "wxyz_lab",
+]
+
+[project.urls]
+homepage = "https://github.com/bjorncole/pymbe"
+bug-tracker = "https://github.com/bjorncole/pymbe/issues"
+changelog = "https://github.com/bjorncole/pymbe/blob/master/CHANGELOG.md"
+releases = "https://github.com/bjorncole/pymbe/releases"
+source = "https://github.com/bjorncole/pymbe"
+
+[tool.pixi.project]
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
+
+[tool.pixi.pypi-dependencies]
+pymbe = { path = ".", editable = true }
+
+[tool.pixi.feature.develop.dependencies]
+ansi2html = "*"
+docformatter = "*"
+git = "*"
+mypy = "*"
+nbmake = "*"
+nbstripout = "*"
+pip = "*"
+pytest = "*"
+pytest-asyncio = "*"
+pytest-cov = "*"
+pytest-html = "*"
+pytest-xdist = "*"
+python-build = "*"
+ruff = "*"
+
+[tool.pixi.environments]
+default = { features = [], solve-group = "default" }
+develop = { features = ["develop"], solve-group = "default" }
+
+[tool.pixi.tasks]
+lab = { cmd = "jupyter lab --no-browser", cwd = "docs" }
+
+[tool.pixi.feature.develop.tasks]
+clean-notebooks = "nbstripout docs/**/*.ipynb"
+fmt = { depends-on = ["fmt-py", "fmt-docs"] }
+fmt-py = "ruff format src/ tests/"
+fmt-docs = { cmd = "docformatter --in-place src/**/*.py", inputs = ["src/**/*.py"] }
+lint = "ruff check --fix --no-unsafe-fixes src/ tests/"
+precommit = { depends-on = ["style", "typing", "test", "clean-notebooks"] }
+style = { depends-on = ["fmt", "lint"] }
+test = { depends-on = ["test-py"] }
+test-nb = { cmd = "pytest --nbmake  --nbmake-timeout=3000 docs/**/*.ipynb", inputs = ["src/**/*.py", "docs/**/*.ipynb"] }
+test-py = { cmd = """
+pytest
+-vv
+--ff
+--capture=no
+-n 4
+--cov-context=test 
+--cov-report html:build/htmlcov
+--cov-report term-missing:skip-covered
+--cov-report xml:build/cov.xml
+--html build/pytest.html
+--junitxml build/pytest.xunit.xml
+--self-contained-html
+-o=junit_family=xunit2 
+--junitxml=build/reports/pytest/junit.xml 
+""", depends-on = ["update-submodules"] }
+typing = "mypy --install-types --html-report=build/reports/mypy src/"
+update-submodules = { cmd = "git submodule update --init", inputs=[".git/HEAD"] }  # TODO: make this more robust to branch changes
+build =  { depends-on = ["build-dist", "build-docs"] }
+build-dist = "python -m build --outdir build/dist"
+build-docs = { cmd = "sphinx-build -b html docs/source build/docs/html", inputs = ["src/**/*.py", "docs/**/*.py", "docs/**/*.rst"] }
+vscode = "code ."
+
+[tool.ruff]
+# Full list of rules: https://docs.astral.sh/ruff/rules/
+lint.select = [
+  "ANN",  # flake8-annotations
+  "D",  # pydocstyle
+  "E",  # pycodestyle errors
+  "F",  # pyflakes
+  "I",  # isort
+  "PL", # pylint
+  "UP", # pyupgra
+  "W",  # pycodestyle warnings
+  "NPY", # NumPy-specific rules
+]
+lint.ignore = [
+  "ANN101", # Missing type annotation for `self` in method
+  "ANN102", # Missing type annotation for `cls` in classmethod
+  "ANN002",  # Missing type annotation for `*args`
+  "ANN003",  # Missing type annotation for `**kwargs`
+  "ANN204",  # Missing return type annotation for special method `__init__`
+  "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed in `*args"
+  "PLR0913",  # Too many arguments in function definition
+  "E501", # if it doesn't bother black
+  "D105",
+  "D107",
+  "D205",
+  "D209",
+  "D400",
+  "D203",
+  "D213", # pydocstyle opinion
+  "D417", # FIXME Missing argument description
+  "D413", # Missing blank line after last section ("Parameters")
+]
+cache-dir = "build/.cache/ruff"
+
+[tool.mypy]
+cache_dir = "build/.cache/mypy"
+sqlite_cache = true
+allow_redefinition = true
+check_untyped_defs = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+no_implicit_optional = true
+show_error_codes = true
+show_error_context = true
+warn_return_any = false
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = [
+    "traitlets",
+    "traittypes",
+]
+ignore_missing_imports = true
+allow_redefinition = true
