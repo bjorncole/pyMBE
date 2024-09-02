@@ -151,8 +151,6 @@ lint.ignore = [
   "D400",    # FIXME First line should end with a period
   "D401",    # FIXME First line of docstring should be in imperative mood
   "D404",    # FIXME First word of the docstring should not be "This"
-  "PLW0127", # FIXME Self-assignment of variable
-  "PLW0127", # FIXME Self-assignment of variable
   "D413",    # FIXME Missing blank line after last section ("Parameters")
   "D415",    # FIXME First line should end with a period, question mark, or exclamation point
   "D417",    # FIXME Missing argument description
@@ -162,6 +160,8 @@ lint.ignore = [
   "PLR0913", # FIXME Too many arguments in function definition
   "PLR0915", # FIXME Too many statements
   "PLR2004", # FIXME Magic value used in comparison
+  "PLW0127", # FIXME Self-assignment of variable
+  "PLW0127", # FIXME Self-assignment of variable
   "PLW2901", # FIXME `for` loop variable `source` overwritten by assignment target
   "UP038",   # FIXME Use `X | Y` in `isinstance` call instead of `(X, Y)`
 ]
