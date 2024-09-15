@@ -1,12 +1,12 @@
 import traceback
+from collections.abc import Iterable
 from functools import lru_cache
 from pathlib import Path
-from typing import Container, Iterable, Optional, Type
 from warnings import warn
 
 import networkx as nx
-from pyparsing import Any
 import traitlets as trt
+from pyparsing import Any
 from ruamel.yaml import YAML
 
 from ..model import Element, Model
@@ -188,7 +188,9 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):  # pylint: disable=too-many-ins
             if key in function_attributes
         }
 
-    def get_implied_edges(self, *implied_edge_types: str) -> list[tuple[str, str, str, dict[Any, Any]]]:
+    def get_implied_edges(
+        self, *implied_edge_types: str
+    ) -> list[tuple[str, str, str, dict[Any, Any]]]:
         from .edge_generators import (
             IMPLIED_GENERATORS,  # pylint: disable=import-outside-toplevel
         )
@@ -207,7 +209,7 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):  # pylint: disable=too-many-ins
     def get_projection(
         self,
         projection: str,
-        packages: Optional[Iterable[Element] | Element] = None,
+        packages: Iterable[Element] | Element | None = None,
     ) -> nx.Graph:
         if isinstance(packages, Element):
             packages = [packages]
@@ -220,14 +222,15 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):  # pylint: disable=too-many-ins
 
     def adapt(
         self,
-        excluded_node_types: Optional[Iterable[str]] = None,
-        excluded_edge_types: Optional[Iterable[str]] = None,
-        reversed_edge_types: Optional[Iterable[str]] = None,
-        implied_edge_types: Optional[Iterable[str]] = None,
-        included_packages: Optional[Iterable[Element]] = None,
+        excluded_node_types: Iterable[str] | None = None,
+        excluded_edge_types: Iterable[str] | None = None,
+        reversed_edge_types: Iterable[str] | None = None,
+        implied_edge_types: Iterable[str] | None = None,
+        included_packages: Iterable[Element] | None = None,
     ) -> nx.Graph | nx.DiGraph:
         """Using the existing graph, filter by node and edge types, and/or
-        reverse certain edge types."""
+        reverse certain edge types.
+        """
         excluded_edge_types = excluded_edge_types or []
         excluded_node_types = excluded_node_types or []
         reversed_edge_types = reversed_edge_types or []
@@ -246,11 +249,11 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):  # pylint: disable=too-many-ins
     @lru_cache(maxsize=1024)
     def _adapt(
         self,
-        excluded_node_types: Optional[Iterable[str]] = None,
-        excluded_edge_types: Optional[Iterable[str]] = None,
-        reversed_edge_types: Optional[Iterable[str]] = None,
-        implied_edge_types: Optional[Iterable[str]] = None,
-        included_packages: Optional[Iterable[Element]] = None,
+        excluded_node_types: Iterable[str] | None = None,
+        excluded_edge_types: Iterable[str] | None = None,
+        reversed_edge_types: Iterable[str] | None = None,
+        implied_edge_types: Iterable[str] | None = None,
+        included_packages: Iterable[Element] | None = None,
     ) -> nx.Graph:
         excluded_node_types = excluded_node_types or []
         excluded_edge_types = excluded_edge_types or []
@@ -294,7 +297,9 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):  # pylint: disable=too-many-ins
             ]
         subgraph = graph.__class__(graph.subgraph(included_nodes))
 
-        def _process_edge(src: str, tgt: str, typ: str, data: dict[Any, Any], rev_types: Iterable[str]) -> tuple[str, str, str, dict[Any, Any]]:
+        def _process_edge(
+            src: str, tgt: str, typ: str, data: dict[Any, Any], rev_types: Iterable[str]
+        ) -> tuple[str, str, str, dict[Any, Any]]:
             data = {**self.graph.edges.get((src, tgt, typ), {}), **data}
             if typ in rev_types:
                 tgt, src = src, tgt
