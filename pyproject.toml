@@ -70,6 +70,8 @@ pytest-html = "*"
 pytest-xdist = "*"
 python-build = "*"
 ruff = "*"
+sphinx = "*"
+sphinx_rtd_theme = "*"
 
 [tool.pixi.environments]
 default = { features = [], solve-group = "default" }
@@ -90,25 +92,27 @@ test = { depends-on = ["test-py"] }
 test-nb = { cmd = "pytest --nbmake  --nbmake-timeout=3000 docs/**/*.ipynb", inputs = ["src/**/*.py", "docs/**/*.ipynb"] }
 test-py = { cmd = """
 pytest
--vv
---ff
 --capture=no
--n 4
 --cov-context=test 
 --cov-report html:build/htmlcov
 --cov-report term-missing:skip-covered
 --cov-report xml:build/cov.xml
+--ff
 --html build/pytest.html
 --junitxml build/pytest.xunit.xml
---self-contained-html
--o=junit_family=xunit2 
 --junitxml=build/reports/pytest/junit.xml 
+--override-ini=cache_dir=build/.cache/pytest
+--override-ini=junit_family=xunit2
+--self-contained-html
+-n 4
+-vv
 """, depends-on = ["update-submodules"] }
 typing = "mypy --install-types --html-report=build/reports/mypy src/"
 update-submodules = { cmd = "git submodule update --init", inputs=[".git/HEAD"] }  # TODO: make this more robust to branch changes
-build =  { depends-on = ["build-dist", "build-docs"] }
-build-dist = "python -m build --outdir build/dist"
+build =  { depends-on = ["build-dist", "build-docs", "build-wheel"] }
+build-dist = "python -m build --sdist --outdir build/sdist"
 build-docs = { cmd = "sphinx-build -b html docs/source build/docs/html", inputs = ["src/**/*.py", "docs/**/*.py", "docs/**/*.rst"] }
+build-wheel = "python -m build --wheel --outdir build/wheel"
 vscode = "code ."
 
 [tool.ruff]

@@ -53,7 +53,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: pymbe dist ${{ github.run_number }}
-          path: ./dist
+          path: ./build/dist
 
   lint:
     runs-on: ${{ matrix.vm }}

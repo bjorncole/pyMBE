@@ -1,11 +1,11 @@
 import json
 from collections import defaultdict
-from collections.abc import Collection
+from collections.abc import Collection, Iterable
 from dataclasses import dataclass, field
 from enum import Enum
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
+from typing import Any, SupportsIndex
 from uuid import uuid4
 from warnings import warn
 
@@ -16,7 +16,7 @@ OWNER_KEYS = ("owner", "owningRelatedElement", "owningRelationship")
 VALUE_METATYPES = ("AttributeDefinition", "AttributeUsage", "DataType")
 
 
-def is_id_item(item):
+def is_id_item(item: Any) -> bool:
     return (
         isinstance(item, dict)
         and item["@id"] is not None
@@ -28,7 +28,7 @@ class ListOfNamedItems(list):
     """A list that also can return items by their name."""
 
     # FIXME: figure out why __dir__ of returned objects think they are lists
-    def __getitem__(self, key):
+    def __getitem__(self, key: Any) -> Any:
         item_map = {
             item._data["declaredName"]: item
             for item in self
@@ -58,7 +58,7 @@ class Naming(Enum):
     LABEL = "label"
     BASIC = "basic"
 
-    def get_name(self, element: "Element") -> str:
+    def get_name(self, element: "Element") -> str | None:
         naming = self._value_  # pylint: disable=no-member
 
         # TODO: Check with Bjorn, he wanted: (a)-[r:RELTYPE {name: a.name + '<->' + b.name}]->(b)
@@ -120,44 +120,36 @@ class Model:  # pylint: disable=too-many-instance-attributes
 
     source: Any = None
 
-    _api: ModelClient = None
+    _api: ModelClient | None = None
     _initializing: bool = True
     _naming: Naming = Naming.LABEL  # The scheme to use for retrieving element names
     _labeling: Naming = Naming.LABEL  # The scheme to use for repr'ing the elements
 
-    metamodel: MetaModel = None
+    metamodel: MetaModel | None = None
 
     _referenced_models: list["Model"] = field(  # pylint: disable=invalid-name
         default_factory=list,
     )
 
-    _metamodel_hints: dict[str, list[list[str]]] = field(
+    _metamodel_hints: dict[str, dict[list[str]]] = field(
         default_factory=dict
     )  # hints about attribute primary v derived, expected value type, etc.
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.metamodel = MetaModel()
 
         self._metamodel_hints = self.metamodel.metamodel_hints
-
-        # self.elements = {
-        #     id_: Element(
-        #         _data={**data, "@id": id_},
-        #         _model=self,
-        #         _metamodel_hints={
-        #             att_key: att_data
-        #             for att_key, att_data in self._metamodel_hints[data["@type"]].items()
-        #         },
-        #     )
-        #     for id_, data in self.elements.items()
-        #     if isinstance(data, dict)
-        # }
 
         self.elements = {
             id_: Element(
                 _data={**data, "@id": id_},
                 _model=self,
                 _metamodel_hints=self._metamodel_hints[data["@type"]],
+                # TODO: review more dynamic metamodel_hint generation
+                # _metamodel_hints={
+                #     att_key: att_data
+                #     for att_key, att_data in self._metamodel_hints[data["@type"]].items()
+                # },
             )
             for id_, data in self.elements.items()
             if isinstance(data, dict)
@@ -178,7 +170,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
     @staticmethod
     def load(
         elements: Collection[dict],
-        **kwargs,
+        **kwargs: Any,
     ) -> "Model":
         """Make a Model from an iterable container of elements."""
         return Model(
@@ -209,7 +201,8 @@ class Model:  # pylint: disable=too-many-instance-attributes
     @staticmethod
     def load_from_post_file(filepath: Path | str, encoding: str = "utf-8") -> "Model":
         """Make a model from a JSON file formatted to POST to v2 API (includes
-        payload fields)"""
+        payload fields)
+        """
         if isinstance(filepath, str):
             filepath = Path(filepath)
 
@@ -237,7 +230,8 @@ class Model:  # pylint: disable=too-many-instance-attributes
         filepath_list: list, encoding: str = "utf-8"
     ) -> "Model":
         """Make a model from multiple JSON files formatted to POST to v2 API
-        (includes payload fields)"""
+        (includes payload fields)
+        """
         factored_data = []
 
         for filepath in filepath_list:
@@ -272,7 +266,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
 
     def get_element(
         self, element_id: str, fail: bool = True, resolve: bool = True
-    ) -> "Element":
+    ) -> "Element" | None:
         """Get an element, or retrieve it from the API if it is there."""
         element = self.elements.get(element_id)
         if element and not isinstance(element, Element):
@@ -327,10 +321,10 @@ class Model:  # pylint: disable=too-many-instance-attributes
 
     def save_to_file(
         self,
-        filepath: Path | str = None,
+        filepath: Path | str | None = None,
         indent: int = 2,
         encoding: str = "utf-8",
-    ):
+    ) -> None:
         filepath = filepath or self.name
         if not self.elements:
             warn("Model has no elements, nothing to save!")
@@ -349,7 +343,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
             encoding=encoding,
         )
 
-    def _add_labels(self, *elements):
+    def _add_labels(self, *elements: "Element") -> None:
         """Attempts to add a label to the elements."""
         from .label import get_label  # pylint: disable=import-outside-toplevel
 
@@ -359,7 +353,7 @@ class Model:  # pylint: disable=too-many-instance-attributes
             if label:
                 element._derived["label"] = label
 
-    def _add_owned(self):
+    def _add_owned(self) -> None:
         """Adds owned elements, relationships, and metatypes to the model."""
         elements = self.elements
 
@@ -390,13 +384,13 @@ class Model:  # pylint: disable=too-many-instance-attributes
             by_metatype[element._metatype].append(element)
         self.ownedMetatype = dict(by_metatype)
 
-    def _add_relationships(self):
+    def _add_relationships(self) -> None:
         """Adds relationships to elements."""
         # TODO: make this more elegant...  maybe.
         for relationship in self.all_relationships.values():
             self._add_relationship(relationship)
 
-    def _add_relationship(self, relationship):
+    def _add_relationship(self, relationship: "Element") -> None:
         relationship_mapper = {
             "through": ("source", "target"),
             "reverse": ("target", "source"),
@@ -456,12 +450,16 @@ class Model:  # pylint: disable=too-many-instance-attributes
         for direction, (key1, key2) in relationship_mapper.items():
             endpts1, endpts2 = endpoints[key1], endpoints[key2]
             for endpt1 in endpts1:
+                if endpt1 is None:
+                    continue
                 for endpt2 in endpts2:
+                    if endpt2 is None:
+                        continue
                     endpt1._derived[f"{direction}{metatype}"] += [
                         {"@id": endpt2._data["@id"]}
                     ]
 
-    def reference_other_model(self, ref_model: "Model"):
+    def reference_other_model(self, ref_model: "Model") -> None:
         if ref_model not in self._referenced_models:
             self._referenced_models.append(ref_model)
 
@@ -473,27 +471,27 @@ class Element:  # pylint: disable=too-many-instance-attributes
     _data: dict[str, Any]
     _model: Model
 
-    _metamodel_hints: dict[str, list[str]]
+    _metamodel_hints: dict[SupportsIndex, dict[SupportsIndex, list[str]]]
 
     _id: str = field(default_factory=lambda: str(uuid4()))
     _metatype: str = "Element"
-    _derived: dict[str, list] = field(default_factory=lambda: defaultdict(list))
+    _derived: dict[str, Any] = field(default_factory=lambda: defaultdict(list))
     # TODO: replace this with instances sequences
     # _instances: List["Instance"] = field(default_factory=list)
     _is_abstract: bool = False
     _is_proxy: bool = True
     _is_relationship: bool = False
-    _package: "Element" = None
+    _package: "Element" | None = None
 
     # TODO: Add comparison to allow sorting of elements (e.g., by name and then by id)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         # if not self._model._initializing:
         #    self._model.elements[self._id] = self
         if self._data:
             self.resolve()
 
-    def resolve(self):
+    def resolve(self) -> None:
         if not self._is_proxy:
             return
 
@@ -524,12 +522,12 @@ class Element:  # pylint: disable=too-many-instance-attributes
             self._model._add_element(self)
         self._is_proxy = False
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *_: Any, **kwargs: Any) -> None:
         element = kwargs.pop("element", None)
         if element:
             warn("When instantiating an element, you cannot pass it element.")
 
-    def __dir__(self):
+    def __dir__(self) -> list[str]:
         return sorted(
             set(
                 list(super().__dir__())
@@ -537,7 +535,7 @@ class Element:  # pylint: disable=too-many-instance-attributes
             )
         )
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, str):
             return self._id == other
         # TODO: Assess if this is more trouble than it's worth
@@ -546,44 +544,46 @@ class Element:  # pylint: disable=too-many-instance-attributes
         return self is other
 
     # TODO: Make this safe for through and reverse by return empty collection is no key found
-    def __getattr__(self, key: str):
+    def __getattr__(self, key: str) -> Any:
         try:
             return self[key]
         except KeyError as exc:
             raise AttributeError(f"Cannot find {key}") from exc
 
-    def __getitem__(self, key: str):
+    def __getitem__(self, key: SupportsIndex) -> Any:
         found = False
-        for source in ("_data", "_derived"):
-            source = self.__getattribute__(source)
-            if key in source:
-                if (
-                    key in self._metamodel_hints
-                    and not self._metamodel_hints[key]["derived"]
-                ):
+        item: str | Iterable[str]
+        if isinstance(key, str):
+            for source in ("_data", "_derived"):
+                source = self.__getattribute__(source)
+                if key in source:
+                    if (
+                        key in self._metamodel_hints
+                        and not self._metamodel_hints[key]["derived"]
+                    ):
+                        found = True
+                        item = source[key]
+                        break
+
+                    if (
+                        key in self._metamodel_hints
+                        and self._metamodel_hints[key]["derived"]
+                    ):
+                        break
                     found = True
                     item = source[key]
                     break
-
+                if key[7:] in list_relationship_metaclasses():
+                    found = True
+                    item = []
+            if not found:
                 if (
                     key in self._metamodel_hints
                     and self._metamodel_hints[key]["derived"]
+                    and self._metamodel_hints[key]["is_reference"]
                 ):
-                    break
-                found = True
-                item = source[key]
-                break
-            if key[7:] in list_relationship_metaclasses():
-                found = True
-                item = []
-        if not found:
-            if (
-                key in self._metamodel_hints
-                and self._metamodel_hints[key]["derived"]
-                and self._metamodel_hints[key]["is_reference"]
-            ):
-                found = True
-                item = derive_attribute(key, self)
+                    found = True
+                    item = derive_attribute(key, self)
 
         if not found:
             raise KeyError(f"No '{key}' in {self}")
@@ -595,10 +595,10 @@ class Element:  # pylint: disable=too-many-instance-attributes
             return type(item)(items)
         return item
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self._data["@id"])
 
-    def __lt__(self, other):
+    def __lt__(self, other: Any) -> bool:
         if isinstance(other, str):
             other = self._model.get_element(other, fail=False) or other
         if not isinstance(other, Element):
@@ -607,7 +607,7 @@ class Element:  # pylint: disable=too-many-instance-attributes
             return self.name < other.name
         return self._id < other._id
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         self_str = self._model._labeling.get_name(element=self)
         if self_str is None:
             return "No Name"
@@ -661,10 +661,10 @@ class Element:  # pylint: disable=too-many-instance-attributes
         except KeyError:
             return default
 
-    def get_element(self, element_id) -> "Element":
+    def get_element(self, element_id: str) -> "Element":
         return self._model.get_element(element_id)
 
-    def get_owner(self) -> "Element":
+    def get_owner(self) -> "Element" | None:
         data = self._data
         owner_id = None
         for key in OWNER_KEYS:
@@ -698,7 +698,7 @@ class Element:  # pylint: disable=too-many-instance-attributes
             _metamodel_hints=model._metamodel_hints[data["@type"]],
         )
 
-    def __safe_dereference(self, item):
+    def __safe_dereference(self, item: dict | str) -> dict:
         """If given a reference to another element, try to get that element."""
         try:
             if isinstance(item, dict) and "@id" in item:
