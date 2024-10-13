@@ -139,7 +139,7 @@ jobs:
 
       - name: test (windows)
         if: ${{ contains(matrix.os, 'windows') }}
-        shell: powershell
+        shell: cmd
         env:
           ATEST_PROCESSES: 1
           WIN_CI: 1
