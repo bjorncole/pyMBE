@@ -4,6 +4,7 @@ from collections.abc import Collection
 from dataclasses import dataclass, field
 from enum import Enum
 from functools import lru_cache
+import logging
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -14,6 +15,8 @@ from pymbe.query.metamodel_navigator import get_effective_basic_name
 
 OWNER_KEYS = ("owner", "owningRelatedElement", "owningRelationship")
 VALUE_METATYPES = ("AttributeDefinition", "AttributeUsage", "DataType")
+
+logger = logging.getLogger(__name__)
 
 
 def is_id_item(item):
@@ -508,7 +511,7 @@ class Element:  # pylint: disable=too-many-instance-attributes
         self._metatype = data["@type"]
 
         self._is_abstract = bool(data.get("isAbstract"))
-        self._is_relationship = bool(data.get("source")) and bool(data.get("target"))
+        self._is_relationship = "source" in data and "target" in data
         for key, items in data.items():
             # set up owned elements to be referencable by their name
             if key.startswith("owned") and isinstance(items, list):
@@ -607,12 +610,14 @@ class Element:  # pylint: disable=too-many-instance-attributes
             return self.name < other.name
         return self._id < other._id
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         self_str = self._model._labeling.get_name(element=self)
-        if self_str is None:
+        if not self_str:
             return "No Name"
-
-        return self_str
+        if isinstance(self_str, str):
+            return self_str
+        logger.debug(f"self_str should be a string, not a {type(self_str)}")
+        return str(self_str)
 
     @property
     def basic_name(self) -> str:
