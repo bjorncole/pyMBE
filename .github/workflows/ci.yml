@@ -144,7 +144,7 @@ jobs:
           ATEST_PROCESSES: 1
           WIN_CI: 1
         run: |
-          pixi run test
+          conda run -n pymbe-ci pixi run test
 
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v1
