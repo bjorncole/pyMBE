@@ -50,7 +50,7 @@ jobs:
           pixi run build-dist || exit 1
 
       - name: publish dists
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: pymbe dist ${{ github.run_number }}
           path: ./dist
