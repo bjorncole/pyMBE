@@ -510,7 +510,7 @@ class Element:  # pylint: disable=too-many-instance-attributes
         self._id = data["@id"]
         self._metatype = data["@type"]
 
-        self._is_abstract = bool(data.get("isAbstract"))
+        self._is_abstract = data.get("isAbstract", False)
         self._is_relationship = "source" in data and "target" in data
         for key, items in data.items():
             # set up owned elements to be referencable by their name
@@ -579,6 +579,7 @@ class Element:  # pylint: disable=too-many-instance-attributes
             if key[7:] in list_relationship_metaclasses():
                 found = True
                 item = []
+        
         if not found:
             if (
                 key in self._metamodel_hints
