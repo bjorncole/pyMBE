@@ -10,7 +10,7 @@ from typing import Any
 from uuid import uuid4
 from warnings import warn
 
-from pymbe.metamodel import MetaModel, derive_attribute, list_relationship_metaclasses
+from pymbe.metamodel import MetaModel, derive_attribute, list_relationship_metaclasses, derive_port_conjugation_source
 from pymbe.query.metamodel_navigator import get_effective_basic_name
 
 OWNER_KEYS = ("owner", "owningRelatedElement", "owningRelationship")
@@ -558,6 +558,11 @@ class Element:  # pylint: disable=too-many-instance-attributes
     def __getitem__(self, key: str):
         found = False
         for source in ("_data", "_derived"):
+            # TODO: Remove this in the future
+            if key == "source" and self.__getattribute__("_metatype") == "PortConjugation":
+                found = True
+                item = derive_port_conjugation_source(self)
+                break
             source = self.__getattribute__(source)
             if key in source:
                 if (

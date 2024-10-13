@@ -1,13 +1,15 @@
 import json
-from dataclasses import field
+from dataclasses import dataclass, field
 from importlib import resources as lib_resources
 from typing import Any
 
 from pymbe.query.metamodel_navigator import get_more_general_types
+from typing import ClassVar
 
 # TODO: Is there a way to restore type hints for Element without inducing a circular dependency?
 
 
+@dataclass
 class MetaModel:
     """A class to hold meta-model information and perform property
     derivation."""
@@ -16,7 +18,21 @@ class MetaModel:
 
     pre_made_dicts: dict[str, dict[str, Any]] = field(default_factory=dict)
 
-    relationship_metas: list[str]
+    #TODO: Refactor the functions definitions of these things into Class Variables
+    relationship_metatypes: ClassVar[list[str]] = [
+        "Conjugation",
+        "EndFeatureMembership",
+        "FeatureMembership",
+        "FeatureTyping",
+        "FeatureValue",
+        "Membership",
+        "OwningMembership",
+        "Redefinition",
+        "ReferenceSubsetting",
+        "Specialization",
+        "Subclassification",
+        "Subsetting",
+    ]
 
     def __init__(self):
         self.pre_made_dicts = {}
@@ -71,18 +87,18 @@ class MetaModel:
 def list_relationship_metaclasses():
     """Return a list of relationship metaclass names."""
     return [
+        "Conjugation",
+        "EndFeatureMembership",
+        "FeatureMembership",
         "FeatureTyping",
+        "FeatureValue",
         "Membership",
         "OwningMembership",
-        "FeatureMembership",
-        "EndFeatureMembership",
+        "Redefinition",
+        "ReferenceSubsetting",
         "Specialization",
-        "Conjugation",
         "Subclassification",
         "Subsetting",
-        "Redefinition",
-        "FeatureValue",
-        "ReferenceSubsetting",
     ]
 
 
@@ -183,3 +199,8 @@ def derive_features(ele: "Element"):  # noqa: F821
         feature_membership.target[0]
         for feature_membership in derive_inherited_featurememberships(ele)
     ] + ele.throughFeatureMembership
+
+
+def derive_port_conjugation_source(ele: "Element") -> list["Element"]:  # noqa: F821
+    # TODO: This should die in a huge pyre unless Ed confirms no source on Port Conjugations are intentional
+    return [ele.owningRelatedElement]
