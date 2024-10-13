@@ -119,6 +119,12 @@ jobs:
         uses: mamba-org/setup-micromamba@main
         with:
           environment-file: .github/environment.yml
+          environment-name: pymbe-ci
+          init-shell: >-
+            bash
+            powershell
+          cache-environment: true
+          post-cleanup: 'all'
 
       # - uses: actions/download-artifact@v2
       #   with:
@@ -139,12 +145,12 @@ jobs:
 
       - name: test (windows)
         if: ${{ contains(matrix.os, 'windows') }}
-        shell: powershell
+        shell: micromamba-shell {0}
         env:
           ATEST_PROCESSES: 1
           WIN_CI: 1
         run: |
-          'C:\Users\runneradmin\micromamba-bin\micromamba.exe' run -n pymbe-ci pixi run test
+          $MAMBA_EXE run -n pymbe-ci pixi run test
 
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v1
