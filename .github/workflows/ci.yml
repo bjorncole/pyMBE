@@ -146,7 +146,7 @@ jobs:
 
       - name: test (windows)
         if: ${{ contains(matrix.os, 'windows') }}
-        shell: micromamba-shell {0}
+        shell: cmd {0} & {1}
         env:
           ATEST_PROCESSES: 1
           WIN_CI: 1
