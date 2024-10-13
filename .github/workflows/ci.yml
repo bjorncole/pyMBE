@@ -115,16 +115,11 @@ jobs:
       - name: git checkout
         uses: actions/checkout@v2
 
-      - name: provision-with-micromamba
-        uses: mamba-org/setup-micromamba@main
+      - name: provision-with-pixi
+        uses: prefix-dev/setup-pixi@v0.8.0
         with:
-          environment-file: .github/environment.yml
-          environment-name: pymbe-ci
-          init-shell: >-
-            bash
-            powershell
-          cache-environment: true
-          post-cleanup: 'all'
+          pixi-version: v0.32.1
+          cache: true
 
       # - uses: actions/download-artifact@v2
       #   with:
@@ -145,12 +140,7 @@ jobs:
 
       - name: test (windows)
         if: ${{ contains(matrix.os, 'windows') }}
-        shell: micromamba-shell {0}
-        env:
-          ATEST_PROCESSES: 1
-          WIN_CI: 1
-        run: |
-          $MAMBA_EXE run -n pymbe-ci pixi run test
+        shell: pixi run test
 
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v1
