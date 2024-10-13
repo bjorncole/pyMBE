@@ -146,13 +146,12 @@ jobs:
 
       - name: test (windows)
         if: ${{ contains(matrix.os, 'windows') }}
-        shell: cmd {0} & {1}
+        shell: cmd {0}
         env:
           ATEST_PROCESSES: 1
           WIN_CI: 1
         run: |
-          'C:\Users\runneradmin\micromamba-bin\micromamba.exe' activate pymbe-ci
-          pixi run test
+          'C:\Users\runneradmin\micromamba-bin\micromamba.exe' activate pymbe-ci & pixi run test
 
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v1
