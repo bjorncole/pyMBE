@@ -1,10 +1,9 @@
 import json
 from dataclasses import dataclass, field
 from importlib import resources as lib_resources
-from typing import Any
+from typing import Any, ClassVar
 
 from pymbe.query.metamodel_navigator import get_more_general_types
-from typing import ClassVar
 
 # TODO: Is there a way to restore type hints for Element without inducing a circular dependency?
 
@@ -12,13 +11,14 @@ from typing import ClassVar
 @dataclass
 class MetaModel:
     """A class to hold meta-model information and perform property
-    derivation."""
+    derivation.
+    """
 
     metamodel_hints: dict[str, dict[str, dict[str, Any]]] = field(default_factory=dict)
 
     pre_made_dicts: dict[str, dict[str, Any]] = field(default_factory=dict)
 
-    #TODO: Refactor the functions definitions of these things into Class Variables
+    # TODO: Refactor the functions definitions of these things into Class Variables
     relationship_metatypes: ClassVar[list[str]] = [
         "Conjugation",
         "EndFeatureMembership",

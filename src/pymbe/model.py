@@ -1,16 +1,21 @@
 import json
+import logging
 from collections import defaultdict
 from collections.abc import Collection
 from dataclasses import dataclass, field
 from enum import Enum
 from functools import lru_cache
-import logging
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
 from warnings import warn
 
-from pymbe.metamodel import MetaModel, derive_attribute, list_relationship_metaclasses, derive_port_conjugation_source
+from pymbe.metamodel import (
+    MetaModel,
+    derive_attribute,
+    derive_port_conjugation_source,
+    list_relationship_metaclasses,
+)
 from pymbe.query.metamodel_navigator import get_effective_basic_name
 
 OWNER_KEYS = ("owner", "owningRelatedElement", "owningRelationship")
@@ -212,7 +217,8 @@ class Model:  # pylint: disable=too-many-instance-attributes
     @staticmethod
     def load_from_post_file(filepath: Path | str, encoding: str = "utf-8") -> "Model":
         """Make a model from a JSON file formatted to POST to v2 API (includes
-        payload fields)"""
+        payload fields)
+        """
         if isinstance(filepath, str):
             filepath = Path(filepath)
 
@@ -240,7 +246,8 @@ class Model:  # pylint: disable=too-many-instance-attributes
         filepath_list: list, encoding: str = "utf-8"
     ) -> "Model":
         """Make a model from multiple JSON files formatted to POST to v2 API
-        (includes payload fields)"""
+        (includes payload fields)
+        """
         factored_data = []
 
         for filepath in filepath_list:
@@ -559,7 +566,10 @@ class Element:  # pylint: disable=too-many-instance-attributes
         found = False
         for source in ("_data", "_derived"):
             # TODO: Remove this in the future
-            if key == "source" and self.__getattribute__("_metatype") == "PortConjugation":
+            if (
+                key == "source"
+                and self.__getattribute__("_metatype") == "PortConjugation"
+            ):
                 found = True
                 item = derive_port_conjugation_source(self)
                 break
@@ -584,7 +594,7 @@ class Element:  # pylint: disable=too-many-instance-attributes
             if key[7:] in list_relationship_metaclasses():
                 found = True
                 item = []
-        
+
         if not found:
             if (
                 key in self._metamodel_hints

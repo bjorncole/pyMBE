@@ -124,7 +124,9 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):  # pylint: disable=too-many-ins
             }
 
         graph.add_nodes_from(
-            {element._id: filter_node_data(element) for element in graph_elements}.items()
+            {
+                element._id: filter_node_data(element) for element in graph_elements
+            }.items()
         )
 
         graph.add_edges_from(
@@ -234,7 +236,8 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):  # pylint: disable=too-many-ins
         included_packages: list | set | tuple = None,
     ) -> nx.Graph | nx.DiGraph:
         """Using the existing graph, filter by node and edge types, and/or
-        reverse certain edge types."""
+        reverse certain edge types.
+        """
         excluded_edge_types = excluded_edge_types or []
         excluded_node_types = excluded_node_types or []
         reversed_edge_types = reversed_edge_types or []
