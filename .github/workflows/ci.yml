@@ -139,12 +139,12 @@ jobs:
 
       - name: test (windows)
         if: ${{ contains(matrix.os, 'windows') }}
-        shell: cmd
+        shell: powershell
         env:
           ATEST_PROCESSES: 1
           WIN_CI: 1
         run: |
-          conda run -n pymbe-ci pixi run test
+          mamba run -n pymbe-ci pixi run test
 
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v1
