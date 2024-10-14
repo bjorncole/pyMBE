@@ -42,7 +42,7 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):  # pylint: disable=too-many-ins
     nodes_by_type: dict = trt.Dict()
     edges_by_type: dict = trt.Dict()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             "<SysML v2 LPG: "
             f"{len(self.graph.nodes):,d} nodes, "
@@ -114,8 +114,19 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):  # pylint: disable=too-many-ins
         old_graph = self.graph
         del old_graph
 
+        def filter_node_data(element: Element) -> dict:
+            return {
+                key: value.get("@id", value) if isinstance(value, dict) else value
+                for key, value in element._data.items()
+                if key in element._metamodel_hints
+                and not element._metamodel_hints[key]["derived"]
+                and not element._metamodel_hints[key]["is_reference"]
+            }
+
         graph.add_nodes_from(
-            {element._id: element._data for element in graph_elements}.items()
+            {
+                element._id: filter_node_data(element) for element in graph_elements
+            }.items()
         )
 
         graph.add_edges_from(
@@ -225,7 +236,8 @@ class SysML2LabeledPropertyGraph(trt.HasTraits):  # pylint: disable=too-many-ins
         included_packages: list | set | tuple = None,
     ) -> nx.Graph | nx.DiGraph:
         """Using the existing graph, filter by node and edge types, and/or
-        reverse certain edge types."""
+        reverse certain edge types.
+        """
         excluded_edge_types = excluded_edge_types or []
         excluded_node_types = excluded_node_types or []
         reversed_edge_types = reversed_edge_types or []

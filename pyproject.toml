@@ -31,7 +31,7 @@ dependencies = [
     "notebook",
     "numpy",
     "pip",
-    "pydantic<2",
+    "pydantic",
     "pyld",
     "rdflib",
     "rdflib-jsonld",
@@ -49,11 +49,15 @@ releases = "https://github.com/bjorncole/pymbe/releases"
 source = "https://github.com/bjorncole/pymbe"
 
 [tool.pixi.project]
-channels = ["conda-forge"]
+channels = ["conda-forge/label/ipyelk_alpha", "conda-forge"]
 platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
 
 [tool.pixi.pypi-dependencies]
+ipysigma = "*"
 pymbe = { path = ".", editable = true }
+
+[tool.pixi.dependencies]
+ipyelk = { version = ">=2.1.0a0" }
 
 [tool.pixi.feature.develop.dependencies]
 ansi2html = "*"

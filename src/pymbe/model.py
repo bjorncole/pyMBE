@@ -1,4 +1,5 @@
 import json
+import logging
 from collections import defaultdict
 from collections.abc import Collection
 from dataclasses import dataclass, field
@@ -9,11 +10,18 @@ from typing import Any
 from uuid import uuid4
 from warnings import warn
 
-from pymbe.metamodel import MetaModel, derive_attribute, list_relationship_metaclasses
+from pymbe.metamodel import (
+    MetaModel,
+    derive_attribute,
+    derive_port_conjugation_source,
+    list_relationship_metaclasses,
+)
 from pymbe.query.metamodel_navigator import get_effective_basic_name
 
 OWNER_KEYS = ("owner", "owningRelatedElement", "owningRelationship")
 VALUE_METATYPES = ("AttributeDefinition", "AttributeUsage", "DataType")
+
+logger = logging.getLogger(__name__)
 
 
 def is_id_item(item):
@@ -209,7 +217,8 @@ class Model:  # pylint: disable=too-many-instance-attributes
     @staticmethod
     def load_from_post_file(filepath: Path | str, encoding: str = "utf-8") -> "Model":
         """Make a model from a JSON file formatted to POST to v2 API (includes
-        payload fields)"""
+        payload fields)
+        """
         if isinstance(filepath, str):
             filepath = Path(filepath)
 
@@ -237,7 +246,8 @@ class Model:  # pylint: disable=too-many-instance-attributes
         filepath_list: list, encoding: str = "utf-8"
     ) -> "Model":
         """Make a model from multiple JSON files formatted to POST to v2 API
-        (includes payload fields)"""
+        (includes payload fields)
+        """
         factored_data = []
 
         for filepath in filepath_list:
@@ -507,8 +517,8 @@ class Element:  # pylint: disable=too-many-instance-attributes
         self._id = data["@id"]
         self._metatype = data["@type"]
 
-        self._is_abstract = bool(data.get("isAbstract"))
-        self._is_relationship = bool(data.get("source")) and bool(data.get("target"))
+        self._is_abstract = data.get("isAbstract", False)
+        self._is_relationship = "source" in data and "target" in data
         for key, items in data.items():
             # set up owned elements to be referencable by their name
             if key.startswith("owned") and isinstance(items, list):
@@ -555,6 +565,14 @@ class Element:  # pylint: disable=too-many-instance-attributes
     def __getitem__(self, key: str):
         found = False
         for source in ("_data", "_derived"):
+            # TODO: Remove this in the future
+            if (
+                key == "source"
+                and self.__getattribute__("_metatype") == "PortConjugation"
+            ):
+                found = True
+                item = derive_port_conjugation_source(self)
+                break
             source = self.__getattribute__(source)
             if key in source:
                 if (
@@ -576,6 +594,7 @@ class Element:  # pylint: disable=too-many-instance-attributes
             if key[7:] in list_relationship_metaclasses():
                 found = True
                 item = []
+
         if not found:
             if (
                 key in self._metamodel_hints
@@ -607,12 +626,14 @@ class Element:  # pylint: disable=too-many-instance-attributes
             return self.name < other.name
         return self._id < other._id
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         self_str = self._model._labeling.get_name(element=self)
-        if self_str is None:
+        if not self_str:
             return "No Name"
-
-        return self_str
+        if isinstance(self_str, str):
+            return self_str
+        logger.debug(f"self_str should be a string, not a {type(self_str)}")
+        return str(self_str)
 
     @property
     def basic_name(self) -> str:
