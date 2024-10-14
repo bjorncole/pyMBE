@@ -22,7 +22,7 @@ def test_association_labels(load_kerml_library):
 
     link_assoc_names = [str(bc) for bc in link_assocs]
 
-    assert "Link «Association»" in link_assoc_names
+    assert "Link «Association» ([] ←→ [])" in link_assoc_names
     assert (
         "BinaryLink «Association» ([Anything «Classifier»] ←→ [Anything «Classifier»])"
         in link_assoc_names
