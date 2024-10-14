@@ -257,3 +257,9 @@ class FeatureTypeWorkingMap:
                 else:
                     # set the value directly
                     pass
+
+class TimeSliceWorkingMap():
+    """
+    This map holds a series of time slices and the temporal dependencies between them, conformant
+    to KerML, such as HappensBefore, HappensJustBefore, HappensDuring, and While.
+    """

@@ -117,6 +117,12 @@ def derive_attribute(key: str, ele: "Element"):  # noqa: F821
         return derive_owned_member(ele)
     if key == "feature":
         return derive_features(ele)
+    if key == "source" and ele._metatype == "TransitionUsage":
+        return derive_transition_source(ele)
+    if key == "succession" and ele._metatype == "TransitionUsage":
+        return derive_transition_succession(ele)
+    if key == "target" and ele._metatype == "TransitionUsage":
+        return derive_transition_target(ele)
 
     raise NotImplementedError(f"The method to derive {key} has yet to be developed.")
 
@@ -145,9 +151,11 @@ def derive_owned_x(ele: "Element", owned_kind: str):  # noqa: F821
     found_ele = []
 
     for owned_rel in ele.ownedRelationship:
+        if owned_rel._metatype == owned_kind:
+            found_ele.append(owned_rel)
         for owned_related_ele in owned_rel.ownedRelatedElement:
             if owned_related_ele._metatype == owned_kind:
-                found_ele.append(owned_related_ele)
+                    found_ele.append(owned_related_ele)
 
     return found_ele
 
@@ -183,3 +191,36 @@ def derive_features(ele: "Element"):  # noqa: F821
         feature_membership.target[0]
         for feature_membership in derive_inherited_featurememberships(ele)
     ] + ele.throughFeatureMembership
+
+
+def derive_transition_source(ele: "Element"):  # noqa: F821
+    """
+    8.3.17.9 TransitionUsage
+
+    deriveTransitionUsageSource
+    The source of a TransitionUsage is given by the memberElement of its first ownedMembership, which must
+    be an ActionUsage.
+    """
+
+    return ele.ownedMembership[0].memberElement
+
+
+def derive_transition_succession(ele: "Element"):  # noqa: F821
+    """
+    deriveTransitionUsageSuccession
+    The succession of a TransitionUsage is its first ownedMember that is a Succession.
+    """
+
+    for owned_member in ele.ownedMember:
+        if owned_member._metatype == "SuccessionAsUsage":
+            return owned_member
+
+
+def derive_transition_target(ele: "Element"):  # noqa: F821
+    """
+    deriveTransitionUsageTarget
+    The target of a TransitionUsage is given by the targetFeature of its succession, which must be an
+    ActionUsage.
+    """
+
+    return ele.succession.throughEndFeatureMembership[-1].throughReferenceSubsetting[0]
